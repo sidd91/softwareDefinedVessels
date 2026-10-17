@@ -1,31 +1,37 @@
 # Scenario B event timeline (WORKLOG DEC-32, DEC-40). Input for the simulator once it exists.
 # Minutes 0, 8 and 12 carry the brief's events (survey vehicle listening, drone report at 18 %, genset
-# trip); at minute 12 G4 is airborne at 2 kW under survey and has its 35 kW charge reserved under sar.
-# The landing time is pinned by seed; the cooling fault at minute 19 is an ADDED event, labelled on
-# screen, sourced to brief A.2 (-40 %) and A.6 (no repair at sea). Every value we chose is in
-# `provenance` below, which tools/physical_account.py reads into the Physical Account.
+# trip). At minute 8 survey pauses G3's leg (it holds depth); sar aborts it (G3 holds at sea, recovered
+# over the stern ramp only after G4 has landed, since flight deck and ramp are mutually exclusive, A.3).
+# At minute 12 G4 is airborne at 2 kW under survey and has its 35 kW charge reserved under sar.
+# The landing time is pinned by seed; the cooling fault at minute 19 is an INJECTED event, labelled
+# INJECTED on screen, sourced to brief A.2 (-40 %) and A.6 (no repair at sea). Faults reach the governor
+# as confirmed plant signals (config/assumptions.yaml fault_entry); `confirmed: true` marks a real fault,
+# not a false alarm. Every value we chose is in `provenance` below, which tools/physical_account.py reads
+# into the Physical Account.
 id: scenario_b
 guests: [G3, G4, G5]
-location: {name: Strait of Sicily cable corridor, seawater_c: 24}
+location: {name: Strait of Sicily cable corridor, seawater_c: 24, layered: false}
 seed_pins: {confirm_min: 1, deck_clear_min: 4, approach_min: 4, g4_lands_at_min: 17}
 events:
   - {t_min: 0, type: baseline, note: "3 kn over the cable route, G3 on its 40-min leg on the acoustic link, G4 airborne, G5 full"}
   - {t_min: 8, type: guest_report, guest: G4, battery_pct: 18, wind_kn: 22}
   - {t_min: 12, type: genset_trip, gensets_online: 1, cooling: nominal}
   - {t_min: 17, type: guest_state, guest: G4, state: landed_fast_charging}
-  - {t_min: 19, type: cooling_degraded, factor: 0.6, confirmed: true, added_event: true, trigger: {after: {guest: G4, state: landed_fast_charging}, delay_min: 2}, load_modes: {G3: standby, G4: fast_charge, G5: full}}
+  - {t_min: 19, type: cooling_degraded, factor: 0.6, confirmed: true, injected: true, trigger: {after: {guest: G4, state: landed_fast_charging}, delay_min: 2}, load_modes: {G3: standby, G4: fast_charge, G5: full}}
   - {t_min: 24, type: genset_restart, gensets_online: 2, optional: true}
 # After the fault, G3 asks to start its 25 kW charge (not interruptible), so it must fit before it starts.
 # Survey: G3 finishes the re-run leg (paused min 8-23, 40 min leg) with G4 still on its slowed charge.
-# Rescue: G3 was recovered after the min-8 abort and asks once it is on the cradle.
+# Rescue: G3's leg was aborted at minute 8 and it held at sea; it is recovered over the ramp after G4 has
+# landed and asks once it is on the cradle.
 g3_charge_requests:
   - {mission: survey, others: {G4: charge, G5: full}}
   - {mission: sar, others: {G4: fast_charge, G5: low_power}}
 provenance:
   guests: {source: assumed, why: "DEC-32: the brief's Scenario B load-out G2, G3, G4, G5 is 13.015 t against the 10 t mass margin (A.4) and needs Bay 2 twice, so it is refused at the pier and G3, G4, G5 (9.515 t) runs, with a logged override for extreme situations."}
   location: {source: "brief, the demo moment (3 kn over a cable route in 24 C water)"}
+  location.layered: {source: assumed, why: "A.5: layered water breaks the acoustic link, and the brief's demo moment has the survey vehicle listening, so we take the water column along the link as not layered. Research found a mixed layer about 10.5 m deep at this corridor in August (research/SENSOR_CATALOG.md, demo location); a layered column would end the survey at minute 0."}
   seed_pins.confirm_min: {source: assumed, why: "A.6: crew confirmation takes 15-60 s with 14 aboard; the demo seed pins the slow end, 1 min, as R3's worst case does."}
   seed_pins.deck_clear_min: {source: assumed, why: "A.6: 3-5 min to clear the deck with full crew; the demo seed pins 4 min. R3's worst-case pick stays 5 min (transition_picks.r3_worst_case); with it G4 would land at minute 18, still inside its minute-18.2 deadline."}
   seed_pins.approach_min: {source: assumed, why: "The same 4 min final approach as rules.r3.approach_min."}
   seed_pins.g4_lands_at_min: {source: assumed, why: "Decision at minute 8, then confirm 1 + clear deck 4 + approach 4 = minute 17 (DEC-40). A fixed seed keeps the demo replayable."}
-  events.cooling_degraded: {source: assumed, trace: '"cooling_degraded"', why: "Invented, labelled event (DEC-40): a chilled-water pump fails 2 min after G4 lands, so it always falls inside G4's 20-min fast charge. The -40 % is brief A.2 and no repair at sea is A.6. At 24 C the loop drops from 133.3 to 80 kW, a 75 kW ceiling against the 81 kW of load_modes, so cooling binds: survey slows G4's charge to 10 kW (56 kW), sar takes G5 to 8 kW (44 kW)."}
+  events.cooling_degraded: {source: assumed, trace: '"cooling_degraded"', why: "Injected event, labelled INJECTED on screen (DEC-40): a chilled-water pump fails 2 min after G4 lands, so it always falls inside G4's 20-min fast charge. The -40 % is brief A.2 and no repair at sea is A.6. At 24 C the loop drops from 133.3 to 80 kW, a 75 kW ceiling against the 81 kW of load_modes, so cooling binds: survey slows G4's charge to 10 kW (56 kW), sar takes G5 to 8 kW (44 kW)."}

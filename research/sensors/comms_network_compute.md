@@ -1,5 +1,7 @@
 # Comms links, shipboard networks, edge-compute telemetry, redundancy practice
 
+> Superseded for the build by WORKLOG DEC-44: section 4 and all other two-node failover material (heartbeats, duplicate paths, hot standby), and the NPU notes in section 6; the link, network and compute telemetry still applies.
+
 Research note for the resource governor (data links, compute, response time; touches power and heat). Web research done 2026-10-16.
 Conventions: **unconfirmed** = I could not verify it at a primary source. **(assumed)** = an engineering assumption for our simulator, not a sourced fact. Numbers in [n] refer to Section 7.
 Brief values (SATCOM 2–8 Mbit/s, 600–800 ms, 70–95 %; LOS 20–40 km, 1–20 Mbit/s; acoustic 1–5 kbit/s, 10–60 s; backbone 2×10 Gbit/s <1 ms) take precedence over vendor figures below.

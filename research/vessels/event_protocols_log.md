@@ -4,7 +4,7 @@ Compiled 2026-10-16 for the Fincantieri "Software Defined Vessel" challenge. Pub
 non-export-controlled material only. Everything is paraphrased; quotes are under 15 words.
 Conventions: `[n]` = numbered source in Section 6. "unconfirmed" = could not be verified against the
 primary text in this pass. "inference" = our own reasoning from the cited material, not a published rule.
-Candidate rules are tagged `R-E<event>-<n>` so the rule compiler can trace them back to this file.
+Candidate rules are tagged `R-E<event>-<n>` so rules written in data can trace them back to this file.
 
 ---
 

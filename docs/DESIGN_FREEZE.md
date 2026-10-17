@@ -71,6 +71,9 @@ Recommendation, in order:
    Armed, in declared order: G5 → 8 kW low power (frees 37 kW, 70 % connectivity lost); G4 → 10 kW charge."*
    The armed ladder *is* the explicit sequence; the pump fault at 19 then runs it live.
 
+> Superseded in part by the freeze alignment: see docs/EXPECTED_OUTCOMES.md, Scenario B as decided (survey
+> 48 kW, rescue 81 kW, first armed step G5 full to low power in both).
+
 ## 5. Why cameras, smoke and computer vision come out
 
 They were Logan's beyond-the-brief addition on Friday night (DEC-02, DEC-06), before the depth policy

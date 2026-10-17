@@ -1,5 +1,7 @@
 # Fixed camera placement on 60–100 m multi-role vessels (naval / coast guard / offshore / research)
 
+> Superseded for the build by WORKLOG DEC-44.
+
 Research note for the "resource governor" virtual-sensor design. Compiled 2026-10-16 from public
 regulator, class-society and manufacturer material. Where a claim rests only on vendor literature
 or a search snippet, it is marked as such; where a standard's text could not be opened it is

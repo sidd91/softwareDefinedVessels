@@ -12,6 +12,9 @@ dotted key (for example `power.shed_headroom_kw`, the form the engine's accessor
 through a subscript chain on a variable loaded from the same YAML file, following simple aliases such as
 `p = A["power"]` then `p["shed_headroom_kw"]`. Rows may add exact `trace` patterns for uses that are not a
 key lookup (card fields, priority files, dynamic subscripts).
+
+A key with `source: measured` is a figure we measure rather than assume (the governor's own footprint on the
+board); until it is measured its `status` (for example "planned") stands in the "Used in" column.
 """
 from pathlib import Path
 import glob
@@ -286,6 +289,12 @@ def kinds(hits):
     return ", ".join(sorted({KIND[next(d for d in SCAN if f.startswith(d + "/"))] for f, _ in hits})) or "not yet"
 
 
+def used_in(keys, hits):
+    """Where a row's numbers are used; a measured key nothing reads yet adds its status (e.g. "planned")."""
+    status = sorted({PROV[k].get("status", "measured") for k in keys if PROV[k]["source"] == "measured" and not where(k)})
+    return ", ".join(([kinds(hits)] if hits else []) + status) or "not yet"
+
+
 def refs(hits, limit=4):
     out = [f"{f}:{i}" for f, i in hits[:limit]]
     return ", ".join(out) + (f" (+{len(hits) - limit} more)" if len(hits) > limit else "") if out else "not yet"
@@ -294,12 +303,13 @@ def refs(hits, limit=4):
 # ---------------------------------------------------------------- render
 
 assumed = [k for k, p in PROV.items() if p["source"] == "assumed"]
+measured = [k for k, p in PROV.items() if p["source"] == "measured"]
 rows = ACC["rows"]
 covered = [k for r in rows for k in r.get("keys", [])]
-missing = [k for k in assumed if k not in covered]
-unknown = [k for k in covered if PROV.get(k, {}).get("source") != "assumed"]
+missing = [k for k in assumed + measured if k not in covered]
+unknown = [k for k in covered if PROV.get(k, {}).get("source") not in ("assumed", "measured")]
 if missing or unknown:
-    sys.exit(f"Physical Account: assumed keys in no row: {missing}; row keys that are not assumed keys: {unknown}")
+    sys.exit(f"Physical Account: assumed or measured keys in no row: {missing}; row keys that are neither: {unknown}")
 
 # The one-page table is HTML inside the Markdown so it can carry Annex C's column widths; a pipe table
 # lets the browser squeeze the reasons column and the page overflows.
@@ -310,31 +320,35 @@ one = ["# Physical Account", "", " ".join(ACC["intro"].split()), "", "<table>",
 last = None
 for r in rows:
     hits = sorted({h for k in r.get("keys", []) for h in where(k)} | set(traced(r.get("trace", []))))
-    one.append(cells("td", [r["row"] if r["row"] != last else "", r["what"], fill(r["value"]), r["why"], kinds(hits)]))
+    one.append(cells("td", [r["row"] if r["row"] != last else "", r["what"], fill(r["value"]), r["why"], used_in(r.get("keys", []), hits)]))
     last = r["row"]
-one += ["</tbody>", "</table>", "", fill(" ".join(ACC["closing"]["text"].split()))]
+# A non-breaking space keeps "30 °C" on one line.
+one += ["</tbody>", "</table>", "", re.sub(r"(\d) °C", "\\1\u00a0°C", fill(" ".join(ACC["closing"]["text"].split())))]
 (ROOT / "docs/PHYSICAL_ACCOUNT.md").write_text("\n".join(one) + "\n")
 
 det = ["# Physical Account, detail", "",
-       "Full reasons and every file:line that reads each assumed key. One-page version: [PHYSICAL_ACCOUNT.md](PHYSICAL_ACCOUNT.md).",
+       "Full reasons and every file:line that reads each assumed or measured key. One-page version: [PHYSICAL_ACCOUNT.md](PHYSICAL_ACCOUNT.md).",
        "A key counts as read where a line names its full dotted key, or reads it through a subscript chain on a variable",
        "loaded from its YAML file; \"not yet\" means nothing reads it yet.", "",
        "| Key | Value | Why | Where used |", "|---|---|---|---|"]
 for r in rows:
     for k in r.get("keys", []):
-        det.append(f"| `{k}` | {shown(lookup(k))} | {PROV[k]['why']} | {refs(where(k))} |")
+        hits = where(k)
+        status = PROV[k].get("status") if PROV[k]["source"] == "measured" and not hits else None
+        det.append(f"| `{k}` | {shown(lookup(k))} | {PROV[k]['why']} | {status or refs(hits)} |")
 det += ["", "## Guest-card values we assumed", "",
         "Card lines marked `assumed: true`: at least one number on the line is ours, not Annex B's. G6 is wholly our invention.", "",
         "| Card line | Where |", "|---|---|"]
 for f, lines in TEXTS.items():
     if f.startswith("manifests/G") and f.endswith(".yaml"):
         det += [f"| `{line.strip()[:110]}` | {f}:{i} |" for i, line in enumerate(lines, 1) if "assumed: true" in line]
-narrowed = {k: p["narrowed"] for k, p in PROV.items() if p["source"] != "assumed" and p.get("narrowed")}
-unchanged = sorted(k for k, p in PROV.items() if p["source"] != "assumed" and k not in narrowed)
+from_brief = {k: p for k, p in PROV.items() if p["source"].startswith("brief")}
+narrowed = {k: p["narrowed"] for k, p in from_brief.items() if p.get("narrowed")}
+unchanged = sorted(k for k in from_brief if k not in narrowed)
 det += ["", "Taken from the brief, then narrowed by the rows above: " +
         "; ".join(f"`{k}`: {why}" for k, why in narrowed.items()) + ".", "",
         "Taken from the brief without change: " + ", ".join(f"`{k}`" for k in unchanged) + ".", "",
         "The closing answer's numbers are derived from these files by tools/physical_account.py, which stops if any of its",
         "claims no longer holds; tests/test_scenario_b_timeline_data.py checks them again."]
 (ROOT / "docs/PHYSICAL_ACCOUNT_DETAIL.md").write_text("\n".join(det) + "\n")
-print(f"wrote one-page account ({len(rows)} rows, {len(assumed)} assumed keys, {len(CARDS)} cards) and detail page")
+print(f"wrote one-page account ({len(rows)} rows, {len(assumed)} assumed and {len(measured)} measured keys, {len(CARDS)} cards) and detail page")

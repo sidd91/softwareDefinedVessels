@@ -76,6 +76,20 @@ def test_minute_12_trip_holds_under_both_files():
     assert survey <= c and sar <= c
 
 
+@pytest.mark.parametrize("mission,current,cost", [
+    ("survey", {"G3": "standby", "G4": "standby", "G5": "full"}, 0.0038),
+    ("sar", {"G3": "standby", "G4": "fast_charge", "G5": "full"}, 0.0189),
+])
+def test_minute_12_armed_first_step_is_g5_to_low_power(mission, current, cost):
+    # Nothing runs at minute 12; D4 shows the step it would take first. Under survey G4 is airborne at
+    # 2 kW with no charge to throttle; under sar its fast charge is reserved and mission-critical.
+    guest, to, freed = cheapest_step(current, mission)
+    assert (guest, to, freed) == ("G5", "low_power", 37)
+    m = MISSIONS[mission]
+    lost = 1.0 - next(x for x in CARDS["G5"]["modes"] if x["name"] == "low_power")["capability_retained"]
+    assert m["weights"][CARDS["G5"]["capability"]["name"]] * lost / freed == pytest.approx(cost, rel=0.02)
+
+
 @pytest.mark.parametrize("mission,guest,after", [("survey", "G4", 56), ("sar", "G5", 44)])
 def test_minute_19_cooling_fault_forces_the_ladder(mission, guest, after):
     fault = fault_event()
@@ -164,3 +178,23 @@ def test_every_scenario_b_choice_is_a_physical_account_row():
     ours = {f"scenario_b.{k}" for k, p in TL["provenance"].items() if p["source"] == "assumed"}
     assert ours and ours <= rows
     assert all(TL["provenance"][k[len("scenario_b."):]].get("why") for k in ours)
+
+
+def test_acoustic_link_rule_matches_g3_surveying_and_the_scenario_water():
+    link = A["data"]["acoustic_link"]
+    surveying = next(c for c in CARDS["G3"]["conditions"] if c["activity"] == "surveying")["requires"]
+    assert link["up_when"] == {"course": surveying["course"], "noise": surveying["noise"],
+                               "deck_machinery": surveying["deck_machinery_allowed"]}
+    assert TL["location"]["layered"] is False  # a layered column would break the link from minute 0 (A.5)
+    # The hold-depth request reaches G3 at the slow end of A.5 inside the 1 min bridge confirm.
+    assert link["judged_latency_s"] == max(A["data"]["acoustic_latency_s"])
+    assert link["drop_delay_s"] + link["judged_latency_s"] <= TL["seed_pins"]["confirm_min"] * 60
+
+
+def test_fault_debounce_fits_inside_the_first_shed_ceiling():
+    f = A["fault_entry"]
+    assert f["confirm"] == {"genset_trip": "power.trip_confirm", "cooling_degraded": "heat.degraded_confirm"}
+    assert A["power"]["trip_confirm"]["needed"] == 2 <= len(A["power"]["trip_confirm"]["signals"])
+    # The 5 s clock runs from the raw event (A.6: a trip is instant), debounce included.
+    assert A["ship_state"]["genset"]["trip_s"] + f["debounce_s"] < A["response_time_s"]["shed_first_action"]
+    assert f["record_times"] == ["raw_event", "confirmed"]

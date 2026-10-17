@@ -1,14 +1,16 @@
-# SDV Resource Governor — Hackathon Game Plan
+# ArgOS: hackathon game plan
 
 Fincantieri challenge, Maritime Dual-Use Hackathon, San Francisco, 16–18 Oct 2026.
 Team repo: https://github.com/sidd91/softwareDefinedVessels (collaborators: sidd91, GhostWalka).
+Project name ArgOS (DEC-45). This plan follows the design freeze approved Sat 12:04 PDT (WORKLOG DEC-44,
+[docs/DESIGN_FREEZE.md](docs/DESIGN_FREEZE.md)) and the work split (DEC-47). Rewritten Sat 12:39 PDT.
 
 ## Clock (Pacific time; the team is in San Francisco)
 
 | | Pacific (PDT) |
 |---|---|
 | Plan started | Fri 2026-10-16 20:07 |
-| Re-timed | Fri 2026-10-16 20:35, 37 h 25 m left |
+| Design frozen | Sat 2026-10-17 12:04 |
 | **Deadline** | **Sun 2026-10-18 10:00** |
 
 The laptop clock runs on Central time; always convert with `TZ=America/Los_Angeles date`.
@@ -16,9 +18,9 @@ The laptop clock runs on Central time; always convert with `TZ=America/Los_Angel
 Rules we hold ourselves to: no compute beyond the local stack at runtime; every AI model declared
 (coding assistant included); strong live demo plus runnable code; no models from China-based
 companies or derived from them (brief, Data Use Authorization §2); AI services only from the
-hackathon's authorized list (Logan confirmed Claude is approved, DEC-05; where the list is published is asked in
-`docs/ORGANIZER_MESSAGE.md`); **only open-source third-party code or our own**, every dependency and
-every pretrained weight declared with its licence in `docs/SOFTWARE_LOG.md`.
+hackathon's authorized list (Logan confirmed Claude is approved, DEC-05; the organizer message asked
+where the list is published, DEC-49); **only open-source third-party code or our own**, every dependency
+declared with its licence in `docs/SOFTWARE_LOG.md`.
 
 ## What the jury scores (from the brief)
 
@@ -36,17 +38,15 @@ actual binding constraint.
 
 Explicit traps: "Kubernetes with a ship label", a dashboard instead of a decision engine, canned
 rationale strings, hard-coded priorities, a solver that takes four minutes, an empty Physical Account.
-Note: the brief lists voice/natural-language interfaces as out of scope. Our rule compiler is
-positioned as the mechanism for Core Mechanic 4 / D5 (tacit rule → execution constraint), not as
-an NL interface; its deterministic grammar path is the product. The LLM assist is considered, not
-approved (`docs/SOFTWARE_LOG.md`).
+The brief also puts voice and natural-language interfaces out of scope and says 3D earns nothing, so the
+freeze cut our rule compiler, LLM paraphraser and 3D view (DEC-44).
 
 ## Depth policy (Logan, Fri 23:10, WORKLOG DEC-24 and DEC-25)
 - Anything the brief or slides call out explicitly is addressed at a granular level, with evidence,
   and traced in `docs/REQUIREMENTS.md`.
 - Our own additions stay light where the facts are unclear.
 - The demo shows breadth with a few deep examples.
-- Cameras watch equipment first; person detection or tracking is last and optional.
+- The freeze applied this policy to our beyond-the-brief items and cut them (DEC-44).
 
 ## Core model (locked by Logan, Fri 21:00 PDT)
 
@@ -57,12 +57,11 @@ one ledger of margins. Roles differ, and the role decides what the governor may 
 | Role | Examples | What the governor may do |
 |---|---|---|
 | Host commitment | hotel load, safety systems, the 20 % ship-systems compute reserve, the governor itself | count it, never shed or outbid it |
-| Guest | G1–G5, our G6, a portable camera, a mission analytics workload | admit, place, arbitrate, throttle, shed |
+| Guest | G1–G5, our G6, a mission analytics workload | admit, place, arbitrate, throttle, shed |
 | Supply | gensets, cooling loop, bays, mast slots, network paths, compute nodes | track capacity; any loss is a degradation event |
 | Crew | people aboard | hands for human-only actions, and authority for confirmation |
 
-A guest is what the brief says it is: equipment that comes aboard to add a capability. A fixed
-ship camera is supply; a portable camera brought aboard is a guest.
+A guest is what the brief says it is: equipment that comes aboard to add a capability.
 
 ### Shedding ladder (D4), precomputed every tick
 1. Ceiling: the tighter of the degraded power budget and the cooling budget at current seawater
@@ -70,15 +69,28 @@ ship camera is supply; a portable camera brought aboard is a guest.
 2. Candidate steps: each guest's ladder of modes, nominal, low-power, standby, off. Each step frees
    kilowatts and costs capability.
 3. Price: mission weight from the active priority file × share of capability lost ÷ kW freed.
-4. Order: all throttles before any shed; cheapest mission loss per kW first; mission-critical last;
-   safety-critical never on the list; ties broken by guest id for determinism.
+4. Order: safety-critical guests are never on the list, and hard limits come first. All throttles
+   before any shed. Then the priority file's `shed_order`, if it has one (F3). Otherwise the price:
+   cheapest mission loss per kW first, mission-critical last, ties broken by guest id. No shipped
+   priority file sets `shed_order`; disaster relief already keeps G5 last through `mission_critical`.
 5. Walk the list until the shortfall is closed, rechecking power and heat after every step; one
    sentence per step saying what that guest lost.
 6. Restore in reverse order with a hold-off delay when supply returns.
+
 The same computation runs every tick as "if a genset tripped now", so the first action at a real
-trip is a lookup, and the crew can see and approve the plan before it is needed. A trip counts only
-when 2 of 3 signals agree (relay flag, kW near zero, frequency dip); any shared condition across
-redundant units is reported as a binding constraint (Viking Sky lesson).
+trip is a lookup, and the crew can see and approve the plan before it is needed. The armed ladder
+covers current draws and reservations. Faults enter as debounced, confirmed plant signals: a trip
+counts when 2 of 3 signals agree (relay flag, kW near zero, frequency dip), and a cooling fault needs
+the plant alarm plus flow or delta-T. Each record carries the raw-event and confirmation times. Any
+shared condition across redundant units is reported as a binding constraint (Viking Sky lesson).
+
+Scenario B under DEC-40 ([EXPECTED_OUTCOMES](docs/EXPECTED_OUTCOMES.md)): at minute 12 the trip holds
+under both files against the 95 kW ceiling, with 0 steps. Survey loads 48 kW: G4 is airborne at 2 kW
+with no charge to throttle, so the first armed step is G5 full to low power (frees 37 kW, 0.0038 per kW).
+Rescue loads 81 kW with G4's 35 kW reserved, and the first armed step is also G5 full to low power
+(0.0189 per kW). At minute 19 an INJECTED chilled-water pump fault drops the ceiling to 75 kW and the
+ladder runs: survey slows G4's charge from 35 to 10 kW, rescue takes G5 from 45 to 8 kW. Minute 12 is
+Siddharth's to change as owner of the scenario timing (DEC-51).
 
 ### Crew in two roles (D5)
 - **Hands.** Every action declares its actuation path: software (guest modes, going silent), ship
@@ -86,8 +98,8 @@ redundant units is reported as a binding constraint (Viking Sky lesson).
   minutes (clear deck, rig winch, swap drone, manual valves, installs). Human-only actions consume
   crew like guests consume kW. At 6 aboard two 4-person tasks cannot overlap; at 0 any plan that
   needs hands is infeasible and the binding constraint says so.
-- **Authority.** People confirm contested decisions, approve standing plans, push priority
-  overrides and write rules. Confirmation latency competes with the response-time ceilings:
+- **Authority.** People confirm contested decisions, approve standing plans and set the crew level.
+  Confirmation latency competes with the response-time ceilings:
 
 | Crew | Confirm time | 5 s first shed | 60 s full sequence |
 |---|---|---|---|
@@ -96,245 +108,199 @@ redundant units is reported as a binding constraint (Viking Sky lesson).
 | 0 | impossible | impossible | impossible |
 
 So "confirm before shedding" is honoured ahead of time by approving the standing plan. Each rule
-carries the brief's per-crew policy: human confirms, automatic, or not permitted.
+carries a policy per crew level: confirm, standing plan, automatic or forbidden. A priority file may
+set it per rule (F3), and `confirm` is refused at 0 aboard, because A.6 makes confirmation impossible
+uncrewed.
 
-## Architecture (one deterministic core, three bolt-ons)
+**Rule R3, "nobody on the flight deck during recovery"** (Scenario C, freeze F5, no camera). At 14
+aboard the landing officer reports the deck and the bridge confirms. At 6 a standing plan approved at
+launch applies. At 0 recovery is allowed only if the deck was latched clear at the last crew sweep with
+no deck activity since, a platform-reported deck state recorded as an assumption. Otherwise it is
+forbidden, and the record states the cost under G4's hard limit: below 20 % it must land within 12
+minutes or ditch. Memo: [docs/SCENARIO_C_MEMO.md](docs/SCENARIO_C_MEMO.md).
+
+## Architecture (the frozen design)
 
 ```
- ┌───────────────────────────── one screen (FastAPI + static SVG/JS, 1 Hz websocket) ─────────────────────────────┐
- │ ship schematic (bays, mast, deck, ramp, hangar) │ 8 gauges │ event log + rationales │ mission/override │ rules │ cam │
- └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
-                                                     ▲ read-only view
- ┌─────────────────────────────────────── governor core (pure Python, no I/O) ────────────────────────────────────┐
- │ assumptions.yaml ──► PlatformModel (8 classes, cooling=f(T_sea), power↔heat 1:1, degraded)                      │
- │ manifests/*.json ──► Guest objects (min/nominal/peak+duration per class, conditions, ontology, flags)           │
- │ ShipState machine (A.6 vars + transition times)  ◄── virtual sensors (CV equipment watch) + sim events          │
- │ DecisionEngine:  D1 admit  D2 place  D3 right-of-way  D4 shed   — each returns Decision{verdict, binding, why}  │
- │ MissionContext = priority file (base) ⊕ override stack (captain) ⊕ crew level ⊕ envelope                        │
- │ RuleEngine: compiled crew rules (from CNL) evaluated every tick / every decision, with per-crew-level policy    │
- │ Simulator: seeded, 1 Hz, event timeline JSONL in → decision log JSONL out; `replay` asserts identical output     │
- └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
-   bolt-on 1: CV equipment watch (camera → change detection on fixed equipment: leaks, smoke, out-of-place
-              gear, deck markers → supply and ship-state events with confidence + age; people optional, last)
-   bolt-on 2: Crew Rule Compiler (text → Lark grammar → AST → JSON Schema → compiled predicate + code view)
-   bolt-on 3: optional local LLM paraphraser (free text → CNL candidate; still parsed, still approved)
+ config/assumptions.yaml    manifests/G1..G6.yaml    config/missions/*.yaml (the jury swaps this)
+         └─────────────────────────┼─────────────────────────┘
+                                   ▼
+          LOADER: every name checked; a bad file is refused, the old one kept
+                                   ▼
+  LEDGER (1 Hz) ◄──── 1 Hz SNAPSHOT ◄──── SIMULATOR + SHIP STATE (A.6)   [Siddharth]
+                                   ▼                      ▲ COMMANDS
+  D1/D2 admit + place   D3 right of way   D4 shed ladder   D5 crew policy   safety table (200 ms)
+                                   ▼
+  DECISION RECORD → EXPLAINER (templates over record fields) → decision log + timing log → REPLAY
+                                   ▼
+  ONE SCREEN: Operations (constraint ledger drill-down) │ Mission compare │ Admission review
+  tools/physical_account.py → Annex C          board instrument → measured compute and latency rows
 ```
+
+- **Inputs.** Three files: the ship profile, the guest cards and a swappable priority file. They join
+  by capability name, so a swap needs no code change. The loader checks every name and refuses a bad
+  file with the failing field while the previous file keeps running.
+- **Ship state.** Siddharth's simulator owns the A.6 state machine and its transition times. It emits
+  a 1 Hz snapshot in ship time; the core sends it commands. The snapshot and command contract comes
+  first (CON-21).
+- **Core.** The ledger, the ladder core, D1 to D5 and the safety-command table: pure Python, no I/O,
+  no solver or model on the 200 ms, 2 s or 5 s paths.
+- **Records.** Every decision is a record. The sentence is a template over record fields. Wall-clock
+  latency and timestamps go to a separate timing log, so a replay matches on every other field.
+- **Screen.** One screen with three views: Operations, with the constraint ledger as its drill-down;
+  Mission compare, two runs on one timeline; Admission review, the jury's card and its one-number edit.
+
+Components, owners and data contracts: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ### Explainability by construction: the constraint ledger
-Every candidate configuration is scored class by class: `margin[class] = free − requested`
-(normalised). The binding class is the smallest margin. Infeasible ⇒ the sentence names the class,
-the free amount, the request and the condition ("Refused: cooling loop at 30 °C has 12 kW free,
-G2 needs 20 kW sustained during winch operation"). Feasible ⇒ the sentence names the tightest
-margin. No template strings beyond the ledger fields. Problem size is tiny (≤ 6 guests, ≤ 5
-positions), so exhaustive enumeration beats a solver and keeps the ledger exact; OR-Tools stays
-optional for D2 if we want to show a declared objective in a solver.
+Every candidate configuration is scored class by class: `margin[class] = (free − requested) /
+capacity`. The binding class is the smallest margin, and every other class over its limit is listed as
+also failing. A3 is the check: mass binds at 13.015 against 10 t, and cooling at 125 of 120 kW at 30 °C
+is listed as also failing. Infeasible means the sentence names the class, the free amount, the request
+and the condition, for example "Yes if G1 disembarks: mass 10.035 of 10.000 t with G1 aboard, 35 kg
+over" (A1). Feasible means the sentence names the tightest margin. No template strings beyond the
+ledger fields. The problem is tiny (six guests, a few positions, Bay 1 in halves), so enumeration of a
+few thousand assignments runs in milliseconds and gives the binding line and the rejected alternatives
+directly. No solver (freeze delta 6).
 
 ### Declared objectives (README table, one line each)
-- D1 admission: feasibility over the **whole envelope grid** (T_sea 12–30 °C, gensets 2/1, sea state
-  0–5, wind to 30 kn), not the pier. Reports the boundary ("holds to 27 °C with one genset down").
-  Verdicts: yes / no / yes-if (ranked displacement list by mission value lost) / not-now-and-when
-  (next installation window per A.11).
-- D2 placement: maximise min normalised margin, tie-break on "future freedom" (how many archetype
-  cards remain admissible); prints rejected alternatives with their binding class.
-- D3 right of way: utility = Σ mission weight × capability delivered, after hard constraints
-  (e.g. drone < 20 % ⇒ must land ≤ 12 min, so "wait for leg end" is infeasible). Cost to loser is
-  computed (survey minutes lost = 15-min recovery window + re-run leg; or drone risk accepted).
-- D4 degradation: the shedding ladder in "Core model" above; shortfall → throttle to low-power modes in declared order → standby → shed;
-  safety-critical never auto-shed; mission-critical last; first action ≤ 5 s, sequence ≤ 60 s with
-  A.6 transition times; also re-checks heat after each step (shedding kW frees cooling kW).
-- D5 crew as a setting: crew in two roles, hands and authority (see "Core model"); every rule carries {14: confirm 15–60 s, 6: confirm 1–3 min, 0: auto | forbidden}.
-- D6 Physical Account: generated from `assumptions.yaml`; a script greps each key's usage sites so
-  "where used in code" is real file:line references.
-- Time is a budget: each decision logs latency vs its ceiling; a watchdog falls back to the safe
-  default (hold/deny) if a ceiling is ever missed.
+- D1 admission: judged at both gensets, the 200 kW reserve and cooling at 30 °C, and it must survive
+  one genset down by throttling to the 95 kW gate, otherwise yes-if (DEC-35). Verdicts: yes / no /
+  yes-if (ranked displacement list by mission value lost) / not-now-and-when (next installation
+  window per A.11). Reports the seawater tipping point. By enumeration.
+- D2 placement: maximise the smallest normalised margin, tie-break on "future freedom" (how many
+  archetype cards remain admissible); prints rejected alternatives with their binding class. The
+  mast rule is written before T2 (CON-18).
+- D3 right of way: hard limits first (drone < 20 % ⇒ must land ≤ 12 min, so "wait for leg end" is
+  infeasible), then utility = Σ mission weight × capability delivered. Cost to the loser is computed:
+  under survey, 25 to 27 survey minutes; under rescue, G3's leg is aborted, it holds at sea and is
+  recovered over the ramp only after G4 has landed, because the flight deck and the ramp are
+  mutually exclusive.
+- D4 degradation: the shedding ladder in "Core model" above; first action ≤ 5 s, sequence ≤ 60 s
+  with A.6 transition times; heat rechecked after each step (shedding kW frees cooling kW).
+- D5 crew as a setting: crew in two roles, hands and authority; every rule carries a policy at 14, 6
+  and 0 aboard.
+- D6 Physical Account: generated from `assumptions.yaml` by `tools/physical_account.py`; compute and
+  response-time rows take the board instrument's measured values if it runs.
+- Safety commands (stop, hold, secure): answered within 200 ms from a table precomputed every tick.
+- Time is a budget: each decision logs latency against its ceiling; a watchdog falls back to the safe
+  default if a ceiling is ever missed (`decision_watchdog` in `assumptions.yaml`).
 
 ## Mapping Logan's four additions
 
-1. **Mission sets** → priority files (brief requires ≥ 2). Four exist in `config/missions/`: survey,
-   search-and-rescue, patrol, disaster relief; environmental monitoring and night transit are optional. Each file: capability weights,
-   per-guest mission-critical flags, shed order policy, crew confirmation policy, envelope narrowing.
-   Hot-swappable mid-run; swap re-arbitrates every standing decision (the "same code, two ships" moment).
-2. **On-the-fly priority edits** → override stack layered over the mission file: entries
-   {target, delta|absolute|protect, reason, author, expiry}. Effective priority = base ⊕ overrides,
-   shown side by side, every override in the audit log, immediate re-arbitration.
-3. **Computer vision where no sensor exists** (re-aimed by Logan Fri 23:10, WORKLOG DEC-23) →
-   cameras watch EQUIPMENT for changes other sensors miss or report late: leaks (chilled-water loop,
-   hydraulics, bilge sheen), smoke or a small fire in a bay or the hangar, damaged or out-of-place
-   fixed equipment (boom not stowed, lashing or hatch marker missing, antenna bent), foreign objects
-   on the flight deck. Each detection becomes a supply or ship-state event with source, age and
-   confidence; for example a leak at the cooling loop makes the governor treat cooling as degraded
-   before the pump fails. A stale or dropped feed degrades to the conservative state, which is
-   exactly "keeps working when a data feed drops". Person detection or tracking of any kind is a
-   nice-to-have, done last. Design: `research/cv_equipment_monitoring.md`. Per DEC-27 cameras are optional supply, not the
-   hero: the demo shows the cooling-loop leak as one breadth line; the deep demos are Scenarios A and B.
-   Recorded clip as fallback for bad lighting.
-4. **Plain-language rules without LLM code edits** → Crew Rule Compiler:
-   vocabulary (guests, ship-state vars, actions, phases) → controlled-natural-language grammar (Lark)
-   → AST → JSON rule (schema-validated, versioned, author, status proposed/approved) → compiled
-   predicate the engine evaluates → human-readable code view ("if G3.acoustic_active: forbid(winch)")
-   → dry run against the recorded event log ("this rule would have fired twice at min 8 and min 12").
-   Only approved rules are active. A structured builder (dropdowns) produces the same AST for
-   people who do not want to type. An offline LLM that turns loose text into a CNL candidate, which
-   must still parse and be approved and never writes code, is considered, not approved; whether the
-   compiler, the LLM and the 3D view stay in scope is OPEN_QUESTIONS #43.
+1. **Mission sets** → priority files: kept. Four exist in `config/missions/`: survey, search and
+   rescue, patrol, disaster relief. Each has capability weights and mission-critical guests, and may
+   carry `shed_order` and a per-rule `confirm` (F3). Hot-swappable mid-run; a swap re-arbitrates every
+   standing decision, and Mission compare runs two files on one timeline.
+2. **On-the-fly priority edits** → an override stack over the mission file: not in the build order.
+   [OPEN_QUESTIONS](docs/OPEN_QUESTIONS.md) #49 proposes deferring it. The jury's one-number edit on a
+   card is in scope, in Admission review.
+3. **Computer vision where no sensor exists:** cut (DEC-44). The governor's inputs are confirmed plant
+   signals the ship already has; a camera is a slower, uncertain copy of the same signal and never
+   changes a decision (freeze section 5).
+4. **Plain-language rules without LLM code edits:** cut (DEC-44). Natural-language interfaces are
+   out of scope. R3 is written as typed conditions in data, checked at load.
 
 ## Invented sixth card (G6)
 Containerised desalination unit: Bay 2 preferred or half Bay 1; 2.8 t; 18 kW continuous, 4 kW
 low-power (recirculate); 2 Mbit/s telemetry; two people to start; high for disaster relief, low
 elsewhere; not safety-critical. It is not in Scenario B (the brief's G2 to G5 load-out is over the mass
-margin and refused at the pier; we run G3, G4, G5, DEC-32), so it sheds first only in runs that carry it; it mirrors the organisers' own slide. Alternative if we want a mast story instead: flat-panel SATCOM
+margin and refused at the pier; we run G3, G4, G5, DEC-32), so it sheds first only in runs that carry it;
+it mirrors the organisers' own slide. Alternative if we want a mast story instead: flat-panel SATCOM
 terminal (competes with G1/G5 for the one free mast slot, excluded in emission silence).
 
 ## Stack (decided unless something breaks)
-- Python 3.12 via `uv` (laptop has 3.14; detector/ML wheels will not be there yet). One command:
-  `uv run sdv demo scenario-b --priority sar` and `uv run sdv serve` for the screen.
-- Core: pure Python + jsonschema + PyYAML + pytest, all installed. pydantic, Lark and OR-Tools are
-  considered, not approved (`docs/SOFTWARE_LOG.md`). No solver dependency on the critical path.
-- UI: FastAPI + uvicorn + websockets (approved, DEC-39), one static HTML/JS/SVG page. No Node, no React, no build step
-  (none installed, none needed). Every JS library vendored into the repo so the demo runs offline.
-- 3D view: three.js (MIT), vendored, as a toggleable panel beside the scored 2D schematic. See the
-  3D section below.
-- CV: equipment change detection first: per-region reference-frame comparison and fiducial
-  markers on fixed equipment (opencv-python-headless, Apache-2.0, DEC-39), colour and flicker cues for smoke and flame,
-  temporal growth for leaks, camera self-checks (blur, frozen frame, view moved); an unsupervised
-  anomaly model only if its licence checks out. Any model runs with ONNX Runtime on the CPU (DEC-31).
-  Person detectors (torchvision SSDlite, BSD-3; considered, not approved) are optional and last. RF-DETR is out: it is built on LW-DETR from Baidu, which the brief's
-  China-derived rule excludes.
-  Ultralytics YOLO is out: AGPL-3.0 would bind the whole served app. All run on CPU at 30–80 ms/frame
-  on this 16-core Ryzen; 2–5 fps is plenty for a deck-state sensor.
-- LLM for rule paraphrase, Phi-4-mini (MIT, Microsoft) or Mistral-7B-Instruct (Apache-2.0): considered,
-  not approved, and not in the build plan; nothing is planned for it on node B. Llama and Gemma are
-  excluded by the open-source-only rule (community licences are not OSI). Never on the critical path.
-- Public data: Open-Meteo Marine (no key) for sea-surface temperature, wave height, wind at a real
-  cable-route position; fetched once, cached in the repo, served offline at demo. The brief names it
-  itself, so CON-05 can close on that line; CC BY 4.0 attribution goes in the README.
+- Python 3.12 via `uv` (the laptop also has 3.14, unused). One documented command: `uv run sdv demo`.
+- Core: pure Python + jsonschema + PyYAML + pytest, all installed. No solver: admission and placement
+  by enumeration. pydantic is considered, not approved (`docs/SOFTWARE_LOG.md`).
+- UI: FastAPI + uvicorn + websockets (approved, DEC-39), one static HTML/JS/SVG page with three views.
+  No Node, no React, no build step. Every JS library vendored into the repo so the demo runs offline.
+- Public data: Open-Meteo Marine (no key) for sea-surface temperature, wave height and wind at a real
+  cable-route position; fetched once, cached in the repo, served offline at demo. The brief names it,
+  so CON-05 can close on that line; CC BY 4.0 attribution goes in the README.
 - Docs to PDF: `uv run python tools/build_pdfs.py` (pandoc and headless Chromium; LibreOffice fallback)
   builds the README, memo and Physical Account into `docs/pdf/` and checks each page limit.
+- Board instrument: the same container on the VENTUNO Q; any install on it needs Logan's OK.
+- Not used after the freeze: three.js, Lark, torch and torchvision, any vision use of opencv or
+  onnxruntime, any LLM (DEC-44).
 
 AI-use declaration (kept current in `docs/SOFTWARE_LOG.md`): Claude Fable 5.1 and Claude Opus 5.5
-(Anthropic, US) as coding assistants and for doc drafting. A detector model is declared with its weight
-licence and training-data origin only if one is approved and used; the LLM paraphraser is considered, not
-approved. `docs/SOFTWARE_LOG.md` lists every package with version and licence, in four groups: installed;
-approved by DEC-39 (FastAPI, uvicorn, websockets, opencv-python-headless, onnxruntime); planned under DEC-02
-and DEC-04 (the rule grammar, three.js); and considered, not approved. Policy: permissive or weak copyleft
-only; no AGPL; no non-OSI model licences.
+(Anthropic, US) as coding assistants and for doc drafting. No AI model runs in ArgOS itself. Policy:
+permissive or weak copyleft only; no AGPL; no non-OSI model licences.
 
-## 3D ship view (demo layer, deliberately not the scored screen)
-The brief says it outright: one screen, schematic, gauges, event log, "3D earns nothing". So the
-2D schematic + gauges + rationale log stays the primary screen and the 3D view is the demo's visual
-hook, built after M3 and time-boxed to 3 hours.
-- Engine: three.js (MIT), vendored. No React: it adds a build step and Node we do not have, and the
-  page is one file of state → scene updates.
-- Geometry: procedural low-poly ship generated from Annex A numbers (60 m hull, `hull.loa_m`, Bay 1 aft 20-ft,
-  Bay 2 midships 10-ft, flight deck 12 × 8 m, hangar, stern ramp, three mast positions). Same source
-  of truth as the governor, so when the jury changes a dimension the model changes with it.
-  CAD import only if a CC0/CC-BY glTF hull turns up in the first 20 minutes of looking; FreeCAD
-  (LGPL) or OpenSCAD (GPL) export is the fallback route, not the plan.
-- What it shows: each position coloured by governor state (free / committed / displaced / shed),
-  guests appearing on admission, the drone on approach while the deck is not clear, heat
-  as a loop tint that reddens as the cooling margin closes, mast slot pulsing when it is the binding
-  class. Camera follows the event log.
-- Rule for the build: every 3D element binds to a field that already exists in the 1 Hz state
-  message. No new logic lives in the 3D layer.
+## Failsafes, stale feeds and the board instrument
+- **Stale and missing feeds** (R-458). Every snapshot input carries its source and age; limits live in
+  `assumptions.yaml`. A stale feed falls to its conservative value, the record says so in one sentence,
+  and decisions continue: genset state unknown means admit as if one is down; pump status unknown
+  means cooling degraded; deck report unknown means not clear; course unknown means not steady. This
+  is the "data feed drops" breadth line.
+- **Watchdogs and safe defaults.** Per-decision ceilings (30 s / 2 s / 5 s / 200 ms) with a watchdog.
+  On a miss the safe default from `decision_watchdog` is emitted with a sentence naming the ceiling:
+  admission "no, timed out", placement and arbitration keep the current state, shedding uses the last
+  precomputed ladder.
+- **Safety commands.** Stop, hold and secure come from a table precomputed every tick next to the D4
+  ladder, so no solver runs on the 200 ms path.
+- **Acoustic link.** Up only while the course is steady, the noise quiet and no deck machinery runs; it
+  drops after an assumed delay. So under survey G3 holds depth before the link breaks.
+- **Restart is a replay.** The event timeline and the decision log are on disk, and a restart replays
+  them.
+- **Compute-class honesty.** The governor is itself an entry in the compute budget (A.7 reserves 20 %
+  for ship systems) and in the Physical Account. The board instrument measures watts, latency per
+  decision class and CPU share against A.7 for those rows ([docs/NODE_B_BOARD.md](docs/NODE_B_BOARD.md)).
+  The laptop provides every demo input; a board button or knob may only mirror one; nothing in the
+  demo depends on the board.
 
-## Edge compute, redundancy and failsafes (Logan's emphasis)
-A ship is several computers on two cables, not one laptop. The governor is designed as a small
-distributed system from the first commit, and the demo shows it surviving the things that actually
-break at sea: a node, a cable, a radio, a camera.
+## Cut by the design freeze (DEC-44)
 
-- **Hardware (Logan, DEC-30, DEC-31).** Node B is an Arduino VENTUNO Q, board `training05` (Dragonwing QCS8275: Ubuntu 24.04 Linux plus an
-  STM32 real-time MCU, MIPI-CSI camera, Ethernet, Wi-Fi, CAN-FD). Models run with ONNX Runtime on its CPU;
-  no cloud compile or training (AI Hub, Edge Impulse) and no proprietary NPU runtime unless the organizers
-  clear it. The MCU is the natural home for the 200 ms safety commands (stop, hold, secure).
-  Brought up over USB Sat 11:11 PDT; measured facts in [docs/NODE_B_BOARD.md](docs/NODE_B_BOARD.md).
-- **Topology.** Governor = replicated service on the ship's rack (A.7) plus edge inference nodes
-  next to sensors. Demo: laptop is node A (governor primary + screen), the VENTUNO Q board is node B
-  (camera equipment-watch inference + governor hot standby). Without the board, node B runs as a second
-  process on the laptop on its own port, so failover can be built and tested on the laptop alone.
-- **Determinism is the redundancy mechanism.** The standby holds the same event log. Takeover is a
-  replay to the last sequence number: no state-sync protocol, no divergence. Fencing by epoch: the
-  standby promotes after three missed heartbeats, the old primary demotes itself when it sees a
-  higher epoch on reconnect. Config (mission file, rules, overrides) is versioned by hash and
-  replicated; on mismatch the standby refuses promotion and says why.
-- **Two transports, one bus.** Every inter-node message carries a sequence number and goes over the
-  wired path first. One heartbeat per path per second tracks health. Wired loss → Wi-Fi within 2 s,
-  shown as a path indicator on screen. Both lost → the node runs autonomous on safe defaults and
-  buffers its log for reconciliation. Honesty with A.5: detections are bytes, video is Mbit/s, so the
-  edge node never ships video over a degraded path, only counts and confidences. In emission silence
-  radio is zero by rule, so Wi-Fi is itself forbidden and the wired path is the only one.
-- **Stale and missing feeds.** Every virtual sensor carries age and confidence; thresholds live in
-  `assumptions.yaml`. Stale → conservative state (deck occupied, ramp not clear). The rule engine
-  then falls back to the crew policy: confirm at 14 and 6, forbidden at 0. That closes the loop with D5.
-- **Watchdogs and safe defaults.** Per-decision ceilings (30 s / 2 s / 5 s / 200 ms) with a
-  watchdog; on a miss the safe default (hold / deny / keep state) is emitted with a rationale naming
-  the ceiling. Write-ahead event log on disk; a restart is a replay.
-- **Compute-class honesty.** The governor and the inference are themselves entries in the compute
-  budget (A.7 reserves 20 % for ship systems) and in the Physical Account. A per-node compute ledger
-  shows where inference runs and what moves when a node is lost.
-- **Failsafe demo moments.** Pull the Ethernet cable: path flips to Wi-Fi, no decision missed. Kill
-  Wi-Fi too: the equipment watch goes stale, so its zones fall back to crew reports at 14 and 6 and
-  to "not clear" at 0. Kill the primary process: standby promotes by replay after three missed 1 s heartbeats (3 s plus replay time) and the log continues with
-  the same sequence numbers.
+| Cut | Why |
+|---|---|
+| Cameras and computer vision: leak (C1), smoke (C2), deck gear (C3), camera virtual sensors, camera-unknown rules, the webcam demo beats | Plant signals already give each input, confirmed and instant; a camera is a slower, uncertain copy and never changes a decision; A.6 answers the deck question |
+| Person detection | the same, and last in priority since DEC-23 |
+| 3D view and three.js | "3D earns nothing" (brief) |
+| Crew rule compiler, controlled grammar and Lark | natural-language interfaces are out of scope |
+| LLM paraphraser | out of scope, and no LLM belongs in the decision path |
+| NPU inference | nothing left to infer |
+| Two-node failover: heartbeats, epochs, duplicate paths, failover by replay, the cable-pull line, Wi-Fi backup | unscored; one laptop, and A.7 is a modelling constraint |
+| torch, torchvision (SSDlite), and the vision uses of opencv and onnxruntime | no vision left |
 
-## Cameras: an inventory, not an assumption
-Fixed cameras exist on some zones of some ships. The ship profile therefore carries a camera
-inventory (`cameras:` in `assumptions.yaml`: id, zones covered, interface wired/Wi-Fi, fixed or
-portable). Virtual sensors declare the zones they need; no coverage → the sensor reports
-"no coverage" and the rule falls back to crew policy. A portable camera can be registered at runtime,
-and the clean way to do that is the lateral we should lean on: **a camera is a guest.** It has a
-manifest (consumes compute, a data link, a mounting position; returns the capability
-`deck_state@flight_deck`), is admitted through the same governor, and is shed through the same
-ledger. Default inventories per domain, from `research/camera_placement.md`:
-
-| Zone | Naval / OPV with helo | Coast guard | Offshore (NCS) | Research |
-|---|---|---|---|---|
-| Flight deck | fixed PTZ, wired, low-light/thermal | sometimes | yes, recorded 30 days (Norway) | owner option |
-| Hangar | sometimes (IPMS) | rarely | n/a | rarely |
-| Stern ramp / boat deck | portable | portable | n/a | one launch-area camera, else portable |
-| Mission bay | sometimes | rarely | n/a | rarely |
-| Machinery spaces | yes, IPMS network | yes | sometimes | sometimes |
-| Winch / deck machinery | read the drive signal; winch camera only corroborates | same | winch cameras common | winch cameras common |
-
-Design consequences: the flight-deck camera is usually a single PTZ that gets slewed onto the
-approach, so the deck sensor needs a field-of-view check (printed fiducial marker on deck; not
-visible means "unknown", never "clear"). IPMS cameras and security CCTV are separate networks.
-Ship CCTV is wired PoE; a portable camera is a separate best-effort feed. Crew confirmation remains
-the only source for ramp water approach, mission-bay contents on non-SOLAS hulls, and any zone whose
-only camera is pointed elsewhere.
+The research behind these items stays in `research/` as research, each file headed "Superseded for the
+build by WORKLOG DEC-44."
 
 ## Schedule (Pacific, PDT)
 
-Not re-timed yet. Logan paused deep implementation for team review (DEC-20), so M1 (Sat 01:30) has
-slipped and every later milestone moves with it; re-time after the team's review (CON-10, TEAM_BRIEF).
-A proposed re-timing with tasks and pass checks is in `docs/BUILD_PLAN.md`.
+Proposed; Logan and Siddharth confirm it (CON-10, CON-17). Tasks and pass checks are in
+[docs/BUILD_PLAN.md](docs/BUILD_PLAN.md).
 
-| Block | When | Deliverable / milestone |
+| Block | When | Milestone |
 |---|---|---|
-| Setup | Fri 20:35–21:30 | Repo access; scaffold; `assumptions.yaml` from Annex A; manifest schema v0; G1–G6 cards |
-| Core | Fri 21:30–Sat 01:30 | Platform model, ship state machine, sim tick, **D1 with ledger + envelope sweep**, CLI. **M1 Sat 01:30**: ticking sim, 3 guests consuming, 8 gauges, one card refused with a sentence |
-| Sleep | Sat 01:30–06:30 | Claude overnight: unit tests for ledger math, public-data fetch + cache, synthetic sensor generators from the research, README skeleton, manifest docs |
-| Decisions | Sat 06:30–11:30 | D2 placement, D3 right of way with priority files, D4 shedding with standing contingency plans. **M2 Sat 11:30**: Scenario A and B pass in CLI with both priority sets; `replay` test green |
-| Screen + edge | Sat 11:30–16:30 | Web screen (schematic, gauges, log); mission selector; override stack; crew dial; two-node topology (node B process, dual-path bus, heartbeats, path indicator). **M3 Sat 16:30**: Scenario B watchable end to end on screen |
-| Rules + CV | Sat 16:30–21:30 | Crew Rule Compiler (grammar, AST, approval, dry run, code view); Scenario C rule live at 14/6/0; CV equipment watch on node B (leak, smoke, out-of-place gear) with camera self-checks; failover by replay; stale-feed fallback ladder. **M4 Sat 21:30** |
-| Polish | Sat 21:30–Sun 01:00 | 3D view (time-boxed 3 h, M3 state message only). Jury drills: change one number on a card, swap priority mid-run, drop the camera feed, over-consuming guest. Docs: README, generated Physical Account, Scenario C memo PDF, AI and software declaration. Backup recording. **M5 Sun 01:00** |
-| Sleep | Sun 01:00–05:30 | Claude overnight: polish docs, regenerate Physical Account, lint, final tests |
-| Rehearse | Sun 05:30–09:15 | Rehearse the demo five times; fix only what breaks; **freeze Sun 09:15** |
-| Buffer | Sun 09:15–10:00 | No new features. Submit by the freeze checklist in `docs/BUILD_PLAN.md` |
+| Contracts | Sat 12:30–14:00 | **S1**: typed conditions, loader, snapshot and command contract (CON-21). Siddharth's simulator track starts here |
+| Ledger | Sat 14:00–16:00 | **S2**: ledger and ladder core |
+| Scenario A | Sat 16:00–18:30 | **M1**: A1 to A7 from the engine within 30 s; A3 names mass and lists cooling at 30 °C as also failing |
+| Scenario B | Sat 18:30–22:30 | **M2**: D3, D4 and the safety table with the simulator, under both priority files |
+| Screen | Sat 22:30–Sun 01:30 | **M3**: Operations, Mission compare, Admission review |
+| Replay and breadth | Sun 01:30–03:00 | **M4**: replay match; breadth lines |
+| Rest | Sun 03:00–06:30 | |
+| Docs | Sun 06:30–08:00 | **M5**: README, memo, Physical Account against the built engine; PDFs within limits |
+| Rehearse | Sun 08:00–09:15 | five rehearsals; backup recording; **freeze Sun 09:15** |
+| Buffer | Sun 09:15–10:00 | No new features. Submit by the checklist in `docs/BUILD_PLAN.md` |
 
-Cut order if behind (first cut first): person detection → LLM paraphraser → 3D view (keep 2D schematic) → structured
-rule builder UI → A′ installation windows → six mission files (keep three) → CV live (keep recorded
-clip) → OR-Tools.
-Never cut: ledger rationales, both scenarios, replay, link failover + stale-feed policy, Physical
-Account, Scenario C memo.
+Cut order if behind (first cut first): emission silence line → board instrument → A′ installation
+windows → patrol and disaster relief in the demo (keep survey and rescue) → Mission compare (fall back
+to the swap on one run) → Admission review (fall back to the D1 record in Operations).
+Never cut: ledger rationales, both scenarios, replay, the stale-feed policy, Physical Account,
+Scenario C memo.
 
-## Demo script: 90 s of Scenario B, Scenario A with the jury's card, failsafe encore
+## Demo script: 90 s of Scenario B, then Scenario A with the jury's card
 
-The storyboard is [docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md): Scenario B with G3, G4 and G5 (DEC-32) on the
-DEC-40 timeline, the priority swap, a breadth strip, then Scenario A with the jury's card (DEC-26, DEC-27).
-The beats that stood here predated those decisions and were removed Sat 11:43 PDT.
+The storyboard is [docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md). Scenario B runs G3, G4 and G5 (DEC-32) on
+the DEC-40 timeline with the jury's priority file: D3 at minute 8; minute 12 holds with both armed
+ladders shown; the INJECTED pump fault at minute 19 runs the ladder. Then Scenario A with the jury's
+card and one number changed, in Admission review. Then the Scenario C segment (R3 at 14, 6 and 0
+aboard) and the breadth strip: landing zone not clear (from the landing officer's report), crew dial,
+over-consuming guest, emission silence (waits on OPEN_QUESTIONS #42), mission sets, data feed drops.
+Injected faults are labelled INJECTED on screen.
 
 ## Open questions for Logan
-- Who owns what between Logan (GhostWalka) and Siddharth (sidd91): engine / screen / CV + rules / docs.
-- Closed: node B is the Arduino VENTUNO Q, board `training05`, on Ubuntu 24.04 with 8 cores and 14 GiB
-  RAM ([docs/NODE_B_BOARD.md](docs/NODE_B_BOARD.md)). The NPU runtime question is settled by DEC-31: models
-  run with ONNX Runtime on the CPU.
+All of them, with proposals: [docs/OPEN_QUESTIONS.md](docs/OPEN_QUESTIONS.md). First: the snapshot and
+command contract with Siddharth (CON-21), the milestones (#3), emission silence (#42), owners for the
+board instrument and the final PDFs (#46, #51), and the board's default login (CON-15).

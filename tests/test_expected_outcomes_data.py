@@ -748,6 +748,50 @@ def test_minute_12_robustness_notes():
     assert n["sheds"] == (n["load_kw"] > B["ceiling"]["kw"])
 
 
+# ---------------------------------------------------------------- Scenario B: minute 12 as decided (DEC-40)
+
+
+AS_DECIDED = B["minute_12_as_decided"]
+
+
+@pytest.mark.parametrize("file_id", ["survey", "sar"])
+def test_minute_12_as_decided_holds_with_no_step(file_id):
+    row = AS_DECIDED["by_file"][file_id]
+    lo = next(lo for lo in B["loadouts"] if lo["id"] == AS_DECIDED["loadout"])
+    assert sorted(row["modes"]) == sorted(lo["guests"])
+    load = sum(mode(g, m)["power_kw"] for g, m in row["modes"].items())
+    assert row["load_kw"] == load
+    assert row["spare_kw"] == B["ceiling"]["kw"] - load > 0
+    assert row["steps_taken"] == 0
+    # G4's 35 kW fast charge is reserved under sar only (minute 8); under survey it is airborne at 2 kW.
+    by_8 = B["minute_8"]["by_file"][file_id]
+    assert (row["reserved"] == ["G4"]) == by_8["charge_reserved"]
+    assert row["modes"]["G4"] == ("fast_charge" if by_8["charge_reserved"] else "standby")
+    assert row["modes"]["G3"] == by_8["g3"]["mode"]
+
+
+@pytest.mark.parametrize("file_id", ["survey", "sar"])
+def test_minute_12_armed_first_step_is_the_price_list_walked_from_the_modes(file_id):
+    row = AS_DECIDED["by_file"][file_id]
+    price = B["price_lists"][file_id]
+    first = next(s for s in price["throttles"] + price["sheds"] if row["modes"].get(s["guest"]) == s["from_mode"])
+    armed = row["armed_first"]
+    assert (armed["guest"], armed["from_mode"], armed["to_mode"]) == (first["guest"], first["from_mode"], first["to_mode"])
+    assert armed["cost_per_kw"] == first["cost_per_kw"]
+    assert armed["cost_per_kw"] == pytest.approx(step_value_lost(file_id, armed) / step_frees_kw(armed), rel=0.02)
+    assert armed["frees_kw"] == step_frees_kw(armed)
+    lost = mode(armed["guest"], armed["from_mode"])["capability_retained"] - mode(armed["guest"], armed["to_mode"])["capability_retained"]
+    assert armed["capability_lost_pct"] == pytest.approx(100 * lost)
+
+
+def test_minute_12_armed_first_step_is_g5_under_both_files_at_different_prices():
+    survey, sar = (AS_DECIDED["by_file"][f]["armed_first"] for f in ("survey", "sar"))
+    assert survey["guest"] == sar["guest"] == "G5"
+    assert (survey["cost_per_kw"], sar["cost_per_kw"]) == (0.0038, 0.0189)
+    # Under survey G4 is in standby, the lowest mode that keeps capability, so it has nothing to throttle.
+    assert first_step_down("G4", "standby")["to_mode"] == "off"
+
+
 # ---------------------------------------------------------------- Scenario B: minute 8
 
 
@@ -804,3 +848,18 @@ def test_minute_8_survey_minutes_lost_add_up():
     assert s["g3_holds_kw"] == mode("G3", "standby")["power_kw"]
     # sar's lower bound is the same 25 to 27 minutes.
     assert B["minute_8"]["by_file"]["sar"]["survey_minutes_lost"] == s["survey_minutes_lost"]
+
+
+def test_minute_8_g3_states_and_the_ramp_after_g4():
+    survey = B["minute_8"]["by_file"]["survey"]["g3"]
+    sar = B["minute_8"]["by_file"]["sar"]["g3"]
+    assert (survey["leg"], survey["holds"]) == ("paused", "depth")
+    assert (sar["leg"], sar["holds"]) == ("aborted", "at_sea")
+    assert survey["mode"] == sar["mode"] == "standby"
+    assert mode("G3", "standby")["power_kw"] == B["minute_8"]["by_file"]["survey"]["g3_holds_kw"]
+    # Flight deck and ramp are mutually exclusive (A.3): G4 recovers only with the ramp not in use, and G3
+    # comes back over the ramp, so G3's recovery waits for G4's landing.
+    g4_recovery = next(c for c in CARDS["G4"]["conditions"] if c["activity"] == "launch_recovery")
+    assert g4_recovery["requires"]["ramp"] == "not_in_use"
+    assert "stern_ramp" in CARDS["G3"]["relations"]["requires"]
+    assert sar["recovery"] == {"via": "stern_ramp", "after": "G4 landed"}

@@ -90,6 +90,7 @@ Deadline: **Sun 2026-10-18 10:00 PDT**.
 | DEC-49 | Sat 12:31 | Organizer message (docs/ORGANIZER_MESSAGE.md) sent by Logan. Answers as relayed by Logan: the questions are fine and there is some flexibility; there is no organizer simulator, so ArgOS runs its own seeded simulator (Siddharth, DEC-47) (req R-492) | Logan | Claude for Logan |
 | DEC-50 | Sat 12:31 | Memo: assume the brief's Scenario C memo and slide 14's architecture-and-constraint-handling memo are different documents, and write the one 2-page memo so it serves both (req R-004) | Logan | Claude for Logan |
 | DEC-51 | Sat 12:31 | Scenario B minute 12 (organizer question 5, freeze F4) is Siddharth's to decide as owner of the simulator and scenario timing; DEC-40 stands until he does | Logan | Claude for Logan |
+| DEC-52 | Sat 13:15 | Freeze alignment applied across docs and data: R3 at 0 aboard on a deck latched clear at the last crew sweep, otherwise forbidden; minute-12 armed ladders corrected (survey 48 and rescue 81 of 95 kW, first armed step G5 to low power in both); rescue minute 8 has G3 aborted and holding until G4 has landed; F3 precedence (safety and hard limits, throttle before shed, shed_order if present, then price; no file sets shed_order); one screen with three views; board as instrument with every demo input on the laptop; breadth strip with a data-feed-drop line; INJECTED, never ADDED; replay identical except wall-clock fields. DEC-44 also supersedes DEC-13 (SSDlite), DEC-14 (node B as second process), DEC-26's camera and failover lines, DEC-31's ONNX on the board and DEC-39's opencv and onnxruntime approval | Logan (DEC-44); details applied by Claude | Claude for Logan |
 
 ## Conflicts and risks to watch
 
@@ -116,6 +117,7 @@ Deadline: **Sun 2026-10-18 10:00 PDT**.
 | CON-19 | Sat 11:50 | Two designs for the same core: Siddharth's handoff (protobuf, CP-SAT, policy compiler) and this branch. Building both wastes the day (CON-07) | Open: settle `docs/DESIGN_FREEZE.md` F1-F6 together, then split work | Claude Fable 5.1 for Siddharth |
 | CON-20 | Sat 12:04 | Resolution after DEC-44: CON-19 (two designs) closed, one design frozen; CON-01 (natural-language rules) and CON-02 (3D) closed, both cut; CON-04 (NPU runtime) closed, NPU cut; CON-11 (camera snapshot fields) closed, cameras cut; CON-16 (Wi-Fi heartbeat tail) off the demo path while failover is cut. CON-07 (work split) stays open until F6 | Closed except CON-07 | Claude for Logan |
 | CON-21 | Sat 12:09 | Resolution of CON-07 (work split): settled by DEC-47. Remaining interface risk: the snapshot schema (ours) and the command set (Siddharth's) must agree before either side builds on them | Open until the snapshot contract is published | Claude for Logan |
+| CON-22 | Sat 13:05 | The state-estimation contract (docs/STATE_ESTIMATION.md) has the core's estimator, not the simulator, confirm faults (2 of 3 genset signals, pump alarm plus flow or delta-T, held 1 s) and derive the acoustic link; BUILD_PLAN T4 and ARCHITECTURE gave both to the simulator. Fits Logan owning the inputs | Open: Siddharth to agree | Claude for Logan |
 
 ## Deferrals
 
@@ -721,3 +723,24 @@ Logan sent the organizer message and relayed the answers: all fine with some fle
 write one 2-page memo that serves both the Scenario C rule and the architecture and constraint-handling reading.
 The minute-12 question goes to Siddharth. Logged on main at Logan's request.
 Decisions: DEC-49, DEC-50, DEC-51 (Logan). Conflicts: none new. Deferrals: DEC-51 routes minute 12 to Siddharth.
+
+### Sat 13:05 PDT · Checkpoint 1: state-estimation contract draft on main · Claude Opus 5.5 on behalf of Logan Walker (GhostWalka)
+
+Logan took over the inputs and made state estimation the priority; the schema is ours to write. A workflow inventoried
+every input (cards, brief, our decisions and fixtures) and a designer wrote the contract: docs/STATE_ESTIMATION.md,
+config/signals.yaml (typed signals plus an activity registry), config/snapshot.schema.json (the 1 Hz snapshot,
+every field with source, age and confidence), five Scenario B survey snapshots (minutes 0, 8, 10 with a stale genset
+feed, 12, 19) and tests/test_snapshot_contract.py. Clock: tick n is n seconds of ship time; wall time only in a timing
+log; x12 demo pacing. Merged to main as a draft at Logan's request; two skeptics and a repair round follow.
+Decisions: none new. Conflicts: CON-22 (boundary moves fault confirmation and the acoustic link to the estimator).
+Deferrals: none.
+
+### Sat 13:15 PDT · Checkpoint 2: freeze alignment on main (DEC-52) · Claude Opus 5.5 on behalf of Logan Walker (GhostWalka)
+
+Four agent groups aligned the plan docs, deliverables, data and compliance files with the freeze; a skeptic found
+13 problems (4 should_fix) and the integrator fixed all of them and brought docs/requirements.yaml in line. 487 tests
+pass; README 3, memo 2, Physical Account 1 page; the PDFs are rebuilt with no cut items in them. BUILD_PLAN now
+has an Owner column from DEC-47 and new tasks T15 to T26; OPEN_QUESTIONS gained #44 to #54 for Logan and Siddharth.
+Logan also asked for a glossary page in the demo UI (status-tag criteria, acronyms, units, decision classes); it is
+on the design canvas as a sixth artboard.
+Decisions: DEC-52 (Logan's freeze, details by Claude). Conflicts: none new. Deferrals: none.

@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/sidd91/softwareDefinedVessels/config/missions/schema.json",
   "title": "Mission priority file",
-  "description": "Swappable input that sets what matters on this mission. The jury may hand us an unseen one, so the governor validates it before use and refuses a bad file with the field that is wrong.",
+  "description": "Swappable input that sets what matters on this mission. The jury may hand us an unseen one, so the governor validates it before use and refuses a bad file with the field that is wrong, keeping the previous file meanwhile. YAML may write crew levels unquoted; the loader validates the file's JSON form, where they are strings.",
   "type": "object",
   "required": ["id", "name", "weights", "mission_critical"],
   "additionalProperties": false,
@@ -16,6 +16,33 @@
       "additionalProperties": {"type": "number", "minimum": 0, "maximum": 1}
     },
     "mission_critical": {"type": "array", "items": {"type": "string", "pattern": "^G[0-9]+$"}, "uniqueItems": true},
+    "shed_order": {
+      "type": "object",
+      "description": "Optional declared shed order, keyed by capability name like weights. Precedence: safety-critical guests are never shed and hard limits come first; throttles come before sheds; then this order; then the computed order (mission-critical guests last, then the least mission value lost per kW freed). A positive rank goes before every unlisted capability (1 first), a negative rank after them (-1 last); unlisted capabilities keep the computed order in between, and equal ranks fall back to it. A name that no loaded guest card returns is refused.",
+      "minProperties": 1,
+      "propertyNames": {"$ref": "#/$defs/name"},
+      "additionalProperties": {"type": "integer", "not": {"const": 0}}
+    },
+    "confirm": {
+      "type": "object",
+      "description": "Optional crew policy per rule, keyed by rule name (rules in config/assumptions.yaml), replacing that rule's default at the crew levels given. confirm: a human confirms live; standing_plan: approved before it is needed; automatic; forbidden. Nobody aboard can confirm at 0 (brief A.6), so confirm is refused there. A rule name the ship profile does not define is refused.",
+      "minProperties": 1,
+      "propertyNames": {"$ref": "#/$defs/name"},
+      "additionalProperties": {"$ref": "#/$defs/crew_policy"}
+    },
     "notes": {"type": "string"}
+  },
+  "$defs": {
+    "name": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$"},
+    "crew_policy": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": false,
+      "properties": {
+        "14": {"enum": ["confirm", "standing_plan", "automatic", "forbidden"]},
+        "6": {"enum": ["confirm", "standing_plan", "automatic", "forbidden"]},
+        "0": {"enum": ["standing_plan", "automatic", "forbidden"], "description": "No live confirmation with nobody aboard (brief A.6)."}
+      }
+    }
   }
 }

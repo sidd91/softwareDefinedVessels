@@ -10,7 +10,8 @@ Rows marked **Called out** are named explicitly by the slides or brief and must 
 granular level (WORKLOG DEC-24). When work changes how a requirement is addressed, edit its row in
 the YAML, re-render, and cite the ID in WORKLOG rows and entries (WORKLOG rules 8 and 9).
 Status: done = finished and evidenced; drafted = a draft exists for review; planned = in the plan,
-not built; gap = nothing addresses it yet; not-applicable = out of scope by the brief.
+not built; gap = nothing addresses it yet; not-applicable = out of scope by the brief, or met by
+leaving out a part the design freeze cut (DEC-44).
 
 ## Summary
 
@@ -28,10 +29,10 @@ not built; gap = nothing addresses it yet; not-applicable = out of scope by the 
 | [Guest manifest and cards (Annex B)](requirements/guest-manifest-and-cards-annex-b.md) | 72 | 70 | 5 | 64 | 3 | 0 | 0 |
 | [Physical Account (Annex C)](requirements/physical-account-annex-c.md) | 25 | 25 | 0 | 24 | 1 | 0 | 0 |
 | [Constraints](requirements/constraints.md) | 68 | 65 | 0 | 46 | 22 | 0 | 0 |
-| [Stack, data and tools](requirements/stack-data-and-tools.md) | 38 | 10 | 1 | 14 | 22 | 0 | 1 |
-| [Out of scope](requirements/out-of-scope.md) | 9 | 8 | 0 | 3 | 0 | 0 | 6 |
-| [Data use and AI rules](requirements/data-use-and-ai-rules.md) | 11 | 9 | 0 | 7 | 3 | 0 | 1 |
-| **All** | **554** | **509** | **11** | **337** | **197** | **0** | **9** |
+| [Stack, data and tools](requirements/stack-data-and-tools.md) | 38 | 10 | 1 | 14 | 21 | 0 | 2 |
+| [Out of scope](requirements/out-of-scope.md) | 9 | 8 | 0 | 2 | 0 | 0 | 7 |
+| [Data use and AI rules](requirements/data-use-and-ai-rules.md) | 11 | 9 | 0 | 7 | 2 | 0 | 2 |
+| **All** | **554** | **509** | **11** | **336** | **195** | **0** | **12** |
 
 ## Gaps
 

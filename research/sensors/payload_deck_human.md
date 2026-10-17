@@ -1,5 +1,7 @@
 # Payload telemetry, deck machinery, deck and human sensing
 
+> Superseded for the build by WORKLOG DEC-44: everything on cameras, detectors and person detection (camera rows, the vision datasets, section 3, the `cam_detection_stream` spec, the detector advice); the payload, deck machinery and emission material still applies.
+
 Scope: guest telemetry (G3 UUV, G4 VTOL drone), deck machinery (G2 winch, A-frame, crane, ramp), acoustic emission state, and deck and human sensing for the resource governor. Camera placement is covered in a separate file. Researched 2026-10-16. "Unconfirmed" means we could not verify the item. "Assumption" marks our own engineering numbers.
 
 ## 1. Sensor table

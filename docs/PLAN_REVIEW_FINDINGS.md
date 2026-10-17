@@ -1,5 +1,7 @@
 # Plan review: all findings
 
+> Findings about items the design freeze cut (cameras and computer vision, the 3D view, the rule compiler, the LLM paraphraser, person detection, NPU inference, two-node failover) are moot after WORKLOG DEC-44.
+
 Whole-plan review run Sat 17 Oct, 10:45 to 11:30 PDT. Seven area reviewers, one skeptic per critical or high finding, batch skeptics for the rest, and a completeness critic whose findings Claude checked against the repo and brief.
 
 | Area | Verdict |

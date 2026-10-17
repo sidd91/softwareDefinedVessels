@@ -1,6 +1,8 @@
 # Expected outcomes for Scenarios A and B, as data.
 #
-# Every number here is copied from docs/EXPECTED_OUTCOMES.md (the hand-computed test oracles).
+# Every number here is copied from docs/EXPECTED_OUTCOMES.md (the hand-computed test oracles), except the
+# armed minute-12 steps and the minute-8 G3 states of the run as decided (WORKLOG DEC-40, with the design
+# freeze review under DEC-44), which come from the cards and the priority files.
 # tests/test_expected_outcomes_data.py recomputes what it can from the cards in manifests/ and
 # config/assumptions.yaml, so a typo here or a changed card shows up before any engine exists.
 # Once the governor exists, an engine test can load this file and compare its decisions to it.
@@ -640,7 +642,8 @@ scenario_b:
 
   # Price lists at minute 12 (cost per kW, then kW freed), in ladder order:
   # non-critical throttles, mission-critical throttles, then sheds in the same order.
-  # G3 charging cannot be interrupted, so it never appears.
+  # They hold every step down from the minute-12 modes of either draw set; which steps apply depends on the
+  # modes at the moment (see minute_12_as_decided). G3 charging cannot be interrupted, so it never appears.
   price_lists:
     survey:
       throttles:
@@ -676,6 +679,28 @@ scenario_b:
       load_kw: 78
       sheds: false
 
+  # Minute 12 in the run as decided (DEC-40): load-out ii, G3 holding on its own battery under both files.
+  # Under survey G4 is still airborne at 2 kW, with no charge to throttle; under sar its 35 kW fast charge
+  # is reserved from minute 8. The trip holds under both, so D4 takes no step and shows the armed ladder:
+  # its first step is G5 to low power under both files, priced by each file's weights.
+  minute_12_as_decided:
+    loadout: ii
+    by_file:
+      survey:
+        modes: {G3: standby, G4: standby, G5: full}
+        reserved: []
+        load_kw: 48
+        spare_kw: 47
+        steps_taken: 0
+        armed_first: {guest: G5, from_mode: full, to_mode: low_power, frees_kw: 37, cost_per_kw: 0.0038, capability_lost_pct: 70}
+      sar:
+        modes: {G3: standby, G4: fast_charge, G5: full}
+        reserved: [G4]
+        load_kw: 81
+        spare_kw: 14
+        steps_taken: 0
+        armed_first: {guest: G5, from_mode: full, to_mode: low_power, frees_kw: 37, cost_per_kw: 0.0189, capability_lost_pct: 70}
+
   minute_8:
     same_for_all_loadouts: true
     timing:
@@ -708,6 +733,7 @@ scenario_b:
         # 8 flown + 15 paused + 2 to 4 to settle and go quiet.
         components: {flown_min: 8, paused_min: 15, settle_min: [2, 4]}
         leg_ends_at_min: [65, 67]
+        g3: {leg: paused, holds: depth, mode: standby}
       sar:
         proceeds: G4
         hard_limit: {guest: G4, when: battery_pct < 20, then: land within 12 min or ditch}
@@ -715,3 +741,6 @@ scenario_b:
         reserved_kw: 35
         survey_minutes_lost: [25, 27]
         open_ended: true
+        # The leg is aborted and G3 holds at sea; flight deck and ramp are mutually exclusive (A.3), so it
+        # comes back over the stern ramp only after G4 has landed.
+        g3: {leg: aborted, holds: at_sea, mode: standby, recovery: {via: stern_ramp, after: G4 landed}}

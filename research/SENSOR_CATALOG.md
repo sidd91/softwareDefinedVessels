@@ -1,5 +1,7 @@
 # Sensor catalog and data plan
 
+> Superseded for the build by WORKLOG DEC-44: the camera and vision items (rows, datasets, weights questions), heartbeat failover and the NPU question; the rest still applies.
+
 One page that ties the four sensor research files to the governor. Detail, sources and the
 synthetic generator specs live in the domain files:
 

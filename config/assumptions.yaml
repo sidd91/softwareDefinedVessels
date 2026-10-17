@@ -1,8 +1,8 @@
 # Reference platform for the resource governor.
 # Every number the code relies on lives here, except the Scenario B timeline (config/scenarios/, with its
-# own provenance). `provenance` (near the bottom) tags each key as taken from the challenge brief or
-# assumed by us, with the reason; `account` (bottom) lays out the one-page Physical Account. The account
-# is generated from these files, so an undocumented assumption cannot hide in code.
+# own provenance). `provenance` (near the bottom) tags each key as taken from the challenge brief, assumed
+# by us or measured by us, with the reason; `account` (bottom) lays out the one-page Physical Account. The
+# account is generated from these files, so an undocumented assumption cannot hide in code.
 
 hull:
   loa_m: 60
@@ -32,7 +32,6 @@ heat:
   degraded_confirm: plant alarm plus flow or delta-T, automatic
   chillers_on_essential_board: true
   degraded_means: one chilled-water pump of two
-  camera_unknown: plant sensors decide; camera evidence alone never confirms a fault
 
 mass:
   margin_t: 10
@@ -48,6 +47,13 @@ data:
   los_radio_operating_mbps: 20
   los_radio_drone_range_km_max: 20
   acoustic_kbps: {min: 1, max: 5}
+  acoustic_latency_s: [10, 60]
+  # A.5's own rule as a state check: the link to the underwater vehicle is up only while all of up_when hold.
+  acoustic_link:
+    up_when: {course: steady, noise: quiet, deck_machinery: false}
+    drop_delay_s: 0
+    judged_latency_s: 60
+    layered_water: not modelled; each scenario states its water column
   silent_zeroes: [satcom, los_radio]
 
 compute:
@@ -70,6 +76,36 @@ response_time_s:
 decision_watchdog:
   budget: response_time_s ceiling of each decision
   on_miss: {admission: "no, timed out", placement: keep current, arbitration: keep current ship state, shedding: last precomputed ladder}
+
+# How a fault reaches a decision: only as a debounced, confirmed plant signal, never a single raw reading.
+# The decision record keeps the raw-event time and the confirmation time.
+fault_entry:
+  confirm: {genset_trip: power.trip_confirm, cooling_degraded: heat.degraded_confirm}
+  debounce_s: 1
+  first_shed_clock: from the raw event, debounce included
+  restore_hold_s: 60
+  record_times: [raw_event, confirmed]
+
+# Safety commands (A.8: stop, hold, secure in 200 ms) are answered from a table, never by a solver.
+safety_commands:
+  answered_from: table rebuilt each tick beside the D4 ladder
+  handled: when the event arrives, not on the next 1 Hz tick
+  requests: [R3 hold landing clearance, G3 hold depth, G2 stop winch, G4 return home]
+
+# A feed that stops updating falls to the value that tightens limits; the decision sentence names it.
+stale_feed:
+  after_s: 3
+  falls_to: {genset: one down, cooling: degraded, deck: occupied, course: free, speed_band: flight deck and ramp closed, acoustic_link: down, environment: tighten only}
+  except: {g4_telemetry: rules.r3.stale_s.g4_telemetry}
+
+# The VENTUNO Q board as an instrument: it runs the governor's container unchanged and measures the
+# governor's own footprint for this account. The laptop provides every demo input; nothing depends on the board.
+instrument:
+  board: VENTUNO Q
+  cores: 8
+  measures: [watts, latency per decision class, CPU share against A.7]
+  status: planned
+  results: null
 
 # Discrete positions. Units: a 20-ft bay is two 10-ft halves; a whole-bay guest takes both.
 positions:
@@ -125,13 +161,13 @@ rules:
   r3:
     approach_min: 4
     drain_pct_min: 1.11
-    stale_s: {camera: 3, g4_telemetry: 10}
-    change_threshold: to_calibrate
-    zone: marked landing area, flying-stations positions masked, drone secured with no deck hand
-    override: landing officer only, at 14 and 6 aboard, logged, valid for one landing, cancelled by a new detection
-    camera: fixed flight-deck camera, inference in the 20 % ship-systems compute reserve, never shed
-    uncrewed_launch: needs automatic landing and securing, fixed deck firefighting and a lit or low-light deck view for the 90 min sortie
-    unchanged: all deck markers visible and the frame matches the last crew sweep
+    stale_s: {g4_telemetry: 10}
+    zone: marked landing area; fire party and landing officer stand clear of it; drone secured with no deck hand
+    deck_evidence: {14: landing officer's deck report, 6: landing officer's deck report, 0: platform deck state latched at the last crew sweep}
+    confirm: {14: confirm, 6: standing_plan, 0: automatic}
+    latched_deck: clear only if latched clear at the last crew sweep with no deck activity reported since, other than G4's own launch; otherwise recovery is forbidden
+    override: landing officer only, at 14 and 6 aboard, logged, valid for one landing
+    uncrewed_launch: needs the deck latched clear, automatic landing and securing, and fixed deck firefighting, for the whole 90 min sortie
 
 admission:
   seawater_scan_step_c: 0.1
@@ -141,7 +177,8 @@ admission:
   data_rates_judged_at: guest_minimum
 
 # Where each key comes from. `source: assumed` keys are ours and each carries its reason (`why`); an
-# assumed key that narrows a brief value names it in `narrows`. A brief key we use at one point of its
+# assumed key that narrows a brief value names it in `narrows`. `source: measured` keys are figures we
+# measure, with a `status` until they are measured. A brief key we use at one point of its
 # range, or never credit, carries `narrowed` saying how. Scenario files keep their own provenance block.
 provenance:
   # Electrical power
@@ -154,6 +191,9 @@ provenance:
   power.line_lost_on_trip: {source: assumed, why: "A.9 lets us choose. Both mission lines survive a genset trip, so the reduced total reserve, not a single line, binds."}
   power.shed_headroom_kw: {source: assumed, why: "Kept free after shedding so a normal load swing does not re-trigger the sequence."}
   power.trip_confirm: {source: assumed, why: "A single sensor must not trigger a shed; 2 of 3 independent signals confirm a trip (Viking Sky lesson)."}
+  fault_entry: {source: assumed, why: "Every fault enters as a confirmed plant signal, never a single raw reading: a genset trip on 2 of 3 signals (power.trip_confirm), a cooling fault on the plant alarm plus flow or delta-T (heat.degraded_confirm). The record keeps the raw-event time and the confirmation time, so the jury sees both."}
+  fault_entry.debounce_s: {source: assumed, why: "A confirmed signal must hold 1 s before it counts. A.6 makes a trip instant and A.8 allows 5 s to the first shed; the clock runs from the raw event, debounce included, so 4 s remain for a ladder that is already computed."}
+  fault_entry.restore_hold_s: {source: assumed, why: "A restarted genset or a recovered pump must read healthy for 60 s before any guest is restored, so shedding and restoring do not alternate."}
   power.gensets.load_limit: {source: assumed, why: "Plant check only, read by tests/test_brief_arithmetic.py and by no decision. Common practice loads gensets to about 90 % of rating, so each 450 kW set gives 405 kW."}
   power.hotel_kw.committed: {source: assumed, why: "Plant check only. The top of A.1's 250-400 kW committed hotel load, the conservative choice."}
   power.ship_aux_kw: {source: assumed, why: "Plant check only. Ship auxiliaries outside the hotel load, chillers and chilled-water pumps among them. With it, one 405 kW set less the 250 kW of hotel kept after the shed leaves exactly the brief's 100 kW (A.9), and two sets leave at least the 200 kW reserve at cruise. The check has no propulsion term, because propulsion is out of model scope (see power.guest_reserve_kw_by_speed), so it shows the brief's reserves are reachable, not a full electrical balance."}
@@ -163,8 +203,7 @@ provenance:
   # Heat rejection
   heat: {source: brief A.2}
   heat.degraded_means: {source: assumed, why: "The brief's -40 % degraded loop (A.2, pump or exchanger down) is read as one of two chilled-water pumps lost."}
-  heat.degraded_confirm: {source: assumed, why: "Scenario B (DEC-40): a cooling fault counts as confirmed only on the plant alarm plus flow or delta-T, automatically; camera evidence alone only precomputes the plan."}
-  heat.camera_unknown: {source: assumed, why: "research/cv_equipment_monitoring.md C1. Camera evidence alone never confirms a cooling fault (heat.degraded_confirm). When the leak camera is unknown, plant sensors decide, where pump status unknown already counts as degraded, and only the early warning is lost. This is the one exception to 'camera unknown counts as changed', because cameras are not guaranteed (DEC-27)."}
+  heat.degraded_confirm: {source: assumed, why: "Scenario B (DEC-40): a cooling fault counts as confirmed only on the plant alarm plus flow or delta-T, and then acts automatically. An alarm alone could be a failed sensor."}
   heat.chillers_on_essential_board: {source: assumed, why: "Chillers and chilled-water pumps sit on the essential board inside the 55 kW ship auxiliaries, so the 150 kW non-essential hotel shed on a genset trip does not take cooling with it."}
   admission.seawater_scan_step_c: {source: assumed, why: "Resolution for reporting the seawater temperature at which a verdict flips."}
   admission.seawater_scan_max_c: {source: assumed, why: "Scan a little past the 30 C design point (A.10) to show the stress case off Florida (30.4 C)."}
@@ -185,10 +224,14 @@ provenance:
   # Mass / stability
   mass: {source: brief A.4}
   # Data links
-  data: {source: brief A.5, narrowed: "SATCOM judged at 2 Mbit/s, the line-of-sight radio at 20 Mbit/s and guests at their minimum rates"}
+  data: {source: brief A.5, narrowed: "SATCOM judged at 2 Mbit/s, the line-of-sight radio at 20 Mbit/s, acoustic messages at 60 s and guests at their minimum rates"}
   admission.data_rates_judged_at: {source: assumed, narrows: [data], why: "DEC-38: admission judges data links at guests' minimum rates and reports the nominal shortfall as degraded quality. At nominal rates G5's 6 Mbit/s alone exceeds the 2 Mbit/s SATCOM floor and would change verdicts."}
   data.satcom_envelope_mbps: {source: assumed, narrows: [data], why: "Admission judges SATCOM at the low end of the brief's 2-8 Mbit/s: it is shared by everyone aboard and only 70-95 % available (A.5), and nothing aboard controls its rate."}
   data.los_radio_drone_range_km_max: {source: assumed, why: "We assume G4 flies within 20 km of the ship, the near end of A.5's 20-40 km radio reach. Unverified: neither the brief nor our research gives the drone's range."}
+  data.acoustic_link: {source: assumed, why: "A.5's own rule: the link breaks with manoeuvre, deck machinery or layered water. We check it as state: up only while the course is steady, the noise quiet and no deck machinery runs (winches, hangar doors; A.6). G3's surveying conditions are the same three (manifests/G3.yaml)."}
+  data.acoustic_link.drop_delay_s: {source: assumed, why: "The brief gives no figure. We take the conservative end: the link is lost the moment a condition fails, since A.6 lets the ship leave quiet at once. So G3's hold-depth request goes out with the decision, and the ship leaves quiet only after it has had time to arrive (data.acoustic_link.judged_latency_s)."}
+  data.acoustic_link.judged_latency_s: {source: assumed, narrows: [data], why: "A message takes 10-60 s (A.5); we judge at 60 s, the slow end. At minute 8 the hold-depth request fits inside the 1 min bridge confirm (scenario_b.seed_pins.confirm_min), so it costs no landing margin."}
+  data.acoustic_link.layered_water: {source: assumed, narrows: [data], why: "A.5's third cause, layered water, is not modelled as a live input. A layered column would break the link from minute 0, which the brief's demo moment (the survey vehicle listening) rules out, so each scenario states its water column (scenario_b.location.layered)."}
   data.los_radio_operating_mbps: {source: assumed, narrows: [data], why: "Within 20 km (data.los_radio_drone_range_km_max) we assume the radio gives its top rate, 20 Mbit/s; the brief does not say how the rate falls with range. This is the opposite end from SATCOM, judged at its floor, because the drone's range is set by how we fly it and SATCOM's rate is not. At the 1 Mbit/s floor, G4's 5 Mbit/s minimum would fail every set with G4 (A1, A2, A3, A5, A6, Scenario B). Range loss in flight is handled at run time, not at admission."}
   # State transitions
   ship_state: {source: brief A.6, narrowed: "single picks in transition_picks.r3_worst_case and the Scenario B seed pins"}
@@ -199,16 +242,19 @@ provenance:
   compute: {source: brief A.7}
   response_time_s: {source: brief A.8}
   decision_watchdog: {source: assumed, why: "Annex C asks for solver budget and timeout behaviour. Each decision's budget is its A.8 ceiling (admission and placement 30 s, arbitration 2 s, first shed 5 s). On a miss a watchdog emits the safe default with a sentence naming the ceiling (GAMEPLAN, watchdogs and safe defaults): admission answers no, placement keeps the current plan, arbitration keeps the current ship state and retries, and shedding runs the ladder precomputed on the last tick (DEC-16), so a slow solver never delays the first shed."}
-  rules.r3.camera: {source: assumed, why: "R3: the deck camera is ship supply, so its inference sits in the ship-systems compute reserve (brief A.7) and is never shed."}
+  safety_commands: {source: assumed, why: "A.8 gives stop, hold and secure 200 ms, too short to run admission or arbitration. Each tick the engine rebuilds a table of the requests the present state may need, beside the D4 ladder (DEC-16), and answers by lookup when the event arrives. The requests come from the cards and the brief: R3's hold, G3 holding depth (demo moment), G2's winch stop (G2 excludes the winch while G3 listens or G4 recovers) and G4's return home in silence. The governor only requests ship states; it does not control machinery (brief, out of scope)."}
+  stale_feed: {source: assumed, why: "The brief: 'keeps working when a data feed drops'. A feed silent for 3 s, three 1 Hz ticks, is stale and falls to the value that tightens limits (research/SENSOR_CATALOG.md, 'When lost or stale'): a genset counts as down, cooling as degraded, the deck as occupied, the course as free, an unknown speed band closes the flight deck and the ramp, the acoustic link counts as down, and stale environment data may only tighten a limit. The decision sentence names the stale feed. G4 battery telemetry keeps R3's 10 s limit (rules.r3.stale_s.g4_telemetry), then falls to the earliest 20 % crossing."}
+  instrument: {source: measured, status: planned, why: "Brief A.7 is a modelling constraint, so the governor's own footprint is measured, not assumed: the board runs the same container and reports its watts, the latency of each decision class against A.8 and its CPU share, scaled to A.7's 4 x 32 cores. It is an 8-core board (docs/NODE_B_BOARD.md), not the A.7 rack, so its figures stand in for the rack's and are labelled so."}
   # Mission priorities / crew
   rules.r3.approach_min: {source: assumed, why: "Scenario C rule R3: final approach and landing from the loiter point; G4's own estimate is used if longer. Transit from range runs alongside deck clearing."}
   rules.r3.drain_pct_min: {source: assumed, why: "R3: 100 % over the 90 min endurance (brief B, G4); we assume G4 never drains slower, which dates the 20 % crossing conservatively. Unverified."}
-  rules.r3.stale_s: {source: assumed, why: "R3: a camera frame older than 3 s or drone telemetry older than 10 s counts as unknown."}
-  rules.r3.change_threshold: {source: assumed, why: "R3: how much of a deck marker or zone must change to count as not clear. A false alarm costs a hold, a miss a damaged drone. To be calibrated on the demo webcam."}
+  rules.r3.stale_s: {source: assumed, why: "R3: drone telemetry older than 10 s counts as unknown; G4's battery is then taken at the earliest 20 % crossing the last report allows."}
   rules.r3.zone: {source: assumed, why: "R3 guards the marked landing area; the fire party and landing officer stand near but clear of it, which assumes the drone is secured with no deck hand (research E3 puts deck crew on deck for helicopters)."}
+  rules.r3.deck_evidence: {source: assumed, why: "R3 reads the deck from people where there are people: at 14 and 6 aboard the landing officer reports whether the zone is clear (a 'landing zone not clear' report holds the recovery); at 0 it reads the deck state the platform reports (A.6: clear or occupied) as the last crew sweep latched it (rules.r3.latched_deck)."}
+  rules.r3.confirm: {source: assumed, why: "R3's crew policy, the default a priority file may override per rule (config/missions/schema.json, confirm). At 14 the bridge confirms the officer's report (A.6: 15-60 s). At 6 a live yes plus clearing (3 + 12 min, A.6) cannot fit the 8 min left before G4 must land, so the bridge approves a standing plan at launch and the zone stays clear from launch. At 0 nobody can confirm (A.6), so the rule is automatic: recovery only on a deck latched clear (rules.r3.latched_deck), else forbidden."}
+  rules.r3.latched_deck: {source: assumed, why: "R3 at 0 aboard: nobody can clear the deck (A.6: 'uncrewed only if already clear'). We assume the departing crew's last sweep latches the deck state, that any deck activity the platform reports since (a hatch, a hangar door, a winch; G4's own launch excepted) unlatches it, and that nothing aboard can latch it clear again. Unlatched, recovery is forbidden and the record states the cost: below 20 % G4 ditches (brief B, G4). The residual risk is gear working loose that no sensor reports."}
   rules.r3.override: {source: assumed, why: "R3: an override is an authority act, not a sensor reading; impossible at 0 aboard (brief A.6)."}
   rules.r3.uncrewed_launch: {source: assumed, why: "R3 at 0 aboard: nobody can clear the deck (brief A.6), so a launch is refused unless recovery stays possible for the whole sortie. Fixed deck firefighting availability is unconfirmed."}
-  rules.r3.unchanged: {source: assumed, why: "R3 at 0 aboard: the evidence that the deck is still clear since the last crew sweep."}
   installation: {source: brief A.11}
 
 # The one-page Physical Account (brief Annex C), rendered by tools/physical_account.py. Each row names
@@ -218,11 +264,10 @@ provenance:
 # exact patterns for uses that are not a key lookup (card fields, priority files, dynamic subscripts).
 account:
   intro: >-
-    Every number our software relies on that is not in Annex A or B, every Annex value we narrowed or
-    overrode, and everything we invented; anything not listed is Annex A or B unchanged. Reasons and the
-    file:line of each use: [detail page](PHYSICAL_ACCOUNT_DETAIL.md).
+    Every number we rely on beyond Annex A and B, every Annex value we changed, and all we invented.
+    Reasons and uses: [detail page](PHYSICAL_ACCOUNT_DETAIL.md).
   # Column widths in % of the page (Annex C's five columns), so short reasons stay on one line.
-  widths: [13, 14.5, 43.5, 19, 10]
+  widths: [13, 15, 44.5, 17.5, 10]
   rows:
     - row: Electrical power
       what: guest reserve
@@ -231,14 +276,14 @@ account:
       why: "propulsion out of scope"
     - row: Electrical power
       what: peak tolerance
-      keys: [admission.peak_credit_kw, admission.one_genset_down_gate]
-      value: "60 s peak never credited; gate min({{power.guest_reserve_kw.one_genset_down}}, {{calc.cool_30}}) - {{power.shed_headroom_kw}} = {{calc.gate}} kW"
-      why: "a peak lasts 60 s (DEC-35)"
+      keys: [admission.peak_credit_kw, admission.one_genset_down_gate, power.shed_headroom_kw]
+      value: "peaks never credited; gate min({{power.guest_reserve_kw.one_genset_down}}, {{calc.cool_30}}) - {{power.shed_headroom_kw}} headroom = {{calc.gate}} kW"
+      why: "peaks last 60 s (DEC-35)"
     - row: Electrical power
-      what: shedding, lines
-      keys: [power.shed_headroom_kw, power.trip_confirm, positions.bay1.power_line, positions.bay2.power_line, positions.flight_deck.power_line, positions.mast_free.power_line, power.line_lost_on_trip]
-      value: "{{power.shed_headroom_kw}} kW headroom; trip on {{power.trip_confirm.needed}} of {{calc.trip_signals}} signals; {{calc.lines}}; line lost on a trip: {{power.line_lost_on_trip}}"
-      why: "no shed on one bad sensor"
+      what: mission lines
+      keys: [positions.bay1.power_line, positions.bay2.power_line, positions.flight_deck.power_line, positions.mast_free.power_line, power.line_lost_on_trip]
+      value: "{{calc.lines}}; line lost on a trip: {{power.line_lost_on_trip}}"
+      why: "total reserve binds"
     - row: Electrical power
       what: plant check
       keys: [power.gensets.load_limit, power.hotel_kw.committed, power.ship_aux_kw, power.hotel_shed_on_trip_kw]
@@ -246,14 +291,14 @@ account:
       why: "consistency check only"
     - row: Heat rejection
       what: loop, seawater
-      keys: [heat.degraded_means, heat.degraded_confirm, heat.camera_unknown, heat.chillers_on_essential_board, admission.seawater_scan_step_c, admission.seawater_scan_max_c]
-      value: "-40 % = 1 of 2 pumps lost; plant alarm plus flow or delta-T confirms, never a camera; chillers essential; scan {{admission.seawater_scan_step_c}} °C steps to {{admission.seawater_scan_max_c}} °C"
-      why: "cameras optional (DEC-27)"
+      keys: [heat.degraded_means, heat.chillers_on_essential_board, admission.seawater_scan_step_c, admission.seawater_scan_max_c]
+      value: "-40 % = 1 of 2 pumps; chillers essential; scan {{admission.seawater_scan_step_c}} °C steps to {{admission.seawater_scan_max_c}} °C"
+      why: "cooling survives a trip"
     - row: Positions
       what: hull, roof, ramp
       keys: [hull.loa_m, positions.hangar_roof]
       value: "{{hull.loa_m}} m hull; roof holds G5's antenna ({{positions.hangar_roof.max_kg}} kg); ramp craft up to {{calc.ramp_min}} m"
-      why: "assumes roof clears drones"
+      why: "roof clears drones"
     - row: Mass / stability
       what: G4 hangar
       value: "850 kg, not Annex B's 900 kg"
@@ -276,6 +321,11 @@ account:
       keys: [data.los_radio_operating_mbps, data.los_radio_drone_range_km_max]
       value: "top rate {{data.los_radio_operating_mbps}} Mbit/s, G4 kept within {{data.los_radio_drone_range_km_max}} km (A.5 reach 20-40 km)"
       why: "unverified; range is ours"
+    - row: Data links
+      what: acoustic link
+      keys: [data.acoustic_link, data.acoustic_link.drop_delay_s, data.acoustic_link.judged_latency_s, data.acoustic_link.layered_water, scenario_b.location.layered]
+      value: "up only while course steady, noise quiet, no deck machinery; lost at once; {{data.acoustic_link.judged_latency_s}} s per message; Scenario B water not layered"
+      why: "A.5's rule, safe end"
     - row: State transitions
       what: R3 lead time
       keys: [transition_picks.r3_worst_case]
@@ -287,30 +337,35 @@ account:
       value: "confirm {{scenario_b.seed_pins.confirm_min}}, clear {{scenario_b.seed_pins.deck_clear_min}}, approach {{scenario_b.seed_pins.approach_min}} min: G4 lands at minute {{scenario_b.seed_pins.g4_lands_at_min}}"
       why: "replayable, inside A.6"
     - row: Compute / response time
-      what: timeout
-      keys: [decision_watchdog]
-      value: "A.8 ceilings; on a miss: admit no, hold the rest, run the ready ladder"
-      why: "ladder is ready (DEC-16)"
+      what: fault entry
+      keys: [power.trip_confirm, heat.degraded_confirm, fault_entry, fault_entry.debounce_s, fault_entry.restore_hold_s, stale_feed]
+      value: "trip on {{power.trip_confirm.needed}} of {{calc.trip_signals}} signals, pump on alarm plus flow or delta-T, held {{fault_entry.debounce_s}} s; restore after {{fault_entry.restore_hold_s}} s; a feed silent {{stale_feed.after_s}} s falls to its conservative value"
+      why: "one reading never sheds"
     - row: Compute / response time
-      what: allocation
-      keys: [rules.r3.camera]
-      value: "cores {{cards.cores}}; deck camera in 20 % ship reserve"
+      what: timeout, safety
+      keys: [decision_watchdog, safety_commands]
+      value: "on a miss: admit no, hold, run the ready ladder; safety by table lookup"
+      why: "no solver on 200 ms"
+    - row: Compute / response time
+      what: compute
+      keys: [instrument]
+      value: "cores {{cards.cores}}; own use: watts, latency, CPU share"
       why: "Annex B gives no compute"
       trace: ['compute_cores: \{nominal: \d+, assumed: true\}']
     - row: Mission priorities / crew
       what: R3 deck rules
-      keys: [rules.r3.zone, rules.r3.change_threshold, rules.r3.unchanged, rules.r3.override, rules.r3.uncrewed_launch]
-      value: "zone unchanged since crew sweep (threshold to calibrate); officer override at 14, 6; at 0, launch only if recovery holds"
+      keys: [rules.r3.zone, rules.r3.deck_evidence, rules.r3.confirm, rules.r3.latched_deck, rules.r3.override, rules.r3.uncrewed_launch]
+      value: "14: officer reports, bridge confirms; 6: standing plan from launch; 0: only on a deck latched clear at the last sweep, else forbidden"
       why: "no one clears deck at 0"
     - row: Mission priorities / crew
       what: R3 timing
       keys: [rules.r3.approach_min, rules.r3.drain_pct_min, rules.r3.stale_s]
-      value: "approach {{rules.r3.approach_min}} min; drain {{rules.r3.drain_pct_min}} %/min; stale {{rules.r3.stale_s.camera}} s camera, {{rules.r3.stale_s.g4_telemetry}} s drone"
+      value: "approach {{rules.r3.approach_min}} min; drain {{rules.r3.drain_pct_min}} %/min; drone data stale after {{rules.r3.stale_s.g4_telemetry}} s"
       why: "drain unverified"
     - row: Mission priorities / crew
       what: mission weights
       value: "high 1.0, medium 0.5, low 0.2, ours if unstated; 1-2 critical each"
-      why: "Annex B: high, medium, low"
+      why: "Annex B: high/medium/low"
       trace: ['^weights:', '\["weights"\]']
     - row: Anything else
       what: guest modes
@@ -327,12 +382,12 @@ account:
     battery_kw: 50
     a5_guests: [G1, G2, G4, G5]  # docs/EXPECTED_OUTCOMES.md, case A5
     text: >-
-      **Closing question.** One change: a standby chilled-water pump, so a pump failure no longer costs 40 %
+      **Closing question.** One change: a standby chilled-water pump, so losing a pump no longer costs 40 %
       of the loop (A.2), {{calc.pump_saves_30}} kW at 30 °C. Our minute-{{scenario_b.events.cooling_degraded.t_min}}
       pump fault then sheds nothing: at {{calc.sw_b}} °C the loop keeps {{calc.cool_b}} kW, not
-      {{calc.cool_b_deg}}, so the {{calc.load_19}} kW load fits the {{calc.ceiling_b}} kW power ceiling instead
-      of a throttle to {{calc.ceiling_b_deg}} kW. At the 30 °C design point a pump loss today leaves
-      guests {{calc.gate_30_deg}} kW for up to {{envelope.days_without_port}} days with no repair at sea (A.6,
-      A.10), against {{calc.chilled_b}} kW for our Scenario B set and {{calc.chilled_a5}} for A5; with the pump
-      both fit under {{calc.gate_30}} kW. An exchanger fault still costs 40 %. A {{closing.battery_kw}} kW
-      battery to bridge a genset restart helps less: at 30 °C cooling caps it at {{calc.battery_usable_30}} kW.
+      {{calc.cool_b_deg}}, so the {{calc.load_19}} kW load fits under {{calc.ceiling_b}} kW, not
+      {{calc.ceiling_b_deg}}. At 30 °C a pump loss today leaves guests {{calc.gate_30_deg}} kW for up to
+      {{envelope.days_without_port}} days with no repair at sea (A.6, A.10), against {{calc.chilled_b}} kW for our
+      Scenario B set and {{calc.chilled_a5}} for A5; with the pump both fit under {{calc.gate_30}} kW. An exchanger
+      fault still costs 40 %. A {{closing.battery_kw}} kW battery for a genset restart helps less: at 30 °C
+      cooling caps it at {{calc.battery_usable_30}} kW.

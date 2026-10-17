@@ -1,5 +1,7 @@
 # Camera-based equipment monitoring (draft for team review)
 
+> Superseded for the build by WORKLOG DEC-44.
+
 Status: draft, Fri 23:50 PDT. Drafted by Claude Opus 5.5 on behalf of Logan Walker (GhostWalka) from a
 seven-agent research workflow with licence and feasibility checks (26 findings, all applied). Research
 and design only; nothing is built.
