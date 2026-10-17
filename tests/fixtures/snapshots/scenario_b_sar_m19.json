@@ -1,0 +1,815 @@
+{
+ "run": {
+  "contract": "argos-snapshot/2",
+  "scenario": "scenario_b",
+  "mission": "sar",
+  "seed": 0,
+  "tick": 1141,
+  "t_ship_s": 1141,
+  "installed": [
+   "G3",
+   "G4",
+   "G5"
+  ],
+  "constants": {
+   "layered_water": {
+    "value": false,
+    "source": "scenario",
+    "confidence": "assumed"
+   }
+  }
+ },
+ "plant": {
+  "genset_1_relay_trip": {
+   "value": false,
+   "source": "plant",
+   "age_s": 0,
+   "confidence": "measured",
+   "stale": false
+  },
+  "genset_2_relay_trip": {
+   "value": true,
+   "source": "plant",
+   "age_s": 0,
+   "confidence": "measured",
+   "stale": false,
+   "since_t_s": 720
+  },
+  "genset_1_kw": {
+   "value": 420.0,
+   "source": "plant",
+   "age_s": 0,
+   "confidence": "measured",
+   "stale": false,
+   "since_t_s": 1020
+  },
+  "genset_2_kw": {
+   "value": 0.0,
+   "source": "plant",
+   "age_s": 0,
+   "confidence": "measured",
+   "stale": false,
+   "since_t_s": 720
+  },
+  "bus_frequency_hz": {
+   "value": 59.6,
+   "source": "plant",
+   "age_s": 0,
+   "confidence": "measured",
+   "stale": false,
+   "since_t_s": 720
+  },
+  "gensets_online": {
+   "value": 1,
+   "source": "derived",
+   "age_s": 0,
+   "confidence": "confirmed",
+   "stale": false,
+   "since_t_s": 721
+  },
+  "tripped_genset": {
+   "value": "genset_2",
+   "source": "derived",
+   "age_s": 0,
+   "confidence": "confirmed",
+   "stale": false,
+   "since_t_s": 721
+  },
+  "chw_pump_1_running": {
+   "value": false,
+   "source": "plant",
+   "age_s": 0,
+   "confidence": "measured",
+   "stale": false,
+   "since_t_s": 1140
+  },
+  "chw_pump_2_running": {
+   "value": true,
+   "source": "plant",
+   "age_s": 0,
+   "confidence": "measured",
+   "stale": false
+  },
+  "chw_pump_1_alarm": {
+   "value": true,
+   "source": "plant",
+   "age_s": 0,
+   "confidence": "measured",
+   "stale": false,
+   "since_t_s": 1140
+  },
+  "chw_pump_2_alarm": {
+   "value": false,
+   "source": "plant",
+   "age_s": 0,
+   "confidence": "measured",
+   "stale": false
+  },
+  "chw_flow_pct": {
+   "value": 50.0,
+   "source": "plant",
+   "age_s": 0,
+   "confidence": "measured",
+   "stale": false,
+   "since_t_s": 1140
+  },
+  "chw_supply_c": {
+   "value": 8.5,
+   "source": "plant",
+   "age_s": 0,
+   "confidence": "measured",
+   "stale": false,
+   "since_t_s": 1140
+  },
+  "chw_return_c": {
+   "value": 17.5,
+   "source": "plant",
+   "age_s": 0,
+   "confidence": "measured",
+   "stale": false,
+   "since_t_s": 1140
+  },
+  "cooling_state": {
+   "value": "degraded",
+   "source": "derived",
+   "age_s": 0,
+   "confidence": "confirmed",
+   "stale": false,
+   "since_t_s": 1141
+  }
+ },
+ "ship_state": {
+  "course": {
+   "value": "free",
+   "source": "plant",
+   "age_s": 0,
+   "confidence": "measured",
+   "stale": false,
+   "since_t_s": 541
+  },
+  "speed_kn": {
+   "value": 5.0,
+   "source": "plant",
+   "age_s": 0,
+   "confidence": "measured",
+   "stale": false,
+   "since_t_s": 661
+  },
+  "speed_band": {
+   "value": "slow",
+   "source": "derived",
+   "age_s": 0,
+   "confidence": "measured",
+   "stale": false
+  },
+  "noise": {
+   "value": "manoeuvring",
+   "source": "plant",
+   "age_s": 0,
+   "confidence": "measured",
+   "stale": false,
+   "since_t_s": 541
+  },
+  "situation": {
+   "value": "at_sea",
+   "source": "scenario",
+   "age_s": 0,
+   "confidence": "assumed",
+   "stale": false
+  },
+  "deck_flight_deck": {
+   "value": "occupied",
+   "source": "plant",
+   "age_s": 0,
+   "confidence": "measured",
+   "stale": false,
+   "since_t_s": 1020
+  },
+  "deck_bays": {
+   "value": "clear",
+   "source": "plant",
+   "age_s": 0,
+   "confidence": "measured",
+   "stale": false
+  },
+  "ramp": {
+   "value": "free",
+   "source": "plant",
+   "age_s": 0,
+   "confidence": "measured",
+   "stale": false,
+   "by": []
+  },
+  "deck_machinery": {
+   "value": false,
+   "source": "plant",
+   "age_s": 0,
+   "confidence": "measured",
+   "stale": false,
+   "by": []
+  },
+  "deck_activity_since_sweep": {
+   "value": true,
+   "source": "plant",
+   "age_s": 0,
+   "confidence": "measured",
+   "stale": false
+  },
+  "emission": {
+   "value": "normal",
+   "source": "plant",
+   "age_s": 0,
+   "confidence": "measured",
+   "stale": false
+  },
+  "radar_transmitting": {
+   "value": true,
+   "source": "plant",
+   "age_s": 0,
+   "confidence": "measured",
+   "stale": false
+  },
+  "heading_free": {
+   "value": true,
+   "source": "derived",
+   "age_s": 0,
+   "confidence": "reported",
+   "stale": false,
+   "since_t_s": 510,
+   "by": []
+  },
+  "deck_machinery_permitted": {
+   "value": true,
+   "source": "derived",
+   "age_s": 0,
+   "confidence": "reported",
+   "stale": false,
+   "since_t_s": 510
+  },
+  "flight_deck_ops": {
+   "value": "free",
+   "source": "derived",
+   "age_s": 0,
+   "confidence": "reported",
+   "stale": false,
+   "since_t_s": 1020,
+   "by": []
+  }
+ },
+ "environment": {
+  "seawater_c": {
+   "value": 24.0,
+   "source": "scenario",
+   "age_s": 1141,
+   "confidence": "assumed",
+   "stale": false
+  },
+  "sea_state": {
+   "value": 4,
+   "source": "scenario",
+   "age_s": 1141,
+   "confidence": "assumed",
+   "stale": false
+  },
+  "wind_kn": {
+   "value": 22.0,
+   "source": "plant",
+   "age_s": 0,
+   "confidence": "measured",
+   "stale": false
+  },
+  "wind_from_deg": {
+   "value": 300.0,
+   "source": "plant",
+   "age_s": 0,
+   "confidence": "measured",
+   "stale": false
+  }
+ },
+ "links": {
+  "satcom_mbps": {
+   "value": 6.0,
+   "source": "plant",
+   "age_s": 0,
+   "confidence": "measured",
+   "stale": false
+  },
+  "los_radio_mbps": {
+   "value": 20.0,
+   "source": "plant",
+   "age_s": 0,
+   "confidence": "measured",
+   "stale": false
+  },
+  "acoustic_link_up": {
+   "value": false,
+   "source": "derived",
+   "age_s": 0,
+   "confidence": "assumed",
+   "stale": false,
+   "since_t_s": 541
+  },
+  "acoustic_kbps": {
+   "value": 0.0,
+   "source": "derived",
+   "age_s": 0,
+   "confidence": "assumed",
+   "stale": false,
+   "since_t_s": 541
+  }
+ },
+ "crew": {
+  "crew_aboard": {
+   "value": 14,
+   "source": "laptop",
+   "age_s": 0,
+   "confidence": "reported",
+   "stale": false
+  },
+  "people_available": {
+   "value": 4,
+   "source": "crew_report",
+   "age_s": 0,
+   "confidence": "reported",
+   "stale": false
+  },
+  "bridge_requests": {
+   "value": [],
+   "source": "crew_report",
+   "age_s": 0,
+   "confidence": "reported",
+   "stale": false
+  },
+  "hlo_deck_report": {
+   "value": "none",
+   "source": "crew_report",
+   "age_s": 0,
+   "confidence": "reported",
+   "stale": false
+  },
+  "hlo_wind_kn": {
+   "value": null,
+   "source": "crew_report",
+   "age_s": 0,
+   "confidence": "reported",
+   "stale": false
+  },
+  "standing_plan": {
+   "value": "none",
+   "source": "crew_report",
+   "age_s": 0,
+   "confidence": "reported",
+   "stale": false
+  },
+  "last_sweep": {
+   "value": null,
+   "source": "crew_report",
+   "age_s": 0,
+   "confidence": "reported",
+   "stale": false
+  },
+  "deck_latched_clear": {
+   "value": false,
+   "source": "derived",
+   "age_s": 0,
+   "confidence": "reported",
+   "stale": false
+  }
+ },
+ "guests": {
+  "G3": {
+   "mode": {
+    "value": "standby",
+    "source": "plant",
+    "age_s": 0,
+    "confidence": "measured",
+    "stale": false
+   },
+   "activity": {
+    "value": "holding_at_sea",
+    "source": "guest_report",
+    "age_s": 631,
+    "confidence": "reported",
+    "stale": false,
+    "since_t_s": 510
+   },
+   "kw_actual": {
+    "value": 1.0,
+    "source": "plant",
+    "age_s": 0,
+    "confidence": "measured",
+    "stale": false
+   },
+   "data_demand": {
+    "value": {
+     "acoustic_kbps": 1
+    },
+    "source": "plant",
+    "age_s": 0,
+    "confidence": "measured",
+    "stale": false
+   },
+   "overdraw_pct": {
+    "value": 0.0,
+    "source": "derived",
+    "age_s": 0,
+    "confidence": "measured",
+    "stale": false
+   },
+   "mode_ends_t_s": {
+    "value": null,
+    "source": "derived",
+    "age_s": 0,
+    "confidence": "measured",
+    "stale": false
+   },
+   "leg_state": {
+    "value": "aborted",
+    "source": "guest_report",
+    "age_s": 631,
+    "confidence": "reported",
+    "stale": false,
+    "since_t_s": 510
+   },
+   "leg_started_t_s": {
+    "value": 0,
+    "source": "guest_report",
+    "age_s": 631,
+    "confidence": "reported",
+    "stale": false
+   },
+   "leg_flown_s": {
+    "value": 480,
+    "source": "guest_report",
+    "age_s": 631,
+    "confidence": "reported",
+    "stale": false
+   },
+   "hold_ack": {
+    "value": true,
+    "source": "guest_report",
+    "age_s": 631,
+    "confidence": "reported",
+    "stale": false,
+    "since_t_s": 510
+   }
+  },
+  "G4": {
+   "mode": {
+    "value": "fast_charge",
+    "source": "plant",
+    "age_s": 0,
+    "confidence": "measured",
+    "stale": false,
+    "since_t_s": 1020
+   },
+   "activity": {
+    "value": "landed",
+    "source": "guest_report",
+    "age_s": 0,
+    "confidence": "reported",
+    "stale": false,
+    "since_t_s": 1020
+   },
+   "kw_actual": {
+    "value": 35.0,
+    "source": "plant",
+    "age_s": 0,
+    "confidence": "measured",
+    "stale": false,
+    "since_t_s": 1020
+   },
+   "data_demand": {
+    "value": {},
+    "source": "plant",
+    "age_s": 0,
+    "confidence": "measured",
+    "stale": false
+   },
+   "overdraw_pct": {
+    "value": 0.0,
+    "source": "derived",
+    "age_s": 0,
+    "confidence": "measured",
+    "stale": false
+   },
+   "mode_ends_t_s": {
+    "value": 2220,
+    "source": "derived",
+    "age_s": 0,
+    "confidence": "measured",
+    "stale": false,
+    "since_t_s": 1020
+   },
+   "battery_pct": {
+    "value": 18.0,
+    "source": "guest_report",
+    "age_s": 661,
+    "confidence": "reported",
+    "stale": false,
+    "since_t_s": 480
+   },
+   "range_km": {
+    "value": 0.0,
+    "source": "guest_report",
+    "age_s": 0,
+    "confidence": "reported",
+    "stale": false,
+    "since_t_s": 1020
+   },
+   "launched_t_s": {
+    "value": -3952,
+    "source": "guest_report",
+    "age_s": 1141,
+    "confidence": "reported",
+    "stale": false
+   },
+   "airborne_since_t_s": {
+    "value": null,
+    "source": "derived",
+    "age_s": 0,
+    "confidence": "reported",
+    "stale": false,
+    "since_t_s": 1020
+   },
+   "battery_crossing_t_s": {
+    "value": null,
+    "source": "derived",
+    "age_s": 0,
+    "confidence": "reported",
+    "stale": false,
+    "since_t_s": 1020
+   },
+   "land_by_t_s": {
+    "value": null,
+    "source": "derived",
+    "age_s": 0,
+    "confidence": "reported",
+    "stale": false,
+    "since_t_s": 1020
+   }
+  },
+  "G5": {
+   "mode": {
+    "value": "full",
+    "source": "plant",
+    "age_s": 0,
+    "confidence": "measured",
+    "stale": false
+   },
+   "activity": {
+    "value": "transmitting",
+    "source": "guest_report",
+    "age_s": 0,
+    "confidence": "reported",
+    "stale": false
+   },
+   "kw_actual": {
+    "value": 45.0,
+    "source": "plant",
+    "age_s": 0,
+    "confidence": "measured",
+    "stale": false
+   },
+   "data_demand": {
+    "value": {
+     "satcom_mbps": 6,
+     "backbone_mbps": 1000
+    },
+    "source": "plant",
+    "age_s": 0,
+    "confidence": "measured",
+    "stale": false
+   },
+   "overdraw_pct": {
+    "value": 0.0,
+    "source": "derived",
+    "age_s": 0,
+    "confidence": "measured",
+    "stale": false
+   }
+  }
+ },
+ "capacity": {
+  "power": {
+   "value": {
+    "capacity": 100,
+    "unit": "kW",
+    "degraded_by": [
+     "one genset down: genset_2 tripped, confirmed at 721 s"
+    ],
+    "zero_by_rule": false
+   },
+   "source": "derived",
+   "age_s": 0,
+   "confidence": "measured",
+   "stale": false,
+   "since_t_s": 721
+  },
+  "port_line": {
+   "value": {
+    "capacity": 150,
+    "unit": "kW",
+    "degraded_by": [],
+    "zero_by_rule": false
+   },
+   "source": "derived",
+   "age_s": 0,
+   "confidence": "assumed",
+   "stale": false
+  },
+  "stbd_line": {
+   "value": {
+    "capacity": 150,
+    "unit": "kW",
+    "degraded_by": [],
+    "zero_by_rule": false
+   },
+   "source": "derived",
+   "age_s": 0,
+   "confidence": "assumed",
+   "stale": false
+  },
+  "heat": {
+   "value": {
+    "capacity": 80.0,
+    "unit": "kW",
+    "degraded_by": [
+     "cooling degraded: chilled-water pump 1 failed, one of two running (x0.6)"
+    ],
+    "zero_by_rule": false
+   },
+   "source": "derived",
+   "age_s": 0,
+   "confidence": "assumed",
+   "stale": false,
+   "since_t_s": 1141
+  },
+  "satcom": {
+   "value": {
+    "capacity": 6.0,
+    "unit": "Mbit/s",
+    "degraded_by": [],
+    "zero_by_rule": false
+   },
+   "source": "derived",
+   "age_s": 0,
+   "confidence": "measured",
+   "stale": false
+  },
+  "los_radio": {
+   "value": {
+    "capacity": 20.0,
+    "unit": "Mbit/s",
+    "degraded_by": [],
+    "zero_by_rule": false
+   },
+   "source": "derived",
+   "age_s": 0,
+   "confidence": "reported",
+   "stale": false
+  },
+  "acoustic": {
+   "value": {
+    "capacity": 0.0,
+    "unit": "kbit/s",
+    "degraded_by": [
+     "acoustic link down: course free, noise manoeuvring"
+    ],
+    "zero_by_rule": true
+   },
+   "source": "derived",
+   "age_s": 0,
+   "confidence": "assumed",
+   "stale": false,
+   "since_t_s": 541
+  },
+  "shed_ceiling_kw": {
+   "value": 75.0,
+   "source": "derived",
+   "age_s": 0,
+   "confidence": "assumed",
+   "stale": false,
+   "since_t_s": 1141
+  }
+ },
+ "feeds": {
+  "pms": {
+   "stale": false,
+   "last_heard_t_s": 1141,
+   "fallback_active": false,
+   "drop": null
+  },
+  "chw": {
+   "stale": false,
+   "last_heard_t_s": 1141,
+   "fallback_active": false,
+   "drop": null
+  },
+  "nav": {
+   "stale": false,
+   "last_heard_t_s": 1141,
+   "fallback_active": false,
+   "drop": null
+  },
+  "deck": {
+   "stale": false,
+   "last_heard_t_s": 1141,
+   "fallback_active": false,
+   "drop": null
+  },
+  "emission": {
+   "stale": false,
+   "last_heard_t_s": 1141,
+   "fallback_active": false,
+   "drop": null
+  },
+  "anemometer": {
+   "stale": false,
+   "last_heard_t_s": 1141,
+   "fallback_active": false,
+   "drop": null
+  },
+  "comms": {
+   "stale": false,
+   "last_heard_t_s": 1141,
+   "fallback_active": false,
+   "drop": null
+  },
+  "public_data": {
+   "stale": false,
+   "last_heard_t_s": 0,
+   "fallback_active": false,
+   "drop": null
+  },
+  "laptop": {
+   "stale": false,
+   "last_heard_t_s": 1141,
+   "fallback_active": false,
+   "drop": null
+  },
+  "guest_meter": {
+   "stale": false,
+   "last_heard_t_s": 1141,
+   "fallback_active": false,
+   "drop": null
+  },
+  "guest_backbone": {
+   "stale": false,
+   "last_heard_t_s": 1141,
+   "fallback_active": false,
+   "drop": null
+  },
+  "g4_telemetry": {
+   "stale": false,
+   "last_heard_t_s": 1141,
+   "fallback_active": false,
+   "drop": null
+  },
+  "g3_acoustic": {
+   "stale": false,
+   "last_heard_t_s": 510,
+   "fallback_active": false,
+   "drop": null
+  }
+ },
+ "faults": [
+  {
+   "fault": "genset_trip",
+   "subject": "genset_2",
+   "state": "confirmed",
+   "raw_event_t_s": 720,
+   "confirmed_t_s": 721,
+   "votes": [
+    "relay_trip",
+    "kw_near_zero"
+   ],
+   "first_shed_due_t_s": 725,
+   "full_sequence_due_t_s": 780,
+   "healthy_since_t_s": null,
+   "injected": false
+  },
+  {
+   "fault": "cooling_degraded",
+   "subject": "chw_pump_1",
+   "state": "confirmed",
+   "raw_event_t_s": 1140,
+   "confirmed_t_s": 1141,
+   "votes": [
+    "pump_alarm",
+    "pump_stopped",
+    "flow_low",
+    "delta_t_high"
+   ],
+   "first_shed_due_t_s": 1145,
+   "full_sequence_due_t_s": 1200,
+   "healthy_since_t_s": null,
+   "injected": true
+  }
+ ],
+ "events": [],
+ "notes": [
+  "Scenario B, sar file, minute 19: the injected pump fault as in the survey run. G3 still holds at sea, to be recovered over the ramp once the flight deck is done; the ship stays at 5 kn with its course free.",
+  "Ledger 81 kW against a 75 kW ceiling; D4's commands from this snapshot are applied at 1142 s: sar takes G5 to 8 kW (44 kW), per scenario_b provenance."
+ ]
+}

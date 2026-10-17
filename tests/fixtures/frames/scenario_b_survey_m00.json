@@ -1,0 +1,312 @@
+{
+ "contract": "argos-frame/1",
+ "tick": 0,
+ "t_ship_s": 0,
+ "signals": {
+  "genset_1_relay_trip": {
+   "value": false,
+   "source": "plant",
+   "t_s": 0
+  },
+  "genset_2_relay_trip": {
+   "value": false,
+   "source": "plant",
+   "t_s": 0
+  },
+  "genset_1_kw": {
+   "value": 330.0,
+   "source": "plant",
+   "t_s": 0
+  },
+  "genset_2_kw": {
+   "value": 325.0,
+   "source": "plant",
+   "t_s": 0
+  },
+  "bus_frequency_hz": {
+   "value": 60.0,
+   "source": "plant",
+   "t_s": 0
+  },
+  "chw_pump_1_running": {
+   "value": true,
+   "source": "plant",
+   "t_s": 0
+  },
+  "chw_pump_2_running": {
+   "value": true,
+   "source": "plant",
+   "t_s": 0
+  },
+  "chw_pump_1_alarm": {
+   "value": false,
+   "source": "plant",
+   "t_s": 0
+  },
+  "chw_pump_2_alarm": {
+   "value": false,
+   "source": "plant",
+   "t_s": 0
+  },
+  "chw_flow_pct": {
+   "value": 100.0,
+   "source": "plant",
+   "t_s": 0
+  },
+  "chw_supply_c": {
+   "value": 7.0,
+   "source": "plant",
+   "t_s": 0
+  },
+  "chw_return_c": {
+   "value": 12.0,
+   "source": "plant",
+   "t_s": 0
+  },
+  "course": {
+   "value": "steady",
+   "source": "plant",
+   "t_s": 0
+  },
+  "speed_kn": {
+   "value": 3.0,
+   "source": "plant",
+   "t_s": 0
+  },
+  "noise": {
+   "value": "quiet",
+   "source": "plant",
+   "t_s": 0
+  },
+  "situation": {
+   "value": "at_sea",
+   "source": "scenario",
+   "t_s": 0
+  },
+  "deck_flight_deck": {
+   "value": "occupied",
+   "source": "plant",
+   "t_s": 0
+  },
+  "deck_bays": {
+   "value": "clear",
+   "source": "plant",
+   "t_s": 0
+  },
+  "ramp": {
+   "value": "free",
+   "source": "plant",
+   "t_s": 0
+  },
+  "deck_machinery": {
+   "value": false,
+   "source": "plant",
+   "t_s": 0
+  },
+  "deck_activity_since_sweep": {
+   "value": true,
+   "source": "plant",
+   "t_s": 0
+  },
+  "emission": {
+   "value": "normal",
+   "source": "plant",
+   "t_s": 0
+  },
+  "radar_transmitting": {
+   "value": true,
+   "source": "plant",
+   "t_s": 0
+  },
+  "seawater_c": {
+   "value": 24.0,
+   "source": "scenario",
+   "t_s": 0
+  },
+  "sea_state": {
+   "value": 4,
+   "source": "scenario",
+   "t_s": 0
+  },
+  "wind_kn": {
+   "value": 18.0,
+   "source": "plant",
+   "t_s": 0
+  },
+  "wind_from_deg": {
+   "value": 300.0,
+   "source": "plant",
+   "t_s": 0
+  },
+  "satcom_mbps": {
+   "value": 6.0,
+   "source": "plant",
+   "t_s": 0
+  },
+  "los_radio_mbps": {
+   "value": 20.0,
+   "source": "plant",
+   "t_s": 0
+  },
+  "crew_aboard": {
+   "value": 14,
+   "source": "laptop",
+   "t_s": 0
+  },
+  "people_available": {
+   "value": 4,
+   "source": "crew_report",
+   "t_s": 0
+  },
+  "bridge_requests": {
+   "value": [],
+   "source": "crew_report",
+   "t_s": 0
+  },
+  "hlo_deck_report": {
+   "value": "none",
+   "source": "crew_report",
+   "t_s": 0
+  },
+  "hlo_wind_kn": {
+   "value": null,
+   "source": "crew_report",
+   "t_s": 0
+  },
+  "standing_plan": {
+   "value": "none",
+   "source": "crew_report",
+   "t_s": 0
+  },
+  "last_sweep": {
+   "value": null,
+   "source": "crew_report",
+   "t_s": 0
+  }
+ },
+ "guests": {
+  "G3": {
+   "mode": {
+    "value": "standby",
+    "source": "plant",
+    "t_s": 0
+   },
+   "activity": {
+    "value": "surveying",
+    "source": "guest_report",
+    "t_s": 0
+   },
+   "kw_actual": {
+    "value": 1.0,
+    "source": "plant",
+    "t_s": 0
+   },
+   "data_demand": {
+    "value": {
+     "acoustic_kbps": 3
+    },
+    "source": "plant",
+    "t_s": 0
+   },
+   "leg_state": {
+    "value": "running",
+    "source": "guest_report",
+    "t_s": 0
+   },
+   "leg_started_t_s": {
+    "value": 0,
+    "source": "guest_report",
+    "t_s": 0
+   },
+   "leg_flown_s": {
+    "value": 0,
+    "source": "guest_report",
+    "t_s": 0
+   },
+   "hold_ack": {
+    "value": false,
+    "source": "guest_report",
+    "t_s": 0
+   }
+  },
+  "G4": {
+   "mode": {
+    "value": "standby",
+    "source": "plant",
+    "t_s": 0
+   },
+   "activity": {
+    "value": "airborne",
+    "source": "guest_report",
+    "t_s": 0
+   },
+   "kw_actual": {
+    "value": 2.0,
+    "source": "plant",
+    "t_s": 0
+   },
+   "data_demand": {
+    "value": {
+     "los_radio_mbps": 20
+    },
+    "source": "plant",
+    "t_s": 0
+   },
+   "range_km": {
+    "value": 12.0,
+    "source": "guest_report",
+    "t_s": 0
+   },
+   "launched_t_s": {
+    "value": -3952,
+    "source": "guest_report",
+    "t_s": 0
+   }
+  },
+  "G5": {
+   "mode": {
+    "value": "full",
+    "source": "plant",
+    "t_s": 0
+   },
+   "activity": {
+    "value": "transmitting",
+    "source": "guest_report",
+    "t_s": 0
+   },
+   "kw_actual": {
+    "value": 45.0,
+    "source": "plant",
+    "t_s": 0
+   },
+   "data_demand": {
+    "value": {
+     "satcom_mbps": 6,
+     "backbone_mbps": 1000
+    },
+    "source": "plant",
+    "t_s": 0
+   }
+  }
+ },
+ "events": [
+  {
+   "t_s": 0,
+   "type": "baseline",
+   "origin": "timeline",
+   "injected": false,
+   "payload": {
+    "note": "3 kn over the cable route, G3 on its 40-min leg on the acoustic link, G4 airborne, G5 full",
+    "assumed": {
+     "seed": 0,
+     "sea_state": 4,
+     "wind_kn": 18,
+     "satcom_mbps": 6,
+     "G4": {
+      "launched_t_s": -3952
+     }
+    }
+   }
+  }
+ ]
+}

@@ -1,6 +1,6 @@
 {
  "run": {
-  "contract": "argos-snapshot/1",
+  "contract": "argos-snapshot/2",
   "scenario": "scenario_b",
   "mission": "survey",
   "seed": 0,
@@ -10,10 +10,14 @@
    "G3",
    "G4",
    "G5"
-  ]
- },
- "held_by_core": {
-  "reservations_kw": {}
+  ],
+  "constants": {
+   "layered_water": {
+    "value": false,
+    "source": "scenario",
+    "confidence": "assumed"
+   }
+  }
  },
  "plant": {
   "genset_1_relay_trip": {
@@ -151,6 +155,13 @@
    "confidence": "measured",
    "stale": false
   },
+  "situation": {
+   "value": "at_sea",
+   "source": "scenario",
+   "age_s": 0,
+   "confidence": "assumed",
+   "stale": false
+  },
   "deck_flight_deck": {
    "value": "occupied",
    "source": "plant",
@@ -165,22 +176,31 @@
    "confidence": "measured",
    "stale": false
   },
-  "emission": {
-   "value": "normal",
-   "source": "plant",
-   "age_s": 0,
-   "confidence": "measured",
-   "stale": false
-  },
   "ramp": {
    "value": "free",
    "source": "plant",
    "age_s": 0,
    "confidence": "measured",
-   "stale": false
+   "stale": false,
+   "by": []
   },
   "deck_machinery": {
    "value": false,
+   "source": "plant",
+   "age_s": 0,
+   "confidence": "measured",
+   "stale": false,
+   "by": []
+  },
+  "deck_activity_since_sweep": {
+   "value": true,
+   "source": "plant",
+   "age_s": 0,
+   "confidence": "measured",
+   "stale": false
+  },
+  "emission": {
+   "value": "normal",
    "source": "plant",
    "age_s": 0,
    "confidence": "measured",
@@ -193,19 +213,15 @@
    "confidence": "measured",
    "stale": false
   },
-  "situation": {
-   "value": "at_sea",
-   "source": "scenario",
-   "age_s": 0,
-   "confidence": "assumed",
-   "stale": false
-  },
   "heading_free": {
    "value": false,
    "source": "derived",
    "age_s": 0,
    "confidence": "reported",
-   "stale": false
+   "stale": false,
+   "by": [
+    "G3"
+   ]
   },
   "deck_machinery_permitted": {
    "value": false,
@@ -219,12 +235,13 @@
    "source": "derived",
    "age_s": 0,
    "confidence": "reported",
-   "stale": false
+   "stale": false,
+   "by": []
   }
  },
  "environment": {
   "seawater_c": {
-   "value": 24,
+   "value": 24.0,
    "source": "scenario",
    "age_s": 0,
    "confidence": "assumed",
@@ -250,13 +267,6 @@
    "age_s": 0,
    "confidence": "measured",
    "stale": false
-  },
-  "layered_water": {
-   "value": false,
-   "source": "scenario",
-   "age_s": 0,
-   "confidence": "assumed",
-   "stale": false
   }
  },
  "links": {
@@ -279,7 +289,8 @@
    "source": "derived",
    "age_s": 0,
    "confidence": "assumed",
-   "stale": false
+   "stale": false,
+   "since_t_s": 0
   },
   "acoustic_kbps": {
    "value": 3.0,
@@ -304,8 +315,8 @@
    "confidence": "reported",
    "stale": false
   },
-  "bridge_confirmation": {
-   "value": "none",
+  "bridge_requests": {
+   "value": [],
    "source": "crew_report",
    "age_s": 0,
    "confidence": "reported",
@@ -318,6 +329,13 @@
    "confidence": "reported",
    "stale": false
   },
+  "hlo_wind_kn": {
+   "value": null,
+   "source": "crew_report",
+   "age_s": 0,
+   "confidence": "reported",
+   "stale": false
+  },
   "standing_plan": {
    "value": "none",
    "source": "crew_report",
@@ -325,18 +343,18 @@
    "confidence": "reported",
    "stale": false
   },
-  "deck_activity_since_sweep": {
-   "value": false,
-   "source": "plant",
+  "last_sweep": {
+   "value": null,
+   "source": "crew_report",
    "age_s": 0,
-   "confidence": "measured",
+   "confidence": "reported",
    "stale": false
   },
   "deck_latched_clear": {
    "value": false,
    "source": "derived",
    "age_s": 0,
-   "confidence": "measured",
+   "confidence": "reported",
    "stale": false
   }
  },
@@ -369,6 +387,13 @@
      "acoustic_kbps": 3
     },
     "source": "plant",
+    "age_s": 0,
+    "confidence": "measured",
+    "stale": false
+   },
+   "overdraw_pct": {
+    "value": 0.0,
+    "source": "derived",
     "age_s": 0,
     "confidence": "measured",
     "stale": false
@@ -441,6 +466,13 @@
     "confidence": "measured",
     "stale": false
    },
+   "overdraw_pct": {
+    "value": 0.0,
+    "source": "derived",
+    "age_s": 0,
+    "confidence": "measured",
+    "stale": false
+   },
    "mode_ends_t_s": {
     "value": null,
     "source": "derived",
@@ -449,10 +481,10 @@
     "stale": false
    },
    "battery_pct": {
-    "value": 26.9,
+    "value": null,
     "source": "guest_report",
-    "age_s": 0,
-    "confidence": "reported",
+    "age_s": null,
+    "confidence": "assumed",
     "stale": false
    },
    "range_km": {
@@ -462,18 +494,25 @@
     "confidence": "reported",
     "stale": false
    },
+   "launched_t_s": {
+    "value": -3952,
+    "source": "guest_report",
+    "age_s": 0,
+    "confidence": "reported",
+    "stale": false
+   },
    "airborne_since_t_s": {
     "value": -3952,
     "source": "derived",
     "age_s": 0,
-    "confidence": "assumed",
+    "confidence": "reported",
     "stale": false
    },
    "battery_crossing_t_s": {
     "value": null,
     "source": "derived",
     "age_s": 0,
-    "confidence": "reported",
+    "confidence": "assumed",
     "stale": false
    },
    "land_by_t_s": {
@@ -515,6 +554,13 @@
     "age_s": 0,
     "confidence": "measured",
     "stale": false
+   },
+   "overdraw_pct": {
+    "value": 0.0,
+    "source": "derived",
+    "age_s": 0,
+    "confidence": "measured",
+    "stale": false
    }
   }
  },
@@ -522,10 +568,9 @@
   "power": {
    "value": {
     "capacity": 250,
-    "committed": 48,
-    "free": 202,
     "unit": "kW",
-    "degraded_by": []
+    "degraded_by": [],
+    "zero_by_rule": false
    },
    "source": "derived",
    "age_s": 0,
@@ -535,36 +580,33 @@
   "port_line": {
    "value": {
     "capacity": 150,
-    "committed": 1,
-    "free": 149,
     "unit": "kW",
-    "degraded_by": []
+    "degraded_by": [],
+    "zero_by_rule": false
    },
    "source": "derived",
    "age_s": 0,
-   "confidence": "measured",
+   "confidence": "assumed",
    "stale": false
   },
   "stbd_line": {
    "value": {
     "capacity": 150,
-    "committed": 47,
-    "free": 103,
     "unit": "kW",
-    "degraded_by": []
+    "degraded_by": [],
+    "zero_by_rule": false
    },
    "source": "derived",
    "age_s": 0,
-   "confidence": "measured",
+   "confidence": "assumed",
    "stale": false
   },
   "heat": {
    "value": {
     "capacity": 133.3,
-    "committed": 48,
-    "free": 85.3,
     "unit": "kW",
-    "degraded_by": []
+    "degraded_by": [],
+    "zero_by_rule": false
    },
    "source": "derived",
    "age_s": 0,
@@ -574,10 +616,9 @@
   "satcom": {
    "value": {
     "capacity": 6.0,
-    "committed": 6,
-    "free": 0.0,
     "unit": "Mbit/s",
-    "degraded_by": []
+    "degraded_by": [],
+    "zero_by_rule": false
    },
    "source": "derived",
    "age_s": 0,
@@ -587,23 +628,21 @@
   "los_radio": {
    "value": {
     "capacity": 20.0,
-    "committed": 20,
-    "free": 0.0,
     "unit": "Mbit/s",
-    "degraded_by": []
+    "degraded_by": [],
+    "zero_by_rule": false
    },
    "source": "derived",
    "age_s": 0,
-   "confidence": "measured",
+   "confidence": "reported",
    "stale": false
   },
   "acoustic": {
    "value": {
     "capacity": 3.0,
-    "committed": 3,
-    "free": 0.0,
     "unit": "kbit/s",
-    "degraded_by": []
+    "degraded_by": [],
+    "zero_by_rule": false
    },
    "source": "derived",
    "age_s": 0,
@@ -618,18 +657,111 @@
    "stale": false
   }
  },
+ "feeds": {
+  "pms": {
+   "stale": false,
+   "last_heard_t_s": 0,
+   "fallback_active": false,
+   "drop": null
+  },
+  "chw": {
+   "stale": false,
+   "last_heard_t_s": 0,
+   "fallback_active": false,
+   "drop": null
+  },
+  "nav": {
+   "stale": false,
+   "last_heard_t_s": 0,
+   "fallback_active": false,
+   "drop": null
+  },
+  "deck": {
+   "stale": false,
+   "last_heard_t_s": 0,
+   "fallback_active": false,
+   "drop": null
+  },
+  "emission": {
+   "stale": false,
+   "last_heard_t_s": 0,
+   "fallback_active": false,
+   "drop": null
+  },
+  "anemometer": {
+   "stale": false,
+   "last_heard_t_s": 0,
+   "fallback_active": false,
+   "drop": null
+  },
+  "comms": {
+   "stale": false,
+   "last_heard_t_s": 0,
+   "fallback_active": false,
+   "drop": null
+  },
+  "public_data": {
+   "stale": false,
+   "last_heard_t_s": 0,
+   "fallback_active": false,
+   "drop": null
+  },
+  "laptop": {
+   "stale": false,
+   "last_heard_t_s": 0,
+   "fallback_active": false,
+   "drop": null
+  },
+  "guest_meter": {
+   "stale": false,
+   "last_heard_t_s": 0,
+   "fallback_active": false,
+   "drop": null
+  },
+  "guest_backbone": {
+   "stale": false,
+   "last_heard_t_s": 0,
+   "fallback_active": false,
+   "drop": null
+  },
+  "g4_telemetry": {
+   "stale": false,
+   "last_heard_t_s": 0,
+   "fallback_active": false,
+   "drop": null
+  },
+  "g3_acoustic": {
+   "stale": false,
+   "last_heard_t_s": 0,
+   "fallback_active": false,
+   "drop": null
+  }
+ },
  "faults": [],
  "events": [
   {
    "t_s": 0,
    "type": "baseline",
    "origin": "timeline",
-   "injected": false
+   "injected": false,
+   "payload": {
+    "note": "3 kn over the cable route, G3 on its 40-min leg on the acoustic link, G4 airborne, G5 full",
+    "assumed": {
+     "seed": 0,
+     "sea_state": 4,
+     "wind_kn": 18,
+     "satcom_mbps": 6,
+     "G4": {
+      "launched_t_s": -3952
+     }
+    }
+   }
   }
  ],
  "notes": [
-  "Scenario B, survey file, minute 0: 3 kn over the cable route, G3 on its 40-min leg on the acoustic link, G4 airborne at 2 kW, G5 full (scenario_b baseline).",
-  "Assumed for this fixture: G4's battery 26.9 % and launch at -3952 s, both dated back from the minute-8 report (18 %) at rules.r3.drain_pct_min; wind 18 kn rising to 22 kn by minute 8 (slide 12 'rising wind'); sea state 4 (Scenario B gives none; minute-8 recovery needs 4 or less); SATCOM 6 Mbit/s of 2-8; genset kW and chilled-water temperatures are plausible, not from the brief.",
-  "The flight deck starts occupied because the seed clears it in 4 min after the minute-8 confirm (seed_pins.deck_clear_min)."
+  "Scenario B, survey file, minute 0: 3 kn over the cable route, G3 on its 40-min leg on the acoustic link, G4 airborne at 2 kW, G5 full.",
+  "G4 has sent no battery report yet (one report, at minute 8, as in the brief), so battery_pct is null and its land-by is the endurance bound: launched -3952 s + 90 min = 1448 s, confidence assumed.",
+  "Assumed for this fixture (the baseline payload lists them): seed 0; sea state 4; wind 18 kn rising to 22 kn by minute 8 (the ship's anemometer); SATCOM 6 Mbit/s of 2-8; G4 launched at -3952 s, dated back from 18 % at minute 8 at rules.r3.drain_pct_min; genset kW and chilled-water temperatures are plausible, not from the brief.",
+  "The flight deck starts occupied; the seed clears it in 4 min after the minute-8 confirmation (seed_pins.deck_clear_min)."
  ]
 }

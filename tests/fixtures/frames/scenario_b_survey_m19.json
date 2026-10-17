@@ -1,0 +1,263 @@
+{
+ "contract": "argos-frame/1",
+ "tick": 1141,
+ "t_ship_s": 1141,
+ "signals": {
+  "genset_1_relay_trip": {
+   "value": false,
+   "source": "plant",
+   "t_s": 1141
+  },
+  "genset_2_relay_trip": {
+   "value": true,
+   "source": "plant",
+   "t_s": 1141
+  },
+  "genset_1_kw": {
+   "value": 420.0,
+   "source": "plant",
+   "t_s": 1141
+  },
+  "genset_2_kw": {
+   "value": 0.0,
+   "source": "plant",
+   "t_s": 1141
+  },
+  "bus_frequency_hz": {
+   "value": 59.6,
+   "source": "plant",
+   "t_s": 1141
+  },
+  "chw_pump_1_running": {
+   "value": false,
+   "source": "plant",
+   "t_s": 1141
+  },
+  "chw_pump_2_running": {
+   "value": true,
+   "source": "plant",
+   "t_s": 1141
+  },
+  "chw_pump_1_alarm": {
+   "value": true,
+   "source": "plant",
+   "t_s": 1141
+  },
+  "chw_pump_2_alarm": {
+   "value": false,
+   "source": "plant",
+   "t_s": 1141
+  },
+  "chw_flow_pct": {
+   "value": 50.0,
+   "source": "plant",
+   "t_s": 1141
+  },
+  "chw_supply_c": {
+   "value": 8.5,
+   "source": "plant",
+   "t_s": 1141
+  },
+  "chw_return_c": {
+   "value": 17.5,
+   "source": "plant",
+   "t_s": 1141
+  },
+  "course": {
+   "value": "free",
+   "source": "plant",
+   "t_s": 1141,
+   "transition": {
+    "to": "steady",
+    "started_t_s": 1081,
+    "expected_end_t_s": 1201,
+    "latest_end_t_s": 1261
+   }
+  },
+  "speed_kn": {
+   "value": 4.0,
+   "source": "plant",
+   "t_s": 1141,
+   "transition": {
+    "to": 3.0,
+    "started_t_s": 1081,
+    "expected_end_t_s": 1201,
+    "latest_end_t_s": 1261
+   }
+  },
+  "noise": {
+   "value": "normal",
+   "source": "plant",
+   "t_s": 1141
+  },
+  "situation": {
+   "value": "at_sea",
+   "source": "scenario",
+   "t_s": 1141
+  },
+  "deck_flight_deck": {
+   "value": "occupied",
+   "source": "plant",
+   "t_s": 1141
+  },
+  "deck_bays": {
+   "value": "clear",
+   "source": "plant",
+   "t_s": 1141
+  },
+  "ramp": {
+   "value": "free",
+   "source": "plant",
+   "t_s": 1141
+  },
+  "deck_machinery": {
+   "value": false,
+   "source": "plant",
+   "t_s": 1141
+  },
+  "deck_activity_since_sweep": {
+   "value": true,
+   "source": "plant",
+   "t_s": 1141
+  },
+  "emission": {
+   "value": "normal",
+   "source": "plant",
+   "t_s": 1141
+  },
+  "radar_transmitting": {
+   "value": true,
+   "source": "plant",
+   "t_s": 1141
+  },
+  "wind_kn": {
+   "value": 22.0,
+   "source": "plant",
+   "t_s": 1141
+  },
+  "wind_from_deg": {
+   "value": 300.0,
+   "source": "plant",
+   "t_s": 1141
+  },
+  "satcom_mbps": {
+   "value": 6.0,
+   "source": "plant",
+   "t_s": 1141
+  },
+  "los_radio_mbps": {
+   "value": 20.0,
+   "source": "plant",
+   "t_s": 1141
+  },
+  "crew_aboard": {
+   "value": 14,
+   "source": "laptop",
+   "t_s": 1141
+  },
+  "people_available": {
+   "value": 4,
+   "source": "crew_report",
+   "t_s": 1141
+  },
+  "bridge_requests": {
+   "value": [],
+   "source": "crew_report",
+   "t_s": 1141
+  },
+  "hlo_deck_report": {
+   "value": "none",
+   "source": "crew_report",
+   "t_s": 1141
+  },
+  "hlo_wind_kn": {
+   "value": null,
+   "source": "crew_report",
+   "t_s": 1141
+  },
+  "standing_plan": {
+   "value": "none",
+   "source": "crew_report",
+   "t_s": 1141
+  },
+  "last_sweep": {
+   "value": null,
+   "source": "crew_report",
+   "t_s": 1141
+  }
+ },
+ "guests": {
+  "G3": {
+   "mode": {
+    "value": "standby",
+    "source": "plant",
+    "t_s": 1141
+   },
+   "kw_actual": {
+    "value": 1.0,
+    "source": "plant",
+    "t_s": 1141
+   },
+   "data_demand": {
+    "value": {
+     "acoustic_kbps": 1
+    },
+    "source": "plant",
+    "t_s": 1141
+   }
+  },
+  "G4": {
+   "mode": {
+    "value": "fast_charge",
+    "source": "plant",
+    "t_s": 1141
+   },
+   "activity": {
+    "value": "landed",
+    "source": "guest_report",
+    "t_s": 1141
+   },
+   "kw_actual": {
+    "value": 35.0,
+    "source": "plant",
+    "t_s": 1141
+   },
+   "data_demand": {
+    "value": {},
+    "source": "plant",
+    "t_s": 1141
+   },
+   "range_km": {
+    "value": 0.0,
+    "source": "guest_report",
+    "t_s": 1141
+   }
+  },
+  "G5": {
+   "mode": {
+    "value": "full",
+    "source": "plant",
+    "t_s": 1141
+   },
+   "activity": {
+    "value": "transmitting",
+    "source": "guest_report",
+    "t_s": 1141
+   },
+   "kw_actual": {
+    "value": 45.0,
+    "source": "plant",
+    "t_s": 1141
+   },
+   "data_demand": {
+    "value": {
+     "satcom_mbps": 6,
+     "backbone_mbps": 1000
+    },
+    "source": "plant",
+    "t_s": 1141
+   }
+  }
+ },
+ "events": []
+}

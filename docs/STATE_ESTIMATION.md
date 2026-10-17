@@ -5,224 +5,249 @@ owns the inputs: everything that goes into state estimation. Nothing here is dec
 row says so. It fills ARCHITECTURE data contract 4 (the snapshot) for CON-21 and follows the design freeze:
 inputs are confirmed, debounced plant signals, and unknown never means safe.
 
-The contract is four files:
+**`config/signals.yaml` is the only authority** for signal names, types, feeds, fallbacks, derivations,
+activities and event payloads. This document explains the rules; it does not repeat the table. The other files
+are derived from it or checked against it:
 
-- `config/signals.yaml`: every signal, typed, with source, rate, stale limit, fallback and provenance; the
-  activity registry per guest; the confirmation thresholds and derivation rules.
-- `config/snapshot.schema.json`: the 1 Hz snapshot the core consumes (JSON Schema 2020-12).
-- `tests/fixtures/snapshots/`: Scenario B under the survey file at minutes 0, 8, 12 and 19, and minute 10
-  with the genset feed stale.
-- `tests/test_snapshot_contract.py`: checks the three agree with each other, the cards and the oracles.
-
-## What goes in, from whom
-
-| Producer | What | Rate (ship time) |
-|---|---|---|
-| Siddharth's simulator, from the platform | raw plant signals: genset relay flags and kW, bus frequency, chilled-water pumps (running, alarm), flow, supply and return temperature | 1 Hz |
-| Siddharth's simulator, from his A.6 state machine | course, speed in knots, noise, deck per zone, emission, ramp, deck machinery, own radar, alongside or at sea; each with any transition in progress and its expected end | 1 Hz |
-| Siddharth's simulator, from the comms system | SATCOM and line-of-sight radio rates | 1 Hz |
-| Siddharth's simulator, from the scenario or the public-data cache | seawater temperature, sea state, layering (hourly); wind speed and direction (1 Hz, the ship's anemometer) | hourly or 1 Hz |
-| Siddharth's simulator, from each guest | mode in effect, metered draw and data rates (1 Hz); the guest's own reports: activity, G3's leg and hold acknowledgement (acoustic messages), G4's battery and range | 1 Hz or on report |
-| The laptop, relayed every tick | crew aboard, people available, bridge confirmation, landing officer's deck report, standing plan; injected faults and feed drops | on change |
-| The core itself | reservations it holds (for example G4's 35 kW under sar), fed back from the decision log | per tick |
-
-Every raw value carries its reading time in ship seconds. A dropped feed is a missing value, never an
-invented one.
+| File | What it is |
+|---|---|
+| `config/frame.schema.json` | what the simulator hands the estimator each tick (`argos-frame/1`); generated |
+| `config/snapshot.schema.json` | what the estimator hands the core each tick (`argos-snapshot/2`); generated |
+| `tools/gen_snapshot_schema.py` | `signals.yaml` to both schemas; `--check` fails if either is out of date |
+| `tools/build_snapshot_fixtures.py` | builds the Scenario B fixtures from compact specs |
+| `tests/fixtures/frames/`, `tests/fixtures/snapshots/` | one frame and the snapshot it produces, per fixture |
+| `tests/test_snapshot_contract.py` | the schemas and fixtures equal the generators' output; every derived value recomputed from config and checked against the oracles |
 
 ## The boundary with Siddharth's simulator
 
-**The simulator emits** what the ship's instruments would read, and nothing it would not. It owns the A.6
-variables and their transition times, so it reports their values and any transition in progress. It emits
-raw fault signals, not verdicts. It applies the core's commands and the timeline, and reports the result in
-the next frames. It uses the signal names in `config/signals.yaml` (producer `simulator` or `laptop`), in the
-shape `{value, source, t_s}`.
+**The simulator emits** what the ship's instruments would read, and nothing they would not. It owns the A.6
+variables and their transition times, so it reports their values and any change under way. It emits raw fault
+signals, not verdicts, following `fault_signatures` in `signals.yaml`: a genset trip at tick t sets the relay
+flag, drops that genset to 0 kW and holds the bus at 59.6 Hz, so the estimator confirms at t + 1 on two votes;
+a pump fault sets the alarm, stops the pump, drops flow to 50 % and opens delta-T to 9 °C. It applies the
+core's commands and the laptop inputs, and reports the result in later frames. The deck fields it reports
+(`ramp`, `deck_machinery`, the deck zones) are the truth: it must set `deck_machinery` while G2 winches or G4
+launches or recovers, and `ramp` while G3 launches or recovers.
 
-**The core derives** every signal whose producer is `estimator`: confirmed faults, gensets online, cooling
-state, speed band, the acoustic link, heading freedom, deck machinery permitted, flight-deck use, the deck
-latch, G4's land-by deadline, mode end times, and the capacity per class.
+**The estimator derives** every signal whose producer is `estimator`: confirmed faults, gensets online,
+cooling state, the acoustic link, heading freedom, deck machinery permitted, flight-deck use, the deck latch,
+G4's land-by deadline, over-draw, mode end times and the capacity of each live class. It checks the
+simulator's deck fields against the running activities' `effects` and logs a mismatch; where they disagree it
+takes the worse of the two.
 
-**Commands are Siddharth's to define** (contract 5). The estimator sends none. It sees their effect as a
-changed mode, activity or transition in a later frame.
+**Commands are Siddharth's to define** (contract 5). The estimator sends none.
 
-This moves two things out of the simulator. BUILD_PLAN T4 and the ARCHITECTURE component table put
-"debounced faults" and "the acoustic link" in Siddharth's state machine. Here the simulator emits the raw
-signals and the estimator confirms and derives. That needs a WORKLOG row and Siddharth's yes.
+This moves two things from his side to Logan's: BUILD_PLAN T4 and the ARCHITECTURE component table put
+"debounced faults" and "the acoustic link" in his state machine. It also asks him to emit values A.6 does not
+list. Both need his yes in a WORKLOG row before either side codes faults (open item 1).
 
-## The clock
+## The frame
 
-- **Tick.** One snapshot. Tick n is at ship time n seconds, so 1 Hz means one tick per ship second.
-- **Ship time** (`t_ship_s`). Seconds since minute 0 of the timeline. It is the only clock the estimator and
-  the decisions read: ages, stale limits, debounce, restore hold, transition ends, A.6 times and deadlines.
-  The timeline is written in `t_min`; an event at `t_min` m is applied at tick 60 m.
-- **Wall time.** The host's monotonic clock and a UTC stamp. It appears only in the timing log: latency per
-  decision and the pacing of ticks. It never appears in a snapshot or a decision record.
-- **Demo pacing, x12.** Twelve ship seconds per wall second: a tick every 83 ms, a ship minute in 5 s. The
-  pacing lives in the timing log header, not in the snapshot.
-- **Hold and jump.** On hold no tick runs and ship time stops. A jump runs every tick unpaced up to the
-  target; it never skips one. A laptop input is stamped with the tick that applies it, the next one, and
-  written to the input log.
-- **Unpaced replay.** Ticks run as fast as the host allows. Same snapshots, same records.
-- **Events between ticks.** A decision runs on the snapshot that carries its trigger, not one tick later.
-  A safety request (200 ms) is answered on arrival from the table built at the last tick, and its record
-  names that tick.
-- **A.8 checks.** Each record's latency is wall time. The 5 s first shed counts from the raw event:
-  `(confirmed_t_s - raw_event_t_s)` in ship time, plus the D4 latency in wall time. With a 1 s debounce,
-  4 s remain (`first_shed_budget_s`). At x12 the debounce passes in 83 ms of wall time, but it still counts
-  as 1 s, what a real ship would wait (OPEN_QUESTIONS #47).
+The interface is an in-process Python call, with no thread and no socket:
+
+```python
+frame = sim.step(tick: int, commands: list, inputs: list) -> dict   # one argos-frame/1 object
+```
+
+- **Presence.** A 1 Hz signal is in every frame with `t_s` = tick. An event-rate signal (G3's acoustic
+  messages, G4's battery report and launch time) is in the frame only on the tick its report arrives, with
+  `t_s` = the report time. An hourly signal is present on the tick of its reading. A dropped feed's signals
+  are **left out**, never sent as null. A null value means the instrument reads "nothing" (no crew report).
+- **Shape.** `signals` holds every non-guest reading by name; `guests.Gx` holds that guest's readings by key.
+  Each reading is `{value, source, t_s}`, plus `transition` while a change is under way and `reported_t_s` for
+  a crew answer (the time it was given; `t_s` is the relay time).
+- **Transitions.** During a change the simulator reports the instantaneous value each tick, linear from the
+  start value to `transition.to` over `[started_t_s, expected_end_t_s]`. An enum keeps its old value until the
+  end tick. `latest_end_t_s` is the slow end of the A.6 range. A genset restart puts a transition on
+  `gensets_online` from the restart event (5 to 15 min).
+- **Laptop inputs take one path.** The core logs each laptop input at tick n in the input log and passes it to
+  `sim.step(n, …)`. The simulator applies it: a crew answer becomes a laptop-feed signal, an injected fault
+  becomes its fault signature, and a `feed_drop {feed, until_t_s}` leaves that feed's signals out of the frames.
+  The estimator never fakes a drop. Laptop signals are state: the simulator re-emits them every tick.
+- **Events.** The frame's `events` are the timeline and laptop events the simulator applied at this tick, with
+  payloads typed per `signals.yaml` `events`. An event at `t_min` m is applied at tick `ceil(60 × m)`; a
+  triggered event (Scenario B's pump fault, 2 min after G4 lands) fires on the first tick its trigger plus
+  delay is met.
+- **Scenario constants.** The water column (`layered_water`) is a run constant, `run.constants`, confidence
+  `assumed`, never stale (assumptions `data.acoustic_link.layered_water`). Seawater temperature and sea state
+  are hourly readings with their real age: in Scenario B the scenario value is read at tick 0, so it is 1141 s
+  old at minute 19.
+
+## The clock and the loop
+
+The core owns the loop:
+
+```
+for n = 0, 1, 2, …:
+    frame      = sim.step(n, commands_from_tick(n - 1), inputs_stamped(n))
+    snapshot_n = estimate(frame)                 # reads only the frame log and the previous estimate
+    run every decision snapshot_n triggers, each to a record
+    # only then does tick n + 1 start
+```
+
+- **Tick and ship time.** One tick is one snapshot. Tick n is at `t_ship_s` = n, so 1 Hz means one tick per
+  ship second. Ship time is the only clock the estimator and the decisions read: ages, stale limits, debounce,
+  restore hold, transition ends and deadlines.
+- **Commands land on the next tick.** Commands from any decision on snapshot n are applied by the simulator in
+  frame n + 1, whatever the wall-clock latency. A safety request arriving between ticks is answered from the
+  table built at the last completed tick n, logged with n, and its command is applied at n + 1. In ship time a
+  decision's latency is therefore always 0 ticks and its actuation lands one tick later. Each decision record
+  carries the tick its commands are applied at.
+- **Wall time** appears only in the timing log: per record `latency_ms` against `ceiling_ms`, and per tick the
+  pacing. It never appears in a frame, a snapshot or a record.
+- **Pacing.** Demo pacing is x12: the loop sleeps until each tick's wall deadline, 83 ms apart, a ship minute in
+  5 s. If compute overruns a deadline, ship time slows and the overrun goes to the timing log. A tick is never
+  skipped. Hold stops the loop; a jump runs every tick unpaced up to the target. Unpaced replay runs as fast as
+  the host allows.
+- **A.8 checks.** In ship time: the tick the first shed command is applied must be no later than
+  `raw_event_t_s + 5` (`first_shed_due_t_s`). With synchronous ticks that is `confirmed_t_s + 1`: the trip at
+  720 s confirms at 721 s and the first shed lands at 722 s, inside 725 s. The 60 s full sequence counts the
+  same way. Separately, in wall time, each decision's compute is checked against its ceiling (200 ms, 2 s, 5 s,
+  30 s) and against one tick period when paced. The two are never added together.
+- **Watchdog.** When `decision_watchdog` cuts a decision off at its wall ceiling, the record says
+  `timed_out: true` and the input log keeps the outcome, so a replay applies it instead of re-timing.
 
 ## Each tick, in order
 
-1. **Read** the simulator's frame for tick n, the laptop inputs stamped n, and the core's held reservations.
-2. **Validate.** A name that is not in `signals.yaml` is refused and logged. A value outside its type or
-   range counts as missing; it is never clamped. A missing value keeps its last reading, and its age grows.
-3. **Age.** `age_s` is ship time now minus the reading time. A field is stale when `age_s` is above its
-   `stale_after_s`. Most 1 Hz signals go stale after 3 s, three ticks (`stale_feed.after_s`). Hourly data
-   allows 3 h. G4's telemetry allows 10 s (R3). G3's acoustic reports allow 900 s, because the vehicle is out
-   of contact by design while the ship manoeuvres.
-4. **Fall back.** A stale field takes its fallback, the value that tightens limits. Its confidence becomes
-   `substituted`, and a `substituted` block keeps the last value, its time and the rule. One rule binds
-   everywhere: a fallback may tighten admission and arm the D4 ladder, but D4 sheds only on a confirmed
-   fault. A stale genset feed counts as one genset down for D1 and the armed ladder, and sheds nothing. The
-   decision sentence names the stale feed.
-5. **Confirm faults.** A genset trip needs 2 of 3 votes: relay flag, kW below 22.5, bus below 58.8 Hz.
-   Cooling needs the pump alarm plus low flow (below 70 %) or high delta-T (above 8 °C). Votes must hold 1 s
-   from the raw event. A vote that drops sooner cancels the pending fault, and the cancellation is logged.
-   Each fault keeps `raw_event_t_s`, `confirmed_t_s`, its votes and its budget left. A recovered genset or
-   pump must read healthy 60 s before any guest is restored.
-6. **Derive ship state.** Speed band from knots: a speed in an A.6 gap takes the faster band, whose reserve
-   is lower. Acoustic link up only while the course is steady, the noise quiet, no deck machinery runs and
-   the water is not layered. Heading free unless a running activity pins it (G3 on its cable route). Deck
-   machinery permitted unless the ship is silent or a running activity excludes it. Flight deck in use while
-   G4 launches or recovers. Deck latch per R3.
-7. **Derive deadlines.** G4's land-by time is the earliest of two bounds. One is launch plus 90 min
-   endurance. The other is the 20 % crossing plus 12 min, the crossing dated back from the last report below
-   20 % at the slowest drain, 1.11 %/min. At minute 8 the report is 18 %, so the crossing is
-   480 - (20 - 18) / 1.11 x 60 = 371.9 s (minute 6.2), and land-by is 1091.9 s, **minute 18.2**
-   (EXPECTED_OUTCOMES). A deadline may move earlier, never later. Mode end times come from the card's
-   `duration_s` (G4's fast charge ends at minute 37).
-8. **Derive capacity per class.** For power, the guest reserve by speed band with two gensets, or 100 kW with
-   one. For each mission line, 150 kW. For heat, 160 kW at 12 °C falling to 120 kW at 30 °C, times 0.6
-   when degraded. For SATCOM and radio, the live rate, zero in silence. Committed is the declared kW of each
-   guest's current mode plus held reservations. Free is capacity minus committed. `degraded_by` names each
-   cause. The shed ceiling is min(power, heat) minus the 5 kW headroom.
-9. **Emit** snapshot n. Every decision this snapshot triggers runs on it.
+1. **Read** frame n. A name that is not in `signals.yaml` is refused and logged. A value outside its type or
+   range counts as missing; it is never clamped. The `kw_actual` ranges run to twice the card's top mode, so an
+   over-draw stays a reading.
+2. **Age.** A raw field's `age_s` is ship time now minus its reading time. A signal with no reading yet has
+   value null and `age_s` null, confidence `assumed` (G4's battery before minute 8).
+3. **Feed health.** A 1 Hz or hourly signal is stale when its own age is above its feed's `stale_after_s`
+   (3 s for most feeds, 10 s for G4's telemetry, 3 h for public data). An event-rate signal keeps its report
+   age but is stale only when its feed is, so G4's minute-8 battery report is 241 s old at minute 12 and still
+   fresh: the telemetry heartbeat (`G4.activity`, 1 Hz) is. G3's acoustic feed goes stale only while
+   `acoustic_link_up` is true, after 120 s of link-up silence; while the link is down by design G3 is out of
+   contact, not stale. The snapshot's `feeds` block shows each feed's health and any injected drop.
+4. **Fall back.** A stale field takes its `fallback`, marked `substituted` with the last value, its time, the
+   rule and the stage. The rules that bind everywhere (`fallback_policy`):
+   - **D4 never acts on a substituted value.** It acts on confirmed faults and on over-commitment the ledger
+     computes only from fresh inputs. A fallback may tighten admission and arm the ladder: a stale genset feed
+     counts as one genset down for D1 and the armed ladder, and sheds nothing.
+   - **Two stages** for `speed_kn`, `wind_kn` and `wind_from_deg`: the last value, substituted, for a 30 s
+     grace, then the fallback value. A null `speed_kn` or `wind_from_deg` fails every numeric condition.
+   - **Unknown never means safe, even against a hard limit.** While G4 is below 20 %, D5 asks the landing
+     officer for wind and deck; a fresh report (`hlo_wind_kn`, `hlo_deck_report`) replaces the stale value,
+     stage `crew_report`, and the record names it. At 0 aboard the closure stands and the record states the
+     cost to G4.
+   - **Lifting.** A fallback lifts after 3 consecutive fresh frames of its feed, so a flapping feed cannot flip
+     D1 limits every tick.
+   - **Keep, don't invent.** G3's activity keeps its last report (`surveying` only if that was the last
+     report). G4's activity keeps its last value (`airborne` only if it was airborne or recovering). A
+     `by_use` fallback keeps the last good value and each consumer applies its own entry.
+5. **Confirm faults.** `raw_event_t_s` is the first tick any vote for that subject is true. `confirmed_t_s` is
+   the first tick t on which the vote count meets the rule on every tick of `[t − 1, t]`. A genset trip needs 2
+   of 3 votes; cooling needs the pump alarm or a stopped pump, plus low flow or high delta-T. A vote that drops
+   sooner cancels the pending fault (logged). A pending fault whose votes go stale is **held**, state
+   `held_stale`, and confirms if the feed returns showing it still true; meanwhile the ladder stays armed and the
+   record says the fault is unconfirmed because the feed is stale. A recovered genset or pump must read healthy
+   60 s before any guest is restored.
+6. **Derive ship state.** The guest reserve comes from `speed_kn`: inside an A.6 band, that band's reserve; in
+   a gap, the lower of its two neighbours (200 kW for 0.5 to 3 kn, 200 for 5 to 10, 150 for 14 to 18), so a gap
+   never loosens the budget. `speed_band` is a display label. The acoustic link is up only while every
+   `up_when` condition holds and the water column is not layered. The four effect fields (`ramp`,
+   `deck_machinery`, `heading_free`, `flight_deck_ops`) carry `by`, the guests whose running activity sets them.
+   **A guest's own conditions are evaluated against the state less its own effects**, so G4's recovery does not
+   block its own turn into the wind and G3's ramp work does not block its own recovery.
+   `deck_machinery_permitted` is emission normal and no running activity listing `deck_machinery` in its
+   `excludes`. `deck_latched_clear` is the last crew sweep clear with no deck activity since (G4's own launch
+   excepted).
+7. **Derive deadlines.** G4's land-by is the earlier of launch plus 90 min and the 20 % crossing plus 12 min.
+   A report below 20 % dates the crossing back at the slowest drain, 1.11 %/min: at minute 8, 18 % gives
+   480 − 2 / 1.11 × 60 = 371.9 s and a land-by of 1091.9 s, **minute 18.2** (EXPECTED_OUTCOMES). While the
+   telemetry feed is stale and the last report is at or above 20 %, the crossing is projected forward at the
+   fastest drain (1.5 %/min, assumed): the earliest crossing the report allows (R-458, DEMO_SCRIPT "Data feed
+   drops"). A deadline may move earlier, never later. The launch time is an input (`G4.launched_t_s`, sent at
+   tick 0 and on each launch), since Scenario B's sortie began before tick 0. Mode end times come from the
+   card's `duration_s`.
+8. **Derive capacity** of the live classes only: power, the two lines, heat, SATCOM, radio and acoustic, plus
+   `shed_ceiling_kw` = min(power, heat) − 5 kW. A link that is 0 by rule (acoustic down, silence) says so in
+   `zero_by_rule`. `degraded_by` names each cause.
+9. **Emit** snapshot n.
 
-A derived field is as old as its oldest deciding input. It is stale only through a fallback, and its
-confidence is the weakest of its inputs. The levels, weakest first: `substituted`, `assumed` (a scenario or
-config value), `reported` (a person or a guest), `measured` (one fresh plant reading), `confirmed` (passed a
-confirmation rule). The ARCHITECTURE working tree dropped confidence from contract 4. This contract keeps
-it, as the task, SENSOR_CATALOG rule 5 and R-458 ask.
+**Confidence and age of a derived field.** It is computed this tick: `age_s` 0. Its confidence is
+`substituted` if any of its `inputs` is, `confirmed` if it is a confirm-rule output while a fault of that rule
+is confirmed, and otherwise the weakest of its inputs; with only config behind it, `assumed`. A raw field's
+confidence comes from its source: plant `measured`; guest, crew, laptop and public data `reported`; scenario
+`assumed`. The levels, weakest first: `substituted`, `assumed`, `reported`, `measured`, `confirmed`. The
+ARCHITECTURE working tree dropped confidence from contract 4; this contract keeps it (open item 2).
 
-## What comes out
+## What comes out, and what does not
 
-One JSON object per tick: `run` (contract, scenario, mission, seed, tick, `t_ship_s`, installed guests),
-`held_by_core`, the groups `plant`, `ship_state`, `environment`, `links`, `crew`, `guests` (per installed
-guest: mode, activity, `kw_actual`, `data_demand` and its own telemetry), `capacity`, then `faults` and the
-`events` applied at this tick. Every field is `{value, source, age_s, confidence, stale}`, plus
-`since_t_s`, `transition` (`to`, `started_t_s`, `expected_end_t_s`, `latest_end_t_s`) or `substituted`
-where they apply. Unknown fields are refused.
+One JSON object per tick: `run` (contract, scenario, mission, seed, `tick`, `t_ship_s`, installed guests, run
+constants), the groups `plant`, `ship_state`, `environment`, `links`, `crew`, `guests`, `capacity`, then `feeds`,
+`faults` and the `events` applied at this tick. Every field is `{value, source, age_s, confidence, stale}`, plus
+`since_t_s`, `reported_t_s`, `transition`, `substituted` or `by` where they apply. Unknown fields are refused.
+Who reads each field is its `read_by` in `signals.yaml`.
 
-## Who reads what
+**Not in the snapshot:**
 
-| Reader | Fields |
-|---|---|
-| Ledger, 1 Hz | `capacity.*`; each guest's mode, `kw_actual`, `data_demand`, `mode_ends_t_s`; emission |
-| D1, D2 admission and placement, 30 s | envelope values from `assumptions.yaml`, not live readings (Scenario A); live only `situation`, `crew_aboard` (no override at 0) and, for A′, the A.11 window: `sea_state`, `wind_kn`, `speed_kn`, `course`, `deck_flight_deck`, `G3.activity`, `people_available`. Stale gensets or cooling tighten the one-genset-down line |
-| D3 right of way, 2 s | `course`, `speed_kn`, `noise`, deck zones, `ramp`, `deck_machinery`, `deck_machinery_permitted`, `heading_free`, `flight_deck_ops`, `emission`, `wind_kn`, `wind_from_deg`, `sea_state`, each guest's activity, `G4.battery_pct`, `G4.land_by_t_s`, `G3.leg_*`, `G3.hold_ack`, `acoustic_link_up`, `crew_aboard`, `bridge_confirmation` |
-| D4 shedding, 5 s | `faults` (confirmed only), `capacity.power`, `capacity.heat`, the lines, `shed_ceiling_kw`, modes, `mode_ends_t_s`, reservations |
-| D5 crew policy | `crew_aboard`, `bridge_confirmation`, `hlo_deck_report`, `standing_plan`, `deck_latched_clear`, `deck_activity_since_sweep`, `G4.land_by_t_s` |
-| Safety table, 200 ms | `G3.hold_ack`, `acoustic_link_up`, `G2.activity`, `G4.activity`, `hlo_deck_report`, `emission`, `deck_machinery_permitted` |
-| Decision sentence | any `substituted` block, `tripped_genset`, `radar_transmitting` |
+- **Committed, free and reservations.** These are ledger lines (contract 8). The ledger takes, per guest, the
+  larger of its mode's declared kW, the kW the core reserves for it (from the decision log:
+  `{Gx: {mode, kw, since_t_s}}`) and its fresh `kw_actual`. Under sar at minute 12 that is G4 at max(2, 35):
+  1 + 35 + 45 = 81 kW against 95, 14 spare, as the oracle says. Demand on a link that is 0 by rule is
+  buffered, with free 0 and no margin computed. Over-consumption shows as `Gx.overdraw_pct`; above 5 % for 10 s
+  (assumed) it raises `guest_overconsumption`.
+- **Static classes**: backbone, compute cores, mass, bay units, high slots, flight deck and stability come from
+  `assumptions.yaml`, the cards and the placement, in the ledger.
+- **The peak budget and heat inertia** (+250 kW for 60 s, +30 kW for 60 s every 10 min): no decision credits
+  them (`admission.peak_credit_kw` 0; D4 sheds to the steady ceiling). Crediting them would add
+  `capacity.power_peak` and `capacity.heat_inertia` with their last-used times.
 
 ## Replay
 
-A snapshot is a pure function of the timeline, the seed, `assumptions.yaml`, `signals.yaml`, the cards, the
-priority file, the laptop input log and the public-data cache. It holds no wall-clock field. A replay gives
-the same snapshots and the same decision log on every field, byte for byte. Only wall-clock timing differs,
-and it goes to the timing log: per tick and per record, the UTC stamp, the monotonic time, the latency and
-the pacing. The replay check compares snapshots and decision log, and reports the first field that differs.
-`inputs_hash` (contract 7) should add the seed, `signals.yaml`, the public-data cache and the input log.
-Mission compare is two runs on one timeline, so it is two snapshot streams: after minute 8 the files diverge
-(sar reserves G4's 35 kW).
+1. Every frame is written to a **frame log** (JSONL). Estimator and core replay read the frame log, so a replay
+   never needs the simulator. Re-running the simulator with the same seed and checking it reproduces the frame
+   log is a separate check, Siddharth's.
+2. Snapshots and records are serialized with sorted keys, no whitespace, and floats rounded to 0.1 (kW, s, kn,
+   °C, Hz, %). The fixtures hold rounded values (371.9, 1091.9) and the tests compare them exactly.
+3. A timed-out decision replays its logged outcome. A safety request replays after the decisions of the tick it
+   was logged with.
+4. A replay therefore reproduces every snapshot and every record byte for byte; only the timing log differs. The
+   replay check compares snapshots and the decision log and reports the first field that differs.
+   `inputs_hash` (contract 7) should add the seed, `signals.yaml`, the frame log and the input log.
 
-## Every signal
+Mission compare is two runs on one timeline: two frame logs that diverge after minute 8, and two decision logs.
 
-`*` marks a value new in this contract, assumed, with its reason in `signals.yaml` provenance. "3 s" is
-`stale_feed.after_s`. "Ladder only" means admission and the armed ladder; D4 does not run on it.
+## Names against ARCHITECTURE
 
-| Signal | From | Type, units | Rate | Stale after | Fallback |
-|---|---|---|---|---|---|
-| `genset_1_relay_trip`, `genset_2_relay_trip` | plant | boolean | 1 Hz | 3 s | no vote |
-| `genset_1_kw`, `genset_2_kw` | plant | 0 to 450 kW | 1 Hz | 3 s | no vote |
-| `bus_frequency_hz` | plant | Hz (60 Hz bus*) | 1 Hz | 3 s | no vote |
-| `gensets_online` | derived | 1 or 2 | tick | 3 s | 1, ladder only |
-| `tripped_genset` | derived | none, genset_1, genset_2 | tick | 3 s | last confirmed |
-| `chw_pump_1_running`, `chw_pump_2_running` | plant | boolean | 1 Hz | 3 s | false |
-| `chw_pump_1_alarm`, `chw_pump_2_alarm` | plant | boolean | 1 Hz | 3 s | no vote |
-| `chw_flow_pct` | plant | % of nominal | 1 Hz | 3 s | no vote |
-| `chw_supply_c`, `chw_return_c` | plant | °C | 1 Hz | 3 s | no vote |
-| `cooling_state` | derived | nominal, degraded | tick | 3 s | degraded, ladder only |
-| `course` | ship state | free, steady | 1 Hz | 3 s | free |
-| `speed_kn`* | ship state | 0 to 25 kn | 1 Hz | 3 s | unknown: speed conditions fail |
-| `speed_band` | derived | stopped, slow, cruise, fast | tick | 3 s | fast (lowest reserve) |
-| `noise` | ship state | quiet, normal, manoeuvring | 1 Hz | 3 s | manoeuvring* |
-| `deck_flight_deck`, `deck_bays`* | ship state | clear, occupied | 1 Hz | 3 s | occupied |
-| `emission` | ship state | normal, silent | 1 Hz | 3 s | normal for conflicts, silent for links |
-| `ramp`* | ship state | free, in_use | 1 Hz | 3 s | in_use |
-| `deck_machinery`* | ship state | boolean | 1 Hz | 3 s | true |
-| `radar_transmitting`* | ship state | boolean | 1 Hz | 3 s | true |
-| `situation` | scenario, laptop | alongside, at_sea | on change | 3 s | at_sea |
-| `heading_free`* | derived | boolean | tick | 3 s | false |
-| `deck_machinery_permitted`* | derived | boolean | tick | 3 s | false |
-| `flight_deck_ops` | derived | free, in_use | tick | 3 s | in_use |
-| `seawater_c` | scenario, public data | °C | hourly | 3 h* | worse of last and 30 °C |
-| `sea_state` | scenario, public data | Douglas 0 to 9 | hourly | 3 h* | worse of last and 5 |
-| `wind_kn` | plant (anemometer*) | kn | 1 Hz | 3 s | worse of last and 30 kn |
-| `wind_from_deg`* | plant | degrees | 1 Hz | 3 s | no turn into wind planned |
-| `layered_water` | scenario, public data | boolean | hourly | 3 h* | true |
-| `satcom_mbps` | plant | 0 to 8 Mbit/s | 1 Hz | 3 s | 0 |
-| `los_radio_mbps` | plant | 0 to 20 Mbit/s | 1 Hz | 3 s | 0 |
-| `acoustic_link_up` | derived | boolean | tick | 3 s | false |
-| `acoustic_kbps` | derived | 3 kbit/s when up*, else 0 | tick | 3 s | 0 |
-| `crew_aboard` | laptop | 14, 6, 0 | on change | 3 s | next lower level |
-| `people_available` | crew report | people | on change | 3 s | 0 |
-| `bridge_confirmation` | crew report | none, pending, confirmed, denied | event | 3 s; answer expires 60 s, 180 s, 0 s by crew | denied |
-| `hlo_deck_report` | crew report | none, clear, not_clear | event | 3 s; clear expires 300 s* | not_clear |
-| `standing_plan` | crew report | none, approved | event | 3 s; expires 90 min* | none |
-| `deck_activity_since_sweep` | plant | boolean | event | 3 s | true |
-| `deck_latched_clear` | derived | boolean | tick | 3 s | false |
-| `Gx.mode` (G1 to G6) | plant | the card's modes | 1 Hz | 3 s | highest-draw mode |
-| `Gx.activity` (G1 to G6) | guest report | the registry, or none | 1 Hz; G3 by acoustic message | 3 s; G4 10 s; G3 900 s* | the most demanding: G2 winch, G3 surveying, G4 airborne |
-| `Gx.kw_actual` (G1 to G6) | plant | kW | 1 Hz | 3 s | declared peak |
-| `Gx.data_demand` (G1 to G6) | plant | Mbit/s per link (acoustic kbit/s) | 1 Hz | 3 s | card nominal |
-| `Gx.mode_ends_t_s` (G2, G3, G4) | derived | ship s | tick | 3 s | last value |
-| `G3.leg_state` | guest report | running, paused, aborted, done | acoustic message | 900 s* | running |
-| `G3.leg_started_t_s`, `G3.leg_flown_s` | guest report | ship s; 0 to 2400 s | acoustic message | 900 s* | last value, said to be old |
-| `G3.hold_ack` | guest report | boolean | acoustic message | 900 s* | false |
-| `G4.battery_pct` | guest report | % | on report | 10 s | last report kept; its deadline stands |
-| `G4.range_km` | guest report | km | 1 Hz | 10 s | beyond 20 km: radio at 1 Mbit/s |
-| `G4.airborne_since_t_s` | derived | ship s | tick | 3 s | last value |
-| `G4.battery_crossing_t_s` | derived | ship s | tick | 3 s | last value |
-| `G4.land_by_t_s` | derived | ship s | tick | 3 s | never later |
-| `capacity`: `power`, `port_line`, `stbd_line`, `heat`, `satcom`, `los_radio`, `acoustic` | derived | capacity, committed, free, degraded_by | tick | 3 s | from the inputs' fallbacks |
-| `capacity.shed_ceiling_kw` | derived | kW | tick | 3 s | from the inputs' fallbacks |
+The snapshot has `tick` (an integer) and `t_ship_s` (= tick); contract 4 calls the latter `t_s`. A decision
+record's `t_s` is the `t_ship_s` of the snapshot it ran on, and `seq` is only the decision and record counter
+that commands carry. For a later ARCHITECTURE edit, once the agents editing it now are done: contract 4 to
+these names, contract 7's replay line to "snapshots and decision log", committed and free to the ledger only,
+and `feed_drop`'s payload to `{feed, until_t_s}`.
 
-Activities are named `Gx.activity` from one registry in `signals.yaml`: G1 listening; G2 probe, winch; G3
-surveying, launch_recovery, holding_depth, holding_at_sea, on_cradle; G4 launch_recovery, airborne, landed;
-G5 transmitting; G6 production, start. Each lists the modes it runs in and its effect on ship state (G2's
-winch and G4's hangar doors are deck machinery; G3's ramp work uses the ramp). Today's cards say
-`G4.recovering` and `stern_ramp_ops`. The test maps them to `G4.launch_recovery` and `G3.launch_recovery`
-with a small table, which goes when F2 types the cards.
+## Fixtures (Scenario B, seed 0)
+
+| Fixture | Shows |
+|---|---|
+| `survey_m00` | the start; no battery report yet, land-by 1448 s from endurance, `assumed` |
+| `survey_m08` | G4 reports 18 %: crossing 371.9 s, land-by 1091.9 s (minute 18.2) |
+| `survey_m08_crew0` | the same with 0 aboard: deck latched clear at the last sweep, R3 automatic |
+| `survey_m09_stale_g4_telemetry` | injected drop: telemetry 15 s old, battery stale with its feed, land-by kept and named |
+| `survey_m10_stale_genset_feed` | injected drop: power management feed 4 s old, one genset down for D1 only, nothing shed; G4's 120 s old report still fresh |
+| `survey_m12`, `sar_m12` | trip at 720 s confirmed at 721 s; the ledger gives 48 of 95 kW (survey) and 81 of 95 kW (sar, with the reservation) |
+| `survey_m19`, `sar_m19` | injected pump fault: heat 80 kW, ceiling 75 kW against 81 kW; G3 631 s silent but not stale |
+
+After the minute-8 decision: G3 is told to hold and acknowledges at 510 s (a 30 s round trip); the bridge
+confirms at 540 s (request seq 1); the manoeuvre lands at 541 s; the ship goes from 3 to 5 kn over 2 min,
+inside the slow band, so there is no A.6 band change (EXPECTED_OUTCOMES minute-8 cost); the deck clears by
+781 s; G4 lands at 1020 s.
 
 ## Open, for a DEC row
 
-1. The split above: the estimator confirms faults and derives the acoustic link (Siddharth to agree).
-2. Keep `confidence` in contract 4 as the five-level enum.
-3. G4's battery cadence. This contract follows the brief: one report at minute 8. A streamed battery would
-   show the crossing at minute 6.2 and move the decision earlier.
-4. Move the `*` values into `assumptions.yaml` with provenance, so they reach the Physical Account
-   (`signals.yaml` `pending_moves`).
-5. Scenario B gives no seed, sea state, wind series or structured starting state. The fixtures assume
-   seed 0, sea state 4, wind 18 kn rising to 22 kn, and G4 launched at -3952 s (26.9 % at minute 0). The wind
-   should be the ship's own feed, not part of G4's report.
-6. Over-consumption: the estimator reports declared and metered draw; the tolerance is still open (R-082).
+1. **The split with Siddharth.** The estimator confirms faults and derives the acoustic link, and the simulator
+   owns the fault signatures and the transitions. He would also emit values A.6 does not list: `ramp`,
+   `deck_machinery`, `deck_activity_since_sweep`, `radar_transmitting`, per-zone deck, numeric `speed_kn`,
+   `wind_from_deg`, `G4.launched_t_s`, transitions with expected and latest ends, frames that leave out a
+   dropped feed, and the deck fields set while the activities run.
+2. Keep `confidence` in contract 4 as the five-level scale.
+3. G4's battery cadence: one report at minute 8, as in the brief. A streamed battery would show the crossing
+   at minute 6.2 and move the decision earlier.
+4. Move the assumed values in `signals.yaml` `pending_moves` into `assumptions.yaml` with provenance, so they
+   reach the Physical Account, once the agents editing it are done.
+5. Scenario B gives no seed, sea state, wind series or structured starting state. The fixtures assume seed 0,
+   sea state 4, the ship's wind 18 kn rising to 22 kn, SATCOM 6 Mbit/s and G4 launched at −3952 s, all listed in
+   the minute-0 baseline payload.
+6. The over-consumption tolerance (R-082): proposed 5 % for 10 s.

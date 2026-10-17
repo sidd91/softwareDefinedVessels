@@ -1,6 +1,6 @@
 {
  "run": {
-  "contract": "argos-snapshot/1",
+  "contract": "argos-snapshot/2",
   "scenario": "scenario_b",
   "mission": "survey",
   "seed": 0,
@@ -10,10 +10,14 @@
    "G3",
    "G4",
    "G5"
-  ]
- },
- "held_by_core": {
-  "reservations_kw": {}
+  ],
+  "constants": {
+   "layered_water": {
+    "value": false,
+    "source": "scenario",
+    "confidence": "assumed"
+   }
+  }
  },
  "plant": {
   "genset_1_relay_trip": {
@@ -25,7 +29,8 @@
    "substituted": {
     "last_value": false,
     "last_good_t_s": 596,
-    "rule": "casts no vote; gensets_online falls back instead"
+    "rule": "casts no vote; a pending trip is held; gensets_online falls back instead",
+    "stage": "bound"
    }
   },
   "genset_2_relay_trip": {
@@ -37,7 +42,8 @@
    "substituted": {
     "last_value": false,
     "last_good_t_s": 596,
-    "rule": "casts no vote; gensets_online falls back instead"
+    "rule": "casts no vote; a pending trip is held; gensets_online falls back instead",
+    "stage": "bound"
    }
   },
   "genset_1_kw": {
@@ -49,7 +55,8 @@
    "substituted": {
     "last_value": 330.0,
     "last_good_t_s": 596,
-    "rule": "casts no vote; gensets_online falls back instead"
+    "rule": "casts no vote; a pending trip is held; gensets_online falls back instead",
+    "stage": "bound"
    }
   },
   "genset_2_kw": {
@@ -61,7 +68,8 @@
    "substituted": {
     "last_value": 325.0,
     "last_good_t_s": 596,
-    "rule": "casts no vote; gensets_online falls back instead"
+    "rule": "casts no vote; a pending trip is held; gensets_online falls back instead",
+    "stage": "bound"
    }
   },
   "bus_frequency_hz": {
@@ -73,32 +81,35 @@
    "substituted": {
     "last_value": 60.0,
     "last_good_t_s": 596,
-    "rule": "casts no vote; gensets_online falls back instead"
+    "rule": "casts no vote; a pending trip is held; gensets_online falls back instead",
+    "stage": "bound"
    }
   },
   "gensets_online": {
    "value": 1,
    "source": "derived",
-   "age_s": 4,
+   "age_s": 0,
    "confidence": "substituted",
    "stale": true,
    "substituted": {
     "last_value": 2,
     "last_good_t_s": 596,
     "rule": "one genset down",
-    "scope": "admission and arming the D4 ladder only; D4 never runs on it, only on a confirmed trip"
+    "stage": "derived",
+    "scope": "admission and arming the D4 ladder only; D4 never acts on a substituted value"
    }
   },
   "tripped_genset": {
    "value": "none",
    "source": "derived",
-   "age_s": 4,
+   "age_s": 0,
    "confidence": "substituted",
    "stale": true,
    "substituted": {
     "last_value": "none",
     "last_good_t_s": 596,
-    "rule": "keeps the last confirmed value"
+    "rule": "keeps the last confirmed value",
+    "stage": "derived"
    }
   },
   "chw_pump_1_running": {
@@ -165,20 +176,20 @@
    "age_s": 0,
    "confidence": "measured",
    "stale": false,
-   "since_t_s": 540
+   "since_t_s": 541
   },
   "speed_kn": {
-   "value": 5.0,
+   "value": 4.0,
    "source": "plant",
    "age_s": 0,
    "confidence": "measured",
    "stale": false,
-   "since_t_s": 540,
+   "since_t_s": 600,
    "transition": {
-    "to": 8.0,
-    "started_t_s": 540,
-    "expected_end_t_s": 780,
-    "latest_end_t_s": 840
+    "to": 5.0,
+    "started_t_s": 541,
+    "expected_end_t_s": 661,
+    "latest_end_t_s": 721
    }
   },
   "speed_band": {
@@ -194,7 +205,14 @@
    "age_s": 0,
    "confidence": "measured",
    "stale": false,
-   "since_t_s": 540
+   "since_t_s": 541
+  },
+  "situation": {
+   "value": "at_sea",
+   "source": "scenario",
+   "age_s": 0,
+   "confidence": "assumed",
+   "stale": false
   },
   "deck_flight_deck": {
    "value": "occupied",
@@ -204,13 +222,36 @@
    "stale": false,
    "transition": {
     "to": "clear",
-    "started_t_s": 540,
-    "expected_end_t_s": 780,
-    "latest_end_t_s": 840
+    "started_t_s": 541,
+    "expected_end_t_s": 781,
+    "latest_end_t_s": 841
    }
   },
   "deck_bays": {
    "value": "clear",
+   "source": "plant",
+   "age_s": 0,
+   "confidence": "measured",
+   "stale": false
+  },
+  "ramp": {
+   "value": "free",
+   "source": "plant",
+   "age_s": 0,
+   "confidence": "measured",
+   "stale": false,
+   "by": []
+  },
+  "deck_machinery": {
+   "value": false,
+   "source": "plant",
+   "age_s": 0,
+   "confidence": "measured",
+   "stale": false,
+   "by": []
+  },
+  "deck_activity_since_sweep": {
+   "value": true,
    "source": "plant",
    "age_s": 0,
    "confidence": "measured",
@@ -223,32 +264,11 @@
    "confidence": "measured",
    "stale": false
   },
-  "ramp": {
-   "value": "free",
-   "source": "plant",
-   "age_s": 0,
-   "confidence": "measured",
-   "stale": false
-  },
-  "deck_machinery": {
-   "value": false,
-   "source": "plant",
-   "age_s": 0,
-   "confidence": "measured",
-   "stale": false
-  },
   "radar_transmitting": {
    "value": true,
    "source": "plant",
    "age_s": 0,
    "confidence": "measured",
-   "stale": false
-  },
-  "situation": {
-   "value": "at_sea",
-   "source": "scenario",
-   "age_s": 0,
-   "confidence": "assumed",
    "stale": false
   },
   "heading_free": {
@@ -257,7 +277,8 @@
    "age_s": 0,
    "confidence": "reported",
    "stale": false,
-   "since_t_s": 540
+   "since_t_s": 510,
+   "by": []
   },
   "deck_machinery_permitted": {
    "value": true,
@@ -265,28 +286,29 @@
    "age_s": 0,
    "confidence": "reported",
    "stale": false,
-   "since_t_s": 540
+   "since_t_s": 510
   },
   "flight_deck_ops": {
    "value": "free",
    "source": "derived",
    "age_s": 0,
    "confidence": "reported",
-   "stale": false
+   "stale": false,
+   "by": []
   }
  },
  "environment": {
   "seawater_c": {
-   "value": 24,
+   "value": 24.0,
    "source": "scenario",
-   "age_s": 0,
+   "age_s": 600,
    "confidence": "assumed",
    "stale": false
   },
   "sea_state": {
    "value": 4,
    "source": "scenario",
-   "age_s": 0,
+   "age_s": 600,
    "confidence": "assumed",
    "stale": false
   },
@@ -302,13 +324,6 @@
    "source": "plant",
    "age_s": 0,
    "confidence": "measured",
-   "stale": false
-  },
-  "layered_water": {
-   "value": false,
-   "source": "scenario",
-   "age_s": 0,
-   "confidence": "assumed",
    "stale": false
   }
  },
@@ -331,17 +346,17 @@
    "value": false,
    "source": "derived",
    "age_s": 0,
-   "confidence": "measured",
+   "confidence": "assumed",
    "stale": false,
-   "since_t_s": 540
+   "since_t_s": 541
   },
   "acoustic_kbps": {
    "value": 0.0,
    "source": "derived",
    "age_s": 0,
-   "confidence": "measured",
+   "confidence": "assumed",
    "stale": false,
-   "since_t_s": 540
+   "since_t_s": 541
   }
  },
  "crew": {
@@ -359,16 +374,30 @@
    "confidence": "reported",
    "stale": false
   },
-  "bridge_confirmation": {
-   "value": "confirmed",
+  "bridge_requests": {
+   "value": [
+    {
+     "request_seq": 1,
+     "rule": "R3",
+     "state": "confirmed",
+     "asked_t_s": 480,
+     "answered_t_s": 540
+    }
+   ],
    "source": "crew_report",
    "age_s": 0,
    "confidence": "reported",
-   "stale": false,
-   "since_t_s": 540
+   "stale": false
   },
   "hlo_deck_report": {
    "value": "none",
+   "source": "crew_report",
+   "age_s": 0,
+   "confidence": "reported",
+   "stale": false
+  },
+  "hlo_wind_kn": {
+   "value": null,
    "source": "crew_report",
    "age_s": 0,
    "confidence": "reported",
@@ -381,18 +410,18 @@
    "confidence": "reported",
    "stale": false
   },
-  "deck_activity_since_sweep": {
-   "value": false,
-   "source": "plant",
+  "last_sweep": {
+   "value": null,
+   "source": "crew_report",
    "age_s": 0,
-   "confidence": "measured",
+   "confidence": "reported",
    "stale": false
   },
   "deck_latched_clear": {
    "value": false,
    "source": "derived",
    "age_s": 0,
-   "confidence": "measured",
+   "confidence": "reported",
    "stale": false
   }
  },
@@ -408,10 +437,10 @@
    "activity": {
     "value": "holding_depth",
     "source": "guest_report",
-    "age_s": 60,
+    "age_s": 90,
     "confidence": "reported",
     "stale": false,
-    "since_t_s": 540
+    "since_t_s": 510
    },
    "kw_actual": {
     "value": 1.0,
@@ -429,6 +458,13 @@
     "confidence": "measured",
     "stale": false
    },
+   "overdraw_pct": {
+    "value": 0.0,
+    "source": "derived",
+    "age_s": 0,
+    "confidence": "measured",
+    "stale": false
+   },
    "mode_ends_t_s": {
     "value": null,
     "source": "derived",
@@ -439,32 +475,32 @@
    "leg_state": {
     "value": "paused",
     "source": "guest_report",
-    "age_s": 60,
+    "age_s": 90,
     "confidence": "reported",
     "stale": false,
-    "since_t_s": 480
+    "since_t_s": 510
    },
    "leg_started_t_s": {
     "value": 0,
     "source": "guest_report",
-    "age_s": 60,
+    "age_s": 90,
     "confidence": "reported",
     "stale": false
    },
    "leg_flown_s": {
     "value": 480,
     "source": "guest_report",
-    "age_s": 60,
+    "age_s": 90,
     "confidence": "reported",
     "stale": false
    },
    "hold_ack": {
     "value": true,
     "source": "guest_report",
-    "age_s": 60,
+    "age_s": 90,
     "confidence": "reported",
     "stale": false,
-    "since_t_s": 540
+    "since_t_s": 510
    }
   },
   "G4": {
@@ -498,6 +534,13 @@
     "confidence": "measured",
     "stale": false
    },
+   "overdraw_pct": {
+    "value": 0.0,
+    "source": "derived",
+    "age_s": 0,
+    "confidence": "measured",
+    "stale": false
+   },
    "mode_ends_t_s": {
     "value": null,
     "source": "derived",
@@ -509,14 +552,9 @@
     "value": 18.0,
     "source": "guest_report",
     "age_s": 120,
-    "confidence": "substituted",
-    "stale": true,
-    "since_t_s": 480,
-    "substituted": {
-     "last_value": 18.0,
-     "last_good_t_s": 480,
-     "rule": "keeps the last report and its age; the land-by deadline from it stands and never moves later"
-    }
+    "confidence": "reported",
+    "stale": false,
+    "since_t_s": 480
    },
    "range_km": {
     "value": 9.0,
@@ -525,38 +563,35 @@
     "confidence": "reported",
     "stale": false
    },
+   "launched_t_s": {
+    "value": -3952,
+    "source": "guest_report",
+    "age_s": 600,
+    "confidence": "reported",
+    "stale": false
+   },
    "airborne_since_t_s": {
     "value": -3952,
     "source": "derived",
     "age_s": 0,
-    "confidence": "assumed",
+    "confidence": "reported",
     "stale": false
    },
    "battery_crossing_t_s": {
     "value": 371.9,
     "source": "derived",
-    "age_s": 120,
-    "confidence": "substituted",
-    "stale": true,
-    "since_t_s": 480,
-    "substituted": {
-     "last_value": 371.9,
-     "last_good_t_s": 480,
-     "rule": "keeps the last value"
-    }
+    "age_s": 0,
+    "confidence": "reported",
+    "stale": false,
+    "since_t_s": 480
    },
    "land_by_t_s": {
     "value": 1091.9,
     "source": "derived",
-    "age_s": 120,
-    "confidence": "substituted",
-    "stale": true,
-    "since_t_s": 480,
-    "substituted": {
-     "last_value": 1091.9,
-     "last_good_t_s": 480,
-     "rule": "never moves later"
-    }
+    "age_s": 0,
+    "confidence": "reported",
+    "stale": false,
+    "since_t_s": 480
    }
   },
   "G5": {
@@ -590,6 +625,13 @@
     "age_s": 0,
     "confidence": "measured",
     "stale": false
+   },
+   "overdraw_pct": {
+    "value": 0.0,
+    "source": "derived",
+    "age_s": 0,
+    "confidence": "measured",
+    "stale": false
    }
   }
  },
@@ -597,63 +639,59 @@
   "power": {
    "value": {
     "capacity": 100,
-    "committed": 48,
-    "free": 52,
     "unit": "kW",
     "degraded_by": [
-     "genset feed stale: taken as one genset down for admission and the armed ladder; D4 does not run on it"
-    ]
+     "genset feed stale: taken as one genset down for admission and the armed ladder; D4 does not act on it"
+    ],
+    "zero_by_rule": false
    },
    "source": "derived",
-   "age_s": 4,
+   "age_s": 0,
    "confidence": "substituted",
    "stale": true,
    "substituted": {
     "last_value": {
      "capacity": 250,
-     "committed": 48,
-     "free": 202,
      "unit": "kW",
-     "degraded_by": []
+     "degraded_by": [],
+     "zero_by_rule": false
     },
     "last_good_t_s": 596,
     "rule": "computed from the inputs' fallbacks",
-    "scope": "admission and arming only"
+    "stage": "derived",
+    "scope": "admission and arming the D4 ladder only; D4 never acts on a substituted value"
    }
   },
   "port_line": {
    "value": {
     "capacity": 150,
-    "committed": 1,
-    "free": 149,
     "unit": "kW",
-    "degraded_by": []
+    "degraded_by": [],
+    "zero_by_rule": false
    },
    "source": "derived",
    "age_s": 0,
-   "confidence": "measured",
+   "confidence": "assumed",
    "stale": false
   },
   "stbd_line": {
    "value": {
     "capacity": 150,
-    "committed": 47,
-    "free": 103,
     "unit": "kW",
-    "degraded_by": []
+    "degraded_by": [],
+    "zero_by_rule": false
    },
    "source": "derived",
    "age_s": 0,
-   "confidence": "measured",
+   "confidence": "assumed",
    "stale": false
   },
   "heat": {
    "value": {
     "capacity": 133.3,
-    "committed": 48,
-    "free": 85.3,
     "unit": "kW",
-    "degraded_by": []
+    "degraded_by": [],
+    "zero_by_rule": false
    },
    "source": "derived",
    "age_s": 0,
@@ -663,10 +701,9 @@
   "satcom": {
    "value": {
     "capacity": 6.0,
-    "committed": 6,
-    "free": 0.0,
     "unit": "Mbit/s",
-    "degraded_by": []
+    "degraded_by": [],
+    "zero_by_rule": false
    },
    "source": "derived",
    "age_s": 0,
@@ -676,51 +713,135 @@
   "los_radio": {
    "value": {
     "capacity": 20.0,
-    "committed": 20,
-    "free": 0.0,
     "unit": "Mbit/s",
-    "degraded_by": []
+    "degraded_by": [],
+    "zero_by_rule": false
    },
    "source": "derived",
    "age_s": 0,
-   "confidence": "measured",
+   "confidence": "reported",
    "stale": false
   },
   "acoustic": {
    "value": {
     "capacity": 0.0,
-    "committed": 1,
-    "free": -1.0,
     "unit": "kbit/s",
     "degraded_by": [
-     "acoustic link down: course free, noise manoeuvring (G3 told to hold depth first)"
-    ]
+     "acoustic link down: course free, noise manoeuvring"
+    ],
+    "zero_by_rule": true
    },
    "source": "derived",
    "age_s": 0,
-   "confidence": "measured",
+   "confidence": "assumed",
    "stale": false,
-   "since_t_s": 540
+   "since_t_s": 541
   },
   "shed_ceiling_kw": {
    "value": 95.0,
    "source": "derived",
-   "age_s": 4,
+   "age_s": 0,
    "confidence": "substituted",
    "stale": true,
    "substituted": {
     "last_value": 128.3,
     "last_good_t_s": 596,
     "rule": "computed from the inputs' fallbacks",
-    "scope": "admission and arming only"
+    "stage": "derived",
+    "scope": "admission and arming the D4 ladder only; D4 never acts on a substituted value"
    }
+  }
+ },
+ "feeds": {
+  "pms": {
+   "stale": true,
+   "last_heard_t_s": 596,
+   "fallback_active": true,
+   "drop": {
+    "event_t_s": 597,
+    "until_t_s": null,
+    "injected": true
+   }
+  },
+  "chw": {
+   "stale": false,
+   "last_heard_t_s": 600,
+   "fallback_active": false,
+   "drop": null
+  },
+  "nav": {
+   "stale": false,
+   "last_heard_t_s": 600,
+   "fallback_active": false,
+   "drop": null
+  },
+  "deck": {
+   "stale": false,
+   "last_heard_t_s": 600,
+   "fallback_active": false,
+   "drop": null
+  },
+  "emission": {
+   "stale": false,
+   "last_heard_t_s": 600,
+   "fallback_active": false,
+   "drop": null
+  },
+  "anemometer": {
+   "stale": false,
+   "last_heard_t_s": 600,
+   "fallback_active": false,
+   "drop": null
+  },
+  "comms": {
+   "stale": false,
+   "last_heard_t_s": 600,
+   "fallback_active": false,
+   "drop": null
+  },
+  "public_data": {
+   "stale": false,
+   "last_heard_t_s": 0,
+   "fallback_active": false,
+   "drop": null
+  },
+  "laptop": {
+   "stale": false,
+   "last_heard_t_s": 600,
+   "fallback_active": false,
+   "drop": null
+  },
+  "guest_meter": {
+   "stale": false,
+   "last_heard_t_s": 600,
+   "fallback_active": false,
+   "drop": null
+  },
+  "guest_backbone": {
+   "stale": false,
+   "last_heard_t_s": 600,
+   "fallback_active": false,
+   "drop": null
+  },
+  "g4_telemetry": {
+   "stale": false,
+   "last_heard_t_s": 600,
+   "fallback_active": false,
+   "drop": null
+  },
+  "g3_acoustic": {
+   "stale": false,
+   "last_heard_t_s": 510,
+   "fallback_active": false,
+   "drop": null
   }
  },
  "faults": [],
  "events": [],
  "notes": [
-  "Scenario B, survey file, minute 10, stale feed: the power management feed (relay flags, genset kW, bus frequency) last reported at 596 s; at 600 s it is 4 s old, over the 3 s limit.",
-  "gensets_online falls to 1 for admission and the armed ladder only. No fault is confirmed, so D4 does not shed (research/SENSOR_CATALOG.md rule 4). The decision sentence names the stale feed.",
-  "G4's battery report is 120 s old, over R3's 10 s: it is carried with its age and the minute-18.2 deadline stands."
+  "Scenario B, survey file, minute 10, INJECTED feed drop: the power management feed (relay flags, genset kW, bus frequency) last arrived at 596 s; at 600 s it is 4 s old, over the 3 s limit.",
+  "gensets_online falls to 1 for admission and the armed ladder only. No fault is confirmed and no input is fresh, so D4 does not shed. The decision sentence names the stale feed. The fallback lifts after 3 fresh frames.",
+  "G4's battery report is 120 s old on a healthy telemetry feed: not stale, confidence reported, and the minute-18.2 deadline stands.",
+  "G3 last spoke at 510 s (hold acknowledged); the acoustic link has been down by design since 541 s, so G3's reports are old but not stale."
  ]
 }
