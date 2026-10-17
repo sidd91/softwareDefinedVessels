@@ -8,6 +8,20 @@ id: scenario_b
 guests: [G3, G4, G5]
 location: {name: Strait of Sicily cable corridor, seawater_c: 24}
 seed_pins: {confirm_min: 1, deck_clear_min: 4, approach_min: 4, g4_lands_at_min: 17}
+# Minute 0 as the brief tells it: 3 kn (slow band), steady, quiet, deck clear; G3 on its leg on battery,
+# G4 airborne on battery (18 % at minute 8 at the R3 drain rate), G5 at full power. Read by src/sdv/plant/sim.py.
+initial:
+  crew: 14
+  sea_state: 2
+  wind_kn: 12
+  ship_state: {course: steady, speed_band: slow, noise: quiet, deck: clear, emission: normal, genset: 2, cooling: nominal}
+  modes: {G3: standby, G4: standby, G5: full}
+  airborne: {G4: true}
+  battery_pct: {G4: 26.9}
+  placement:
+    G3: {cradle_and_vehicle: bay1}
+    G4: {drone: flight_deck, hangar: flight_deck}
+    G5: {node: bay2, antenna: hangar_roof}
 events:
   - {t_min: 0, type: baseline, note: "3 kn over the cable route, G3 on its 40-min leg on the acoustic link, G4 airborne, G5 full"}
   - {t_min: 8, type: guest_report, guest: G4, battery_pct: 18, wind_kn: 22}

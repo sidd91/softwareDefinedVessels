@@ -140,6 +140,12 @@ admission:
   one_genset_down_gate: {kw: 95, rule: "min(one-genset-down reserve, cooling at 30 C) minus shed headroom", over_gate: "throttle-only prefix of the D4 ladder; else yes-if; else no"}
   data_rates_judged_at: guest_minimum
 
+# Plant (simulator) behaviour beyond the cards. Used by src/sdv/plant/.
+sim:
+  tick_s: 1
+  demo_speed: 12
+  g4_charge_pct_min: {fast_charge: 3.0, charge: 1.0, standby: 0.0, "off": 0.0}
+
 # Where each key comes from. `source: assumed` keys are ours and each carries its reason (`why`); an
 # assumed key that narrows a brief value names it in `narrows`. A brief key we use at one point of its
 # range, or never credit, carries `narrowed` saying how. Scenario files keep their own provenance block.
@@ -168,6 +174,9 @@ provenance:
   heat.chillers_on_essential_board: {source: assumed, why: "Chillers and chilled-water pumps sit on the essential board inside the 55 kW ship auxiliaries, so the 150 kW non-essential hotel shed on a genset trip does not take cooling with it."}
   admission.seawater_scan_step_c: {source: assumed, why: "Resolution for reporting the seawater temperature at which a verdict flips."}
   admission.seawater_scan_max_c: {source: assumed, why: "Scan a little past the 30 C design point (A.10) to show the stress case off Florida (30.4 C)."}
+  sim.tick_s: {source: brief p4, short: "platform budget at 1 Hz", why: "The brief states the platform budget per class at 1 Hz; the plant ticks at the same rate."}
+  sim.demo_speed: {source: assumed, short: "12 ship-minutes per wall minute", why: "The brief's 90 s demo covers Scenario B minutes 0 to 12 and beyond; 12x fits minutes 0-19 in about 95 s. Decision latency is still measured in wall time."}
+  sim.g4_charge_pct_min: {source: assumed, short: "card gives kW and minutes, not a charge curve", why: "G4's card gives 35 kW for 20 min then 10 kW; no state-of-charge curve. 3 %/min in fast charge (60 % in 20 min) and 1 %/min after is enough for the battery gauge; it never enters a decision."}
   envelope: {source: brief A.10}
   # Positions
   hull.loa_m: {source: assumed, why: "The slides show a 60 m vessel (reference drawing and demo baseline); the brief allows 60-70 m. We use 60 m. The roll model in research/sensors/navigation_environment.md, built at 65 m, was re-checked at 60 m: roll period 9.75 s against 9.70 s, no material change."}
