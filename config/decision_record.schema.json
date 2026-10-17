@@ -61,6 +61,7 @@
         "free": {"type": "number"}, "unit": {"type": "string"}, "degraded_by": {"type": "array", "items": {"type": "string"}}}},
     "step": {"type": "object", "additionalProperties": false, "required": ["guest", "from_mode", "to_mode", "frees_kw"],
       "properties": {"guest": {"type": "string"}, "from_mode": {"type": "string"}, "to_mode": {"type": "string"}, "frees_kw": {"type": "number"},
-        "cost_per_kw": {"type": "number"}, "capability_lost_pct": {"type": "number"}, "mission_critical": {"type": "boolean"}, "shed": {"type": "boolean"}}}
+        "cost_per_kw": {"type": "number"}, "capability_lost_pct": {"type": "number"}, "mission_critical": {"type": "boolean"}, "shed": {"type": "boolean"},
+        "tier": {"enum": ["mission_critical", "mission_support", "discretionary"]}}}
   }
 }

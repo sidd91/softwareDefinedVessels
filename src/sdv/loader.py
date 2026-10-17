@@ -175,6 +175,14 @@ def check_mission(mission: dict, cards: dict[str, dict], vocab: Vocabulary, sche
     for i, gid in enumerate(doc["mission_critical"]):
         if gid not in cards:
             problems.append(f"mission_critical[{i}]: no loaded card {gid}")
+    seen = {g: "mission_critical" for g in doc["mission_critical"]}
+    for tier, gids in (doc.get("tiers") or {}).items():
+        for i, gid in enumerate(gids):
+            if gid not in cards:
+                problems.append(f"tiers.{tier}[{i}]: no loaded card {gid}")
+            elif gid in seen:
+                problems.append(f"tiers.{tier}[{i}]: {gid} is already {seen[gid]}; a guest sits in one tier only")
+            seen[gid] = tier
     for name in doc.get("shed_order", {}):
         if name not in capabilities:
             problems.append(f"shed_order.{name}: no loaded card returns this capability")

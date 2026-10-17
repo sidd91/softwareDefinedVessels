@@ -69,4 +69,4 @@ def shed(cards: dict, mission: dict, snap: dict, reservations: dict[str, float] 
 def _step(s: Lg.Step) -> dict:
     return {"guest": s.guest, "from_mode": s.from_mode, "to_mode": s.to_mode, "frees_kw": s.frees_kw,
             "cost_per_kw": round(s.price, 4), "capability_lost_pct": round(100 * s.capability_lost, 1),
-            "mission_critical": s.mission_critical, "shed": s.shed}
+            "mission_critical": s.mission_critical, "shed": s.shed, "tier": s.tier}

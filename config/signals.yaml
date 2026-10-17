@@ -249,6 +249,7 @@ events:
   card_presented: {from: [laptop], to: core, payload: {guest: guest, card: string}, provenance: contract 6}
   card_edited: {from: [laptop], to: core, payload: {guest: guest, field: string, from: any, to: any}, provenance: contract 6}
   priority_swap: {from: [laptop], to: core, payload: {mission: string}, provenance: contract 6}
+  profile_applied: {from: [laptop], to: core, payload: {profile: object}, provenance: "DEC-58: an edited priority file from the profile builder, applied at sea; carried whole in the input log so a replay reproduces it; refused with the field named, keeping the previous file, if it fails the loader"}
   genset_trip: {from: [timeline, laptop], to: simulator, payload: {genset: [1, 2], confirmed: boolean}, provenance: "contract 6; fault_signatures.genset_trip"}
   genset_restart: {from: [timeline, laptop], to: simulator, payload: {genset: [1, 2], expected_end_t_s: number}, provenance: "contract 6; fault_signatures.genset_restart"}
   cooling_degraded: {from: [timeline, laptop], to: simulator, payload: {pump: [1, 2], factor: number, confirmed: boolean}, provenance: "contract 6; fault_signatures.cooling_degraded"}

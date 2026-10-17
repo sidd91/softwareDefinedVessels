@@ -1133,7 +1133,7 @@ def test_events_are_routed_to_the_simulator_or_the_core():
     inputs = set(STEP_DEFS["input"]["properties"]["type"]["enum"])
     want = {n for n, ev in SIGNALS_FILE["events"].items() if "laptop" in ev["from"] and ev["to"] == "simulator"}
     assert inputs == want
-    assert {"card_presented", "card_edited", "priority_swap", "safety_request"} == {n for n, ev in SIGNALS_FILE["events"].items() if ev["to"] == "core"}
+    assert {"card_presented", "card_edited", "priority_swap", "profile_applied", "safety_request"} == {n for n, ev in SIGNALS_FILE["events"].items() if ev["to"] == "core"}
     assert not inputs & {"card_presented", "safety_request"}, "core-only inputs never reach sim.step"
     assert {e["type"] for e in TL["events"]} <= {n for n, ev in SIGNALS_FILE["events"].items() if "timeline" in ev["from"]}
 

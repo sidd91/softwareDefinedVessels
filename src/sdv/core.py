@@ -36,9 +36,11 @@ def _pred_value(pred, current):
 class Core:
     def __init__(self, mission: str = "survey", root=Ld.ROOT):
         self.A = Ld.load_assumptions()
-        vocab = Ld.load_vocabulary(assumptions=self.A)
+        self.vocab = vocab = Ld.load_vocabulary(assumptions=self.A)
         self.cards = Ld.load_cards(vocab=vocab)
         self.missions = Ld.load_missions(self.cards, vocab)
+        self.mission_schema = Ld._schema(root, "config/missions/schema.json")
+        self.rejected: list[dict] = []          # profiles refused at sea, with the fields named; the previous one is kept
         self.signals = yaml.safe_load((root / "config/signals.yaml").read_text())
         self.mission = self.missions[mission]
         self.seq = 0
@@ -83,7 +85,8 @@ class Core:
     def _r3_open(self, snap: dict, d3: dict, out: list, cmds: list) -> None:
         crew = snap["crew"]["crew_aboard"]["value"]
         r3 = self.A["rules"]["r3"]
-        how = r3["confirm"][crew]
+        how = (self.mission.get("confirm") or {}).get("r3", {}).get(crew) or \
+            (self.mission.get("confirm") or {}).get("r3", {}).get(str(crew)) or r3["confirm"][crew]
         evidence = r3["deck_evidence"][crew]
         started = time.perf_counter()
         seq = self._take_seq()
@@ -102,9 +105,12 @@ class Core:
             verdict = "automatic"
             self.r3 = {"seq": seq, "request_seq": None, "state": "cleared", "landed_t_s": None}
             c += self._clear_cmds(snap)
+        elif how == "forbidden":
+            verdict, evidence = "forbidden", f"the {self.mission['name'].lower()} file forbids it at {crew} aboard"
         else:
             verdict = "forbidden" if crew == 0 else "held"
             evidence = ("deck activity since the last crew sweep voided the latch" if crew == 0 else "no standing plan approved")
+        if verdict in ("forbidden", "held"):
             self.r3 = {"seq": seq, "request_seq": None, "state": verdict, "landed_t_s": None}
         r = Rec.from_d5(seq=seq, snapshot=snap, verdict=verdict, crew=crew, deck_evidence=evidence,
                         deadline_t_s=d3["deadline_t_s"], mission=self.mission)
@@ -155,6 +161,14 @@ class Core:
         for i in core_inputs or []:
             if i["type"] == "priority_swap":
                 self.mission = self.missions[i["payload"]["mission"]]
+            elif i["type"] == "profile_applied":
+                prof = i["payload"]["profile"]
+                problems = Ld.check_mission(prof, self.cards, self.vocab, self.mission_schema)
+                if problems:
+                    self.rejected.append({"tick": snap["run"]["tick"], "profile": prof.get("id"), "problems": problems})
+                else:
+                    self.missions[prof["id"]] = prof
+                    self.mission = prof
             elif i["type"] == "card_presented":
                 started = time.perf_counter()
                 gid = i["payload"]["guest"]

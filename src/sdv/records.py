@@ -38,9 +38,9 @@ def _line(l: Line) -> dict:
 
 def _step(s) -> dict:
     if isinstance(s, dict):
-        return {k: s[k] for k in ("guest", "from_mode", "to_mode", "frees_kw", "cost_per_kw", "capability_lost_pct", "mission_critical", "shed") if k in s}
+        return {k: s[k] for k in ("guest", "from_mode", "to_mode", "frees_kw", "cost_per_kw", "capability_lost_pct", "mission_critical", "shed", "tier") if k in s}
     return {"guest": s.guest, "from_mode": s.from_mode, "to_mode": s.to_mode, "frees_kw": s.frees_kw, "cost_per_kw": round(s.price, 4),
-            "capability_lost_pct": round(100 * s.capability_lost, 1), "mission_critical": s.mission_critical, "shed": s.shed}
+            "capability_lost_pct": round(100 * s.capability_lost, 1), "mission_critical": s.mission_critical, "shed": s.shed, "tier": s.tier}
 
 
 def _finish(r: dict) -> dict:

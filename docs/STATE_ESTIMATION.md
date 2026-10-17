@@ -84,7 +84,7 @@ frame = sim.step(tick: int, commands: list, inputs: list) -> dict   # one argos-
   `to: simulator`, in input-log order, each `{t_s: n, type, injected, payload}`. These go to the simulator:
   injected faults and over-consumption, feed drops, crew changes, deck reports and sweeps, bridge answers,
   standing plans, emission changes, guest requests. These go **only to the core**, which handles and logs them
-  at tick n and never passes them on: card presented, card edited, priority swap and safety requests (the
+  at tick n and never passes them on: card presented, card edited, priority swap, an edited profile applied at sea and safety requests (the
   answer is a command applied at n + 1). The simulator applies an input on its own tick: a crew answer becomes
   a laptop-feed signal, an injected fault becomes its fault signature, a `feed_drop {feed, until_t_s}` leaves
   that feed's signals out. The estimator never fakes a drop. Laptop signals are state: the simulator

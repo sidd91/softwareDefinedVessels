@@ -3547,6 +3547,7 @@
       "card_presented",
       "card_edited",
       "priority_swap",
+      "profile_applied",
       "genset_trip",
       "genset_restart",
       "cooling_degraded",
@@ -3706,6 +3707,31 @@
         "properties": {
          "mission": {
           "type": "string"
+         }
+        }
+       }
+      }
+     }
+    },
+    {
+     "if": {
+      "properties": {
+       "type": {
+        "const": "profile_applied"
+       }
+      }
+     },
+     "then": {
+      "properties": {
+       "payload": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+         "profile"
+        ],
+        "properties": {
+         "profile": {
+          "type": "object"
          }
         }
        }

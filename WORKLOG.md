@@ -861,3 +861,18 @@ Logan widened the scope (DEC-55 to DEC-59): profile and rule builder, compute re
 Kit and its port upload, profiles changed at sea, degradation by criticality tier. Plan: tiers in D4 first, then
 the screen with the builder as a fifth view, then the compute and kit design.
 Decisions: DEC-55 to DEC-59 (Logan). Conflicts: none new. Deferrals: none.
+
+### Sat 14:56 PDT · Criticality tiers in degradation; profiles applied at sea (DEC-58, DEC-59) · Claude Opus 5.5 on behalf of Logan Walker (GhostWalka)
+
+A priority file may now declare tiers {vessel_critical, discretionary} beside mission_critical; every other guest is
+mission support. The shed ladder orders throttles before sheds, then tier (discretionary, mission support,
+mission-critical), then the declared shed_order, then mission value lost per kW freed; vessel-critical guests (the
+card's safety_critical or the file's tier) are never on it. Every step in a record names its tier. The loader refuses
+an unknown guest or a guest in two tiers, with the field named. Patrol puts the water maker discretionary; disaster
+relief puts the RF sensor and the survey vehicle discretionary. Survey and sar are unchanged, so every Scenario A and
+B oracle outcome stands. New core input profile_applied {profile} (signals.yaml events, to: core) applies an edited
+profile at sea: validated by the loader, refused with the field named and the previous file kept, and carried whole
+in the input log so a replay reproduces it. The core now reads a profile's own R3 crew policy (confirm.r3) before
+the ship default. tests/test_tiers.py: 11 tests. 922 tests pass. The UI session (argos-ui) is building the screen and
+the builder view (DEC-55); the core session stays out of UI files.
+Decisions: none new (implements DEC-58, DEC-59). Conflicts: none new. Deferrals: tier names for Logan to confirm.

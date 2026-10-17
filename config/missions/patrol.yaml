@@ -2,3 +2,5 @@ id: patrol
 name: Patrol
 weights: {passive_rf_detection: 1.0, sar_air: 0.5, ocean_data: 0.5, coastal_connectivity: 0.2, seabed_inspection: 0.2, fresh_water: 0.2}
 mission_critical: [G1]
+tiers: {discretionary: [G6]}
+notes: Patrol primary. The water maker is the first to throttle; the passive RF sensor goes last.

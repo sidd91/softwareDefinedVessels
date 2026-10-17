@@ -162,10 +162,26 @@ class Step:
     mission_critical: bool
     shed: bool
     rank: tuple
+    tier: str = "mission_support"
 
     @property
     def order_key(self) -> tuple:
-        return (self.shed, self.rank, self.mission_critical, self.price, self.guest)
+        return (self.shed, TIER_RANK[self.tier], self.rank, self.price, self.guest)
+
+
+# Graceful degradation by criticality tier (DEC-59): discretionary first, mission support, mission-critical last;
+# vessel-critical (a card's safety_critical, or the profile's tiers.vessel_critical) is never shed.
+TIERS = ("vessel_critical", "mission_critical", "mission_support", "discretionary")
+TIER_RANK = {"discretionary": 0, "mission_support": 1, "mission_critical": 2}
+
+
+def tier_of(cards: dict, gid: str, mission: dict) -> str:
+    t = mission.get("tiers") or {}
+    if cards[gid].get("criticality", {}).get("safety_critical") or gid in t.get("vessel_critical", []):
+        return "vessel_critical"
+    if gid in mission["mission_critical"]:
+        return "mission_critical"
+    return "discretionary" if gid in t.get("discretionary", []) else "mission_support"
 
 
 def _shed_rank(mission: dict, capability: str) -> tuple:
@@ -177,9 +193,10 @@ def _shed_rank(mission: dict, capability: str) -> tuple:
 
 
 def next_step(cards: dict, gid: str, mode: str, mission: dict) -> Step | None:
-    """One guest's next step down its mode ladder; None if the mode cannot be interrupted, is off, or the guest is safety-critical."""
+    """One guest's next step down its mode ladder; None if the mode cannot be interrupted, is off, or the guest is vessel-critical."""
     card = cards[gid]
-    if card.get("criticality", {}).get("safety_critical"):
+    tier = tier_of(cards, gid, mission)
+    if tier == "vessel_critical":
         return None
     ordered = sorted(card["modes"], key=lambda m: -m["power_kw"])
     names = [m["name"] for m in ordered]
@@ -193,8 +210,8 @@ def next_step(cards: dict, gid: str, mode: str, mission: dict) -> Step | None:
     lost = a["capability_retained"] - b["capability_retained"]
     cap = card["capability"]["name"]
     value = mission["weights"].get(cap, 0.0) * lost
-    return Step(gid, a["name"], b["name"], frees, lost, value, value / frees, gid in mission["mission_critical"],
-                b["capability_retained"] <= 0, _shed_rank(mission, cap))
+    return Step(gid, a["name"], b["name"], frees, lost, value, value / frees, tier == "mission_critical",
+                b["capability_retained"] <= 0, _shed_rank(mission, cap), tier)
 
 
 def ladder(cards: dict, modes: dict[str, str], mission: dict) -> list[Step]:
