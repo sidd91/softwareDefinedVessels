@@ -725,7 +725,7 @@ scenario_b:
     by_file:
       survey:
         proceeds: G4
-        hard_limit: {guest: G4, when: battery_pct < 20, then: land within 12 min or ditch}
+        hard_limit: {guest: G4, when: {signal: G4.battery_pct, op: "<", value: 20}, then: {action: land_or_ditch, within_min: 12}}
         charge_reserved: false
         g3_holds_kw: 1
         survey_minutes_lost: [25, 27]
@@ -736,7 +736,7 @@ scenario_b:
         g3: {leg: paused, holds: depth, mode: standby}
       sar:
         proceeds: G4
-        hard_limit: {guest: G4, when: battery_pct < 20, then: land within 12 min or ditch}
+        hard_limit: {guest: G4, when: {signal: G4.battery_pct, op: "<", value: 20}, then: {action: land_or_ditch, within_min: 12}}
         charge_reserved: true
         reserved_kw: 35
         survey_minutes_lost: [25, 27]

@@ -23,14 +23,13 @@ conditions:
     requires: {noise: [normal, manoeuvring], emission: normal}
     note: The high-pressure pump is machinery above minimum, so the ship cannot be quiet while it produces and silence stops it (A.6).
   - activity: start
-    requires: {people: 2}
-    note: Two people prime and start the unit by hand from off. Nobody can at 0 aboard, so a unit shed to off while uncrewed stays off until crew return.
+    requires: {people_available: {min: 2}}
+    note: Two people prime and start the unit by hand from off. Nobody can at 0 aboard, so a unit shed to off while uncrewed stays off until two people can start it.
 relations:
   excludes:
-    - {what: G6.production, when: G3.surveying, kind: conditional}
+    - {activity: production, excludes: G3.surveying}
 hard_limits:
-  - {when: emission == silent, then: drop to recirculate, note: "silence forbids machinery above minimum (A.6)"}
-  - {when: crew_aboard == 0 and mode == off, then: stays off, note: "the start needs two people"}
+  - {when: {signal: emission, op: "==", value: silent}, then: {action: mode, mode: recirculate}, note: "silence forbids machinery above minimum (A.6)"}
 installation:
   port: {people: 2, hours: 4, note: "assumed: the low end of A.11's 4-8 h per bay guest"}
   at_sea: null

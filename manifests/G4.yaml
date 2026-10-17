@@ -22,14 +22,14 @@ modes:
   - {name: "off", power_kw: 0, capability_retained: 0.0}
 conditions:
   - activity: launch_recovery
-    requires: {deck: clear, wind_kn_max: 25, sea_state_max: 4, speed_kn: [5, 12], turn_into_wind: free, ramp: not_in_use}
+    requires: {deck_flight_deck: clear, wind_kn: {max: 25}, sea_state: {max: 4}, speed_kn: {min: 5, max: 12}, heading_free: true, ramp: free}
 hard_limits:
-  - {when: battery_pct < 20, then: land within 12 min or ditch, note: "waiting for the end of a survey leg is not an option"}
-  - {when: emission == silent, then: return home and demand a clear deck}
-  - {when: airborne, then: endurance 90 min}
+  - {when: {signal: G4.battery_pct, op: "<", value: 20}, then: {action: land_or_ditch, within_min: 12}, note: "waiting for the end of a survey leg is not an option"}
+  - {when: {signal: emission, op: "==", value: silent}, then: {action: return_and_land}, note: "returns home and needs a clear deck"}
+  - {when: {signal: G4.activity, op: "==", value: airborne}, then: {action: land, within_min: 90}, note: "endurance 90 min"}
 relations:
   excludes:
-    - {what: stern_ramp_ops, when: G4.launch_recovery, kind: conditional}
+    - {activity: launch_recovery, excludes: G3.launch_recovery, note: "flight deck and ramp operations are mutually exclusive (A.3)"}
 installation:
   port: {people: 4, hours: 4, note: "hangar is port only"}
   at_sea: {people: 3, minutes: 30, via: flight_deck, note: "drone swappable at sea"}

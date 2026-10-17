@@ -21,10 +21,8 @@ modes:
 conditions:
   - activity: listening
     requires: {}
-    note: No course or speed conditions; compatible with emission silence. Loses 30 % capability if the ship's own radar transmits nearby, unless the ship declares quiet radio.
-relations:
-  excludes:
-    - {what: G5.antenna, when: "both need the one free mast slot", kind: conditional}
+    note: No course or speed conditions; compatible with emission silence. Loses 30 % capability while radar_transmitting is true, unless the ship declares quiet radio. Competes with G5's antenna for the one free mast slot; placement (D2) decides that, not an exclusion.
+relations: {}
 installation:
   port: {people: 2, hours: 3}
   at_sea: null

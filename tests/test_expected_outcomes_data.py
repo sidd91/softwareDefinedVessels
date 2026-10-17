@@ -860,6 +860,6 @@ def test_minute_8_g3_states_and_the_ramp_after_g4():
     # Flight deck and ramp are mutually exclusive (A.3): G4 recovers only with the ramp not in use, and G3
     # comes back over the ramp, so G3's recovery waits for G4's landing.
     g4_recovery = next(c for c in CARDS["G4"]["conditions"] if c["activity"] == "launch_recovery")
-    assert g4_recovery["requires"]["ramp"] == "not_in_use"
+    assert g4_recovery["requires"]["ramp"] == "free"
     assert "stern_ramp" in CARDS["G3"]["relations"]["requires"]
     assert sar["recovery"] == {"via": "stern_ramp", "after": "G4 landed"}

@@ -4,163 +4,532 @@
   "title": "Guest manifest",
   "description": "How a guest payload nobody aboard has seen describes itself to the hull: what it consumes per resource class (min / nominal / peak with duration), where it can go, what ship states it needs, how it installs, how it degrades, the capability it returns, and its relations to other guests.",
   "type": "object",
-  "required": ["id", "name", "capability", "cooling", "placement", "consumes", "modes", "installation", "criticality"],
+  "required": [
+    "id",
+    "name",
+    "capability",
+    "cooling",
+    "placement",
+    "consumes",
+    "modes",
+    "installation",
+    "criticality"
+  ],
   "additionalProperties": false,
   "properties": {
-    "id": {"type": "string", "pattern": "^G[0-9]+$"},
-    "name": {"type": "string"},
-    "version": {"type": "integer", "minimum": 1},
-    "source": {"type": "string", "description": "Where the numbers come from, e.g. 'brief Annex B' or 'team invention'."},
+    "id": {
+      "type": "string",
+      "pattern": "^G[0-9]+$"
+    },
+    "name": {
+      "type": "string"
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "source": {
+      "type": "string",
+      "description": "Where the numbers come from, e.g. 'brief Annex B' or 'team invention'."
+    },
     "capability": {
       "type": "object",
-      "required": ["name"],
+      "required": [
+        "name"
+      ],
       "additionalProperties": false,
       "properties": {
-        "name": {"type": "string", "description": "Weighted capability name; the active mission-priority file assigns its weight."},
-        "description": {"type": "string"},
-        "relevance": {"type": "object", "additionalProperties": {"enum": ["high", "medium", "low"]}, "description": "The card's own statement of relevance per mission; priority files are authoritative."}
+        "name": {
+          "type": "string",
+          "description": "Weighted capability name; the active mission-priority file assigns its weight."
+        },
+        "description": {
+          "type": "string"
+        },
+        "relevance": {
+          "type": "object",
+          "additionalProperties": {
+            "enum": [
+              "high",
+              "medium",
+              "low"
+            ]
+          },
+          "description": "The card's own statement of relevance per mission; priority files are authoritative."
+        }
       }
     },
-    "cooling": {"enum": ["chilled_water", "air"], "description": "Chilled-water guests load the cooling loop 1 kW heat per kW electric; air-cooled guests must stay under the position's air limit."},
+    "cooling": {
+      "enum": [
+        "chilled_water",
+        "air"
+      ],
+      "description": "Chilled-water guests load the cooling loop 1 kW heat per kW electric; air-cooled guests must stay under the position's air limit."
+    },
     "placement": {
       "type": "object",
-      "required": ["parts"],
+      "required": [
+        "parts"
+      ],
       "additionalProperties": false,
       "properties": {
-        "parts": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/part"}},
-        "needs_bay_clear": {"type": "boolean", "description": "True if the guest's operations need the deck around its bay clear, so it cannot share a 20-ft bay."},
-        "uses_ramp": {"type": "boolean"}
+        "parts": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/part"
+          }
+        },
+        "needs_bay_clear": {
+          "type": "boolean",
+          "description": "True if the guest's operations need the deck around its bay clear, so it cannot share a 20-ft bay."
+        },
+        "uses_ramp": {
+          "type": "boolean"
+        }
       }
     },
     "consumes": {
       "type": "object",
-      "required": ["power_kw"],
+      "required": [
+        "power_kw"
+      ],
       "additionalProperties": false,
       "properties": {
-        "power_kw": {"$ref": "#/$defs/quantity"},
-        "data_backbone_mbps": {"$ref": "#/$defs/quantity"},
-        "data_satcom_mbps": {"$ref": "#/$defs/quantity"},
-        "data_los_radio_mbps": {"$ref": "#/$defs/quantity"},
-        "data_acoustic_kbps": {"$ref": "#/$defs/quantity"},
-        "compute_cores": {"$ref": "#/$defs/quantity"}
+        "power_kw": {
+          "$ref": "#/$defs/quantity"
+        },
+        "data_backbone_mbps": {
+          "$ref": "#/$defs/quantity"
+        },
+        "data_satcom_mbps": {
+          "$ref": "#/$defs/quantity"
+        },
+        "data_los_radio_mbps": {
+          "$ref": "#/$defs/quantity"
+        },
+        "data_acoustic_kbps": {
+          "$ref": "#/$defs/quantity"
+        },
+        "compute_cores": {
+          "$ref": "#/$defs/quantity"
+        }
       }
     },
-    "modes": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/mode"}, "description": "Ladder from full capability down to off. The governor throttles down this ladder before shedding."},
-    "conditions": {"type": "array", "items": {"$ref": "#/$defs/condition"}},
+    "modes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/mode"
+      },
+      "description": "Ladder from full capability down to off. The governor throttles down this ladder before shedding."
+    },
+    "conditions": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/condition"
+      }
+    },
     "relations": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "part_of": {"type": "array", "items": {"type": "string"}, "description": "Other guests this whole card belongs to. Parts of one assembly use the part-level part_of instead."},
-        "requires": {"type": "array", "items": {"type": "string"}},
-        "excludes": {"type": "array", "items": {"$ref": "#/$defs/exclusion"}}
+        "part_of": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Other guests this whole card belongs to. Parts of one assembly use the part-level part_of instead."
+        },
+        "requires": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "excludes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/exclusion"
+          }
+        }
       }
     },
     "installation": {
       "type": "object",
-      "required": ["port"],
+      "required": [
+        "port"
+      ],
       "additionalProperties": false,
       "properties": {
-        "port": {"$ref": "#/$defs/work"},
-        "at_sea": {"anyOf": [{"$ref": "#/$defs/work"}, {"type": "null"}]},
-        "at_sea_logical": {"type": "string"}
+        "port": {
+          "$ref": "#/$defs/work"
+        },
+        "at_sea": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/work"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "at_sea_logical": {
+          "type": "string"
+        }
       }
     },
     "criticality": {
       "type": "object",
-      "required": ["safety_critical"],
+      "required": [
+        "safety_critical"
+      ],
       "additionalProperties": false,
       "properties": {
-        "safety_critical": {"type": "boolean", "description": "Never shed automatically; a human confirms where a crew exists."},
-        "mission_critical": {"type": "string", "description": "Resolved against the active priority file, not a bare boolean."}
+        "safety_critical": {
+          "type": "boolean",
+          "description": "Never shed automatically; a human confirms where a crew exists."
+        },
+        "mission_critical": {
+          "type": "string",
+          "description": "Resolved against the active priority file, not a bare boolean."
+        }
       }
     },
-    "hard_limits": {"type": "array", "items": {"$ref": "#/$defs/limit"}},
-    "notes": {"type": "array", "items": {"type": "string"}}
+    "hard_limits": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/limit"
+      }
+    },
+    "notes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
   },
   "$defs": {
-    "position": {"enum": ["bay1", "bay1_half", "bay2", "flight_deck", "mast_free", "hangar_roof"]},
+    "position": {
+      "enum": [
+        "bay1",
+        "bay1_half",
+        "bay2",
+        "flight_deck",
+        "mast_free",
+        "hangar_roof"
+      ]
+    },
     "part": {
       "type": "object",
-      "required": ["name", "mass_t", "allowed"],
+      "required": [
+        "name",
+        "mass_t",
+        "allowed"
+      ],
       "additionalProperties": false,
       "properties": {
-        "name": {"type": "string"},
-        "mass_t": {"type": "number", "minimum": 0},
-        "area_m2": {"type": "number", "minimum": 0},
-        "length_m": {"type": "number", "minimum": 0, "description": "Length of a craft that crosses the stern ramp or flight deck, checked against the ramp's craft length (A.3)."},
-        "preferred": {"type": "array", "items": {"$ref": "#/$defs/position"}},
-        "allowed": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/position"}},
-        "part_of": {"type": "string", "description": "Name of another part on this card that this part belongs to (B.0 part-of): the assembly is admitted and shed as one thing."},
-        "assumed": {"type": "boolean", "description": "True if this part's numbers are ours, not the brief's."},
-        "note": {"type": "string"}
+        "name": {
+          "type": "string"
+        },
+        "mass_t": {
+          "type": "number",
+          "minimum": 0
+        },
+        "area_m2": {
+          "type": "number",
+          "minimum": 0
+        },
+        "length_m": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Length of a craft that crosses the stern ramp or flight deck, checked against the ramp's craft length (A.3)."
+        },
+        "preferred": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/position"
+          }
+        },
+        "allowed": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/position"
+          }
+        },
+        "part_of": {
+          "type": "string",
+          "description": "Name of another part on this card that this part belongs to (B.0 part-of): the assembly is admitted and shed as one thing."
+        },
+        "assumed": {
+          "type": "boolean",
+          "description": "True if this part's numbers are ours, not the brief's."
+        },
+        "note": {
+          "type": "string"
+        }
       }
     },
     "quantity": {
       "type": "object",
-      "required": ["nominal"],
+      "required": [
+        "nominal"
+      ],
       "additionalProperties": false,
       "properties": {
-        "min": {"type": "number", "minimum": 0},
-        "nominal": {"type": "number", "minimum": 0},
-        "peak": {"type": "number", "minimum": 0},
-        "peak_duration_s": {"type": "number", "minimum": 0},
-        "assumed": {"type": "boolean"},
-        "note": {"type": "string"}
+        "min": {
+          "type": "number",
+          "minimum": 0
+        },
+        "nominal": {
+          "type": "number",
+          "minimum": 0
+        },
+        "peak": {
+          "type": "number",
+          "minimum": 0
+        },
+        "peak_duration_s": {
+          "type": "number",
+          "minimum": 0
+        },
+        "assumed": {
+          "type": "boolean"
+        },
+        "note": {
+          "type": "string"
+        }
       }
     },
     "mode": {
       "type": "object",
-      "required": ["name", "power_kw", "capability_retained"],
+      "required": [
+        "name",
+        "power_kw",
+        "capability_retained"
+      ],
       "additionalProperties": false,
       "properties": {
-        "name": {"type": "string"},
-        "power_kw": {"type": "number", "minimum": 0},
-        "capability_retained": {"type": "number", "minimum": 0, "maximum": 1},
-        "duration_s": {"type": "number", "minimum": 0},
-        "interruptible": {"type": "boolean"},
-        "assumed": {"type": "boolean"},
-        "note": {"type": "string"}
+        "name": {
+          "type": "string"
+        },
+        "power_kw": {
+          "type": "number",
+          "minimum": 0
+        },
+        "capability_retained": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "duration_s": {
+          "type": "number",
+          "minimum": 0
+        },
+        "interruptible": {
+          "type": "boolean"
+        },
+        "assumed": {
+          "type": "boolean"
+        },
+        "note": {
+          "type": "string"
+        }
       }
     },
     "condition": {
       "type": "object",
-      "required": ["activity", "requires"],
+      "required": [
+        "activity",
+        "requires"
+      ],
       "additionalProperties": false,
       "properties": {
-        "activity": {"type": "string"},
-        "requires": {"type": "object"},
-        "note": {"type": "string"}
+        "activity": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*$",
+          "description": "One of this guest's activities in config/signals.yaml activities"
+        },
+        "requires": {
+          "type": "object",
+          "propertyNames": {
+            "pattern": "^(G[0-9]+\\.)?[a-z][a-z0-9_]*$"
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/predicate"
+          },
+          "description": "Signal name (config/signals.yaml) to predicate; all must hold for the activity to run"
+        },
+        "note": {
+          "type": "string"
+        }
       }
     },
     "exclusion": {
       "type": "object",
-      "required": ["what", "kind"],
+      "required": [
+        "activity",
+        "excludes"
+      ],
       "additionalProperties": false,
       "properties": {
-        "what": {"type": "string"},
-        "when": {"type": "string"},
-        "kind": {"enum": ["absolute", "conditional"]}
+        "activity": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*$",
+          "description": "This guest's activity"
+        },
+        "excludes": {
+          "type": "string",
+          "pattern": "^G[0-9]+\\.[a-z][a-z0-9_]*$",
+          "description": "Another guest's activity that cannot run at the same time, as Gx.activity"
+        },
+        "note": {
+          "type": "string"
+        }
       }
     },
     "work": {
       "type": "object",
-      "required": ["people"],
+      "required": [
+        "people"
+      ],
       "additionalProperties": false,
       "properties": {
-        "people": {"type": "integer", "minimum": 0},
-        "hours": {"type": "number", "minimum": 0},
-        "minutes": {"type": "number", "minimum": 0},
-        "via": {"type": "string"},
-        "parts": {"type": "array", "items": {"type": "string"}, "description": "The parts this work installs or swaps; omitted means the whole card."},
-        "note": {"type": "string"}
+        "people": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "hours": {
+          "type": "number",
+          "minimum": 0
+        },
+        "minutes": {
+          "type": "number",
+          "minimum": 0
+        },
+        "via": {
+          "type": "string"
+        },
+        "parts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "The parts this work installs or swaps; omitted means the whole card."
+        },
+        "note": {
+          "type": "string"
+        }
       }
     },
     "limit": {
       "type": "object",
-      "required": ["when", "then"],
+      "required": [
+        "when",
+        "then"
+      ],
       "additionalProperties": false,
-      "properties": {"when": {"type": "string"}, "then": {"type": "string"}, "note": {"type": "string"}}
+      "properties": {
+        "when": {
+          "type": "object",
+          "required": [
+            "signal",
+            "op",
+            "value"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "signal": {
+              "type": "string",
+              "pattern": "^(G[0-9]+\\.)?[a-z][a-z0-9_]*$"
+            },
+            "op": {
+              "enum": [
+                "<",
+                "<=",
+                "==",
+                "!=",
+                ">=",
+                ">"
+              ]
+            },
+            "value": {
+              "type": [
+                "string",
+                "number",
+                "boolean"
+              ]
+            }
+          }
+        },
+        "then": {
+          "type": "object",
+          "required": [
+            "action"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "action": {
+              "enum": [
+                "land_or_ditch",
+                "land",
+                "return_and_land",
+                "mode",
+                "hold"
+              ]
+            },
+            "within_min": {
+              "type": "number",
+              "minimum": 0,
+              "description": "Counted from the moment when becomes true"
+            },
+            "mode": {
+              "type": "string",
+              "description": "Target mode when action is mode"
+            }
+          }
+        },
+        "note": {
+          "type": "string"
+        }
+      }
+    },
+    "predicate": {
+      "description": "What a condition needs from one signal: an exact value (numbers hold within derivations.speed_tolerance_kn for speed), one of a list, or a range. Names and values are checked against config/signals.yaml by the loader.",
+      "oneOf": [
+        {
+          "type": [
+            "string",
+            "number",
+            "boolean"
+          ]
+        },
+        {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": [
+              "string",
+              "number"
+            ]
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "minProperties": 1,
+          "properties": {
+            "min": {
+              "type": "number"
+            },
+            "max": {
+              "type": "number"
+            }
+          }
+        }
+      ]
     }
   }
 }

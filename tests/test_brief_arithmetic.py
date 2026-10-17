@@ -127,10 +127,10 @@ def test_g6_declares_ship_states_relations_limits_and_crew():
     production = next(c for c in g6["conditions"] if c["activity"] == "production")
     assert production["requires"]["emission"] == "normal"
     assert "quiet" not in production["requires"]["noise"]
-    assert g6["relations"]["excludes"] == [{"what": "G6.production", "when": "G3.surveying", "kind": "conditional"}]
-    assert any(limit["when"] == "emission == silent" for limit in g6["hard_limits"])
+    assert g6["relations"]["excludes"] == [{"activity": "production", "excludes": "G3.surveying"}]
+    assert any(limit["when"] == {"signal": "emission", "op": "==", "value": "silent"} for limit in g6["hard_limits"])
     start = next(c for c in g6["conditions"] if c["activity"] == "start")
-    assert start["requires"]["people"] == 2  # two people to start it by hand
+    assert start["requires"]["people_available"] == {"min": 2}  # two people to start it by hand
     assert g6["installation"]["at_sea"] is None  # a bay guest is port only (A.11: at sea, "No bays")
 
 

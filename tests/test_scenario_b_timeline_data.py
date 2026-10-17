@@ -184,7 +184,7 @@ def test_acoustic_link_rule_matches_g3_surveying_and_the_scenario_water():
     link = A["data"]["acoustic_link"]
     surveying = next(c for c in CARDS["G3"]["conditions"] if c["activity"] == "surveying")["requires"]
     assert link["up_when"] == {"course": surveying["course"], "noise": surveying["noise"],
-                               "deck_machinery": surveying["deck_machinery_allowed"]}
+                               "deck_machinery": surveying["deck_machinery"]}
     assert TL["location"]["layered"] is False  # a layered column would break the link from minute 0 (A.5)
     # The hold-depth request reaches G3 at the slow end of A.5 inside the 1 min bridge confirm.
     assert link["judged_latency_s"] == max(A["data"]["acoustic_latency_s"])

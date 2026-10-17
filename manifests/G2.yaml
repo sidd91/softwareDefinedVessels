@@ -23,14 +23,14 @@ modes:
   - {name: "off", power_kw: 0, capability_retained: 0.0}
 conditions:
   - activity: probe
-    requires: {speed_kn_max: 5, sea_state_max: 4, course: steady, deck_around_bay: clear}
+    requires: {speed_kn: {max: 5}, sea_state: {max: 4}, course: steady, deck_bays: clear}
   - activity: winch
-    requires: {deck_machinery_allowed: true}
+    requires: {deck_machinery_permitted: true}
     note: The winch is deck machinery, excluded while G3 listens or G4 recovers.
 relations:
   excludes:
-    - {what: G2.winch, when: G3.surveying, kind: conditional}
-    - {what: G2.winch, when: G4.recovering, kind: conditional}
+    - {activity: winch, excludes: G3.surveying}
+    - {activity: winch, excludes: G4.launch_recovery}
 installation:
   port: {people: 4, hours: 6}
   at_sea: null

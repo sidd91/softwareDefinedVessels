@@ -91,6 +91,7 @@ Deadline: **Sun 2026-10-18 10:00 PDT**.
 | DEC-50 | Sat 12:31 | Memo: assume the brief's Scenario C memo and slide 14's architecture-and-constraint-handling memo are different documents, and write the one 2-page memo so it serves both (req R-004) | Logan | Claude for Logan |
 | DEC-51 | Sat 12:31 | Scenario B minute 12 (organizer question 5, freeze F4) is Siddharth's to decide as owner of the simulator and scenario timing; DEC-40 stands until he does | Logan | Claude for Logan |
 | DEC-52 | Sat 13:15 | Freeze alignment applied across docs and data: R3 at 0 aboard on a deck latched clear at the last crew sweep, otherwise forbidden; minute-12 armed ladders corrected (survey 48 and rescue 81 of 95 kW, first armed step G5 to low power in both); rescue minute 8 has G3 aborted and holding until G4 has landed; F3 precedence (safety and hard limits, throttle before shed, shed_order if present, then price; no file sets shed_order); one screen with three views; board as instrument with every demo input on the laptop; breadth strip with a data-feed-drop line; INJECTED, never ADDED; replay identical except wall-clock fields. DEC-44 also supersedes DEC-13 (SSDlite), DEC-14 (node B as second process), DEC-26's camera and failover lines, DEC-31's ONNX on the board and DEC-39's opencv and onnxruntime approval | Logan (DEC-44); details applied by Claude | Claude for Logan |
+| DEC-53 | Sat 14:09 | Typed conditions (F2): card conditions map signal names from config/signals.yaml to an exact value, a list, or a {min, max} range; exclusions name an own activity and another guest's activity (Gx.activity); hard limits are {signal, op, value} then {action, within_min or mode}. Drift fixed: G4.recovering is G4.launch_recovery, ramp not_in_use is free, deck_machinery_allowed is deck_machinery or deck_machinery_permitted. G1's mast competition moves to placement; G5's duplicate silence exclusion dropped; G6's compound limit becomes its start condition; G4's endurance is land within 90 min of airborne; G3 ramp recovery gains A.3's steady course. src/sdv/loader.py refuses unknown names with the field named and keeps the previous file (req R-064, R-100, R-152) | Logan (F2, DEC-44); format by Claude as core owner | Claude for Logan |
 
 ## Conflicts and risks to watch
 
@@ -762,3 +763,12 @@ Logan chose the hybrid build: Claude builds the core spine in this session (load
 D1); two parallel sessions build the UI shell (argos-ui) and the decision-record schema and sentence templates
 (argos-explain), each merging to main when its tests pass.
 Decisions: none new (DEC-50 applied). Conflicts: CON-22 still open (Siddharth to agree). Deferrals: none.
+
+### Sat 14:09 PDT · Checkpoint 4: typed conditions and loader (DEC-53) · Claude Opus 5.5 on behalf of Logan Walker (GhostWalka)
+
+F2 done directly in this session (hybrid build). manifests/schema.json types conditions, exclusions and limits;
+the six cards are rewritten in place; src/sdv/loader.py checks every name against config/signals.yaml and
+config/assumptions.yaml and refuses a bad card or priority file with the file and field named, keeping the previous
+one (try_load). tests/test_loader.py: 15 hostile cards and 8 hostile priority files refused, a one-number edit
+accepted. The contract test's temporary name-translation tables are gone. 657 tests pass.
+Decisions: DEC-53. Conflicts: none new. Deferrals: none.

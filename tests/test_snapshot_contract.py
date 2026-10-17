@@ -57,33 +57,8 @@ BASE = SIGNALS_FILE["baselines"]["scenario_b"]
 SAR_RESERVATIONS = {"G4": {"mode": "fast_charge", "kw": ORACLE["scenario_b"]["minute_8"]["by_file"]["sar"]["reserved_kw"], "since_t_s": 480}}
 
 # ---------------------------------------------------------------------------------------------------------
-# Today's free-text names on the cards, mapped to the typed vocabulary. Remove this table when F2 types the
-# cards (DESIGN_FREEZE delta 2): from then on the cards use the signal and activity names directly.
-CONDITION_KEYS = {
-    (None, None, "speed_kn"): "speed_kn",
-    (None, None, "speed_kn_max"): "speed_kn",
-    (None, None, "sea_state_max"): "sea_state",
-    (None, None, "wind_kn_max"): "wind_kn",
-    (None, None, "course"): "course",
-    (None, None, "noise"): "noise",
-    (None, None, "emission"): "emission",
-    (None, None, "ramp"): "ramp",
-    (None, None, "deck_around_bay"): "deck_bays",
-    ("G4", None, "deck"): "deck_flight_deck",
-    ("G4", None, "turn_into_wind"): "heading_free",
-    ("G6", "start", "people"): "people_available",
-    # One key, two meanings: G2 means "machinery is permitted", G3 means "no machinery is running".
-    ("G2", "winch", "deck_machinery_allowed"): "deck_machinery_permitted",
-    ("G3", "surveying", "deck_machinery_allowed"): "deck_machinery",
-}
-VALUE_ALIASES = {("ramp", "not_in_use"): "free", ("heading_free", "free"): True}
-REFERENCE_ALIASES = {
-    "G4.recovering": ("activity", "G4.launch_recovery"),          # G2.yaml, G3.yaml; OPEN_QUESTIONS #44
-    "stern_ramp_ops": ("activity", "G3.launch_recovery"),         # G4.yaml; A.3 flight deck and ramp exclusive
-    "emission_silence": ("signal", "emission", "silent"),         # G5.yaml; a ship-state value, not an activity
-    "always": ("literal", None),                                  # G5.yaml exclusion when
-    "both need the one free mast slot": ("position", "mast_free"),  # G1.yaml; placement contention
-}
+# The cards are typed (F2): conditions, exclusions and limits use signal and activity names directly.
+# WINDOW_KEYS maps the installation-window keys in config/assumptions.yaml, which are not card fields.
 WINDOW_KEYS = {"sea_state_max": "sea_state", "wind_kn_max": "wind_kn", "speed_kn": "speed_kn", "course": "course",
                "deck": "deck_flight_deck", "survey_vehicle_listening": ("activity", "G3.surveying")}
 # ---------------------------------------------------------------------------------------------------------
@@ -407,33 +382,34 @@ def test_registry_covers_every_card_activity_and_mode():
 
 
 def resolve_condition_key(gid, act, key):
-    for k in [(gid, act, key), (gid, None, key), (None, None, key)]:
-        if k in CONDITION_KEYS:
-            return CONDITION_KEYS[k]
     return key if key in SIGNALS else None
 
 
 def condition_value_ok(sig_name, key, v):
     sig = SIGNALS[sig_name]
-    if sig["type"] == "number" and isinstance(v, list):
-        return len(v) == 2 and all(value_ok(sig, x) for x in v)
+    if isinstance(v, dict):
+        return sig["type"] in ("number", "integer") and all(value_ok(sig, x) for x in v.values())
     vals = v if isinstance(v, list) else [v]
-    return all(value_ok(sig, VALUE_ALIASES.get((sig_name, x), x)) for x in vals)
+    return all(value_ok(sig, x) for x in vals)
 
 
 def condition_holds(sig_name, key, want, value):
-    want = VALUE_ALIASES.get((sig_name, want), want) if not isinstance(want, list) else want
     if value is None:
         return False
-    if key.endswith("_max"):
-        return value <= want
+    if isinstance(want, dict):
+        return want.get("min", float("-inf")) <= value <= want.get("max", float("inf"))
     if SIGNALS[sig_name]["type"] == "number":
-        if isinstance(want, list):
-            return want[0] <= value <= want[1]
         return abs(value - want) <= DERIV["speed_tolerance_kn"]["value"]
     if isinstance(want, list):
         return value in want
     return value == want
+
+
+def sample_value(want):
+    """One value that satisfies a condition's predicate."""
+    if isinstance(want, dict):
+        return want.get("min", want.get("max"))
+    return want[0] if isinstance(want, list) else want
 
 
 CARD_CONDITIONS = [(gid, c["activity"], k, v) for gid, card in CARDS.items()
@@ -457,8 +433,7 @@ def test_an_activity_never_fails_its_own_conditions(gid, act):
     state = {}
     for key, want in conds.items():
         sig = resolve_condition_key(gid, act, key)
-        w = VALUE_ALIASES.get((sig, want), want) if not isinstance(want, list) else want[0]
-        state[sig] = {"value": w, "by": []}
+        state[sig] = {"value": sample_value(want), "by": []}
     for sig, val in ACTIVITIES[gid][act]["effects"].items():
         state[sig] = {"value": val, "by": [gid]}
 
@@ -472,26 +447,15 @@ def test_an_activity_never_fails_its_own_conditions(gid, act):
 
 
 def resolve_reference(ref, gid):
-    if ref in REFERENCE_ALIASES:
-        kind, target, *rest = REFERENCE_ALIASES[ref]
-        if kind == "activity":
-            g, a = target.split(".")
-            return a in ACTIVITIES[g]
-        if kind == "signal":
-            return value_ok(SIGNALS[target], rest[0])
-        if kind == "position":
-            return target in A["positions"]
-        return kind == "literal"
     m = re.fullmatch(r"(G\d)\.(\w+)", ref)
     if m:
         g, name = m.groups()
-        parts = {p["name"] for p in CARDS[g]["placement"]["parts"]}
-        return name in ACTIVITIES[g] or name in parts
+        return g in ACTIVITIES and name in ACTIVITIES[g]
     return ref in A["positions"]
 
 
 REFERENCES = [(gid, ref) for gid, card in CARDS.items() for ex in card.get("relations", {}).get("excludes", [])
-              for ref in (ex["what"], ex["when"])]
+              for ref in (f"{gid}.{ex['activity']}", ex["excludes"])]
 REFERENCES += [(gid, r) for gid, card in CARDS.items() for r in card.get("relations", {}).get("requires", [])]
 
 
@@ -503,18 +467,10 @@ def test_every_relation_reference_resolves(gid, ref):
 LIMITS = [(gid, lim["when"]) for gid, card in CARDS.items() for lim in card.get("hard_limits", [])]
 
 
-@pytest.mark.parametrize("gid,when", LIMITS, ids=[f"{g}:{w}" for g, w in LIMITS])
-def test_every_hard_limit_names_a_signal_or_an_activity(gid, when):
-    for clause in when.split(" and "):
-        m = re.fullmatch(r"\s*(\w+)\s*(==|<=|>=|<|>)\s*(\w+)\s*", clause)
-        if not m:
-            assert clause.strip() in ACTIVITIES[gid], f"{gid}: {clause!r} is not a registered activity"
-            continue
-        ident, _, raw = m.groups()
-        sig = f"{gid}.{ident}" if f"{gid}.{ident}" in SIGNALS else ident
-        assert sig in SIGNALS, f"{gid}: {ident!r} is no signal"
-        value = int(raw) if raw.isdigit() else raw     # not yaml: YAML 1.1 reads "off" as false
-        assert value_ok(SIGNALS[sig], value) or SIGNALS[sig]["type"] == "number", f"{gid}: {raw!r} for {sig}"
+@pytest.mark.parametrize("gid,when", LIMITS, ids=[f"{g}:{w['signal']}" for g, w in LIMITS])
+def test_every_hard_limit_names_a_signal(gid, when):
+    assert when["signal"] in SIGNALS, f"{gid}: {when['signal']!r} is no signal"
+    assert value_ok(SIGNALS[when["signal"]], when["value"]), f"{gid}: {when['value']!r} for {when['signal']}"
 
 
 def test_installation_window_and_ramp_names_resolve():
@@ -873,9 +829,9 @@ def test_minute_8_land_by_is_18_2():
     g4 = s["guests"]["G4"]
     assert s["run"]["t_ship_s"] == report["t_min"] * 60
     assert g4["battery_pct"]["value"] == report["battery_pct"] and g4["battery_pct"]["age_s"] == 0
-    limit = next(l for l in CARDS["G4"]["hard_limits"] if "battery_pct" in l["when"])
-    threshold = float(re.search(r"<\s*(\d+)", limit["when"]).group(1))
-    within_min = float(re.search(r"within (\d+) min", limit["then"]).group(1))
+    limit = next(l for l in CARDS["G4"]["hard_limits"] if l["when"]["signal"] == "G4.battery_pct")
+    threshold = float(limit["when"]["value"])
+    within_min = float(limit["then"]["within_min"])
     drain = A["rules"]["r3"]["drain_pct_min"]
     crossing_min = report["t_min"] - (threshold - report["battery_pct"]) / drain
     timing = ORACLE["scenario_b"]["minute_8"]["timing"]
