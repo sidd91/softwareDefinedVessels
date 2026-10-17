@@ -1,0 +1,49 @@
+# Software and AI usage log
+
+Every tool, package, model and service used on this project, dev-time or shipped. Kept current as
+things are added. "Ships" means it is in the deliverable repo or runs during the live demo.
+Policy: open-source third-party code only (OSI licence, no AGPL), or our own; every AI model declared.
+
+## Needs action from Logan
+| Item | Why | Status |
+|---|---|---|
+| `gh auth login` as GhostWalka | team repo is private | done Fri 20:40 PDT |
+
+## Installed or already present on the laptop
+| Software | Version | Licence | Origin | Purpose | Ships | Status |
+|---|---|---|---|---|---|---|
+| Claude Fable 5.1 (Claude Code desktop) | claude-fable-5-1 | service | Anthropic, US | coding assistant, docs drafting, research | no (declared) | in use, approved by Logan for hackathon |
+| Claude Opus 5.5 (Claude Code desktop) | claude-opus-5-5 | service | Anthropic, US | coding assistant, brainstorming, docs drafting; switched in by Logan 2026-10-16 ~22:40 CDT | no (declared) | in use, approved |
+| uv | present | MIT / Apache-2.0 | Astral, US | Python version + dependency manager | no (dev) | present |
+| Python | 3.14.4 system; 3.12 via uv planned | PSF | PSF | runtime | yes | 3.12 install pending (uv does it, no sudo) |
+| git | present | GPL-2.0 | — | version control | no | present |
+| GitHub CLI (gh) | present | MIT | GitHub | repo access | no | present, signed in as GhostWalka |
+| Docker | present | Apache-2.0 | Docker Inc. | not planned | no | unused |
+
+## Planned (added to the table above when actually installed)
+| Software | Licence | Origin | Purpose | Ships |
+|---|---|---|---|---|
+| FastAPI | MIT | Sebastián Ramírez | HTTP + websocket server for the screen | yes |
+| uvicorn | BSD-3 | Encode | ASGI server | yes |
+| websockets | BSD-3 | Aymeric Augustin | inter-node bus + browser push | yes |
+| pydantic | MIT | Pydantic Services | manifest and rule models | yes |
+| jsonschema | MIT | Julian Berman | manifest schema validation | yes |
+| PyYAML | MIT | — | assumptions, mission files, rules | yes |
+| Lark | MIT | Erez Shinan | controlled-natural-language rule grammar | yes |
+| numpy | BSD-3 | NumPy devs | ledger math | yes |
+| pytest | MIT | pytest devs | tests, replay assertions | no (dev) |
+| httpx | BSD-3 | Encode | one-time Open-Meteo Marine fetch, cached | no (dev) |
+| torch + torchvision | BSD-3 | Meta | SSDlite320-MobileNetV3 detector, COCO weights | yes |
+| opencv-python | Apache-2.0 | OpenCV | webcam capture, frame handling | yes |
+| three.js (vendored file) | MIT | three.js authors | 3D ship view | yes |
+| ReportLab or WeasyPrint | BSD-3 | — | memo and Physical Account to PDF | no (dev) |
+| Phi-4-mini or Mistral-7B-Instruct (optional) | MIT / Apache-2.0 | Microsoft / Mistral AI | offline paraphrase of free text into rule grammar | only if used, declared |
+
+## Excluded on purpose
+| Software | Reason |
+|---|---|
+| Ultralytics YOLO | AGPL-3.0 would bind the whole served application |
+| Llama, Gemma | community licences are not OSI open source |
+| Any model from a China-based company or derived from one (Qwen, DeepSeek, Yi, GLM, YOLOv6/X/v10, DAMO-YOLO, PP-YOLO, PaddleOCR) | brief, Data Use Authorization §2 |
+| Node / React | no build step wanted; nothing installed; vanilla JS + vendored libs run offline |
+| Any cloud inference or training | Logan's rule: runtime compute local only |
