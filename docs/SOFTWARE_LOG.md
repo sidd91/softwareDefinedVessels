@@ -19,6 +19,7 @@ Policy: open-source third-party code only (OSI licence, no AGPL), or our own; ev
 | git | present | GPL-2.0 | — | version control | no | present |
 | GitHub CLI (gh) | present | MIT | GitHub | repo access | no | present, signed in as GhostWalka |
 | Docker | present | Apache-2.0 | Docker Inc. | not planned | no | unused |
+| Superpowers plugin for Claude Code (obra/superpowers) | 6.4.2 | MIT | Jesse Vincent, Anthropic plugin directory (partner tier) | development workflow skills: TDD, plans, debugging, verification, subagent-driven development | no (dev) | install card shown to Logan Fri 21:36 PDT |
 
 ## Planned (added to the table above when actually installed)
 | Software | Licence | Origin | Purpose | Ships |

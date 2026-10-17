@@ -218,3 +218,22 @@ Work done:
   total. They are linked, not downloaded; a visual reference board needs Logan's OK to download.
 
 Conflicts: one plausibility row added above. Deferrals: none.
+
+### Fri 21:36 PDT · PR, reference board, Superpowers · Claude Opus 5.5 on behalf of Logan Walker (GhostWalka)
+
+All work in this entry was done by Claude on Logan's behalf.
+
+Work done:
+- Opened sidd91/softwareDefinedVessels#1 from `docs/game-plan-and-research` to main, carrying the
+  plan, research, worklog and software log. It is mergeable; merging is Siddharth's call as repo
+  owner. The repo has no CI checks.
+- Published a visual reference board of 24 freely licensed Fincantieri-group vessel photos in
+  Claude Design, each credited with author, licence and file page. Downloaded as 1280 px Commons
+  thumbnails, 7.2 MB, kept out of the repo. The board is private to Logan until he shares it.
+- Logan asked to use the Superpowers plugin for development where it doesn't slow us down. It is
+  in the Anthropic plugin directory (obra/superpowers 6.4.2, MIT); the install card is shown to
+  Logan and logged in `docs/SOFTWARE_LOG.md`.
+- Lost about 30 minutes to a connection drop while Logan changed location; nothing was lost.
+
+Conflicts: the setup block ended at 21:30 and the core build has not started; M1 is due Sat 01:30.
+Deferrals: none.
