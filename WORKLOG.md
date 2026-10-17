@@ -915,3 +915,16 @@ tests/test_response.py (19) replaces tests/test_tiers.py. 1255 tests pass. Not m
 after the adversarial review and fixes so the team can review.
 Decisions: DEC-60. Conflicts: none new. Deferrals: the two design calls in DEC-60 to Logan's team; a drone-side hold
 command (guest_command G4 hold_landing) is Siddharth's to add to the command list.
+
+### Sat 15:55 PDT · Weather-API listener; deployment globe on trigger · Claude Opus 5.5 on behalf of Logan Walker (GhostWalka)
+
+Logan asked for a listener on Siddharth's work: once a weather API lands, build the deployment globe (NICE_TO_HAVE,
+main 7cd080b) as a standalone tool, outside the ArgOS screen; whether to fold it into the screen is decided after.
+A background script polls a private bare clone of the team repo every 5 min for 18 h and fires on any new weather-API
+line (weather, Open-Meteo, forecast, marine API, NOAA, ECMWF, wave height and the like) in code or config whose file
+Siddharth last changed, or a new commit of his that names one. Baseline at 15:55 PDT: none. Seen while setting it up:
+his branch feat/ship-state-fsm carries his simulator ("seeded 1 Hz simulator", plant contract CON-21) and a governor
+of his own (D1-D4, decision record, closed loop, `sdv demo`, commit 9a99dc7), neither on main; the overlap with the
+core on main is for the team to settle.
+Decisions: none new. Conflicts: the second governor on feat/ship-state-fsm against DEC-47's split (for the team).
+Deferrals: the globe waits for the weather API and for Logan's yes to install CesiumJS.
