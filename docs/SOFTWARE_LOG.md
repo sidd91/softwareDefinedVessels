@@ -41,6 +41,9 @@ answers so far do not name the list's source. The source and date go here when t
 | pandoc | 3.7.0.2+ds-1, Ubuntu universe | GPL-2.0-or-later | John MacFarlane et al., Ubuntu | Markdown to HTML for the deliverable PDFs (`tools/build_pdfs.py`) | no (dev) | installed Sat 11:47 PDT at Logan's request; Logan typed sudo |
 | Chromium (snap) | 155.0.8059.79 | BSD-3-Clause and others (Chromium licences) | Canonical snap of the Chromium project | headless print of the deliverable PDFs (`tools/build_pdfs.py`) | no (dev) | installed Sat 11:47 PDT at Logan's request |
 | android-sdk-platform-tools-common | 28.0.2+12, Ubuntu universe | Apache-2.0 | AOSP, Ubuntu | udev rules giving USB access without root | no | installed Sat 11:07 PDT with adb |
+| FastAPI (+ Starlette 1.8.0 BSD-3-Clause, pydantic 2.14.1 MIT, pydantic-core 2.50.1 MIT, annotated-doc 0.0.5 MIT, annotated-types 0.8.0 MIT, typing-inspection 0.4.4 MIT, anyio 4.15.1 MIT, idna 3.20 BSD-3-Clause, opentelemetry-api 1.45.1 Apache-2.0) | 0.143.3 | MIT | Sebastián Ramírez (deps: Encode, Pydantic Services, Alex Grönholm, Kim Davies, OpenTelemetry/CNCF) | HTTP and websocket server for the ArgOS screen (`src/sdv/ui/`) | yes | installed Sat 14:51 PDT (approved DEC-39) |
+| uvicorn (+ click 8.5.0 BSD-3-Clause, h11 0.16.0 MIT) | 0.54.0 | BSD-3-Clause | Encode (deps: Pallets, python-hyper) | ASGI server behind `uv run python -m sdv.ui.server` | yes | installed Sat 14:51 PDT (approved DEC-39) |
+| websockets | 17.2 | BSD-3-Clause | Aymeric Augustin | websocket protocol for uvicorn (`/ws` pushes snapshot and records per tick); also the client in the UI tests | yes | installed Sat 14:51 PDT (approved DEC-39) |
 | Superpowers plugin for Claude Code (obra/superpowers) | 6.4.2 | MIT | Jesse Vincent, Anthropic plugin directory (partner tier) | development workflow skills: TDD, plans, debugging, verification, subagent-driven development | no (dev) | install card shown to Logan Fri 21:36 PDT |
 
 ## Present on the board (VENTUNO Q `training05`); nothing installed by us
@@ -57,14 +60,10 @@ per decision class and CPU share against A.7 for the Physical Account. Nothing i
 | Echo server for link timing | our own, 15 lines | ours | measured USB and Wi-Fi heartbeat round trips for the failover plan, now cut (DEC-44) | no | ran Sat 11:14 PDT from /tmp, then removed |
 
 ## Planned (approved by Logan, DEC-39; added to the table above when actually installed)
-| Software | Licence | Origin | Purpose | Ships | When |
-|---|---|---|---|---|---|
-| FastAPI | MIT | Sebastián Ramírez | HTTP and websocket server for the screen | yes | approved now (DEC-39) |
-| uvicorn | BSD-3 | Encode | ASGI server | yes | approved now (DEC-39) |
-| websockets | BSD-3 | Aymeric Augustin | push from the core to the browser screen | yes | approved now (DEC-39) |
+FastAPI, uvicorn and websockets were installed Sat 14:51 PDT and moved to the installed table, with versions and licences.
 
-Their transitive dependencies (for example pydantic and Starlette under FastAPI) are logged with versions
-and licences in the installed table at install time, as for jsonschema. DEC-39 also approved
+Their transitive dependencies (pydantic and Starlette under FastAPI, click and h11 under uvicorn) are logged
+with versions and licences in the installed table, as for jsonschema. DEC-39 also approved
 opencv-python-headless and onnxruntime for the camera and board steps. DEC-44 cut both uses, so neither is
 planned; both are listed under [Excluded by the design freeze](#excluded-by-the-design-freeze-dec-44).
 

@@ -1,0 +1,164 @@
+// The ArgOS page: one title bar, four views, the SIM bar, and the /ws replay stream.
+import { esc, chip, getJSON } from './util.js';
+import { renderOps, renderLedger } from './ops.js';
+import { renderCompare } from './compare.js';
+import { renderAdmit } from './admit.js';
+import { renderReference } from './reference.js';
+
+const VIEWS = {
+  ops: { sub: 'RESOURCE GOVERNOR · MRV-60', sim: true },
+  ledger: { sub: 'CONSTRAINT LEDGER · MRV-60', sim: true },
+  compare: { sub: 'MISSION COMPARE · MRV-60', sim: true },
+  admit: { sub: 'ADMISSION · MRV-60', sim: false },
+  ref: { sub: 'REFERENCE · MRV-60', sim: false },
+};
+
+export const app = {
+  view: 'ops',
+  meta: null,
+  tick: null,          // the latest /ws message: {tick, t_s, mission, snapshot, records, view, running, speed}
+  ws: null,
+  header: null,        // chips and clock set by a view that owns the title bar (admission, reference)
+  send(msg) { if (this.ws && this.ws.readyState === 1) this.ws.send(JSON.stringify(msg)); },
+};
+
+const $ = id => document.getElementById(id);
+
+// ------------------------------------------------------------------------------------------- title bar
+
+function replayChips(v) {
+  const h = v.header;
+  const gens = v.plant.filter(p => p.tag.startsWith('GEN')).filter(p => p.state === 'RUN').length;
+  return [
+    chip(`MISSION ${esc(h.mission)}`, 'strong'),
+    chip(`PRIORITY ${esc(h.priority_file)} <span class="dim">VALID</span>`),
+    chip(`${esc(h.crew)} <span class="dim">· R3 ${esc(h.crew_policy)}</span>`),
+    chip(esc(h.sea)),
+    chip(esc(h.speed)),
+    app.view === 'ledger' ? chip(`GEN ${gens} OF 2`) : '',
+    chip(`SIM ×${esc(app.tick.speed)}`),
+  ].join('');
+}
+
+export function setHeader(chips, right = null, small = false) {
+  app.header = { chips, right, small };
+  paintHeader();
+}
+
+function paintHeader() {
+  const cfg = VIEWS[app.view];
+  $('subtitle').textContent = cfg.sub;
+  const alarms = $('alarms');
+  const clock = $('clock');
+  if (!cfg.sim || (app.view === 'compare' && app.header)) {
+    $('chips').innerHTML = app.header ? app.header.chips : '';
+    alarms.hidden = true;
+    clock.className = 'clock' + (app.header && app.header.small ? ' small' : '');
+    clock.textContent = app.header && app.header.right != null ? app.header.right : '';
+    clock.hidden = !(app.header && app.header.right);
+    return;
+  }
+  if (!app.tick) return;
+  const v = app.tick.view;
+  $('chips').innerHTML = replayChips(v);
+  alarms.hidden = false;
+  alarms.className = 'alarm-count' + (v.header.alarms ? '' : ' none');
+  alarms.textContent = `ALARMS ${v.header.alarms}`;
+  clock.hidden = false;
+  clock.className = 'clock';
+  clock.textContent = v.header.clock;
+}
+
+// ------------------------------------------------------------------------------------------- SIM bar
+
+function simbar() {
+  const t = app.tick;
+  if (!t || !app.meta) return;
+  $('sim-run').textContent = t.running ? 'HOLD' : 'RUN';
+  $('sim-run').classList.toggle('on', !t.running);
+  $('sim-speed').innerHTML = '<span class="gl">PACE</span>' + app.meta.speeds.map(s =>
+    `<button type="button" data-speed="${s}" class="${s === t.speed ? 'on' : ''}">×${s}</button>`).join('');
+  const marks = (app.meta.marks[t.mission] || []).filter(m => m.t_s > 0);
+  $('sim-jump').innerHTML = '<span class="gl">JUMP</span>' + marks.map(m =>
+    `<button type="button" data-jump="${Math.max(0, m.at - 3)}" title="${esc(m.label)}">${esc(m.t.slice(3))}</button>`).join('');
+  $('sim-file').innerHTML = '<span class="gl">PRIORITY</span>' + app.meta.missions.map(m =>
+    `<button type="button" data-file="${esc(m.id)}" class="${m.id === t.mission ? 'on' : ''}">${esc(m.name)}</button>`).join('');
+  $('sim-fill').style.width = `${Math.round(100 * t.t_s / t.end_t_s)}%`;
+}
+
+function wireSimbar() {
+  $('sim-run').addEventListener('click', () => app.send({ cmd: 'toggle' }));
+  $('sim-restart').addEventListener('click', () => app.send({ cmd: 'restart' }));
+  $('simbar').addEventListener('click', e => {
+    const b = e.target.closest('button');
+    if (!b) return;
+    if (b.dataset.speed) app.send({ cmd: 'speed', value: Number(b.dataset.speed) });
+    if (b.dataset.jump) app.send({ cmd: 'jump', t: Number(b.dataset.jump) });
+    if (b.dataset.file) app.send({ cmd: 'mission', value: b.dataset.file });
+  });
+  document.addEventListener('keydown', e => {
+    if (e.code !== 'Space' || !VIEWS[app.view].sim) return;
+    if (e.target.closest('input, select, textarea')) return;
+    e.preventDefault();
+    app.send({ cmd: 'toggle' });
+  });
+}
+
+// ------------------------------------------------------------------------------------------- stream
+
+function connect(attempt = 0) {
+  const q = new URLSearchParams({ mission: app.tick ? app.tick.mission : 'survey', t: app.tick ? app.tick.t_s : 0,
+    speed: app.tick ? app.tick.speed : 12, run: app.tick && !app.tick.running ? '0' : '1' });
+  const ws = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws?${q}`);
+  app.ws = ws;
+  ws.onopen = () => { attempt = 0; link(true); };
+  ws.onmessage = e => {
+    app.tick = JSON.parse(e.data);
+    render();
+  };
+  ws.onclose = () => {
+    link(false);
+    setTimeout(() => connect(attempt + 1), Math.min(5000, 500 * 2 ** attempt));
+  };
+}
+
+function link(up) {
+  const el = $('link-state');
+  el.textContent = up ? 'LINK UP' : 'LINK DOWN';
+  el.classList.toggle('down', !up);
+}
+
+// ------------------------------------------------------------------------------------------- views
+
+function render() {
+  const v = app.tick && app.tick.view;
+  if (v && app.view === 'ops') renderOps($('view-ops'), v);
+  if (v && app.view === 'ledger') renderLedger($('view-ledger'), v);
+  if (app.view === 'compare') renderCompare($('view-compare'));
+  paintHeader();
+  simbar();
+}
+
+function route() {
+  const name = (location.hash || '#ops').slice(1);
+  app.view = VIEWS[name] ? name : 'ops';
+  app.header = null;
+  for (const k of Object.keys(VIEWS)) {
+    $(`view-${k}`).hidden = k !== app.view;
+  }
+  document.querySelectorAll('.views a').forEach(a => a.classList.toggle('on', a.dataset.view === app.view));
+  $('simbar').hidden = !VIEWS[app.view].sim;
+  if (app.view === 'admit') renderAdmit($('view-admit'));
+  if (app.view === 'ref') renderReference($('view-ref'));
+  render();
+}
+
+async function start() {
+  app.meta = await getJSON('/api/meta');
+  wireSimbar();
+  window.addEventListener('hashchange', route);
+  route();
+  connect();
+}
+
+start();

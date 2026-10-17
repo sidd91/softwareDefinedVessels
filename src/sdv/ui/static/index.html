@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ArgOS</title>
+<link rel="stylesheet" href="/static/argos.css">
+<script type="module" src="/static/js/app.js"></script>
+</head>
+<body>
+<header class="titlebar">
+  <div class="brand"><span class="name">ArgOS</span><span class="sub" id="subtitle">RESOURCE GOVERNOR · MRV-60</span></div>
+  <div class="chips" id="chips"></div>
+  <span class="alarm-count" id="alarms" hidden></span>
+  <span class="clock" id="clock">T+00:00:00</span>
+</header>
+<nav class="views" aria-label="Views">
+  <a href="#ops" data-view="ops">OPERATIONS</a>
+  <a href="#ledger" data-view="ledger">CONSTRAINT LEDGER</a>
+  <a href="#compare" data-view="compare">MISSION COMPARE</a>
+  <a href="#admit" data-view="admit">ADMISSION REVIEW</a>
+  <a href="#ref" data-view="ref">REFERENCE</a>
+  <span class="link-state" id="link-state">LINK --</span>
+</nav>
+<main>
+  <div class="view" id="view-ops" hidden></div>
+  <div class="view" id="view-ledger" hidden></div>
+  <div class="view" id="view-compare" hidden></div>
+  <div class="view" id="view-admit" hidden></div>
+  <div class="view" id="view-ref" hidden></div>
+</main>
+<footer class="simbar" id="simbar" aria-label="Simulation">
+  <span class="replay-chip">REPLAY</span>
+  <button type="button" id="sim-run" title="Space">HOLD</button>
+  <span class="group" role="group" aria-label="Pace" id="sim-speed"></span>
+  <span class="group" role="group" aria-label="Jump" id="sim-jump"></span>
+  <button type="button" id="sim-restart">RESTART</button>
+  <span class="group" role="group" aria-label="Priority file" id="sim-file"></span>
+  <span class="track" aria-hidden="true"><span class="fill" id="sim-fill"></span></span>
+</footer>
+</body>
+</html>
