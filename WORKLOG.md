@@ -82,7 +82,8 @@ Deadline: **Sun 2026-10-18 10:00 PDT**.
 | CON-08 | Fri 20:55 | The brief's peak-power allowance is ambiguous right after a generator trip | Our reading will be recorded as an assumption | Claude for Logan |
 | CON-09 | Fri 20:57 | No real 60–70 m Fincantieri-group hull combines a flight deck with hangar, two mission bays and a stern ramp; real 88–95 m OPVs carry 1.8–2.7 MW of generation, so the brief's 2 × 450 kW is plausible but lean | Insight, not a blocker: use it in the Physical Account's closing question | Claude for Logan |
 | CON-10 | Fri 21:55 | GAMEPLAN's M1 (ticking sim and first admission by Sat 01:30) assumed deep implementation now; with implementation paused for team analysis, M1 will likely move | Open: Logan and team to re-time milestones after their analysis | Claude for Logan |
-| CON-11 | Sat 00:00 | The camera design needs new conditions-snapshot fields (`zone_hazard`, latched readings, uncalibrated confidence index) not yet in `docs/ARCHITECTURE.md`; C2 has two open options (stop the charge at once vs arm and wait) | Open: team to choose; ARCHITECTURE to be updated after review | Claude for Logan |
+| CON-11 | Fri 23:54 | The camera design needs new conditions-snapshot fields (`zone_hazard`, latched readings, uncalibrated confidence index) not yet in `docs/ARCHITECTURE.md`; C2 has two open options (stop the charge at once vs arm and wait) | Open: team to choose; ARCHITECTURE to be updated after review | Claude for Logan |
+| CON-12 | Fri 23:56 | The brief's Scenario B load-out (G2, G3, G4, G5) is 13.015 t against the 10 t mass margin and needs Bay 2 twice; G2+G3+G4 (9.99 t) or G3+G4+G5 (9.5 t) fit | Open: team to choose; proposal in docs/DEMO_SCRIPT.md is to run it as given and flag it on screen | Claude for Logan |
 
 ## Deferrals
 
@@ -307,7 +308,7 @@ and implies new conditions-snapshot fields (people in zone, field of view, lens 
 Correction: the entries stamped Fri 21:50, 21:55 and 21:56 were written about 21:38 to 21:42 by the
 laptop clock. Commit times are authoritative.
 
-### Sat 00:00 PDT · Camera equipment-monitoring design landed · Claude Opus 5.5 on behalf of Logan Walker (GhostWalka)
+### Fri 23:54 PDT · Camera equipment-monitoring design landed · Claude Opus 5.5 on behalf of Logan Walker (GhostWalka)
 
 All work in this entry was done by Claude on Logan's behalf while he sleeps (DEC-28).
 
@@ -326,3 +327,24 @@ Work done:
 Decisions: none new. Conflicts: CON-11. Deferrals: none.
 Requirements touched: pending `docs/REQUIREMENTS.md` (workflow still running).
 Next: requirements matrix, then README skeleton, demo storyboard, team brief.
+
+### Fri 23:57 PDT · README skeleton, demo storyboard, team brief · Claude Opus 5.5 on behalf of Logan Walker (GhostWalka)
+
+All work in this entry was done by Claude on Logan's behalf while he sleeps (DEC-28).
+
+Work done:
+- `README.md`: skeleton for the brief's README deliverable (run command, architecture diagram, D1-D6
+  with what each optimises and status, deliverables, limitations, another week, declarations).
+- `docs/DEMO_SCRIPT.md`: storyboard on DEC-26 (deep: Scenario B with live priority swap, Scenario A
+  with the jury's card; breadth strip of one-liners labelled live or replayed). GAMEPLAN's demo
+  section now points to it.
+- `docs/TEAM_BRIEF.md`: one page for Logan and Siddharth: state, decisions waiting, organizer
+  questions; no work split proposed (DEC-29). Requirement gaps to be filled when the matrix lands.
+- Finding: the brief's own Scenario B load-out (G2, G3, G4, G5) is 13.015 t against the 10 t margin
+  and needs Bay 2 twice; logged as CON-12 with options.
+- Corrected tonight's estimated timestamps (CON-11, the 23:54 entry, README, storyboard) to the clock
+  and commit times; timestamps are now always read from the clock.
+
+Decisions: none new. Conflicts: CON-12. Deferrals: none.
+Requirements touched: pending `docs/REQUIREMENTS.md`.
+Next: land the requirements matrix, fill the team brief's gaps, then a review workflow over all new docs.

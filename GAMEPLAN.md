@@ -314,6 +314,9 @@ Never cut: ledger rationales, both scenarios, replay, link failover + stale-feed
 Account, Scenario C memo.
 
 ## Demo script: 90 s of Scenario B, Scenario A with the jury's card, failsafe encore
+
+Storyboard for team review, superseding the beats below where they differ: `docs/DEMO_SCRIPT.md`
+(WORKLOG DEC-26, DEC-27; Scenario B load-out question CON-12).
 00:00 Baseline: 3 kn over a cable route, 24 °C water, G3 listening, eight gauges steady, mission = survey,
       two nodes green, wired path active.
 00:08 Drone reports 18 % in 22 kn wind. Two incompatible condition sets appear on the ship state.
