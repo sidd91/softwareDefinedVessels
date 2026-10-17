@@ -44,6 +44,7 @@ Deadline: **Sun 2026-10-18 10:00 PDT**.
 | Fri 20:55 | PROPOSED: load shedding as a ladder precomputed every tick, priced by the priority file, rechecking power and cooling after each step | Proposed by Claude; awaiting Logan | Claude for Logan |
 | Fri 20:55 | PROPOSED stack: Python 3.12 via uv, FastAPI and websockets, vanilla JS, vendored three.js, no Node or React; detector torchvision SSDlite | Proposed by Claude; team may override | Claude for Logan |
 | Fri 20:58 | Qualcomm edge hardware arrives Sat about 10:00 PDT. Until then node B runs as a second process on the laptop. Using its NPU still depends on the organizers accepting Qualcomm's proprietary runtime | Logan (arrival); Claude (interim plan) | Claude for Logan |
+| Fri 20:56 | Brief corrected by the organizers: G4 hangar is 850 kg, not 900 kg; three of the five possible sets of four guests exceed the 10 t mass margin. The PDFs on Logan's laptop predate this; the updated Hack Pack is the source of truth | Organizers | Claude for Logan |
 
 ## Conflicts and risks to watch
 
@@ -161,3 +162,25 @@ Not modelled yet:
 - Helideck motion limits are placeholders; real ones are set per vessel and aircraft.
 
 Next: these values go into `assumptions.yaml` when the core build starts at 21:30.
+
+### Fri 20:56 PDT · Brief correction checked · Claude Opus 5.5 on behalf of Logan Walker (GhostWalka)
+
+All work in this entry was done by Claude on Logan's behalf.
+
+Work done:
+- Checked the organizers' correction against the guest cards. With the G4 hangar at 850 kg and the
+  G5 mast antenna counted, the sets of four come out as below. Exactly three exceed 10 t, which
+  matches the corrected brief. No file in the repo used the old 900 kg figure.
+
+| Set of four | Mass | Against the 10 t margin |
+|---|---|---|
+| without G1 | 13.015 t | exceeds by 3,015 kg |
+| without G4 | 12.070 t | exceeds by 2,070 kg |
+| without G5 | 10.035 t | exceeds by 35 kg |
+| without G2 | 9.560 t | fits |
+| without G3 | 7.560 t | fits |
+
+- The 35 kg case is a strong Scenario A moment: G1 + G2 + G3 + G4 is refused on mass by 35 kg, and
+  the governor's yes-if list should name the smallest displacement that fixes it.
+
+Next: use 850 kg in `assumptions.yaml` and the G4 card.
