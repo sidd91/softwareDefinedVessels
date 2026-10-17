@@ -39,11 +39,30 @@ Policy: open-source third-party code only (OSI licence, no AGPL), or our own; ev
 | ReportLab or WeasyPrint | BSD-3 | — | memo and Physical Account to PDF | no (dev) |
 | Phi-4-mini or Mistral-7B-Instruct (optional) | MIT / Apache-2.0 | Microsoft / Mistral AI | offline paraphrase of free text into rule grammar | only if used, declared |
 
+## Data sources (planned; none downloaded yet)
+Full tiered list with sizes in `research/SENSOR_CATALOG.md`. Each is declared here when pulled.
+| Source | Licence | Status |
+|---|---|---|
+| Open-Meteo Marine and Archive | CC BY 4.0, free tier non-commercial | planned, organizer check pending |
+| NOAA OISST via ERDDAP | public domain | planned |
+| Argo via Ifremer ERDDAP | free and open | planned |
+| UCI naval propulsion CBM | CC BY 4.0 | planned |
+| Zenodo tanker auxiliary load profiles | CC BY 4.0 | planned |
+| Zenodo marine engine fault set | CC BY 4.0 | planned |
+| PX4 Flight Review logs | CC BY | planned |
+| CMU M100 drone energy | CC BY 4.0 | planned |
+| SeaDronesSee, MaSTr1325 | CC0, CC BY 4.0 | optional |
+
 ## Excluded on purpose
 | Software | Reason |
 |---|---|
 | Ultralytics YOLO | AGPL-3.0 would bind the whole served application |
 | Llama, Gemma | community licences are not OSI open source |
-| Any model from a China-based company or derived from one (Qwen, DeepSeek, Yi, GLM, YOLOv6/X/v10, DAMO-YOLO, PP-YOLO, PaddleOCR) | brief, Data Use Authorization §2 |
+| Any model from a China-based company or derived from one (Qwen, DeepSeek, Yi, GLM, YOLOX, YOLOv6, YOLOv10, RT-DETR, D-FINE, LW-DETR, DAMO-YOLO, PP-YOLO, PaddleOCR) | brief, Data Use Authorization §2 |
+| RF-DETR (Roboflow) | built on LW-DETR from Baidu; excluded as China-derived |
+| OpenCV `wechat_qrcode` module | CNN models contributed by Tencent; use `cv2.QRCodeDetector` or zxing-cpp |
+| DeepShip dataset | China origin (NWPU); same source audio available from Ocean Networks Canada |
 | Node / React | no build step wanted; nothing installed; vanilla JS + vendored libs run offline |
 | Any cloud inference or training | Logan's rule: runtime compute local only |
+| Qualcomm QAIRT SDK and AI Hub | proprietary runtime and cloud compile; only with organizer approval |
+| Datasets: CWRU, Paderborn, FuelCast, CRAWDAD, DeepShip, XJTU-SY, HUST, FLIR ADAS, Girona caves | no licence, non-commercial, no redistribution, or China origin |

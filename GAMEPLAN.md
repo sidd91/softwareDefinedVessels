@@ -131,8 +131,9 @@ terminal (competes with G1/G5 for the one free mast slot, excluded in emission s
 - 3D view: three.js (MIT), vendored, as a toggleable panel beside the scored 2D schematic. See the
   3D section below.
 - CV: torchvision SSDlite320-MobileNetV3 (BSD-3, Meta; COCO weights) as primary, MediaPipe
-  EfficientDet-Lite0 (Apache-2.0, Google; COCO) as the lighter alternative, RF-DETR nano
-  (Apache-2.0, Roboflow, US; DINOv2 backbone by Meta) only if accuracy on the webcam is poor.
+  EfficientDet-Lite0 (Apache-2.0, Google; COCO) for the Qualcomm box once its weights licence is
+  confirmed, Faster R-CNN MobileNetV3 (BSD-3) as a slower second opinion. RF-DETR is out: it is
+  built on LW-DETR from Baidu, which the brief's China-derived rule excludes.
   Ultralytics YOLO is out: AGPL-3.0 would bind the whole served app. All run on CPU at 30–80 ms/frame
   on this 16-core Ryzen; 2–5 fps is plenty for a deck-state sensor.
 - Optional local LLM for rule paraphrase: Phi-4-mini (MIT, Microsoft) or Mistral-7B-Instruct
