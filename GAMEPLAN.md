@@ -296,6 +296,7 @@ only camera is pointed elsewhere.
 
 Not re-timed yet. Logan paused deep implementation for team review (DEC-20), so M1 (Sat 01:30) has
 slipped and every later milestone moves with it; re-time after the team's review (CON-10, TEAM_BRIEF).
+A proposed re-timing with tasks and pass checks is in `docs/BUILD_PLAN.md`.
 
 | Block | When | Deliverable / milestone |
 |---|---|---|
