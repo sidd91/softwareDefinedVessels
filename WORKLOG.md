@@ -82,6 +82,7 @@ Deadline: **Sun 2026-10-18 10:00 PDT**.
 | CON-08 | Fri 20:55 | The brief's peak-power allowance is ambiguous right after a generator trip | Our reading will be recorded as an assumption | Claude for Logan |
 | CON-09 | Fri 20:57 | No real 60–70 m Fincantieri-group hull combines a flight deck with hangar, two mission bays and a stern ramp; real 88–95 m OPVs carry 1.8–2.7 MW of generation, so the brief's 2 × 450 kW is plausible but lean | Insight, not a blocker: use it in the Physical Account's closing question | Claude for Logan |
 | CON-10 | Fri 21:55 | GAMEPLAN's M1 (ticking sim and first admission by Sat 01:30) assumed deep implementation now; with implementation paused for team analysis, M1 will likely move | Open: Logan and team to re-time milestones after their analysis | Claude for Logan |
+| CON-11 | Sat 00:00 | The camera design needs new conditions-snapshot fields (`zone_hazard`, latched readings, uncalibrated confidence index) not yet in `docs/ARCHITECTURE.md`; C2 has two open options (stop the charge at once vs arm and wait) | Open: team to choose; ARCHITECTURE to be updated after review | Claude for Logan |
 
 ## Deferrals
 
@@ -305,3 +306,23 @@ and implies new conditions-snapshot fields (people in zone, field of view, lens 
 
 Correction: the entries stamped Fri 21:50, 21:55 and 21:56 were written about 21:38 to 21:42 by the
 laptop clock. Commit times are authoritative.
+
+### Sat 00:00 PDT · Camera equipment-monitoring design landed · Claude Opus 5.5 on behalf of Logan Walker (GhostWalka)
+
+All work in this entry was done by Claude on Logan's behalf while he sleeps (DEC-28).
+
+Work done:
+- `research/cv_equipment_monitoring.md` from a 7-agent workflow (4 research tracks, synthesis, licence
+  check, feasibility check). 26 findings applied, 4 of them high: whole-zone clutter check added,
+  smoke that fills the view is treated as a hazard not a lens fault, hazard findings latch until crew
+  or plant confirm, and one webcam instead of three cameras.
+- Reframed to DEC-27: cameras are optional supply, not the hero; the cooling-loop leak (C1) is the one
+  demo breadth line and maps to the existing `degraded` cooling state with `source: camera`, shedding
+  only on a confirmed fault. C2 (smoke at the drone charger) and C3 (gear on the landing zone) are
+  design depth only. Examples renamed C1 to C3 to avoid clashing with decision classes D1 to D6.
+- A research agent timed OpenCV checks on this laptop with synthetic frames, using OpenCV 5.0 and
+  NumPy already in the uv cache; nothing was installed. Logged in `docs/SOFTWARE_LOG.md`.
+
+Decisions: none new. Conflicts: CON-11. Deferrals: none.
+Requirements touched: pending `docs/REQUIREMENTS.md` (workflow still running).
+Next: requirements matrix, then README skeleton, demo storyboard, team brief.

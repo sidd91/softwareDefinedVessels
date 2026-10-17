@@ -23,6 +23,7 @@ Policy: open-source third-party code only (OSI licence, no AGPL), or our own; ev
 | jsonschema (+ attrs, referencing, rpds-py, jsonschema-specifications, typing-extensions) | 4.26.0 | MIT (deps MIT / Apache-2.0) | Julian Berman et al. | validate guest manifests | yes | installed Fri 21:40 PDT |
 | pytest (+ iniconfig, packaging, pluggy, pygments) | 9.1.1 | MIT (deps MIT / Apache-2.0 / BSD-2) | pytest devs | tests | no (dev) | installed Fri 21:40 PDT |
 | hatchling | build backend, fetched by uv into an isolated build env | MIT | PyPA | builds the `sdv-governor` package | no (build) | used by `uv sync` |
+| OpenCV (opencv-python-headless) and NumPy | 5.0.0.93 and 2.5.3 | Apache-2.0; BSD-3 | OpenCV.org; NumPy devs | CPU timing benches by a camera research agent, Fri about 23:30 PDT, on synthetic frames | no | nothing installed: both were already in the laptop's uv cache from Oct 9 and were used through PYTHONPATH; the project environment is unchanged |
 | Superpowers plugin for Claude Code (obra/superpowers) | 6.4.2 | MIT | Jesse Vincent, Anthropic plugin directory (partner tier) | development workflow skills: TDD, plans, debugging, verification, subagent-driven development | no (dev) | install card shown to Logan Fri 21:36 PDT |
 
 ## Planned (added to the table above when actually installed)

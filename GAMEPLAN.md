@@ -164,7 +164,8 @@ optional for D2 if we want to show a declared objective in a solver.
    confidence; for example a leak at the cooling loop makes the governor treat cooling as degraded
    before the pump fails. A stale or dropped feed degrades to the conservative state, which is
    exactly "keeps working when a data feed drops". Person detection or tracking of any kind is a
-   nice-to-have, done last. Design: `research/cv_equipment_monitoring.md` (in progress).
+   nice-to-have, done last. Design: `research/cv_equipment_monitoring.md`. Per DEC-27 cameras are optional supply, not the
+   hero: the demo shows the cooling-loop leak as one breadth line; the deep demos are Scenarios A and B.
    Recorded clip as fallback for bad lighting.
 4. **Plain-language rules without LLM code edits** → Crew Rule Compiler:
    vocabulary (guests, ship-state vars, actions, phases) → controlled-natural-language grammar (Lark)
