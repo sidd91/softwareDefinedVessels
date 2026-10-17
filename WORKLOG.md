@@ -33,7 +33,7 @@ Deadline: **Sun 2026-10-18 10:00 PDT**.
 | Person | GitHub | Agents |
 |---|---|---|
 | Logan Walker | GhostWalka | Claude (Anthropic) in Claude Code desktop: Fable 5.1 until Fri 20:27 PDT, then Opus 5.5 |
-| Siddharth Chawla | sidd91 | to be filled in by Siddharth |
+| Siddharth Chawla | sidd91 | Claude (Anthropic) in Claude Code desktop: Fable 5.1 |
 
 ## Decisions
 
@@ -80,6 +80,7 @@ Deadline: **Sun 2026-10-18 10:00 PDT**.
 | DEC-39 | Sat 10:12 | Install approval: FastAPI, uvicorn and websockets now; opencv-python-headless and onnxruntime when the camera and UNO Q steps start; all open-source, logged in docs/SOFTWARE_LOG.md when installed | Logan | Claude for Logan |
 | DEC-40 | Sat 10:25 | Scenario B setup: the brief's story at minutes 0, 8 and 12 (G3 underwater; the minute-12 trip holds and D4 runs on screen with 0 steps and both armed ladders shown); G4 lands at minute 17 (seed); ADDED, labelled event at minute 19: a chilled-water pump fails (x0.6, 80 kW loop, 75 kW ceiling), so cooling binds against 81 kW: survey slows G4's charge to 10 kW (56 kW), sar takes G5 to 8 kW (44 kW). Robot-charging start rejected because it removes the minute-8 conflict. Confirmed by four critics and a judge (req R-066, R-067) | Logan (option); critics and judge (timing) | Claude for Logan |
 | DEC-41 | Sat 11:15 | Bring up node B now, headless over ADB on USB-C; ADB installed on the laptop from Ubuntu's packages (req R-458) | Logan | Claude for Logan |
+| DEC-42 | Sat 11:50 | PROPOSED: design freeze. Base = this branch; typed conditions before engine code; priority file gains optional `shed_order` and per-rule `confirm`; admission by enumeration; board as instrument; cut cameras/CV, 3D, rule compiler, LLM paraphraser, person detection, NPU, two-node failover; Scenario C rule R3 without the camera; Scenario B minute 12 to be asked of the organisers. Full delta table in `docs/DESIGN_FREEZE.md` (req R-064 to R-067, R-069, R-146, R-458) | Proposed by Siddharth; awaiting Logan | Claude Fable 5.1 for Siddharth |
 
 ## Conflicts and risks to watch
 
@@ -101,6 +102,7 @@ Deadline: **Sun 2026-10-18 10:00 PDT**.
 | CON-14 | Sat 10:08 | Resolution of CON-13: closed by DEC-36 (cooling loss stays an information line) | Closed | Claude for Logan |
 | CON-15 | Sat 11:15 | Node B runs SSH on the shared venue Wi-Fi with the default login from the workshop slide; anyone at the event can log in and use sudo | Open: Logan to change the password (`adb shell -t passwd`) | Claude for Logan |
 | CON-16 | Sat 11:15 | Venue Wi-Fi heartbeats have a long tail (95th percentile 96 ms, max 116 ms, 3 of 100 over 100 ms) against 100 ms heartbeats; USB holds 6.5 ms (req R-458) | Open: team to set failover timeouts per path; numbers in docs/NODE_B_BOARD.md | Claude for Logan |
+| CON-17 | Sat 11:50 | Two designs for the same core: Siddharth's handoff (protobuf, CP-SAT, policy compiler) and this branch. Building both wastes the day (CON-07) | Open: settle `docs/DESIGN_FREEZE.md` F1-F6 together, then split work | Claude Fable 5.1 for Siddharth |
 
 ## Deferrals
 
@@ -630,3 +632,16 @@ Nothing was installed on the board; a temporary echo server ran from /tmp and wa
 `docs/NODE_B_BOARD.md`; GAMEPLAN, OPEN_QUESTIONS and BUILD_PLAN corrected (VENTUNO Q, Ubuntu, landed).
 Decisions: DEC-41 (Logan). Conflicts: CON-15 (default login with SSH open on shared Wi-Fi), CON-16 (Wi-Fi
 heartbeat tail). Deferrals: DEF-01, wired path and power arrangement to the team (hardware).
+
+### Sat 11:50 PDT · Design freeze proposal · Claude Fable 5.1 on behalf of Siddharth Chawla (sidd91)
+
+Siddharth brought his pre-coding design (protobuf schema, policy compiler, CP-SAT admission, 10 Hz plant) and
+the brief PDF; this branch was read in full and its 265 tests run (all pass). `docs/DESIGN_FREEZE.md` lists
+where the two designs agree, sixteen deltas with the brief as referee and a recommendation for each, and six
+decisions for the team (F1-F6). Headlines: this branch is the base; conditions and hard limits must be typed
+against `assumptions.yaml` before any engine code (cards already drift: `G4.recovering` vs `launch_recovery`);
+cameras, CV and the other beyond-the-brief items come out; the board is an instrument; Scenario B minute 12
+versus the must-have's "explicit shedding sequence" is the one question for the organisers.
+Decisions: DEC-42 (PROPOSED). Conflicts: CON-17. Deferrals: none. Requirements touched: none yet (rows change
+once F1-F6 are decided). Next: Logan and Siddharth settle F1-F6; then the branch `design/freeze` merges into
+`feat/governor-core` and the build starts at typed conditions.
