@@ -60,7 +60,7 @@ and may change one number. Verdict within 30 s, judged against the mission envel
 | Verdict | yes, no, yes-if or not-now, with the binding resource class named in one sentence |
 | Placement | Which bay, mast slot or deck position, and the rejected alternatives |
 | Yes-if | A ranked list of what to displace or throttle and the capability lost |
-| Degraded check | "Holds with one genset down: yes or no", with the binding line |
+| Degraded check | Three states (DEC-35): holds; holds by throttling, naming the guest, kW freed and capability lost, automatic within 5 s; or does not hold, so the guest to remove joins the yes-if list |
 | Tipping point | The seawater temperature at which the verdict flips |
 
 Prepared drills (the jury chooses, but we rehearse these):

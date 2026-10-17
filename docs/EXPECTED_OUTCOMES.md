@@ -107,3 +107,21 @@ Hand-computed by three Claude Opus 5.5 agents on behalf of Logan Walker (GhostWa
 - **Minute 8 sar cost:** calculator 1 said at least 8 min, open-ended; calculator 2 said at least 23 to 27. Kept a lower bound of 25 to 27, because recovery still takes the minimum window and the leg must be re-settled and re-run.
 - **Minute 12 envelope draw set (G2 winch at 20 kW):** only calculator 2 used it. Dropped, because G2's card excludes the winch while G4 recovers or G3 listens.
 - **SATCOM:** calculator 2 flagged that judging at nominal would change verdicts. Kept judging at minimums (assumption 8), for the team to decide.
+
+## Envelope rule (DEC-35) and the one-genset-down line
+
+Verdicts above are unchanged under the rule Logan chose (option 3, refined by four critics and a judge). The
+one-genset-down line now has three states, tested against a 95 kW gate. Checked against the cards by
+`tests/test_envelope_gate_data.py`.
+
+| Case | Set checked | As loaded (of 100 kW) | Survey: how it holds | Rescue: how it holds |
+|---|---|---|---|---|
+| A1, A2, A6 | G1, G2, G3, G4 | 81.5, fits | nothing needed | nothing needed |
+| A3, if G2 leaves | G3, G4, G5 | 105, 5 short | G4 charge 35 to 10 kW, 80 kW | G5 to low power, 68 kW |
+| A3, if G3 leaves | G2, G4, G5 | 100, fits but over the 95 gate | G4 charge 35 to 10 kW, 75 kW | G2 winch to sampling, 86 kW |
+| A4, either option | G1, G2, G3 or G1, G3, G5 | 46.5 or 71.5, fits | nothing needed | nothing needed |
+| A5 | G1, G2, G4, G5 | 101.5, 1.5 short | G4 charge 35 to 10 kW, 76.5 kW | G2 winch to sampling, 87.5 kW |
+| Scenario B (DEC-32) | G3, G4, G5 | 105, 5 short | G4 charge 35 to 10 kW, 80 kW | G5 to low power, 68 kW |
+
+G3 charging cannot be interrupted, so it never earns throttle credit. Information line only: with cooling at
+-40 % the chilled-water gate at 30 °C is 67 kW (CON-13).

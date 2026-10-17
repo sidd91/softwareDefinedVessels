@@ -91,6 +91,10 @@ stability, SATCOM, backbone, line-of-sight radio, acoustic, compute cores, respo
 - **Rule parameters live in data.** Scenario C rule R3's parameters are `rules.r3.*` in
   `config/assumptions.yaml`, so every rule's numbers reach the Physical Account like any other
   assumption.
+- **Admission envelope rule** (DEC-35). Judge the verdict at both gensets, the lower speed-band reserve (200 kW) and cooling at 30 °C. For each admitted set (each removal option for yes-if), report the raw one-genset-down line first: stacked envelope draws against 100 kW. Gate = min(100, cooling at 30 °C) minus 5 kW headroom = 95 kW. If the load is over 95 kW, walk the D4 ladder's throttle-only prefix: a step counts only if its mode is interruptible and keeps capability above 0; non-critical steps first, mission-critical last and named. Reaching 95 kW or less keeps the verdict, worded "holds by throttling". Otherwise the verdict becomes yes-if, adding the cheapest removal sets that pass the same check; no set passes means no. The 60 s peak allowance is never credited; cooling at -40 % is an information line, not part of the verdict.
+  Sentence template: "{Verdict}. Binding: {class}, {demand} of {capacity} {unit} at 30 °C. One genset down:
+  {class} {load} of 100 kW, {fits | N kW short} as loaded; {nothing needed | holds by {action} ({kW} freed,
+  {capability lost}), automatic within 5 s, no guest switched off | does not hold by throttling, so {guest} must leave}."
 - **Admission override** (Logan, DEC-32). A refused admission can be forced by an explicit captain override
   for extreme situations. It needs a human, so it is not available at 0 aboard; the decision record keeps
   the binding line, marks the decision overridden, and names who overrode and why.

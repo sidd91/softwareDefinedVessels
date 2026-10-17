@@ -12,7 +12,7 @@ is decided, add a WORKLOG Decisions row and update the source document.
 | 2 | Who owns what? | Team call; no split proposed | CON-07, DEC-29, [architecture](ARCHITECTURE.md) |
 | 3 | Accept the re-timed milestones? | Review 08:30, Scenario A 12:30, Scenario B 17:30, screen 21:30 | [build plan](BUILD_PLAN.md), CON-10 |
 | 4 | Scenario B load-out (13.0 t against 10 t, Bay 2 twice)? | **Decided (DEC-32):** run G3, G4, G5; refuse the full load-out at the pier, recommend this subset, logged override available | [storyboard](DEMO_SCRIPT.md), CON-12 |
-| 5 | Which envelope corner decides admission? | Both gensets at 30 °C; report one-genset-down separately | [architecture](ARCHITECTURE.md) Q3 |
+| 5 | Which envelope corner decides admission? | **Decided (DEC-35):** both gensets at 30 °C, and the set must survive one genset down by throttling alone against a 95 kW gate, or it becomes yes-if | [architecture](ARCHITECTURE.md) Q3 |
 | 6 | In port, may installed guests move between bays to admit a card? | Yes, and report the moves | architecture Q4 |
 | 7 | Is the decision record the single source for screen and demo? | Yes | architecture Q2 |
 

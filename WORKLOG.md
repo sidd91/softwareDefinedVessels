@@ -73,6 +73,7 @@ Deadline: **Sun 2026-10-18 10:00 PDT**.
 | DEC-32 | Sat 09:52 | Scenario B runs with G3, G4, G5. At the pier the brief's G2-G5 load-out is refused and flagged, with G3, G4, G5 recommended as the alternative; a logged override exists for extreme situations (resolves CON-12) | Logan | Claude for Logan |
 | DEC-33 | Sat 09:52 | Hold the core build about an hour more; first a full Phase 1 rundown | Logan | Claude for Logan |
 | DEC-34 | Sat 09:56 | Open a pull request for `feat/governor-core` into main (sidd91/softwareDefinedVessels#2); it includes PR #1's commits, so merging it alone is enough. Siddharth merges as repo owner | Logan | Claude for Logan |
+| DEC-35 | Sat 10:06 | Admission envelope rule, option 3 "survivable by throttling", confirmed by four critics and a judge with refinements: Judge the verdict at both gensets, the lower speed-band reserve (200 kW) and cooling at 30 °C. For each admitted set (each removal option for yes-if), report the raw one-genset-down line first: stacked envelope draws against 100 kW. Gate = min(100, cooling at 30 °C) minus 5 kW headroom = 95 kW. If the load is over 95 kW, walk the D4 ladder's throttle-only prefix: a step counts only if its mode is interruptible and keeps capability above 0; non-critical steps first, mission-critical last and named. Reaching 95 kW or less keeps the verdict, worded "holds by throttling". Otherwise the verdict becomes yes-if, adding the cheapest removal sets that pass the same check; no set passes means no. The 60 s peak allowance is never credited; cooling at -40 % is an information line, not part of the verdict. (req R-069, R-103) | Logan (option); critics and judge (refinements) | Claude for Logan |
 
 ## Conflicts and risks to watch
 
@@ -90,6 +91,7 @@ Deadline: **Sun 2026-10-18 10:00 PDT**.
 | CON-10 | Fri 21:55 | GAMEPLAN's M1 (ticking sim and first admission by Sat 01:30) assumed deep implementation now; with implementation paused for team analysis, M1 will likely move | Open: Logan and team to re-time milestones after their analysis | Claude for Logan |
 | CON-11 | Fri 23:54 | The camera design needs new conditions-snapshot fields (`zone_hazard`, latched readings, uncalibrated confidence index) not yet in `docs/ARCHITECTURE.md`; C2 has two open options (stop the charge at once vs arm and wait) | Open: team to choose; ARCHITECTURE to be updated after review | Claude for Logan |
 | CON-12 | Fri 23:56 | The brief's Scenario B load-out (G2, G3, G4, G5) is 13.015 t against the 10 t mass margin and needs Bay 2 twice; G2+G3+G4 (9.99 t) or G3+G4+G5 (9.5 t) fit | Open: team to choose; proposal in docs/DEMO_SCRIPT.md is to run it as given and flag it on screen | Claude for Logan |
+| CON-13 | Sat 10:06 | Dissent from the envelope review: a 40 % cooling loss cannot be repaired at sea for 14 days and may be the worse single failure; DEC-35 shows it only as an information line because A.10 names one genset down as the envelope corner. A5 needs 100 kW chilled against 72 kW and holds only by throttling two guests for the rest of the voyage | Open: team to decide whether cooling loss enters the verdict | Claude for Logan |
 
 ## Deferrals
 
@@ -564,3 +566,14 @@ Conflicts: CON-12 resolved by DEC-32; CON-04 narrowed by DEC-31. Deferrals: none
 At Logan's request, opened sidd91/softwareDefinedVessels#2 from `feat/governor-core` into main: 37 commits
 (30 beyond PR #1), the Phase 1 data model, requirements trace, plans and expected outcomes; no engine yet.
 Decisions: DEC-34. Conflicts: CON-06 now covers both PRs (Siddharth to review and merge). Deferrals: none.
+
+### Sat 10:06 PDT · Envelope rule decided (DEC-35) · Claude Opus 5.5 on behalf of Logan Walker (GhostWalka)
+
+Logan chose option 3 and asked for critics and a judge. Four critics (brief compliance, ship safety, jury,
+build cost) all scored option 3 highest and all asked for the same tightening; the judge confirmed it with
+refinements: 95 kW gate, raw "does not fit" line kept, only interruptible steps with capability kept count,
+mission-critical throttles last and named, gate failure gives yes-if, no credit for the 60 s peak, cooling
+at -40 % as information only. No Scenario A verdict changes; the one-genset-down wording does. New test
+`tests/test_envelope_gate_data.py` recomputes every gate result and the first throttle step from the cards
+and priority weights. Docs updated: ARCHITECTURE, EXPECTED_OUTCOMES, DEMO_SCRIPT, OPEN_QUESTIONS, R-069, R-103.
+Decisions: DEC-35. Conflicts: CON-13 (cooling-loss dissent). Deferrals: none.
