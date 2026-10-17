@@ -40,6 +40,13 @@ Note: the brief lists voice/natural-language interfaces as out of scope. Our rul
 positioned as the mechanism for Core Mechanic 4 / D5 (tacit rule → execution constraint), not as
 an NL interface; its deterministic grammar path is the product, the LLM assist is optional.
 
+## Depth policy (Logan, Fri 23:10, WORKLOG DEC-24 and DEC-25)
+- Anything the brief or slides call out explicitly is addressed at a granular level, with evidence,
+  and traced in `docs/REQUIREMENTS.md`.
+- Our own additions stay light where the facts are unclear.
+- The demo shows breadth with a few deep examples.
+- Cameras watch equipment first; person detection or tracking is last and optional.
+
 ## Core model (locked by Logan, Fri 21:00 PDT)
 
 ### One ledger, one manifest language
@@ -100,13 +107,14 @@ carries the brief's per-crew policy: human confirms, automatic, or not permitted
  ┌─────────────────────────────────────── governor core (pure Python, no I/O) ────────────────────────────────────┐
  │ assumptions.yaml ──► PlatformModel (8 classes, cooling=f(T_sea), power↔heat 1:1, degraded)                      │
  │ manifests/*.json ──► Guest objects (min/nominal/peak+duration per class, conditions, ontology, flags)           │
- │ ShipState machine (A.6 vars + transition times)  ◄── virtual sensors (CV deck-watch) + sim events               │
+ │ ShipState machine (A.6 vars + transition times)  ◄── virtual sensors (CV equipment watch) + sim events          │
  │ DecisionEngine:  D1 admit  D2 place  D3 right-of-way  D4 shed   — each returns Decision{verdict, binding, why}  │
  │ MissionContext = priority file (base) ⊕ override stack (captain) ⊕ crew level ⊕ envelope                        │
  │ RuleEngine: compiled crew rules (from CNL) evaluated every tick / every decision, with per-crew-level policy    │
  │ Simulator: seeded, 1 Hz, event timeline JSONL in → decision log JSONL out; `replay` asserts identical output     │
  └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
-   bolt-on 1: CV deck-watch (webcam → detector → deck_state/people_on_deck with confidence + age)
+   bolt-on 1: CV equipment watch (camera → change detection on fixed equipment: leaks, smoke, out-of-place
+              gear, deck markers → supply and ship-state events with confidence + age; people optional, last)
    bolt-on 2: Crew Rule Compiler (text → Lark grammar → AST → JSON Schema → compiled predicate + code view)
    bolt-on 3: optional local LLM paraphraser (free text → CNL candidate; still parsed, still approved)
 ```
@@ -148,12 +156,15 @@ optional for D2 if we want to show a declared objective in a solver.
 2. **On-the-fly priority edits** → override stack layered over the mission file: entries
    {target, delta|absolute|protect, reason, author, expiry}. Effective priority = base ⊕ overrides,
    shown side by side, every override in the audit log, immediate re-arbitration.
-3. **Computer vision where no sensor exists** → virtual sensors for A.6 `deck_state`,
-   `people_on_flight_deck`, `ramp_clear`. Pretrained COCO person/vehicle detector on the laptop
-   webcam (live demo: a teammate steps into frame ⇒ recovery held with the rule and the count in the
-   rationale; steps out ⇒ deck clears ⇒ recovery proceeds). Confidence + staleness; a stale or
-   dropped feed degrades to the conservative state (occupied/unknown), which is exactly
-   "keeps working when a data feed drops". Declared in the Physical Account as a compute consumer.
+3. **Computer vision where no sensor exists** (re-aimed by Logan Fri 23:10, WORKLOG DEC-23) →
+   cameras watch EQUIPMENT for changes other sensors miss or report late: leaks (chilled-water loop,
+   hydraulics, bilge sheen), smoke or a small fire in a bay or the hangar, damaged or out-of-place
+   fixed equipment (boom not stowed, lashing or hatch marker missing, antenna bent), foreign objects
+   on the flight deck. Each detection becomes a supply or ship-state event with source, age and
+   confidence; for example a leak at the cooling loop makes the governor treat cooling as degraded
+   before the pump fails. A stale or dropped feed degrades to the conservative state, which is
+   exactly "keeps working when a data feed drops". Person detection or tracking of any kind is a
+   nice-to-have, done last. Design: `research/cv_equipment_monitoring.md` (in progress).
    Recorded clip as fallback for bad lighting.
 4. **Plain-language rules without LLM code edits** → Crew Rule Compiler:
    vocabulary (guests, ship-state vars, actions, phases) → controlled-natural-language grammar (Lark)
@@ -180,10 +191,12 @@ terminal (competes with G1/G5 for the one free mast slot, excluded in emission s
   (none installed, none needed). Every JS library vendored into the repo so the demo runs offline.
 - 3D view: three.js (MIT), vendored, as a toggleable panel beside the scored 2D schematic. See the
   3D section below.
-- CV: torchvision SSDlite320-MobileNetV3 (BSD-3, Meta; COCO weights) as primary, MediaPipe
-  EfficientDet-Lite0 (Apache-2.0, Google; COCO) for the Qualcomm box once its weights licence is
-  confirmed, Faster R-CNN MobileNetV3 (BSD-3) as a slower second opinion. RF-DETR is out: it is
-  built on LW-DETR from Baidu, which the brief's China-derived rule excludes.
+- CV: equipment change detection first: per-region reference-frame comparison and fiducial
+  markers on fixed equipment (OpenCV, Apache-2.0), colour and flicker cues for smoke and flame,
+  temporal growth for leaks, camera self-checks (blur, frozen frame, view moved); an unsupervised
+  anomaly model only if its licence checks out. Person detectors (torchvision SSDlite, BSD-3) are
+  optional and last. RF-DETR is out: it is built on LW-DETR from Baidu, which the brief's
+  China-derived rule excludes.
   Ultralytics YOLO is out: AGPL-3.0 would bind the whole served app. All run on CPU at 30–80 ms/frame
   on this 16-core Ryzen; 2–5 fps is plenty for a deck-state sensor.
 - Optional local LLM for rule paraphrase: Phi-4-mini (MIT, Microsoft) or Mistral-7B-Instruct
@@ -212,7 +225,7 @@ hook, built after M3 and time-boxed to 3 hours.
   CAD import only if a CC0/CC-BY glTF hull turns up in the first 20 minutes of looking; FreeCAD
   (LGPL) or OpenSCAD (GPL) export is the fallback route, not the plan.
 - What it shows: each position coloured by governor state (free / committed / displaced / shed),
-  guests appearing on admission, the drone on approach while the deck-watch count is non-zero, heat
+  guests appearing on admission, the drone on approach while the deck is not clear, heat
   as a loop tint that reddens as the cooling margin closes, mast slot pulsing when it is the binding
   class. Camera follows the event log.
 - Rule for the build: every 3D element binds to a field that already exists in the 1 Hz state
@@ -225,7 +238,7 @@ break at sea: a node, a cable, a radio, a camera.
 
 - **Topology.** Governor = replicated service on the ship's rack (A.7) plus edge inference nodes
   next to sensors. Demo: laptop is node A (governor primary + screen), Qualcomm box is node B
-  (deck-watch inference + governor hot standby). Until the box lands, node B is a second process on
+  (camera equipment-watch inference + governor hot standby). Until the box lands, node B is a second process on
   the laptop on its own port, so failover is built and tested before the hardware exists.
 - **Determinism is the redundancy mechanism.** The standby holds the same event log. Takeover is a
   replay to the last sequence number: no state-sync protocol, no divergence. Fencing by epoch: the
@@ -248,8 +261,8 @@ break at sea: a node, a cable, a radio, a camera.
   budget (A.7 reserves 20 % for ship systems) and in the Physical Account. A per-node compute ledger
   shows where inference runs and what moves when a node is lost.
 - **Failsafe demo moments.** Pull the Ethernet cable: path flips to Wi-Fi, no decision missed. Kill
-  Wi-Fi too: deck-watch goes stale, the recovery hold flips to "crew confirms" at 14 and "forbidden"
-  at 0. Kill the primary process: standby promotes by replay in under 3 s and the log continues with
+  Wi-Fi too: the equipment watch goes stale, so its zones fall back to crew reports at 14 and 6 and
+  to "not clear" at 0. Kill the primary process: standby promotes by replay in under 3 s and the log continues with
   the same sequence numbers.
 
 ## Cameras: an inventory, not an assumption
@@ -287,13 +300,13 @@ only camera is pointed elsewhere.
 | Sleep | Sat 01:30–06:30 | Claude overnight: unit tests for ledger math, public-data fetch + cache, synthetic sensor generators from the research, README skeleton, manifest docs |
 | Decisions | Sat 06:30–11:30 | D2 placement, D3 right of way with priority files, D4 shedding with standing contingency plans. **M2 Sat 11:30**: Scenario A and B pass in CLI with both priority sets; `replay` test green |
 | Screen + edge | Sat 11:30–16:30 | Web screen (schematic, gauges, log); mission selector; override stack; crew dial; two-node topology (node B process, dual-path bus, heartbeats, path indicator). **M3 Sat 16:30**: Scenario B watchable end to end on screen |
-| Rules + CV | Sat 16:30–21:30 | Crew Rule Compiler (grammar, AST, approval, dry run, code view); Scenario C rule live at 14/6/0; CV deck-watch on node B with field-of-view check; failover by replay; stale-feed fallback ladder. **M4 Sat 21:30** |
+| Rules + CV | Sat 16:30–21:30 | Crew Rule Compiler (grammar, AST, approval, dry run, code view); Scenario C rule live at 14/6/0; CV equipment watch on node B (leak, smoke, out-of-place gear) with camera self-checks; failover by replay; stale-feed fallback ladder. **M4 Sat 21:30** |
 | Polish | Sat 21:30–Sun 01:00 | 3D view (time-boxed 3 h, M3 state message only). Jury drills: change one number on a card, swap priority mid-run, drop the camera feed, over-consuming guest. Docs: README, generated Physical Account, Scenario C memo PDF, AI and software declaration. Backup recording. **M5 Sun 01:00** |
 | Sleep | Sun 01:00–05:30 | Claude overnight: polish docs, regenerate Physical Account, lint, final tests |
 | Rehearse | Sun 05:30–09:15 | Rehearse the demo five times; fix only what breaks; **freeze Sun 09:15** |
 | Buffer | Sun 09:15–10:00 | No new features. Submit |
 
-Cut order if behind (first cut first): LLM paraphraser → 3D view (keep 2D schematic) → structured
+Cut order if behind (first cut first): person detection → LLM paraphraser → 3D view (keep 2D schematic) → structured
 rule builder UI → A′ installation windows → six mission files (keep three) → CV live (keep recorded
 clip) → OR-Tools.
 Never cut: ledger rationales, both scenarios, replay, link failover + stale-feed policy, Physical
@@ -307,16 +320,17 @@ Account, Scenario C memo.
       recovery window, cost stated in minutes.
 00:20 Jury swaps the priority file to SAR. Same event replayed: survey suspended, ship released to
       manoeuvre, 35 kW reserved ahead of everything, one sentence says why.
-00:32 Teammate steps in front of the deck camera: "Held: flight deck occupied (1 person), rule R3
-      'nobody on the flight deck during recovery'". Steps out: deck clear, recovery proceeds.
-00:45 Ethernet cable pulled: path indicator flips to Wi-Fi, deck-watch keeps reporting, nothing missed.
+00:32 A marked item is left on the landing zone (deck marker covered): "Held: flight deck not clear,
+      marker FD-2 covered since 00:31 (camera, 0.4 s old), rule R3". Removed: deck clear, recovery
+      proceeds. Breadth line on screen: leak at the cooling loop turns cooling to degraded early.
+00:45 Ethernet cable pulled: path indicator flips to Wi-Fi, equipment watch keeps reporting, nothing missed.
 00:55 Genset trips, reserve ~100 kW. First shed action within 5 s: G5 to 8 kW low-power, G6 to
       standby, G2 to standby; winner kept alive; every guest's loss listed.
 01:10 Crew dial 14 → 0: the same shed step flips from "confirm (60 s)" to "automatic", on screen.
 01:20 Scenario A: jury's card loaded, one number changed live, verdict in < 30 s with binding
       class, placement, displacement list and "holds with one genset down: yes/no".
-01:30 Done. Encore if the jury wants it (30 s): kill Wi-Fi too → deck-watch stale → hold becomes
-      "crew confirms"; kill the primary governor process → standby promotes by replay in < 3 s.
+01:30 Done. Encore if the jury wants it (30 s): kill Wi-Fi too → equipment watch stale → hold
+      becomes "crew confirms"; kill the primary governor process → standby promotes by replay in < 3 s.
 
 ## Open questions for Logan
 - Who owns what between Logan (GhostWalka) and Siddharth (sidd91): engine / screen / CV + rules / docs.

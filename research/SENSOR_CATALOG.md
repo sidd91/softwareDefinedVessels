@@ -29,7 +29,7 @@ All 54 YAML generator specs parse (checked Fri 20:46 PDT). Rates and fault rates
 | Ship state: course, speed | GNSS, gyro, speed log, autopilot mode | 1–10 Hz | synthetic | course not steady; speed band unknown blocks flight deck and ramp ops |
 | Ship state: motion | motion reference unit roll, pitch, heave | 10 Hz | synthetic, JONSWAP spectrum driven by hourly Open-Meteo waves | unknown motion counts as out of limits |
 | Environment | seawater temp, wave height and period, wind, water-column layering | hourly | public: Open-Meteo Marine and Archive, OISST, Argo profiles | stale data may only tighten a limit |
-| Deck and people | camera detections per zone, field-of-view check, lens health, people on deck | 2 Hz | live webcam or the synthetic detection stream | unknown means occupied; tags and thermal can add people, never clear a zone |
+| Equipment and deck (camera) | change detection on fixed equipment: deck and lashing markers in place, leaks, smoke or small fire, damaged or out-of-place gear, foreign objects on the flight deck; lens, frozen-frame and view self-checks. Person counting optional and last (WORKLOG DEC-23) | 2 Hz | live webcam or the synthetic detection stream | unknown means not clear or changed; a camera may add a hazard, never clear one; people on deck come from the crew report |
 | Guests | drone battery, wind and failsafe state; UUV leg, battery and USBL fix; winch tension and payout; sonar emission; comms node load | 0.5–20 Hz | synthetic, drone shape from PX4 logs and the CMU M100 energy set | winch unknown means in use; sonar unknown means active; USBL gives no fixes in silence |
 | Emission state | radio, SATCOM and AIS transmit status | event | synthetic | treat as normal for conflicts, silent for link budget |
 
