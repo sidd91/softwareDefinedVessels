@@ -78,6 +78,22 @@ stability, SATCOM, backbone, line-of-sight radio, acoustic, compute cores, respo
 | D4 shedding | throttle before shed, cheapest loss per kW first, recheck power and heat each step | 5 s first, 60 s all | "{guest} to {mode}: frees {kW}; loses {capability}." |
 | D5 crew policy | what a human still confirms at 14 / 6 / 0, approved ahead of time | n/a | "At {crew} aboard {rule} is {confirm / automatic / forbidden}." |
 
+## Proposed additions since the first draft (for review)
+
+- **Camera readings** (`research/cv_equipment_monitoring.md`, WORKLOG CON-11). A camera check logs a
+  `sensor_reading` event, never a frame, with `camera`, `region`, `check`, `state`, `score`,
+  `threshold`, `confidence_index`, `calibrated: false`, `age_s`, `reference_age_s`, `latched` and
+  `health {blur_ok, frozen, view_ok}`. The conditions snapshot gains `zone_hazard` per zone. Hazard
+  findings latch until crew or plant confirm; only deck-occupancy findings withdraw themselves. A leak
+  maps to the existing cooling state `degraded` with `source: camera, confirmed: false`.
+- **Priority file schema** (`config/missions/schema.json`, tested). The governor validates a swapped
+  file before use and refuses a bad one with the failing field, keeping the previous file meanwhile.
+- **Rule parameters live in data.** Scenario C rule R3's parameters are `rules.r3.*` in
+  `config/assumptions.yaml`, so every rule's numbers reach the Physical Account like any other
+  assumption.
+- **Requirements trace.** Every component above maps to rows in `docs/requirements.yaml`; edit the YAML
+  and re-render (`tools/render_requirements.py`).
+
 ## Open decisions for the team
 
 1. Owners for each component above.
