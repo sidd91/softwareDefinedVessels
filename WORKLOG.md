@@ -785,3 +785,23 @@ box (no pandoc/Chromium; the LibreOffice fallback writes a PDF `pdfinfo` rejects
 Decisions: DEC-53 to DEC-56. Conflicts: CON-21 still open (snapshot names; the governor reads the plant's shape as is).
 Deferrals: none. Requirements touched: R-064 to R-067, R-069, R-086, R-100 to R-119, R-137, R-152, R-155 (rows not yet
 edited in `docs/requirements.yaml`). Next: commit; minute 12 wording (DEC-51); R3/D5 table; screen if time allows.
+
+### Sat 14:35 PDT · Demo: 90 s pace, jury injections from the keyboard, prompt hardening · Claude Fable 5.1 on behalf of Siddharth Chawla (sidd91)
+
+On `feat/ship-state-fsm`, uncommitted. Siddharth's review of the first live run: the brief's "90 s of Scenario B" was
+not met (12x gave 100 s), the screen looked stuck between events, typing early garbled the Scenario A prompt, Ctrl-C
+left a traceback, and nothing let a judge break the ship live - every failure came from `scenario_b.yaml`.
+Done: pace derived from the budget (`sim.demo_seconds: 90`, source brief; `sim.demo_until_min: 20`, assumed with
+reason; `sim.demo_speed` dropped; account row updated), measured 90 s wall time; one tick line per ship-minute;
+`Simulator.inject()` (next tick, recorded `injected: true`, replayable) and `paused`; `KeyInjector` in the demo:
+g trip, r restart, c pump fault, w seawater +3 °C, b drone battery report (the plant's value, as telemetry),
+o G5 +20 %, s swap file, k crew 14/6/0, p pause, h help - the keyboard stand-in for the board's button and knob
+(freeze delta 10); the governor now also runs D4 when the current supply is outgrown without a trip (over-draw,
+warmer water, a reservation), trigger `overload`; D3 says when the landing deadline cannot be met at the crew level
+and names the card's fallback ("ditch"); the side-by-side pairs decisions by time and kind; early typing is flushed
+before the prompt; Ctrl-C exits cleanly. Bug found by the injections: the scripted `genset_trip` carried
+`cooling: nominal` and the plant forced it, repairing a failed pump at sea against A.6 - a trip may now only degrade
+cooling, never restore it. Verified through a pseudo-terminal (`script`) with keys sent on a timer. 488 tests pass.
+Decisions: none new (works under DEC-53). Conflicts: none. Deferrals: restore-in-reverse after `r` (modes stay
+throttled; GAMEPLAN ladder step 6) is not built. Requirements touched: R-082, R-083 (over-consumer detected and
+throttled with a sentence), R-146, R-152. Next: commit; rehearse on the demo laptop; minute-12 wording (DEC-51).
