@@ -28,7 +28,9 @@ HOLDS = {"depth": "holding_depth", "at_sea": "holding_at_sea"}
 CLASS_NAMES = {"heat": "COOLING CHW", "power": "POWER"}
 SIGNAL_NAMES = {"speed_kn": "SPEED", "deck_machinery": "DECK MACHINERY", "heading_free": "HEADING", "noise": "NOISE",
                 "course": "COURSE", "deck_flight_deck": "FLIGHT DECK", "ramp": "RAMP", "emission": "EMISSION"}
-CEILING_S = {"D1": 30.0, "D2": 30.0, "D3": 2.0, "D4": 5.0}
+CEILING_S = {"D1": 30.0, "D2": 30.0, "D3": 2.0, "D4": 5.0, "D5": 2.0}
+TIER_NAMES = {"vessel_critical": "VESSEL CRITICAL", "mission_critical": "MISSION CRITICAL", "mission_support": "MISSION SUPPORT",
+              "discretionary": "DISCRETIONARY"}
 
 
 # ------------------------------------------------------------------------------------------- formatting
@@ -57,8 +59,15 @@ def words(s: str) -> str:
     return str(s).replace("_", " ").upper()
 
 
-def mission_name(mission: str) -> str:
-    return MISSION_NAMES.get(mission, words(mission))
+def mission_name(mission: str, profile: dict | None = None) -> str:
+    if mission in MISSION_NAMES:
+        return MISSION_NAMES[mission]
+    return (profile or {}).get("name", "").upper() or words(mission)
+
+
+def _file(I: Inputs, m: Moment) -> dict:
+    """The priority file in force: the live run's (a profile applied at sea included), else the loaded one."""
+    return m.profile or I.missions.get(m.mission) or {"id": m.mission, "name": m.mission, "weights": {}, "mission_critical": []}
 
 
 # ------------------------------------------------------------------------------------------- ship state
@@ -128,6 +137,17 @@ def _latest(records: list, kinds=("D3", "D4", "D5")) -> dict | None:
     return max(rs, key=lambda r: (r["tick"], r["seq"])) if rs else None
 
 
+def _acting(records: list, kinds=("D3", "D4")) -> dict | None:
+    """The decision the panel shows: the latest D3 or D4, except that a D4 recheck after a shed on the same fault
+    (the 19:02 hold after the 19:01 shed) leaves the shed on show, since that is the decision the fault caused."""
+    r = _latest(records, kinds)
+    if r and r["kind"] == "D4" and r["verdict"] != "shed" and r.get("raw_event_t_s") is not None:
+        shed = [x for x in records if x["kind"] == "D4" and x["verdict"] == "shed" and x.get("raw_event_t_s") == r["raw_event_t_s"]]
+        if shed:
+            return max(shed, key=lambda x: (x["tick"], x["seq"]))
+    return r
+
+
 # ------------------------------------------------------------------------------------------- header and chips
 
 def header(I: Inputs, m: Moment, pl: dict) -> dict:
@@ -140,8 +160,12 @@ def header(I: Inputs, m: Moment, pl: dict) -> dict:
     if "transition" in speed:
         sp += f" → {f1(speed['transition']['to'])}"
     alarms = _faults(snap)
+    builtin = m.mission in I.missions and I.missions[m.mission] == _file(I, m)
     return {
-        "mission": mission_name(m.mission), "mission_id": m.mission, "priority_file": f"{m.mission}.yaml",
+        "mission": mission_name(m.mission, _file(I, m)), "mission_id": m.mission,
+        "priority_file": f"{m.mission}.yaml" if builtin else f"{m.mission} · AT SEA",
+        "standby": None if m.standby is None else ("IN STEP" if m.standby == "in step" else "OUT OF STEP"),
+        "source": m.source,
         "crew": f"CREW {crew}", "crew_policy": words(policy), "sea": f"SW {f1(pl['seawater_c'])} °C",
         "sea_state": f"SEA STATE {_value(snap, 'environment', 'sea_state')}", "speed": f"SPEED {sp}",
         "alarms": len(alarms), "clock": "T+" + clock(m.t_s), "t_s": m.t_s, "end_t_s": END_T_S,
@@ -271,12 +295,13 @@ def plant(I: Inputs, m: Moment, pl: dict) -> list[dict]:
 
 def guest_rows(I: Inputs, m: Moment, gs: dict) -> list[dict]:
     placement = _placement(I, list(gs))
+    file = _file(I, m)
     out = []
     for g, s in gs.items():
         out.append({"id": g, "pos": _pos(I, g, s, placement), "mode": words(s["mode"]) + (f" · RSV {kw(s['reserved_kw'])}" if _reserved_only(s) else ""),
                     "kw": kw(_drawing_kw(s)),
                     "cap": f"{s['capability'] * 100:.0f} %", "rsv": f"{kw(s['reserved_kw'])} kW" if s.get("reserved_kw") else "",
-                    "activity": words(s["activity"])})
+                    "activity": words(s["activity"]), "tier": TIER_NAMES[Lg.tier_of(I.cards, g, file)]})
     return out
 
 
@@ -335,13 +360,23 @@ def _deck(I: Inputs, m: Moment, guests: list[str]) -> tuple[int, int, list[str]]
     return len(names), 4, names
 
 
-def _response(r: dict | None) -> tuple[float | None, float, str]:
+def _response(r: dict | None, timing: dict | None = None) -> tuple[float | None, float, str]:
+    """Seconds against the decision's ceiling: the decision time from the timing log when the run has one,
+    otherwise ship time from the raw event to the tick the first command applies."""
     if not r:
         return None, CEILING_S["D4"], "D4 FIRST ACTION"
+    ceil = r["ceiling_ms"] / 1000 if r.get("ceiling_ms") else CEILING_S.get(r["kind"], 5.0)
+    name = {"D3": "D3 RIGHT OF WAY", "D4": "D4 FIRST ACTION", "D5": "D5 CREW POLICY"}.get(r["kind"], r["kind"])
+    if timing and r["seq"] in timing:
+        return timing[r["seq"]] / 1000, ceil, name + " · COMPUTE"
     start = r.get("raw_event_t_s") if r.get("raw_event_t_s") is not None else r["t_s"]
-    applied = r.get("applies_at_tick", r["tick"] + 1)
-    label = {"D3": "D3 RIGHT OF WAY", "D4": "D4 FIRST ACTION"}.get(r["kind"], r["kind"])
-    return applied - start, CEILING_S.get(r["kind"], 5.0), label
+    return r.get("applies_at_tick", r["tick"] + 1) - start, ceil, name + " · SHIP TIME"
+
+
+def resp_text(resp: float | None, ceil: float) -> str:
+    if resp is None:
+        return f"-- / {f1(ceil)} s"
+    return f"{resp * 1000:.2f} ms / {f1(ceil)} s" if resp < 0.1 else f"{f1(resp)} / {f1(ceil)} s"
 
 
 def tiles(I: Inputs, m: Moment, gs: dict, pl: dict) -> list[dict]:
@@ -358,13 +393,14 @@ def tiles(I: Inputs, m: Moment, gs: dict, pl: dict) -> list[dict]:
     p = snap["plant"]
     pumps = sum(1 for n in (1, 2) if p[f"chw_pump_{n}_running"]["value"])
     tripped = [SUBJECTS[f"genset_{n}"] for n in (1, 2) if p[f"genset_{n}_relay_trip"]["value"]]
-    resp, ceil, resp_label = _response(_latest(m.records))
+    resp, ceil, resp_label = _response(_acting(m.records), m.timing)
 
     chw_sub = f"{2 - pumps} OF 2 PUMPS DOWN" if pumps < 2 else f"2 PUMPS · SW {pl['seawater_c']:.0f} °C"
     if pumps < 2:
         chw_sub = "P1 TRIP · 1 OF 2 PUMPS" if not p["chw_pump_1_running"]["value"] else "P2 TRIP · 1 OF 2 PUMPS"
     if pl["binds"] == "heat" and pl["power_cap"] > pl["heat_cap"] and pl["heat_degraded"]:
-        power_sub = f"USABLE {f1(pl['ceiling'] - pl['load'])} kW · CHW BINDS"
+        usable = pl["ceiling"] - pl["load"]
+        power_sub = f"USABLE {f1(usable)} kW · CHW BINDS" if usable >= 0 else f"CHW {f1(-usable)} kW OVER LIMIT"
     elif tripped:
         power_sub = f"{' '.join(tripped)} TRIP · {pl['power_cap']:.0f} kW"
     else:
@@ -396,7 +432,7 @@ def tiles(I: Inputs, m: Moment, gs: dict, pl: dict) -> list[dict]:
          "state": data_state, **bar(sat["demand"], sat["capacity"])},
         {"name": "COMPUTE", "value": f"{used_cores} / {total_cores} cores",
          "sub": " · ".join(f"{g} {n}" for g, n in per_cores.items() if n) or "NONE", "state": "NORMAL", **bar(used_cores, total_cores)},
-        {"name": "RESPONSE", "value": f"{'--' if resp is None else f1(resp)} / {f1(ceil)} s", "sub": resp_label,
+        {"name": "RESPONSE", "value": resp_text(resp, ceil), "sub": resp_label,
          "state": "NORMAL" if resp is None or resp <= ceil else "LATE", **bar(resp or 0, ceil)},
     ]
 
@@ -413,7 +449,7 @@ def ledger_rows(I: Inputs, m: Moment, gs: dict, pl: dict) -> list[dict]:
     deck_used, deck_total, deck_names = _deck(I, m, guests)
     placement = _placement(I, guests)
     mast_free = sum(1 for s in placement.values() if s == "mast_free")
-    resp, ceil, _ = _response(_latest(m.records, ("D4",)))
+    resp, ceil, _ = _response(_acting(m.records, ("D4",)), m.timing)
     side = {}
     for g, s in gs.items():
         slot = placement.get(f"{g}.{I.cards[g]['placement']['parts'][0]['name']}")
@@ -447,8 +483,8 @@ def ledger_rows(I: Inputs, m: Moment, gs: dict, pl: dict) -> list[dict]:
                      free, d["state"]))
     rows += [
         ("COMPUTE", f"{total_cores} cores", f"{total_cores} cores", f"{used_cores} cores", f"{total_cores - used_cores} cores", "NORMAL"),
-        ("RESPONSE D4", f"{f1(ceil)} s", f"{f1(ceil)} s", "--" if resp is None else f"{f1(resp)} s",
-         "--" if resp is None else f"{f1(ceil - resp)} s", "--" if resp is None else "NORMAL"),
+        ("RESPONSE D4", f"{f1(ceil)} s", f"{f1(ceil)} s", "--" if resp is None else resp_text(resp, ceil).split(" / ")[0],
+         "--" if resp is None else f"{f1(ceil - resp)} s", "--" if resp is None else ("NORMAL" if resp <= ceil else "LATE")),
     ]
     return [dict(zip(("name", "cap", "lim", "used", "free", "state"), r)) for r in rows]
 
@@ -493,12 +529,12 @@ def _cond_value(signal: str, v) -> str:
 
 def decision(I: Inputs, m: Moment, gs: dict, pl: dict) -> dict | None:
     """The decision panel: the latest record, its one sentence first."""
-    r = _latest(m.records)
+    r = _acting(m.records)
     if r is None:
         return None
     snap = m.snapshot
     applied = m.t_s >= r.get("applies_at_tick", r["tick"] + 1)
-    resp, ceil, _ = _response(r)
+    resp, ceil, _ = _response(r, m.timing)
     out = {"kind": r["kind"], "seq": r["seq"], "sentence": r["sentence"], "t": clock(r["t_s"]), "rows": [], "conflicts": [],
            "applied": applied}
     if r["kind"] == "D3":
@@ -521,7 +557,8 @@ def decision(I: Inputs, m: Moment, gs: dict, pl: dict) -> dict | None:
         ]
         if r.get("reserved"):
             out["rows"].append(("RESERVED", " · ".join(f"{g} {kw(v)} kW" for g, v in r["reserved"].items()), False))
-        out["rows"].append(("RESPONSE", f"{f1(resp)} / {f1(ceil)} s", False))
+        out["rows"].append(("RESPONSE", resp_text(resp, ceil), False))
+        out["r3"] = _r3(m)
         now = m.snapshots_so_far[-1]["ship_state"]
         for c in r.get("conflicts", []):
             if "signal" in c:
@@ -556,41 +593,67 @@ def decision(I: Inputs, m: Moment, gs: dict, pl: dict) -> dict | None:
             if r.get("armed"):
                 a = r["armed"][0]
                 out["rows"].append(("NEXT", f"{_step_text(a)} · {kw(a['frees_kw'])} kW", False))
-        out["rows"] += [("LOSS", _losses(r), False), ("RESPONSE", f"{f1(resp)} / {f1(ceil)} s", False)]
+        out["rows"] += [("LOSS", _losses(r), False), ("RESPONSE", resp_text(resp, ceil), False)]
+        later = _latest(m.records, ("D4",))
+        if later is not r and later["verdict"] == "hold":
+            out["recheck"] = f"RECHECK {clock(later['t_s'])} · HOLDS {f1(later['load_kw'])} / {f1(later['limit_kw'])} kW"
+        out["r3"] = _r3(m)
         return out
     out.update(title=r["kind"], tag=words(r["verdict"]), tone="hold")
     return out
 
 
+def _r3(m: Moment) -> dict | None:
+    """The latest crew-policy record for rule R3, shown under the decision it follows."""
+    r = _latest(m.records, ("D5",))
+    if r is None:
+        return None
+    return {"t": clock(r["t_s"]), "crew": r.get("crew_aboard"), "verdict": words(r["verdict"]), "sentence": r["sentence"],
+            "evidence": r.get("deck_evidence", "")}
+
+
 def shed_order(I: Inputs, m: Moment) -> dict:
     """Executed and armed steps of the latest D4 record, then the mission-critical guests that go last."""
-    r = _latest(m.records, ("D4",))
-    file = I.missions[m.mission]
+    r = _acting(m.records, ("D4",))
+    latest = _latest(m.records, ("D4",))
+    file = _file(I, m)
     rows = []
     if r:
         applied = m.t_s >= r.get("applies_at_tick", r["tick"] + 1)
         for s in r["steps"]:
             rows.append((s, "EXECUTED" if applied else "COMMANDED"))
-        for s in r["armed"]:
+        for s in (latest or r)["armed"]:
             rows.append((s, "ARMED"))
     out = []
     for i, (s, state) in enumerate(rows, 1):
+        tier = s.get("tier") or Lg.tier_of(I.cards, s["guest"], file)
         out.append({"n": str(i), "g": s["guest"], "step": f"{words(s['from_mode'])} → {words(s['to_mode'])}",
-                    "kw": f"-{kw(s['frees_kw'])}", "loss": f"{s.get('capability_lost_pct', 0):.0f} %",
-                    "mc": bool(s.get("mission_critical")), "shed": bool(s.get("shed")), "state": state})
+                    "kw": f"-{kw(s['frees_kw'])}", "loss": f"{s.get('capability_lost_pct', 0):.0f} %", "tier": TIER_NAMES[tier],
+                    "mc": tier == "mission_critical", "shed": bool(s.get("shed")), "state": state})
     listed = {s["g"] for s in out}
-    for g in file["mission_critical"]:
-        if g in m.snapshot["guests"] and g not in listed:
-            out.append({"n": str(len(out) + 1), "g": g, "step": "MISSION CRITICAL", "kw": "--", "loss": "--", "mc": True,
-                        "shed": False, "state": "LAST"})
-    return {"rows": out, "source": f"ORDER {words(r['order_source']) if r else 'COMPUTED'} · LOSS PER kW",
-            "mission": mission_name(m.mission)}
+    for g in m.snapshot["guests"]:
+        tier = Lg.tier_of(I.cards, g, file)
+        if g not in listed and tier in ("mission_critical", "vessel_critical"):
+            out.append({"n": "--" if tier == "vessel_critical" else str(len(out) + 1), "g": g,
+                        "step": "VESSEL CRITICAL" if tier == "vessel_critical" else "MISSION CRITICAL", "kw": "--", "loss": "--",
+                        "tier": TIER_NAMES[tier], "mc": tier == "mission_critical", "shed": False,
+                        "state": "NEVER" if tier == "vessel_critical" else "LAST"})
+    src = r["order_source"] if r else ("declared" if file.get("shed_order") else "computed")
+    return {"rows": out, "source": f"ORDER {words(src)} · TIER, THEN LOSS PER kW", "mission": mission_name(m.mission, file)}
 
 
 # ------------------------------------------------------------------------------------------- event log
 
+LAPTOP_EVENTS = {
+    "crew_change": lambda p: ("CREW", f"{p['crew_aboard']} aboard."),
+    "deck_report": lambda p: ("HLO", f"Deck report: {words(p['deck']).lower()}." + (f" Wind {f1(p['wind_kn'])} kn." if p.get("wind_kn") is not None else "")),
+    "standing_plan": lambda p: ("BRIDGE", f"Standing plan {p['state']}."),
+    "deck_sweep": lambda p: ("CREW", f"Deck sweep: {words(p['result']).lower()}."),
+}
+
 ACTIVITY_MSG = {"holding_depth": "Holding depth. Survey leg paused.", "holding_at_sea": "Holding at sea. Survey leg aborted.",
-                "surveying": "Surveying on the acoustic link."}
+                "surveying": "Surveying on the acoustic link.", "launch_recovery": "Recovery approach.",
+                "on_cradle": "On the cradle."}
 
 
 def _guest_report(snap: dict, e: dict) -> str:
@@ -623,6 +686,9 @@ def log_rows(I: Inputs, m: Moment) -> list[dict]:
             elif e["type"] == "guest_report":
                 rows.append({"t_s": e["t_s"], "order": 1, "type": "STATE", "tag": e["payload"]["guest"], "msg": _guest_report(snap, e),
                              "injected": bool(e.get("injected"))})
+            elif e["type"] in LAPTOP_EVENTS:
+                tag, msg = LAPTOP_EVENTS[e["type"]](e["payload"])
+                rows.append({"t_s": e["t_s"], "order": 1, "type": "STATE", "tag": tag, "msg": msg, "injected": bool(e.get("injected"))})
         for f in _faults(snap):
             key = (f["fault"], f["subject"], f["raw_event_t_s"])
             if key in faults_seen:
@@ -639,6 +705,8 @@ def log_rows(I: Inputs, m: Moment) -> list[dict]:
                 msg = f"{words(f['fault']).capitalize()} confirmed at {clock(f['confirmed_t_s'])}."
             rows.append({"t_s": f["raw_event_t_s"], "order": 2, "type": "ALARM", "tag": tag, "msg": msg, "injected": bool(f.get("injected"))})
         for req in snap["crew"]["bridge_requests"]["value"] or []:
+            if any(r["kind"] == "D5" for r in m.records):
+                break  # the crew-policy records carry the bridge's answer
             if req.get("state") == "confirmed" and req["request_seq"] not in requests_seen:
                 requests_seen.add(req["request_seq"])
                 rows.append({"t_s": req["answered_t_s"], "order": 1, "type": "STATE", "tag": req["rule"],
@@ -663,10 +731,14 @@ def log_rows(I: Inputs, m: Moment) -> list[dict]:
             typ, tag = "SHED", " ".join(sorted({s["guest"] for s in r["steps"]}))
         elif r["kind"] == "D4":
             typ, tag = "HOLD", "D4"
+        elif r["kind"] == "D5":
+            typ, tag = "CREW POLICY", f"{r.get('rule', 'R3')} · {r.get('crew_aboard', '')}".rstrip(" ·")
         else:
             typ, tag = r["kind"], words(r.get("rule", r["subject"]))
         rows.append({"t_s": r["t_s"], "order": 3, "type": typ, "tag": tag, "msg": r["sentence"], "injected": False, "seq": r["seq"]})
-    rows.sort(key=lambda e: (e["t_s"], e["order"]), reverse=True)
+    for e in m.inputs:
+        rows.append({**e, "order": 1})
+    rows.sort(key=lambda e: (e["t_s"], e["order"], e.get("seq", 0)), reverse=True)
     for e in rows:
         e["t"] = clock(e["t_s"])
     return rows
@@ -674,17 +746,22 @@ def log_rows(I: Inputs, m: Moment) -> list[dict]:
 
 # ------------------------------------------------------------------------------------------- active constraint
 
+def _draws_before(I: Inputs, r: dict, m: Moment) -> dict:
+    """Per guest kW the shed decision read: each guest's mode before the step, or its reservation."""
+    reserved: dict = {}
+    for x in m.records:
+        if x["tick"] <= r["tick"]:
+            reserved.update(x.get("reserved") or {})
+    return {g: Lg.committed_kw(I.cards, g, l["mode_before"], reserved.get(g, 0.0)) for g, l in (r.get("losses") or {}).items()}
+
+
 def constraint(I: Inputs, m: Moment, gs: dict, pl: dict) -> dict:
-    """The constraint-ledger drill-down: the limit arithmetic of the binding class, step by step."""
-    r = _latest(m.records, ("D4",))
+    """The constraint-ledger drill-down: the limit arithmetic of the binding class, step by step. A shed shows the
+    load it read, the shortfall, each step and the load after; otherwise the load now against the limit."""
+    r = _acting(m.records, ("D4",))
+    shed = r if r and r["verdict"] == "shed" else None
     snap = m.snapshot
     inj = _injected_subjects(snap)
-    pre_gs, _ = guest_states(I, Moment(m.mission, snap["run"]["tick"], snap, m.records, m.snapshots_so_far))
-    if r and r["tick"] == snap["run"]["tick"]:
-        before, after = r["load_kw"], r["load_after_kw"]
-    else:
-        before = after = pl["load"]
-        pre_gs = gs
     cls = pl["binds"]
     rows = []
     if cls == "heat":
@@ -694,38 +771,42 @@ def constraint(I: Inputs, m: Moment, gs: dict, pl: dict) -> dict:
             rows.append((f"P{down[0] if down else 1} TRIP · 1 OF 2 PUMPS", f"× {I.A['heat']['degraded_factor']:.2f}", 0,
                          bool({"chw_pump_1", "chw_pump_2"} & inj)))
             rows.append(("AVAILABLE", f"{f1(pl['heat_cap'])} kW", 0, False))
-        cap = pl["heat_cap"]
         title = "CHILLED WATER"
     else:
         reserve = "GEN 1 ONLY" if pl["power_degraded"] else f"2 GEN · {words(_value(snap, 'ship_state', 'speed_band'))}"
         rows.append((f"GUEST RESERVE · {reserve}", f"{f1(pl['power_cap'])} kW", 0, False))
-        cap = pl["power_cap"]
         title = "POWER"
     rows.append(("HEADROOM", f"-{f1(pl['headroom'])} kW", 0, False))
     rows.append(("LIMIT", f"{f1(pl['ceiling'])} kW", 1, False))
-    rows.append(("DEMAND " + " + ".join(f"{g} {kw(s['kw'])}" for g, s in pre_gs.items()), f"{f1(before)} kW", 0, False))
-    if r and r["tick"] == snap["run"]["tick"] and r["verdict"] == "shed":
-        rows.append(("SHORTFALL", f"{f1(before - r['limit_kw'])} kW", 2, False))
-        for s in r["steps"]:
-            rows.append((f"{s['guest']} {words(s['from_mode'])} → {words(s['to_mode'])}", f"-{f1(s['frees_kw'])} kW", 0, False))
+    if shed:
+        before, after = shed["load_kw"], shed["load_after_kw"]
+        draws = _draws_before(I, shed, m)
+        rows.append(("DEMAND " + " + ".join(f"{g} {kw(v)}" for g, v in draws.items()), f"{f1(before)} kW", 0, False))
+        rows.append(("SHORTFALL", f"{f1(before - shed['limit_kw'])} kW", 2, False))
+        for st in shed["steps"]:
+            rows.append((f"{st['guest']} {words(st['from_mode'])} → {words(st['to_mode'])}", f"-{f1(st['frees_kw'])} kW", 0, False))
         rows.append(("DEMAND AFTER", f"{f1(after)} kW", 1, False))
+        if abs(pl["load"] - after) > 0.05 and m.t_s >= shed.get("applies_at_tick", shed["tick"] + 1):
+            rows.append(("DEMAND NOW", f"{f1(pl['load'])} kW", 1, False))
     else:
+        before = pl["load"]
+        rows.append(("DEMAND " + " + ".join(f"{g} {kw(x['kw'])}" for g, x in gs.items()), f"{f1(before)} kW", 0, False))
         rows.append(("SPARE", f"{f1(pl['ceiling'] - before)} kW", 1, False))
     action = None
-    if r and r["verdict"] == "shed":
-        s = r["steps"][0]
-        loss = r["losses"][s["guest"]]
-        resp, ceil, _ = _response(r)
-        action = {"t": clock(r.get("applies_at_tick", r["tick"] + 1)), "what": " · ".join(_step_text(x) for x in r["steps"]),
-                  "kw": f"-{f1(sum(x['frees_kw'] for x in r['steps']))} kW · {'CHW' if cls == 'heat' else 'POWER'} {f1(after)} / {f1(r['limit_kw'])} kW",
-                  "impact": f"{s['guest']} CAPABILITY {loss['capability_before'] * 100:.0f} → {loss['capability_after'] * 100:.0f} % · RESPONSE {f1(resp)} / {f1(ceil)} s"}
+    if shed:
+        st = shed["steps"][0]
+        loss = shed["losses"][st["guest"]]
+        resp, ceil, _ = _response(shed, m.timing)
+        action = {"t": clock(shed.get("applies_at_tick", shed["tick"] + 1)), "what": " · ".join(_step_text(x) for x in shed["steps"]),
+                  "kw": f"-{f1(sum(x['frees_kw'] for x in shed['steps']))} kW · {'CHW' if cls == 'heat' else 'POWER'} {f1(after)} / {f1(shed['limit_kw'])} kW",
+                  "impact": f"{st['guest']} CAPABILITY {loss['capability_before'] * 100:.0f} → {loss['capability_after'] * 100:.0f} % · RESPONSE {resp_text(resp, ceil)}"}
     elif r:
-        resp, ceil, _ = _response(r)
+        resp, ceil, _ = _response(r, m.timing)
         action = {"t": clock(r["t_s"]), "what": "NO ACTION · HOLDS", "kw": f"{f1(r['load_kw'])} / {f1(r['limit_kw'])} kW",
-                  "impact": f"LOSS NONE · RESPONSE {f1(resp)} / {f1(ceil)} s"}
+                  "impact": f"LOSS NONE · RESPONSE {resp_text(resp, ceil)}"}
     tone = "limit" if (pl["heat_degraded"] if cls == "heat" else pl["power_degraded"]) else "normal"
     return {"title": f"ACTIVE CONSTRAINT · {title}", "headline": f"{f1(before)} / {f1(pl['ceiling'])} kW", "tone": tone,
-            "rows": [{"k": k, "v": v, "style": s, "injected": i} for k, v, s, i in rows], "action": action}
+            "rows": [{"k": k, "v": v, "style": st_, "injected": i} for k, v, st_, i in rows], "action": action}
 
 
 def alarms(m: Moment) -> list[dict]:
@@ -739,19 +820,19 @@ def alarms(m: Moment) -> list[dict]:
 
 # ------------------------------------------------------------------------------------------- the whole screen
 
-def operations(I: Inputs, mission: str, t_s: int) -> dict:
-    m = I.moment(mission, t_s)
+def screen(I: Inputs, m: Moment) -> dict:
+    """Operations and its ledger drill-down for one moment, live or replayed."""
     gs, _ = guest_states(I, m)
     pl = plant_lines(I, m, gs)
     d = decision(I, m, gs, pl)
-    latest = _latest(m.records)
+    acting = _acting(m.records)
     hot = set()
-    if latest and latest["kind"] == "D4":
-        hot = {s["guest"] for s in latest["steps"]}
-    elif latest and latest["kind"] == "D3":
-        hot = {latest["proceeds"]}
+    if acting and acting["kind"] == "D4":
+        hot = {s["guest"] for s in acting["steps"]}
+    elif acting and acting["kind"] == "D3":
+        hot = {acting["proceeds"]}
     return {
-        "mission": mission, "t_s": t_s, "header": header(I, m, pl), "ship_state": ship_state(m),
+        "mission": m.mission, "t_s": m.t_s, "header": header(I, m, pl), "ship_state": ship_state(m),
         "mimic": mimic(I, m, gs, hot), "plant": plant(I, m, pl), "tiles": tiles(I, m, gs, pl), "decision": d,
         "shed_order": shed_order(I, m), "guests": guest_rows(I, m, gs), "log": log_rows(I, m),
         "ledger": {"constraint": constraint(I, m, gs, pl), "rows": ledger_rows(I, m, gs, pl), "alarms": alarms(m)},
@@ -759,28 +840,38 @@ def operations(I: Inputs, mission: str, t_s: int) -> dict:
     }
 
 
-def marks(I: Inputs, mission: str = "survey") -> list[dict]:
-    """The replay's decision moments, for the timeline and the jump keys."""
+def operations(I: Inputs, mission: str, t_s: int) -> dict:
+    """The fixture replay's screen at one ship second."""
+    return screen(I, I.moment(mission, t_s))
+
+
+def marks(records: list[dict]) -> list[dict]:
+    """One mark per decision moment (D3, and each fault's acting D4), for the timeline and the jump keys."""
     out = [{"t_s": 0, "at": 0, "t": "00:00", "label": "START"}]
-    for r in I.records.get(mission, []):
+    seen = set()
+    for r in records:
         if r["kind"] == "D3":
             label = f"{r['proceeds']} LOW BATT"
-        elif r.get("trigger") == "genset_trip":
-            label = "GEN 2 TRIP"
-        elif r.get("trigger") == "cooling_degraded":
-            label = "CHW P1 TRIP"
+        elif r["kind"] == "D4" and r.get("raw_event_t_s") is not None:
+            if r["raw_event_t_s"] in seen:
+                continue
+            seen.add(r["raw_event_t_s"])
+            r = _acting([x for x in records if x["kind"] == "D4" and x.get("raw_event_t_s") == r["raw_event_t_s"]], ("D4",))
+            label = {"genset_trip": "GEN 2 TRIP", "cooling_degraded": "CHW P1 TRIP"}.get(r.get("trigger"), words(r.get("trigger", "D4")))
         else:
-            label = r["kind"]
+            continue
         start = r.get("raw_event_t_s") if r.get("raw_event_t_s") is not None else r["t_s"]
         out.append({"t_s": int(r.get("applies_at_tick", r["tick"] + 1)), "at": int(start), "t": clock(start)[:5],
                     "label": label, "injected": bool(r.get("injected"))})
     return out
 
 
-def compare(I: Inputs, t_s: int, files=("survey", "sar")) -> dict:
+def compare(I: Inputs, t_s: int, files=("survey", "sar"), moments: dict | None = None, mark_records: list | None = None) -> dict:
+    """Both priority files at one moment: from the given moments (the live reference runs) or the fixture replay.
+    The timeline marks come from mark_records (the whole run), else from the first file's records."""
     ships = {}
     for f in files:
-        v = operations(I, f, t_s)
+        v = screen(I, moments[f]) if moments else operations(I, f, t_s)
         ships[f] = {"name": f"MISSION {mission_name(f)}", "weights": _weights(I, f), "decision": v["decision"],
                     "bars": [t for t in v["tiles"] if t["name"] in ("POWER", "COOLING CHW")], "guests": v["guests"],
                     "mimic": v["mimic"]}
@@ -797,7 +888,8 @@ def compare(I: Inputs, t_s: int, files=("survey", "sar")) -> dict:
         ships[f]["cap"] = " · ".join(f"{g} {x['cap']}" for g, x in gs.items())
     if ships[files[0]]["cap"] != ships[files[1]]["cap"]:
         diff.append({"k": "CAPABILITY", "a": ships[files[0]]["cap"], "b": ships[files[1]]["cap"]})
-    return {"t_s": t_s, "clock": "T+" + clock(t_s), "files": list(files), "ships": ships, "diff": diff, "marks": marks(I, files[0])}
+    recs = mark_records if mark_records is not None else (moments[files[0]].records if moments else I.records.get(files[0], []))
+    return {"t_s": t_s, "clock": "T+" + clock(t_s), "files": list(files), "ships": ships, "diff": diff, "marks": marks(recs)}
 
 
 def _weights(I: Inputs, mission: str) -> str:
@@ -956,6 +1048,12 @@ def reference(I: Inputs) -> dict:
         modes = " · ".join(f"{words(m['name']).lower()} {kw(m['power_kw'])}" if m["power_kw"] else words(m["name"]).lower() for m in c["modes"])
         guests.append({"id": g, "name": c["name"], "pos": " · ".join(dict.fromkeys(pos)), "modes": modes,
                        "cooling": "CHW" if c["cooling"] == "chilled_water" else "AIR"})
-    missions = [{"id": k, "name": mission_name(k), "weights": " · ".join(f"{words(w)} {v:.1f}" for w, v in m["weights"].items()),
-                 "mc": " ".join(m["mission_critical"]) or "--"} for k, m in I.missions.items()]
-    return {"guests": guests, "missions": missions}
+    missions = [{"id": k, "name": mission_name(k, m), "weights": " · ".join(f"{words(w)} {v:.1f}" for w, v in m["weights"].items()),
+                 "mc": " ".join(m["mission_critical"]) or "--",
+                 "tiers": " · ".join(f"{g} {TIER_NAMES[Lg.tier_of(I.cards, g, m)]}" for g in sorted(I.cards))} for k, m in I.missions.items()]
+    try:
+        from sdv import kit
+        devices = [{k: d.get(k) for k in ("id", "kind", "role", "site", "storage_gb")} for d in kit.devices(I.A)]
+    except Exception:  # the kit is optional for the screen
+        devices = []
+    return {"guests": guests, "missions": missions, "devices": devices}

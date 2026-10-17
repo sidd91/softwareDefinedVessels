@@ -19,6 +19,7 @@
   <a href="#ledger" data-view="ledger">CONSTRAINT LEDGER</a>
   <a href="#compare" data-view="compare">MISSION COMPARE</a>
   <a href="#admit" data-view="admit">ADMISSION REVIEW</a>
+  <a href="#build" data-view="build">PROFILE BUILDER</a>
   <a href="#ref" data-view="ref">REFERENCE</a>
   <span class="link-state" id="link-state">LINK --</span>
 </nav>
@@ -27,16 +28,18 @@
   <div class="view" id="view-ledger" hidden></div>
   <div class="view" id="view-compare" hidden></div>
   <div class="view" id="view-admit" hidden></div>
+  <div class="view" id="view-build" hidden></div>
   <div class="view" id="view-ref" hidden></div>
 </main>
 <footer class="simbar" id="simbar" aria-label="Simulation">
-  <span class="replay-chip">REPLAY</span>
+  <span class="replay-chip" id="sim-source">REPLAY</span>
   <button type="button" id="sim-run" title="Space">HOLD</button>
   <span class="group" role="group" aria-label="Pace" id="sim-speed"></span>
   <span class="group" role="group" aria-label="Jump" id="sim-jump"></span>
   <button type="button" id="sim-restart">RESTART</button>
   <span class="group" role="group" aria-label="Priority file" id="sim-file"></span>
   <span class="track" aria-hidden="true"><span class="fill" id="sim-fill"></span></span>
+  <span class="sim-note" id="sim-note"></span>
 </footer>
 </body>
 </html>

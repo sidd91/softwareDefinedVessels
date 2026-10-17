@@ -1,15 +1,17 @@
-// The ArgOS page: one title bar, four views, the SIM bar, and the /ws replay stream.
+// The ArgOS page: one title bar, five views, the SIM bar, and the /ws stream (the live loop, or the fixture replay).
 import { esc, chip, getJSON } from './util.js';
 import { renderOps, renderLedger } from './ops.js';
 import { renderCompare } from './compare.js';
 import { renderAdmit } from './admit.js';
 import { renderReference } from './reference.js';
+import { renderBuilder, builderTick } from './builder.js';
 
 const VIEWS = {
   ops: { sub: 'RESOURCE GOVERNOR · MRV-60', sim: true },
   ledger: { sub: 'CONSTRAINT LEDGER · MRV-60', sim: true },
   compare: { sub: 'MISSION COMPARE · MRV-60', sim: true },
   admit: { sub: 'ADMISSION · MRV-60', sim: false },
+  build: { sub: 'PROFILE BUILDER · MRV-60', sim: true },
   ref: { sub: 'REFERENCE · MRV-60', sim: false },
 };
 
@@ -23,6 +25,7 @@ export const app = {
 };
 
 const $ = id => document.getElementById(id);
+const CREW_NEXT = { 14: 6, 6: 0, 0: 14 };
 
 // ------------------------------------------------------------------------------------------- title bar
 
@@ -32,11 +35,14 @@ function replayChips(v) {
   return [
     chip(`MISSION ${esc(h.mission)}`, 'strong'),
     chip(`PRIORITY ${esc(h.priority_file)} <span class="dim">VALID</span>`),
-    chip(`${esc(h.crew)} <span class="dim">· R3 ${esc(h.crew_policy)}</span>`),
+    app.tick.source === 'live'
+      ? `<button type="button" class="chip" data-crew="${CREW_NEXT[app.tick.snapshot.crew.crew_aboard.value] ?? 14}" title="Next crew level">${esc(h.crew)} <span class="dim">· R3 ${esc(h.crew_policy)}</span></button>`
+      : chip(`${esc(h.crew)} <span class="dim">· R3 ${esc(h.crew_policy)}</span>`),
     chip(esc(h.sea)),
     chip(esc(h.speed)),
     app.view === 'ledger' ? chip(`GEN ${gens} OF 2`) : '',
     chip(`SIM ×${esc(app.tick.speed)}`),
+    h.standby ? chip(`STANDBY ${esc(h.standby)}`, h.standby === 'IN STEP' ? '' : 'alarm') : '',
   ].join('');
 }
 
@@ -84,11 +90,17 @@ function simbar() {
   $('sim-file').innerHTML = '<span class="gl">PRIORITY</span>' + app.meta.missions.map(m =>
     `<button type="button" data-file="${esc(m.id)}" class="${m.id === t.mission ? 'on' : ''}">${esc(m.name)}</button>`).join('');
   $('sim-fill').style.width = `${Math.round(100 * t.t_s / t.end_t_s)}%`;
+  $('sim-source').textContent = t.source === 'live' ? `LIVE · SIM ${String(t.sim || '').toUpperCase()}` : 'REPLAY';
+  if (t.refused) $('sim-note').textContent = `REFUSED · ${t.refused}`;
 }
 
 function wireSimbar() {
   $('sim-run').addEventListener('click', () => app.send({ cmd: 'toggle' }));
   $('sim-restart').addEventListener('click', () => app.send({ cmd: 'restart' }));
+  $('chips').addEventListener('click', e => {
+    const b = e.target.closest('button[data-crew]');
+    if (b) app.send({ cmd: 'input', input: { type: 'crew_change', injected: false, payload: { crew_aboard: Number(b.dataset.crew) } } });
+  });
   $('simbar').addEventListener('click', e => {
     const b = e.target.closest('button');
     if (!b) return;
@@ -135,6 +147,7 @@ function render() {
   if (v && app.view === 'ops') renderOps($('view-ops'), v);
   if (v && app.view === 'ledger') renderLedger($('view-ledger'), v);
   if (app.view === 'compare') renderCompare($('view-compare'));
+  if (app.view === 'build') builderTick($('view-build'));
   paintHeader();
   simbar();
 }
@@ -150,6 +163,7 @@ function route() {
   $('simbar').hidden = !VIEWS[app.view].sim;
   if (app.view === 'admit') renderAdmit($('view-admit'));
   if (app.view === 'ref') renderReference($('view-ref'));
+  if (app.view === 'build') renderBuilder($('view-build'));
   render();
 }
 

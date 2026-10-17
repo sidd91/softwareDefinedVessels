@@ -31,12 +31,19 @@ _MAIN_LINE = re.compile(r"^scenario_b_(?P<mission>[a-z_]+?)_m(?P<minute>\d\d)$")
 
 @dataclass
 class Moment:
-    """The replay at one ship second: the latest snapshot at or before it and every record decided by then."""
+    """The screen's input at one ship second: the latest snapshot, every record decided by then, and the earlier
+    snapshots the event log needs. A live run also gives the priority file in force (it may be a profile applied
+    at sea), each record's decision time from the timing log, the standby board's state and its laptop inputs."""
     mission: str
     t_s: int
     snapshot: dict
     records: list
     snapshots_so_far: list = field(default_factory=list)
+    profile: dict | None = None
+    timing: dict = field(default_factory=dict)          # record seq -> latency_ms
+    standby: str | None = None
+    inputs: list = field(default_factory=list)          # laptop inputs applied so far, with their outcome
+    source: str = "replay"
 
 
 def load_timeline(directory: Path = SNAPSHOTS) -> dict[str, list[dict]]:

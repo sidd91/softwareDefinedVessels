@@ -2,6 +2,12 @@
 // the constraint ledger. Both render the `view` the server builds from one snapshot and its records.
 import { esc, tag, injected, stateWord, meter, panel, paint } from './util.js';
 
+const TIER_TAG = { 'VESSEL CRITICAL': 'VC', 'MISSION CRITICAL': 'MC', 'DISCRETIONARY': 'DISC' };
+
+export function tierTag(tier) {
+  return TIER_TAG[tier] ? `<span class="mc" title="${esc(tier)}">${TIER_TAG[tier]}</span>` : '';
+}
+
 export function mountOps(root) {
   root.innerHTML = `
 <div class="row">
@@ -75,12 +81,20 @@ export function decision(d) {
 <p class="why">${esc(d.sentence)}</p>
 ${conflictTable(d)}
 <div class="kv">${recordRows(d.rows)}</div>
+${d.recheck ? `<div class="foot">${esc(d.recheck)}</div>` : ''}
+${r3(d.r3)}
 </section>`;
+}
+
+function r3(x) {
+  if (!x) return '';
+  return `<div class="r3"><div class="r3h"><span>R3 · CREW ${esc(x.crew)}</span><span class="tag t-CREW-POLICY">${esc(x.verdict)}</span><span class="mono">${esc(x.t)}</span></div>
+<div class="r3s">${esc(x.sentence)}</div></div>`;
 }
 
 function shedOrder(s) {
   const rows = s.rows.map(r => `<tr class="${r.state === 'EXECUTED' ? 'exec' : ''}">
-<td>${esc(r.n)}</td><td class="b">${esc(r.g)}${r.mc ? '<span class="mc">MC</span>' : ''}</td><td>${esc(r.step)}</td>
+<td>${esc(r.n)}</td><td class="b">${esc(r.g)}${tierTag(r.tier)}</td><td>${esc(r.step)}</td>
 <td class="num">${esc(r.kw)}</td><td class="num">${esc(r.loss)}</td><td>${tag(r.state)}</td></tr>`).join('');
   return panel(`SHED ORDER · ${s.mission}`, `<div class="scroll-x"><table>
 <thead><tr><th scope="col">#</th><th scope="col">GUEST</th><th scope="col">STEP</th><th scope="col">kW</th><th scope="col">LOSS</th><th scope="col">STATE</th></tr></thead>
@@ -88,7 +102,7 @@ function shedOrder(s) {
 }
 
 function guests(gs) {
-  const rows = gs.map(g => `<tr><td class="b">${esc(g.id)}</td><td>${esc(g.pos)}</td><td>${esc(g.mode)}</td><td class="num">${esc(g.kw)}</td><td class="num">${esc(g.cap)}</td></tr>`).join('');
+  const rows = gs.map(g => `<tr><td class="b">${esc(g.id)}${tierTag(g.tier)}</td><td>${esc(g.pos)}</td><td>${esc(g.mode)}</td><td class="num">${esc(g.kw)}</td><td class="num">${esc(g.cap)}</td></tr>`).join('');
   return panel('GUESTS', `<table><thead><tr><th scope="col">ID</th><th scope="col">POS</th><th scope="col">MODE</th><th scope="col">kW</th><th scope="col">CAP</th></tr></thead><tbody>${rows}</tbody></table>`);
 }
 
@@ -128,7 +142,7 @@ function constraintPanel(c, shed) {
   const a = c.action;
   const action = a ? `<div class="action-card"><span class="al">ACTION ${esc(a.t)}</span><span class="aw">${esc(a.what)}</span>
 <span class="ak">${esc(a.kw)}</span><span class="ai">${esc(a.impact)}</span></div>` : '<div class="action-card"><span class="al">ACTION</span><span class="aw">NONE</span></div>';
-  const ladder = shed.rows.map(s => `<tr class="${s.state === 'EXECUTED' ? 'exec' : ''}"><td class="b">${esc(s.g)}${s.mc ? '<span class="mc">MC</span>' : ''}</td>
+  const ladder = shed.rows.map(s => `<tr class="${s.state === 'EXECUTED' ? 'exec' : ''}"><td class="b">${esc(s.g)}${tierTag(s.tier)}</td>
 <td>${esc(s.step)} · ${esc(s.kw)} kW</td><td class="num">${esc(s.loss)}</td><td>${tag(s.state)}</td></tr>`).join('');
   return `<section class="panel" aria-label="Active constraint" style="flex: 1 1 auto; display: flex; flex-direction: column">
 <div class="strip ${c.tone === 'limit' ? 'amber' : 'navy'}" style="padding: 8px 12px; align-items: baseline">

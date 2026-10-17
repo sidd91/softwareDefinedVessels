@@ -1,5 +1,5 @@
-"""The screen server: routes, the replay, and a live /ws stream of a Scenario B replay (uvicorn in a thread, the
-websockets client; no HTTP test client is installed)."""
+"""The screen server: routes, the fixture replay, the live loop, and /ws streams of Scenario B (uvicorn in a thread,
+the websockets client; no HTTP test client is installed)."""
 import json
 import socket
 import threading
@@ -18,7 +18,11 @@ I = data.Inputs()
 def test_create_app_exposes_the_page_the_api_and_the_stream():
     app = server.create_app(I)
     paths = {getattr(r, "path", None) for r in app.routes}
-    assert {"/", "/api/meta", "/api/state", "/api/compare", "/api/admit", "/api/reference", "/ws", "/static"} <= paths
+    assert {"/", "/api/meta", "/api/state", "/api/compare", "/api/admit", "/api/reference", "/api/builder",
+            "/api/builder/check", "/api/builder/save", "/ws", "/static"} <= paths
+    assert app.state.source == "live"
+    with pytest.raises(ValueError):
+        server.create_app(I, source="nonsense")
 
 
 def test_state_carries_the_snapshot_and_the_records_decided_by_then():
@@ -59,33 +63,57 @@ def test_parse_edits():
     assert server.parse_edits(["G4.hangar.mass_t=0.9", "bad", "=1"]) == {"G4.hangar.mass_t": "0.9"}
 
 
-@pytest.fixture(scope="module")
-def live():
+def serve(app):
     with socket.socket() as s:
         s.bind(("127.0.0.1", 0))
         port = s.getsockname()[1]
-    srv = uvicorn.Server(uvicorn.Config(server.create_app(I), host="127.0.0.1", port=port, log_level="warning"))
+    srv = uvicorn.Server(uvicorn.Config(app, host="127.0.0.1", port=port, log_level="warning"))
     th = threading.Thread(target=srv.run, daemon=True)
     th.start()
     deadline = time.monotonic() + 10
     while not srv.started and time.monotonic() < deadline:
         time.sleep(0.05)
     assert srv.started
-    yield f"127.0.0.1:{port}"
+    return srv, th, f"127.0.0.1:{port}"
+
+
+@pytest.fixture(scope="module")
+def live():
+    """The fixture replay (the name is the server's, not the source's)."""
+    srv, th, base = serve(server.create_app(I, source="fixtures"))
+    yield base
+    srv.should_exit = True
+    th.join(timeout=5)
+
+
+@pytest.fixture(scope="module")
+def loop_server(tmp_path_factory):
+    tmp = tmp_path_factory.mktemp("builder")
+    srv, th, base = serve(server.create_app(I, source="live", profiles_dir=tmp, drafts_dir=tmp))
+    yield base, tmp
     srv.should_exit = True
     th.join(timeout=5)
 
 
 def get(base, path):
-    with urllib.request.urlopen(f"http://{base}{path}", timeout=5) as r:
+    with urllib.request.urlopen(f"http://{base}{path}", timeout=30) as r:
         return r.status, r.read().decode()
+
+
+def post(base, path, body):
+    req = urllib.request.Request(f"http://{base}{path}", data=json.dumps(body).encode(), headers={"Content-Type": "application/json"})
+    try:
+        with urllib.request.urlopen(req, timeout=10) as r:
+            return r.status, json.loads(r.read())
+    except urllib.error.HTTPError as e:
+        return e.code, json.loads(e.read())
 
 
 def test_the_page_and_its_assets_are_served(live):
     status, html = get(live, "/")
     assert status == 200 and "ArgOS" in html and "/static/js/app.js" in html
     for asset in ("/static/argos.css", "/static/js/app.js", "/static/js/ops.js", "/static/js/compare.js",
-                  "/static/js/admit.js", "/static/js/reference.js", "/static/js/util.js"):
+                  "/static/js/admit.js", "/static/js/reference.js", "/static/js/util.js", "/static/js/builder.js"):
         assert get(live, asset)[0] == 200
 
 
@@ -119,3 +147,47 @@ def test_ws_streams_a_scenario_b_replay(live):
         swapped = json.loads(ws.recv(timeout=5))
         assert swapped["mission"] == "sar" and swapped["t_s"] == held["t_s"]
         assert swapped["view"]["decision"]["rows"][3] == ["ACTION", "G5 FULL → LOW POWER", False]
+
+
+def test_ws_streams_the_live_loop_and_takes_laptop_inputs(loop_server):
+    base, _ = loop_server
+    with connect(f"ws://{base}/ws?mission=sar&t=1138&speed=60") as ws:
+        first = json.loads(ws.recv(timeout=30))
+        assert first["source"] == "live" and first["sim"] and first["standby"] == "in step"
+        assert first["t_s"] == first["snapshot"]["run"]["tick"] == 1138
+        msg = first
+        while msg["t_s"] < 1143:
+            msg = json.loads(ws.recv(timeout=5))
+            assert msg["snapshot"]["run"]["tick"] == msg["t_s"]
+        assert [r["verdict"] for r in msg["records"] if r["kind"] == "D4"][-2:] == ["shed", "hold"]
+        assert msg["view"]["decision"]["tag"] == "EXECUTED"
+        ws.send(json.dumps({"cmd": "hold"}))
+        while msg["running"]:
+            msg = json.loads(ws.recv(timeout=5))
+        ws.send(json.dumps({"cmd": "input", "input": {"type": "genset_trip", "payload": {}}}))
+        refused = json.loads(ws.recv(timeout=5))
+        assert refused["refused"].startswith("input 'genset_trip'")
+        prof = dict(I.missions["sar"], id="sar_ws", name="Rescue ws")
+        ws.send(json.dumps({"cmd": "input", "input": {"type": "profile_applied", "payload": {"profile": prof}}}))
+        ws.recv(timeout=5)
+        ws.send(json.dumps({"cmd": "run"}))
+        while msg["view"]["header"]["priority_file"] != "sar_ws · AT SEA":
+            msg = json.loads(ws.recv(timeout=5))
+
+
+def test_live_api_meta_compare_and_builder(loop_server):
+    base, tmp = loop_server
+    meta = json.loads(get(base, "/api/meta")[1])
+    assert meta["source"] == "live" and [m["label"] for m in meta["marks"]["survey"]] == ["START", "G4 LOW BATT", "GEN 2 TRIP", "CHW P1 TRIP"]
+    c = json.loads(get(base, "/api/compare?t=1142")[1])
+    assert c["ships"]["survey"]["decision"]["tag"] == "EXECUTED"
+    s = json.loads(get(base, "/api/state?mission=sar&t=722")[1])
+    assert s["snapshot"]["run"]["tick"] == 722 and s["view"]["decision"]["tag"] == "HOLDS"
+    cat = json.loads(get(base, "/api/builder")[1])
+    assert "G4" in cat["cards"]
+    prof = dict(I.missions["survey"], id="survey_net", name="Survey net")
+    assert post(base, "/api/builder/check", {"kind": "profile", "doc": prof}) == (200, {"problems": []})
+    status, out = post(base, "/api/builder/save", {"kind": "profile", "doc": prof})
+    assert status == 200 and (tmp / "survey_net.yaml").exists()
+    status, out = post(base, "/api/builder/save", {"kind": "profile", "doc": dict(prof, weights={"sar_air": 9})})
+    assert status == 422 and out["problems"]

@@ -1,19 +1,26 @@
-"""The ArgOS screen server: one page, four views, and /ws pushing {snapshot, records} per tick from a replay.
+"""The ArgOS screen server: one page, five views, and /ws pushing {snapshot, records} per tick.
 
-    uv run python -m sdv.ui.server [--host 127.0.0.1] [--port 8000]
+    uv run python -m sdv.ui.server [--host 127.0.0.1] [--port 8000] [--source live|fixtures]
+
+The source is the live tick loop (sdv.loop: simulator, estimator, core) by default; `fixtures` replays
+tests/fixtures/snapshots and tests/fixtures/records instead.
 
 Routes:
-    GET /                 the page (static/index.html)
-    GET /api/meta         priority files, replay end, decision moments, where the records come from
-    GET /api/state        one moment: ?mission=survey&t=1142 -> {tick, t_s, mission, snapshot, records, view}
-    GET /api/compare      both priority files at one moment: ?t=1142
-    GET /api/admit        D1 on a Scenario A case with the jury's edits: ?case=A1-survey&edit=G4.hangar.mass_t=0.9
-                          (&keep=... the last accepted edits, kept in force when an edit is rejected)
-    GET /api/reference    guests and priority files for the Reference view
-    WS  /ws               ?mission=survey&t=0&speed=12&run=1; accepts {"cmd": run|hold|speed|jump|mission|restart}
+    GET  /                  the page (static/index.html)
+    GET  /api/meta          priority files, run end, decision marks, source
+    GET  /api/state         one moment: ?mission=survey&t=1142 -> {tick, t_s, mission, snapshot, records, view}
+    GET  /api/compare       both priority files at one moment: ?t=1142
+    GET  /api/admit         D1 on a Scenario A case with the jury's edits: ?case=A1-survey&edit=G4.hangar.mass_t=0.9
+                            (&keep=... the last accepted edits, kept in force when an edit is rejected)
+    GET  /api/reference     guests, priority files, tiers and the governor's computers for the Reference view
+    GET  /api/builder       what the profile and rule builder offers
+    POST /api/builder/check {kind: profile|card, doc} -> {problems}
+    POST /api/builder/save  {kind, doc, label} -> {path} or {problems}; a new file, never an overwrite
+    WS   /ws                ?mission=survey&t=0&speed=12&run=1; accepts {"cmd": run|hold|toggle|speed|jump|restart|mission}
+                            and, live, {"cmd": "input", "input": {type, injected, payload}} for laptop inputs
 
-The replay advances one ship second per tick, `speed` ticks per wall-clock second (SIM x12 is one ship minute every
-5 s). The live engine replaces Replay.payload's source later; the message shape stays {snapshot, records}.
+The run advances one ship second per tick, `speed` ticks per wall-clock second (SIM x12 is one ship minute every
+5 s). Every message is {type, tick, t_s, mission, snapshot, records, view, running, speed, end_t_s, source}.
 """
 from __future__ import annotations
 
@@ -21,31 +28,42 @@ import argparse
 import asyncio
 from pathlib import Path
 
-from fastapi import FastAPI, Query, WebSocket, WebSocketDisconnect
+from fastapi import Body, FastAPI, Query, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from sdv.ui import data, view
+from sdv.ui import builder, data, live, view
 
 STATIC = Path(__file__).parent / "static"
 SPEEDS = (1, 12, 60)
+SOURCES = ("live", "fixtures")
 
 
-def meta(I: data.Inputs) -> dict:
-    src = str(I.records_dir.relative_to(data.ROOT)) if I.records_dir.is_relative_to(data.ROOT) else str(I.records_dir)
-    return {"missions": [{"id": m, "name": view.mission_name(m)} for m in I.replay_missions], "end_t_s": data.END_T_S,
-            "marks": {m: view.marks(I, m) for m in I.replay_missions}, "records_source": src, "speeds": list(SPEEDS),
+def meta(I: data.Inputs, source: str = "fixtures", ref: live.Reference | None = None) -> dict:
+    if source == "live":
+        missions = list(ref.missions)
+        marks = {m: view.marks(ref.records(m)) for m in missions}
+        records = "live core"
+    else:
+        missions = I.replay_missions
+        marks = {m: view.marks(I.records.get(m, [])) for m in missions}
+        records = str(I.records_dir.relative_to(data.ROOT)) if I.records_dir.is_relative_to(data.ROOT) else str(I.records_dir)
+    return {"missions": [{"id": m, "name": view.mission_name(m)} for m in missions], "end_t_s": data.END_T_S,
+            "marks": marks, "records_source": records, "speeds": list(SPEEDS), "source": source,
             "scenario": data.SCENARIO, "location": I.scenario.get("location", {}).get("name", "")}
 
 
 def state(I: data.Inputs, mission: str, t_s: int) -> dict:
-    """The /ws message for one tick: the snapshot and records the screen reads, plus the view built from them."""
+    """The fixture replay's message for one tick: the snapshot and records the screen reads, plus the view."""
     if mission not in I.timeline:
         raise KeyError(mission)
     t_s = max(0, min(int(t_s), data.END_T_S))
-    m = I.moment(mission, t_s)
-    return {"type": "tick", "tick": t_s, "t_s": t_s, "mission": mission, "snapshot": m.snapshot, "records": m.records,
-            "view": view.operations(I, mission, t_s)}
+    return live_state(I, I.moment(mission, t_s))
+
+
+def live_state(I: data.Inputs, m: data.Moment) -> dict:
+    return {"type": "tick", "tick": m.t_s, "t_s": m.t_s, "mission": m.mission, "snapshot": m.snapshot, "records": m.records,
+            "view": view.screen(I, m)}
 
 
 def parse_edits(edit: list[str]) -> dict[str, str]:
@@ -58,7 +76,7 @@ def parse_edits(edit: list[str]) -> dict[str, str]:
 
 
 class Replay:
-    """One browser's replay: ship time, priority file, pace, run or hold."""
+    """One browser's fixture replay: ship time, priority file, pace, run or hold."""
 
     def __init__(self, I: data.Inputs, mission: str = "survey", t_s: int = 0, speed: float = 12, running: bool = True):
         self.I = I
@@ -78,7 +96,7 @@ class Replay:
         if self.t_s >= data.END_T_S:
             self.running = False
 
-    def command(self, msg: dict) -> None:
+    def command(self, msg: dict) -> str | None:
         cmd = msg.get("cmd")
         if cmd == "run":
             self.running = self.t_s < data.END_T_S
@@ -94,12 +112,52 @@ class Replay:
             self.t_s, self.running = 0, True
         elif cmd == "mission" and msg.get("value") in self.I.timeline:
             self.mission = msg["value"]
+        elif cmd == "input":
+            return "the fixture replay takes no inputs"
+        return None
 
 
-def create_app(inputs: data.Inputs | None = None) -> FastAPI:
+class Live:
+    """One browser's live run (sdv.ui.live), with the same interface as Replay."""
+
+    def __init__(self, I: data.Inputs, mission: str = "survey", t_s: int = 0, speed: float = 12, running: bool = True):
+        self.I = I
+        self.lr = live.LiveReplay(mission if mission in I.missions else "survey", t_s, speed, running, speeds=SPEEDS)
+
+    @property
+    def speed(self):
+        return self.lr.speed
+
+    @property
+    def running(self):
+        return self.lr.running
+
+    @property
+    def t_s(self):
+        return self.lr.t_s
+
+    def payload(self) -> dict:
+        run = self.lr.run
+        p = live_state(self.I, run.moment())
+        p.update(running=self.lr.running, speed=self.lr.speed, end_t_s=data.END_T_S, source="live", sim=run.sim_label,
+                 standby=run.standby, rejected=run.loop.core.rejected[-3:])
+        return p
+
+    def advance(self) -> None:
+        self.lr.advance()
+
+    def command(self, msg: dict) -> str | None:
+        return self.lr.command(msg, missions=tuple(self.I.missions))
+
+
+def create_app(inputs: data.Inputs | None = None, source: str = "live", profiles_dir: Path = builder.PROFILES_DIR,
+               drafts_dir: Path = builder.DRAFTS_DIR) -> FastAPI:
+    if source not in SOURCES:
+        raise ValueError(f"source {source!r} is not one of {SOURCES}")
     I = inputs or data.Inputs()
+    ref = live.Reference() if source == "live" else None
     app = FastAPI(title="ArgOS", docs_url=None, redoc_url=None, openapi_url=None)
-    app.state.inputs = I
+    app.state.inputs, app.state.source, app.state.reference = I, source, ref
     app.mount("/static", StaticFiles(directory=STATIC), name="static")
 
     @app.middleware("http")
@@ -115,18 +173,27 @@ def create_app(inputs: data.Inputs | None = None) -> FastAPI:
 
     @app.get("/api/meta")
     def api_meta():
-        return meta(I)
+        return meta(I, source, ref)
 
     @app.get("/api/state")
     def api_state(mission: str = "survey", t: int = 0):
+        t = max(0, min(t, data.END_T_S))
         try:
+            if ref is not None:
+                if mission not in ref.missions:
+                    raise KeyError(mission)
+                return live_state(I, ref.moment(mission, t))
             return state(I, mission, t)
         except KeyError:
-            return JSONResponse({"error": f"no replay for priority file {mission}"}, status_code=404)
+            return JSONResponse({"error": f"no run for priority file {mission}"}, status_code=404)
 
     @app.get("/api/compare")
     def api_compare(t: int = 0):
-        return view.compare(I, max(0, min(t, data.END_T_S)), tuple(I.replay_missions[:2]))
+        t = max(0, min(t, data.END_T_S))
+        if ref is not None:
+            files = ref.missions[:2]
+            return view.compare(I, t, files, {f: ref.moment(f, t) for f in files}, ref.records(files[0]))
+        return view.compare(I, t, tuple(I.replay_missions[:2]))
 
     @app.get("/api/admit")
     def api_admit(case: str = "A1-survey", edit: list[str] = Query(default=[]), keep: list[str] = Query(default=[])):
@@ -136,6 +203,19 @@ def create_app(inputs: data.Inputs | None = None) -> FastAPI:
     def api_reference():
         return view.reference(I)
 
+    @app.get("/api/builder")
+    def api_builder():
+        return builder.catalog(I)
+
+    @app.post("/api/builder/check")
+    def api_builder_check(body: dict = Body(...)):
+        return {"problems": builder.check(I, body.get("kind", ""), body.get("doc"))}
+
+    @app.post("/api/builder/save")
+    def api_builder_save(body: dict = Body(...)):
+        out = builder.save(I, body.get("kind", ""), body.get("doc"), body.get("label", ""), profiles_dir, drafts_dir)
+        return JSONResponse(out, status_code=422 if "problems" in out else 200)
+
     @app.websocket("/ws")
     async def ws(websocket: WebSocket):
         await websocket.accept()
@@ -144,24 +224,37 @@ def create_app(inputs: data.Inputs | None = None) -> FastAPI:
             speed = float(q.get("speed", 12))
             t0 = int(q.get("t", 0))
         except ValueError:
-            speed, t0 = 12, 0
-        rp = Replay(I, q.get("mission", "survey"), t0, int(speed) if speed.is_integer() else speed, q.get("run", "1") != "0")
+            speed, t0 = 12.0, 0
+        speed = int(speed) if speed.is_integer() else speed
+        running = q.get("run", "1") != "0"
+        mission = q.get("mission", "survey")
+        rp = Live(I, mission, t0, speed, running) if source == "live" else Replay(I, mission, t0, speed, running)
         changed = asyncio.Event()
+        refusals: list[str] = []
 
         async def receive():
             try:
                 while True:
                     msg = await websocket.receive_json()
                     if isinstance(msg, dict):
-                        rp.command(msg)
+                        refused = rp.command(msg)
+                        if refused:
+                            refusals.append(refused)
                         changed.set()
             finally:
                 changed.set()
 
         rx = asyncio.create_task(receive())
         loop = asyncio.get_running_loop()
+
+        async def send():
+            p = rp.payload()
+            if refusals:
+                p["refused"] = refusals.pop()
+            await websocket.send_json(p)
+
         try:
-            await websocket.send_json(rp.payload())
+            await send()
             due = loop.time() + 1 / rp.speed
             while not rx.done():
                 timeout = max(0.0, due - loop.time()) if rp.running else None
@@ -177,7 +270,7 @@ def create_app(inputs: data.Inputs | None = None) -> FastAPI:
                     due = loop.time() + 1 / rp.speed
                 if rx.done():
                     break
-                await websocket.send_json(rp.payload())
+                await send()
         except (WebSocketDisconnect, RuntimeError):
             pass
         finally:
@@ -186,18 +279,19 @@ def create_app(inputs: data.Inputs | None = None) -> FastAPI:
     return app
 
 
-def run(host: str = "127.0.0.1", port: int = 8000) -> None:
+def run(host: str = "127.0.0.1", port: int = 8000, source: str = "live") -> None:
     import uvicorn
-    uvicorn.run(create_app(), host=host, port=port, log_level="warning")
+    uvicorn.run(create_app(source=source), host=host, port=port, log_level="warning")
 
 
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(prog="python -m sdv.ui.server", description="ArgOS screen")
     p.add_argument("--host", default="127.0.0.1")
     p.add_argument("--port", type=int, default=8000)
+    p.add_argument("--source", choices=SOURCES, default="live", help="the live tick loop (default) or the fixture replay")
     a = p.parse_args(argv)
-    print(f"ArgOS screen on http://{a.host}:{a.port}/")
-    run(a.host, a.port)
+    print(f"ArgOS screen on http://{a.host}:{a.port}/ ({a.source})")
+    run(a.host, a.port, a.source)
     return 0
 
 
