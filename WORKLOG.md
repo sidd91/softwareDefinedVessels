@@ -44,6 +44,11 @@ Deadline: **Sun 2026-10-18 10:00 PDT**.
 | Fri 20:55 | PROPOSED: load shedding as a ladder precomputed every tick, priced by the priority file, rechecking power and cooling after each step | Proposed by Claude; awaiting Logan | Claude for Logan |
 | Fri 20:55 | PROPOSED stack: Python 3.12 via uv, FastAPI and websockets, vanilla JS, vendored three.js, no Node or React; detector torchvision SSDlite | Proposed by Claude; team may override | Claude for Logan |
 | Fri 20:58 | Qualcomm edge hardware arrives Sat about 10:00 PDT. Until then node B runs as a second process on the laptop. Using its NPU still depends on the organizers accepting Qualcomm's proprietary runtime | Logan (arrival); Claude (interim plan) | Claude for Logan |
+| Fri 21:00 | LOCKED: thesis "one ledger, one manifest language" with four roles: host commitment, guest, supply, crew | Logan | Claude for Logan |
+| Fri 21:00 | LOCKED: load shedding as a ladder precomputed every tick, priced by the priority file, rechecking power and cooling | Logan | Claude for Logan |
+| Fri 21:00 | LOCKED: crew in two roles, hands for human-only actions and authority with confirmation latency; standing plans approved ahead of time | Logan | Claude for Logan |
+| Fri 21:00 | Open a pull request from `docs/game-plan-and-research` to main; Siddharth merges as repo owner | Logan | Claude for Logan |
+| Fri 21:00 | Download the 24 freely licensed fleet images for a visual reference board in Claude Design; images stay out of the repo | Logan | Claude for Logan |
 | Fri 20:56 | Brief corrected by the organizers: G4 hangar is 850 kg, not 900 kg; three of the five possible sets of four guests exceed the 10 t mass margin. The PDFs on Logan's laptop predate this; the updated Hack Pack is the source of truth | Organizers | Claude for Logan |
 
 ## Conflicts and risks to watch

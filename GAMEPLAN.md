@@ -40,6 +40,56 @@ Note: the brief lists voice/natural-language interfaces as out of scope. Our rul
 positioned as the mechanism for Core Mechanic 4 / D5 (tacit rule → execution constraint), not as
 an NL interface; its deterministic grammar path is the product, the LLM assist is optional.
 
+## Core model (locked by Logan, Fri 21:00 PDT)
+
+### One ledger, one manifest language
+Everything that uses or supplies a resource is described in one manifest language and counted in
+one ledger of margins. Roles differ, and the role decides what the governor may do:
+
+| Role | Examples | What the governor may do |
+|---|---|---|
+| Host commitment | hotel load, safety systems, the 20 % ship-systems compute reserve, the governor itself | count it, never shed or outbid it |
+| Guest | G1–G5, our G6, a portable camera, a mission analytics workload | admit, place, arbitrate, throttle, shed |
+| Supply | gensets, cooling loop, bays, mast slots, network paths, compute nodes | track capacity; any loss is a degradation event |
+| Crew | people aboard | hands for human-only actions, and authority for confirmation |
+
+A guest is what the brief says it is: equipment that comes aboard to add a capability. A fixed
+ship camera is supply; a portable camera brought aboard is a guest.
+
+### Shedding ladder (D4), precomputed every tick
+1. Ceiling: the tighter of the degraded power budget and the cooling budget at current seawater
+   temperature, minus a headroom (assumed 5 kW, Physical Account).
+2. Candidate steps: each guest's ladder of modes, nominal, low-power, standby, off. Each step frees
+   kilowatts and costs capability.
+3. Price: mission weight from the active priority file × share of capability lost ÷ kW freed.
+4. Order: all throttles before any shed; cheapest mission loss per kW first; mission-critical last;
+   safety-critical never on the list; ties broken by guest id for determinism.
+5. Walk the list until the shortfall is closed, rechecking power and heat after every step; one
+   sentence per step saying what that guest lost.
+6. Restore in reverse order with a hold-off delay when supply returns.
+The same computation runs every tick as "if a genset tripped now", so the first action at a real
+trip is a lookup, and the crew can see and approve the plan before it is needed. A trip counts only
+when 2 of 3 signals agree (relay flag, kW near zero, frequency dip); any shared condition across
+redundant units is reported as a binding constraint (Viking Sky lesson).
+
+### Crew in two roles (D5)
+- **Hands.** Every action declares its actuation path: software (guest modes, going silent), ship
+  state request (course, speed, noise, with A.6 transition times), or human-only with people ×
+  minutes (clear deck, rig winch, swap drone, manual valves, installs). Human-only actions consume
+  crew like guests consume kW. At 6 aboard two 4-person tasks cannot overlap; at 0 any plan that
+  needs hands is infeasible and the binding constraint says so.
+- **Authority.** People confirm contested decisions, approve standing plans, push priority
+  overrides and write rules. Confirmation latency competes with the response-time ceilings:
+
+| Crew | Confirm time | 5 s first shed | 60 s full sequence |
+|---|---|---|---|
+| 14 | 15–60 s | too slow | sometimes |
+| 6 | 1–3 min | too slow | too slow |
+| 0 | impossible | impossible | impossible |
+
+So "confirm before shedding" is honoured ahead of time by approving the standing plan. Each rule
+carries the brief's per-crew policy: human confirms, automatic, or not permitted.
+
 ## Architecture (one deterministic core, three bolt-ons)
 
 ```
@@ -80,10 +130,10 @@ optional for D2 if we want to show a declared objective in a solver.
 - D3 right of way: utility = Σ mission weight × capability delivered, after hard constraints
   (e.g. drone < 20 % ⇒ must land ≤ 12 min, so "wait for leg end" is infeasible). Cost to loser is
   computed (survey minutes lost = 15-min recovery window + re-run leg; or drone risk accepted).
-- D4 degradation: shortfall → throttle to low-power modes in declared order → standby → shed;
+- D4 degradation: the shedding ladder in "Core model" above; shortfall → throttle to low-power modes in declared order → standby → shed;
   safety-critical never auto-shed; mission-critical last; first action ≤ 5 s, sequence ≤ 60 s with
   A.6 transition times; also re-checks heat after each step (shedding kW frees cooling kW).
-- D5 crew as a setting: every rule carries {14: confirm 15–60 s, 6: confirm 1–3 min, 0: auto | forbidden}.
+- D5 crew as a setting: crew in two roles, hands and authority (see "Core model"); every rule carries {14: confirm 15–60 s, 6: confirm 1–3 min, 0: auto | forbidden}.
 - D6 Physical Account: generated from `assumptions.yaml`; a script greps each key's usage sites so
   "where used in code" is real file:line references.
 - Time is a budget: each decision logs latency vs its ceiling; a watchdog falls back to the safe
