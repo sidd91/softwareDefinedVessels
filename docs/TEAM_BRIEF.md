@@ -22,6 +22,8 @@ Siddharth. One page; details are linked. No work split is proposed here (WORKLOG
 
 ## Decisions waiting on you
 
+Every open question from every document, with proposals: [docs/OPEN_QUESTIONS.md](OPEN_QUESTIONS.md).
+
 | Ref | Question | Proposal | Where |
 |---|---|---|---|
 | CON-12 | The brief's Scenario B load-out (G2, G3, G4, G5) is 13.0 t against a 10 t margin and needs Bay 2 twice. Run as given or use a feasible subset? | Run as given and flag it on screen: an honest physical model is scored | [storyboard](DEMO_SCRIPT.md) |
