@@ -93,6 +93,11 @@ Deadline: **Sun 2026-10-18 10:00 PDT**.
 | DEC-52 | Sat 13:15 | Freeze alignment applied across docs and data: R3 at 0 aboard on a deck latched clear at the last crew sweep, otherwise forbidden; minute-12 armed ladders corrected (survey 48 and rescue 81 of 95 kW, first armed step G5 to low power in both); rescue minute 8 has G3 aborted and holding until G4 has landed; F3 precedence (safety and hard limits, throttle before shed, shed_order if present, then price; no file sets shed_order); one screen with three views; board as instrument with every demo input on the laptop; breadth strip with a data-feed-drop line; INJECTED, never ADDED; replay identical except wall-clock fields. DEC-44 also supersedes DEC-13 (SSDlite), DEC-14 (node B as second process), DEC-26's camera and failover lines, DEC-31's ONNX on the board and DEC-39's opencv and onnxruntime approval | Logan (DEC-44); details applied by Claude | Claude for Logan |
 | DEC-53 | Sat 14:09 | Typed conditions (F2): card conditions map signal names from config/signals.yaml to an exact value, a list, or a {min, max} range; exclusions name an own activity and another guest's activity (Gx.activity); hard limits are {signal, op, value} then {action, within_min or mode}. Drift fixed: G4.recovering is G4.launch_recovery, ramp not_in_use is free, deck_machinery_allowed is deck_machinery or deck_machinery_permitted. G1's mast competition moves to placement; G5's duplicate silence exclusion dropped; G6's compound limit becomes its start condition; G4's endurance is land within 90 min of airborne; G3 ramp recovery gains A.3's steady course. src/sdv/loader.py refuses unknown names with the field named and keeps the previous file (req R-064, R-100, R-152) | Logan (F2, DEC-44); format by Claude as core owner | Claude for Logan |
 | DEC-54 | Sat 14:21 | D3 right of way is computed from the priority file, never written per file: hard limits first; the winner's next demand is reserved when its weight is at least the loser's or it is mission-critical; the loser pauses and resumes when its weight is at least the winner's, otherwise it is suspended, open-ended. A land-by deadline alone (G4's 90 min endurance) calls for recovery only once the recovery lead time is needed (bridge confirm + deck clear + approach: 10 min at 14 aboard); the battery limit acts at once. Reproduces the survey and sar minute-8 oracle and gives patrol and disaster relief a coherent answer (review design-1, critic-2; req R-066, R-110) | Claude as core owner (DEC-47); Logan to confirm | Claude for Logan |
+| DEC-55 | Sat 14:51 | Scope: the pitch leads with the special sauce, the mission profiles and the modular card-and-rule design. ArgOS gets a no-code profile and rule builder that a sailor with some technical knowledge can use: forms and dropdowns over the priority files and the typed rules (signals.yaml vocabulary), validated live by the loader, saved as a new file, applicable at sea | Logan | Claude for Logan |
+| DEC-56 | Sat 14:51 | Compute redundancy, assumed and recommended: the Qualcomm board on hand is the primary governor; every vessel carries a second identical board (standby and dual use), plus one more per additional 25 m of length; Raspberry Pi-class edge nodes at high-priority locations do local compute and monitoring. Reading of "per additional 25 m" for the 60 m hull is Claude's, for Logan to confirm | Logan; formula reading by Claude | Claude for Logan |
+| DEC-57 | Sat 14:51 | Deployment Reference Kit: full technical documentation, troubleshooting and FAQ for the vessel and every guest, held on each device whose storage allows it, plus a printed copy and an SSD copy aboard. How the kit is uploaded at port is part of the design | Logan | Claude for Logan |
+| DEC-58 | Sat 14:51 | Mission profiles can be changed at sea (priority swap, or an edited profile from the builder); every change is a logged input, so a replay reproduces it | Logan | Claude for Logan |
+| DEC-59 | Sat 14:51 | Graceful degradation follows criticality tiers inside the profile: vessel-safety critical is never shed, mission-critical goes last, the rest in between by mission loss per kW freed. Tier names and their ordering are Claude's proposal, for Logan to confirm | Logan; tiers by Claude | Claude for Logan |
 
 ## Conflicts and risks to watch
 
@@ -840,3 +845,19 @@ matching the fixture frames. The Physical Account table prints at 8.3 pt so it s
 895 tests pass. CON-22 (Siddharth's yes on the estimator boundary) stays open.
 Decisions: none new. Conflicts: none new. Deferrals: since_t_s rule and the stub's choices are granular code calls
 for Siddharth to confirm when his simulator lands.
+
+### Sat 14:51 PDT · Tick loop, replay and timing log; scope expansion received (DEC-55 to DEC-59) · Claude Opus 5.5 on behalf of Logan Walker (GhostWalka)
+
+src/sdv/core.py runs every decision a snapshot triggers: D3 on G4's recovery against G3's leg, the R3 follow-through
+by crew level (D5 records: ask the bridge at 14, standing plan at 6, automatic on the latch at 0; turn into the wind
+and clear the deck once cleared; close the request when G4 lands; resume a paused survey once G4 is secured), and D4
+each tick, recorded when a fault confirms or a step is taken. src/sdv/loop.py owns the loop: frame, estimate,
+decide, commands applied at n + 1; frame, input, snapshot, decision and timing logs; replay from the frame and input
+logs only. With the live core the commands equal the Scenario B script's at every tick and the frames equal the
+scripted run's byte for byte, under survey and sar; crew0 recovers automatically; a late bridge answer counts as no.
+New commands: sdv run, sdv replay. Record inputs are hashed in canonical form so a replayed log hashes the same.
+New assumption rules.r3.secure_s 60 s (in the Physical Account's R3 row). 911 tests pass.
+Logan widened the scope (DEC-55 to DEC-59): profile and rule builder, compute redundancy, the Deployment Reference
+Kit and its port upload, profiles changed at sea, degradation by criticality tier. Plan: tiers in D4 first, then
+the screen with the builder as a fifth view, then the compute and kit design.
+Decisions: DEC-55 to DEC-59 (Logan). Conflicts: none new. Deferrals: none.

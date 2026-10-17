@@ -116,7 +116,13 @@ def d5(r: dict) -> str:
     if v == "forbidden":
         return f"Recovery forbidden at {crew} aboard: {r['deck_evidence']}. G4 ditches by minute {n(deadline, 1)} and its rescue capability is lost."
     if v == "cleared":
-        return f"Cleared to land: {r['deck_evidence']}."
+        return f"Cleared to land: {r['deck_evidence']}. Turning into the wind and clearing the flight deck."
+    if v == "confirm":
+        return f"Bridge asked to confirm G4's recovery at {crew} aboard, on the {r['deck_evidence']}. G4 must land by minute {n(deadline, 1)}."
+    if v == "standing_plan":
+        return f"Recovery under the standing plan at {crew} aboard: {r['deck_evidence']}. G4 must land by minute {n(deadline, 1)}."
+    if v == "automatic":
+        return f"Recovery automatic at {crew} aboard: {r['deck_evidence']}. G4 must land by minute {n(deadline, 1)}."
     return f"R3 at {crew} aboard: {v.replace('_', ' ')}."
 
 

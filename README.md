@@ -20,14 +20,17 @@ uv sync
 uv run pytest
 uv run sdv admit G4 --installed G1,G2,G3 --mission survey
 uv run sdv admit G4 --installed G1,G2,G3 --set G4.hangar.mass_t=0.8
+uv run sdv run --mission sar --log-dir runs/b-sar && uv run sdv replay runs/b-sar --mission sar
 ```
 
 `sdv admit` runs D1 and D2 on the real engine: verdict, binding line, every ledger line, placement, ranked
-yes-if options and the one-genset-down check, with the time taken against the 30 s ceiling.
+yes-if options and the one-genset-down check, with the time taken against the 30 s ceiling. `sdv run` plays
+Scenario B through the tick loop (simulator, estimator, decisions) and prints each decision's sentence;
+`sdv replay` re-runs the logs without the simulator and checks every snapshot and record byte for byte.
 
 The one demo command (planned; it needs the real engine, which the brief forbids mocking) starts the
 decision engine and the screen and loads Scenario B; the priority file is picked and swapped on screen.
-Entry point `sdv.cli:main` (`src/sdv/cli.py`, planned):
+Entry point `sdv.cli:main` (`src/sdv/cli.py`; `demo` planned):
 
 ```bash
 uv run sdv demo

@@ -12,8 +12,22 @@ from sdv import explain
 from sdv.ledger import Line
 
 
+def _norm(x):
+    """The log serializer's numbers (sdv.loop.canonical): 0.1, whole numbers as integers, so a replayed log hashes the same."""
+    if isinstance(x, bool) or x is None or isinstance(x, str):
+        return x
+    if isinstance(x, (int, float)):
+        v = round(float(x), 1)
+        return int(v) if v.is_integer() else v
+    if isinstance(x, dict):
+        return {str(k): _norm(v) for k, v in x.items()}
+    if isinstance(x, (list, tuple)):
+        return [_norm(v) for v in x]
+    return str(x)
+
+
 def inputs_hash(*objs) -> str:
-    blob = json.dumps(objs, sort_keys=True, separators=(",", ":"), default=str)
+    blob = json.dumps(_norm(objs), sort_keys=True, separators=(",", ":"))
     return hashlib.sha256(blob.encode()).hexdigest()[:16]
 
 
@@ -87,4 +101,14 @@ def from_d4(d: dict, *, seq: int, snapshot: dict) -> dict:
     if "trigger" in d:
         r["trigger"] = d["trigger"]
         r["injected"] = d["trigger_injected"]
+    return _finish(r)
+
+
+def from_d5(*, seq: int, snapshot: dict, verdict: str, crew: int, deck_evidence: str, deadline_t_s: float | None, mission: dict) -> dict:
+    """Rule R3 at the crew level aboard (docs/SCENARIO_C_MEMO.md): who clears G4's recovery, and on what evidence."""
+    run = snapshot["run"]
+    r = {"seq": seq, "tick": run["tick"], "t_s": run["t_ship_s"], "applies_at_tick": run["tick"] + 1, "kind": "D5",
+         "subject": "G4 recovery under rule R3", "mission": mission["id"], "verdict": verdict, "rule": "R3",
+         "crew_aboard": crew, "deck_evidence": deck_evidence, "deadline_t_s": deadline_t_s,
+         "inputs_hash": inputs_hash(snapshot, mission["id"])}
     return _finish(r)

@@ -162,6 +162,7 @@ rules:
     approach_min: 4
     drain_pct_min: 1.11
     stale_s: {g4_telemetry: 10}
+    secure_s: 60
     zone: marked landing area; fire party and landing officer stand clear of it; drone secured with no deck hand
     deck_evidence: {14: landing officer's deck report, 6: landing officer's deck report, 0: platform deck state latched at the last crew sweep}
     confirm: {14: confirm, 6: standing_plan, 0: automatic}
@@ -249,6 +250,7 @@ provenance:
   rules.r3.approach_min: {source: assumed, why: "Scenario C rule R3: final approach and landing from the loiter point; G4's own estimate is used if longer. Transit from range runs alongside deck clearing."}
   rules.r3.drain_pct_min: {source: assumed, why: "R3: 100 % over the 90 min endurance (brief B, G4); we assume G4 never drains slower, which dates the 20 % crossing conservatively. Unverified."}
   rules.r3.stale_s: {source: assumed, why: "R3: drone telemetry older than 10 s counts as unknown; G4's battery is then taken at the earliest 20 % crossing the last report allows."}
+  rules.r3.secure_s: {source: assumed, why: "R3: G4 is secured in its hangar 60 s after landing; only then may the ship leave the wind and a paused survey resume (Scenario B script seq 2, snapshot 1080)."}
   rules.r3.zone: {source: assumed, why: "R3 guards the marked landing area; the fire party and landing officer stand near but clear of it, which assumes the drone is secured with no deck hand (research E3 puts deck crew on deck for helicopters)."}
   rules.r3.deck_evidence: {source: assumed, why: "R3 reads the deck from people where there are people: at 14 and 6 aboard the landing officer reports whether the zone is clear (a 'landing zone not clear' report holds the recovery); at 0 it reads the deck state the platform reports (A.6: clear or occupied) as the last crew sweep latched it (rules.r3.latched_deck)."}
   rules.r3.confirm: {source: assumed, why: "R3's crew policy, the default a priority file may override per rule (config/missions/schema.json, confirm). At 14 the bridge confirms the call to clear the deck (A.6: 15-60 s). At 6 a live yes plus clearing (3 + 12 min, A.6) cannot fit the 8 min left before G4 must land, so the bridge approves a standing plan at launch and the zone stays clear from launch. At 0 nobody can confirm (A.6), so the rule is automatic: recovery only on a deck latched clear (rules.r3.latched_deck), else forbidden."}
@@ -359,8 +361,8 @@ account:
       why: "no one clears deck at 0"
     - row: Mission priorities / crew
       what: R3 timing
-      keys: [rules.r3.approach_min, rules.r3.drain_pct_min, rules.r3.stale_s]
-      value: "approach {{rules.r3.approach_min}} min; drain {{rules.r3.drain_pct_min}} %/min; drone data stale after {{rules.r3.stale_s.g4_telemetry}} s"
+      keys: [rules.r3.approach_min, rules.r3.drain_pct_min, rules.r3.stale_s, rules.r3.secure_s]
+      value: "approach {{rules.r3.approach_min}} min; drain {{rules.r3.drain_pct_min}} %/min; stale {{rules.r3.stale_s.g4_telemetry}} s; secured {{rules.r3.secure_s}} s"
       why: "drain unverified"
     - row: Mission priorities / crew
       what: mission weights
