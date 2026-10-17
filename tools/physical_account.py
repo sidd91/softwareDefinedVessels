@@ -21,7 +21,7 @@ CLASSES = [
 # Related keys share one line on the one-page account; the detail page keeps one row per key.
 GROUPS = [
     ("power balance", ["power.gensets.load_limit", "power.hotel_kw.committed", "power.ship_aux_kw", "power.hotel_shed_on_trip_kw"],
-     "2 x 405 kW less 455 kW committed = 200 kW reserve; one set plus hotel shed = 100 kW",
+     "2 x 405 kW less 455 kW committed = 355 kW: the 200 kW reserve plus 155 kW spare; one set plus hotel shed = 100 kW",
      lambda L: f"load limit {L('power.gensets.load_limit')}; hotel {L('power.hotel_kw.committed')} kW; aux {L('power.ship_aux_kw')} kW; hotel shed {L('power.hotel_shed_on_trip_kw')} kW"),
     ("reserve by speed", ["power.guest_reserve_kw_by_speed", "power.envelope_reserve_kw"],
      "less propulsion at slow speed; admit at the lower band",
@@ -43,6 +43,13 @@ GROUPS = [
      "reports where a verdict flips",
      lambda L: f"{L('admission.seawater_scan_step_c')} °C steps to {L('admission.seawater_scan_max_c')} °C"),
 ]
+
+EXTRA = {
+    "Mass / stability": [("G4 hangar mass", "850 kg, not Annex B's 900 kg", "organizer correction (WORKLOG DEC-22)", "card, test"),
+                         ("Scenario B load-out", "G2, G3, G4, G5: 13.015 t against 10 t", "the brief's own scenario exceeds its margin (CON-12)", "test")],
+    "State transitions": [("R3 lead time", "slow end of A.6: confirm 1 min at 14, 3 at 6; clear 5 min at 14, 12 at 6", "the rule must hold in the worst case", "not yet")],
+    "Mission priorities / crew": [("weights per mission", "four files; weights 0.2 to 1.0; one or two mission-critical guests each", "Annex B gives only high, medium, low", "test")],
+}
 
 
 def lookup(dotted):
@@ -118,23 +125,25 @@ for title, prefixes in CLASSES:
         else:
             done.add(k)
             rows.append((label(k), short_value(lookup(k)), assumed[k].get("short", ""), used_short(k)))
+    rows += EXTRA.get(title, [])
     if not rows:
         empty.append(title.lower())
     for i, (name, val, why, used) in enumerate(rows):
         one.append(f"| {title if i == 0 else ''} | {name} | {val} | {why} | {used} |")
 cores = ", ".join(f"{c['id']} {c['consumes']['compute_cores']['nominal']}" for c in cards
                   if c["consumes"].get("compute_cores", {}).get("assumed"))
-modes = ", ".join(f"{c['id']} {m['name']} {m['power_kw']} kW" for c in cards if "team invention" not in c.get("source", "")
+modes = ", ".join(f"{c['id']} {m['name']} {m['capability_retained']}" for c in cards if "team invention" not in c.get("source", "")
                   for m in c["modes"] if m.get("assumed"))
 links = ", ".join(f"{c['id']} {cls.split('_')[1]} min {q.get('min')}" for c in cards if "team invention" not in c.get("source", "")
                   for cls, q in c["consumes"].items() if q.get("assumed") and cls.startswith("data"))
-one.append(f"| Guest cards | gaps in Annex B | cores: {cores}; low modes: {modes}; links: {links} | Annex B is silent | card |")
+one.append(f"| Guest cards | gaps in Annex B | compute cores: {cores}; capability kept in lower modes: {modes}; link floors: {links} | Annex B gives the kW, not cores, capability kept or link floors | card |")
 one.append("|  | G6 desalination | all numbers ours | our invented sixth card | card |")
 if empty:
     one.append(f"| {', '.join(empty).capitalize()} | nothing beyond Annex A | - | - | - |")
-one += ["", "**Closing question (draft).** More generation. Real 88-95 m patrol ships carry 1.8-2.7 MW; the reference",
-        "platform's 900 kW is why one genset trip halves the guest reserve to 100 kW and forces shedding. A third",
-        "450 kW set (or a battery bridge for the 5-15 min restart) would turn Scenario B's crisis into a throttle."]
+one += ["", "**Closing question (draft, team to confirm).** One change: a 50 kW, 12.5 kWh battery bridge that lifts the",
+        "one-genset-down guest reserve from 100 to 150 kW for the 5-15 min restart. Scenario B's four guests at their sustained worst (G2 20 +",
+        "G3 charge 25 + G4 35 + G5 45 = 125 kW, plus 5 kW headroom) would then ride through the trip with no shedding, where",
+        "today the governor must shed at least 30 kW. Real 88-95 m patrol ships carry 1.8-2.7 MW against this platform's 900 kW."]
 (ROOT / "docs/PHYSICAL_ACCOUNT.md").write_text("\n".join(one) + "\n")
 
 det = ["# Physical Account, detail", "", "Full reasons and where each assumed number is used. One-page version:",

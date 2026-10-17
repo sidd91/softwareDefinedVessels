@@ -149,8 +149,8 @@ optional for D2 if we want to show a declared objective in a solver.
 
 ## Mapping Logan's four additions
 
-1. **Mission sets** → priority files (brief requires ≥ 2). Ship six: survey, search-and-rescue,
-   patrol, environmental monitoring, disaster relief, night transit. Each file: capability weights,
+1. **Mission sets** → priority files (brief requires ≥ 2). Four exist in `config/missions/`: survey,
+   search-and-rescue, patrol, disaster relief; environmental monitoring and night transit are optional. Each file: capability weights,
    per-guest mission-critical flags, shed order policy, crew confirmation policy, envelope narrowing.
    Hot-swappable mid-run; swap re-arbitrates every standing decision (the "same code, two ships" moment).
 2. **On-the-fly priority edits** → override stack layered over the mission file: entries
@@ -179,8 +179,8 @@ optional for D2 if we want to show a declared objective in a solver.
 ## Invented sixth card (G6)
 Containerised desalination unit: Bay 2 preferred or half Bay 1; 2.8 t; 18 kW continuous, 4 kW
 low-power (recirculate); 2 Mbit/s telemetry; two people to start; high for disaster relief, low
-elsewhere; not safety-critical. It is the natural first casualty in Scenario B's shed sequence and
-mirrors the organisers' own slide. Alternative if we want a mast story instead: flat-panel SATCOM
+elsewhere; not safety-critical. It is not in the brief's Scenario B load-out (G2 to G5, already over the mass
+margin, CON-12), so it sheds first only in runs that carry it; it mirrors the organisers' own slide. Alternative if we want a mast story instead: flat-panel SATCOM
 terminal (competes with G1/G5 for the one free mast slot, excluded in emission silence).
 
 ## Stack (decided unless something breaks)
@@ -207,9 +207,9 @@ terminal (competes with G1/G5 for the one free mast slot, excluded in emission s
   cable-route position; fetched once, cached in the repo, served offline at demo.
 - Docs to PDF: markdown → pandoc or a Python PDF path; decide at M5.
 
-AI-use declaration (keep current in `docs/AI_USE.md`): Claude Fable 5.1 and Claude Opus 5.5 (Anthropic, US)
+AI-use declaration (keep current in `docs/SOFTWARE_LOG.md`): Claude Fable 5.1 and Claude Opus 5.5 (Anthropic, US)
 as coding assistants and doc drafting; the detector above with weight licence and training-data origin; the
-optional LLM above. Nothing else. `docs/THIRD_PARTY.md` lists every package with version and licence
+optional LLM above. Nothing else. `docs/SOFTWARE_LOG.md` lists every package with version and licence
 (FastAPI MIT, uvicorn BSD-3, pydantic MIT, Lark MIT, PyYAML MIT, jsonschema MIT, numpy BSD-3,
 torch/torchvision BSD-3, opencv-python Apache-2.0, three.js MIT). Policy: permissive or weak copyleft
 only; no AGPL; no non-OSI model licences.
@@ -220,7 +220,7 @@ The brief says it outright: one screen, schematic, gauges, event log, "3D earns 
 hook, built after M3 and time-boxed to 3 hours.
 - Engine: three.js (MIT), vendored. No React: it adds a build step and Node we do not have, and the
   page is one file of state → scene updates.
-- Geometry: procedural low-poly ship generated from Annex A numbers (65 m hull, Bay 1 aft 20-ft,
+- Geometry: procedural low-poly ship generated from Annex A numbers (60 m hull, `hull.loa_m`, Bay 1 aft 20-ft,
   Bay 2 midships 10-ft, flight deck 12 × 8 m, hangar, stern ramp, three mast positions). Same source
   of truth as the governor, so when the jury changes a dimension the model changes with it.
   CAD import only if a CC0/CC-BY glTF hull turns up in the first 20 minutes of looking; FreeCAD
@@ -263,7 +263,7 @@ break at sea: a node, a cable, a radio, a camera.
   shows where inference runs and what moves when a node is lost.
 - **Failsafe demo moments.** Pull the Ethernet cable: path flips to Wi-Fi, no decision missed. Kill
   Wi-Fi too: the equipment watch goes stale, so its zones fall back to crew reports at 14 and 6 and
-  to "not clear" at 0. Kill the primary process: standby promotes by replay in under 3 s and the log continues with
+  to "not clear" at 0. Kill the primary process: standby promotes by replay after three missed 1 s heartbeats (3 s plus replay time) and the log continues with
   the same sequence numbers.
 
 ## Cameras: an inventory, not an assumption
@@ -293,6 +293,9 @@ the only source for ramp water approach, mission-bay contents on non-SOLAS hulls
 only camera is pointed elsewhere.
 
 ## Schedule (Pacific, PDT)
+
+Not re-timed yet. Logan paused deep implementation for team review (DEC-20), so M1 (Sat 01:30) has
+slipped and every later milestone moves with it; re-time after the team's review (CON-10, TEAM_BRIEF).
 
 | Block | When | Deliverable / milestone |
 |---|---|---|
@@ -328,8 +331,8 @@ Storyboard for team review, superseding the beats below where they differ: `docs
       marker FD-2 covered since 00:31 (camera, 0.4 s old), rule R3". Removed: deck clear, recovery
       proceeds. Breadth line on screen: leak at the cooling loop turns cooling to degraded early.
 00:45 Ethernet cable pulled: path indicator flips to Wi-Fi, equipment watch keeps reporting, nothing missed.
-00:55 Genset trips, reserve ~100 kW. First shed action within 5 s: G5 to 8 kW low-power, G6 to
-      standby, G2 to standby; winner kept alive; every guest's loss listed.
+00:55 Genset trips, reserve ~100 kW. First shed action within 5 s: G5 to 8 kW low-power, G2 to
+      standby; winner kept alive; every guest's loss listed (G6 is not aboard in Scenario B).
 01:10 Crew dial 14 → 0: the same shed step flips from "confirm (60 s)" to "automatic", on screen.
 01:20 Scenario A: jury's card loaded, one number changed live, verdict in < 30 s with binding
       class, placement, displacement list and "holds with one genset down: yes/no".

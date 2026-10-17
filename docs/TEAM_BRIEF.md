@@ -9,7 +9,7 @@ Siddharth. One page; details are linked. No work split is proposed here (WORKLOG
   [PR #1](https://github.com/sidd91/softwareDefinedVessels/pull/1) to main, unreviewed.
   `feat/governor-core` sits on top of it with the data model and the drafts below.
 - **Built.** Platform assumptions with provenance, the guest manifest schema with six cards (five from
-  the brief plus our desalination unit), four mission priority files, and 11 passing checks against
+  the brief plus our desalination unit), four mission priority files, and 12 passing checks against
   the brief's own arithmetic. **No decision engine yet**, by Logan's direction (DEC-24).
 - **Drafted for your review.** [Architecture and data contracts](ARCHITECTURE.md),
   [Scenario C memo](SCENARIO_C_MEMO.md), [camera equipment monitoring](../research/cv_equipment_monitoring.md),

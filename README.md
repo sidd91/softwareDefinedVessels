@@ -17,7 +17,7 @@ uv run pytest
 ```
 
 Today this validates the six guest cards against the manifest schema and checks the data against
-the brief's own arithmetic (11 checks). The planned one-command demo, with the real decision engine
+the brief's own arithmetic, and validates the four priority files against their schema (12 tests). The planned one-command demo, with the real decision engine
 (the brief forbids mocking it):
 
 ```bash
@@ -85,8 +85,8 @@ the event log. Data contracts: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 | Manifest schema, five cards plus one of ours | [manifests/schema.json](manifests/schema.json), [G1-G6](manifests/) (G6 is our desalination unit) | drafted, validated by tests, pending team review |
 | README, at most 3 pages | this file | skeleton |
 | Physical Account | [docs/PHYSICAL_ACCOUNT.md](docs/PHYSICAL_ACCOUNT.md), from [config/assumptions.yaml](config/assumptions.yaml) | draft |
-| Scenario C memo, at most 2 pages | [docs/SCENARIO_C_MEMO.md](docs/SCENARIO_C_MEMO.md) | draft for team review |
-| Live demo: 90 s of Scenario B, then Scenario A with the jury's card | [GAMEPLAN, Demo script](GAMEPLAN.md) | planned |
+| Scenario C memo, PDF, at most 2 pages | [docs/SCENARIO_C_MEMO.md](docs/SCENARIO_C_MEMO.md), to be exported to PDF for submission | draft for team review |
+| Live demo: 90 s of Scenario B, then Scenario A with the jury's card | [demo storyboard](docs/DEMO_SCRIPT.md) | planned |
 
 Every requirement from the brief and slides, and how we address it: [docs/REQUIREMENTS.md](docs/REQUIREMENTS.md).
 

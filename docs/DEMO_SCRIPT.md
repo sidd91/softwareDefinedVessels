@@ -29,14 +29,14 @@ and show their latency against the ceiling. Location: Strait of Sicily cable cor
 
 | Clock | Ship time | What happens | What the jury sees |
 |---|---|---|---|
-| 00:00 | min 0 | Baseline: 3 kn over the cable route, G3 surveying on its acoustic link, G2 sampling, G5 at 45 kW, G4 in its hangar | Schematic, eight gauges steady, priority file the jury chose, crew 14 |
+| 00:00 | min 0 | Baseline: 3 kn over the cable route, G3 surveying on its acoustic link, G2 sampling, G5 at 45 kW, G4 airborne on a SAR sortie | Schematic, eight gauges steady, priority file the jury chose, crew 14 |
 | 00:10 | min 8 | G4 reports 18 % battery in 22 kn wind. G3's conditions (3 kn, steady, quiet, no deck machinery) and G4's (deck clear, 5-12 kn, turn into wind, ramp free) collide | The conflict appears as two condition sets, not an alarm |
 | 00:12 | min 8 | **D3 decides within 2 s.** Hard limit first: below 20 % G4 must land within 12 min or ditch, so "wait for the end of the leg" is off the table | Decision record with latency, binding constraint and cost to the loser |
 | | | *Survey priority:* G3 holds depth before its acoustic link breaks; the survey pauses for the minimum 15-minute recovery window and the leg is re-run | Sentence names the survey minutes lost |
-| 00:25 | min 8 | **Jury swaps to the rescue priority file. Same event, re-decided.** The survey is suspended, the ship is released to manoeuvre, and G4's 35 kW charge is reserved ahead of everything | Both decisions side by side: same code, two ships |
+| 00:25 | min 8 | **We swap to the other priority file (rescue if the jury chose survey, survey if it chose rescue). Same event, re-decided.** The survey is suspended, the ship is released to manoeuvre, and G4's 35 kW charge is reserved ahead of everything | Both decisions side by side: same code, two ships |
 | 00:40 | min 12 | **Genset trips.** The guest reserve halves to about 100 kW while G4 draws 35 kW and G5 45 kW | Power gauge drops; cooling gauge rechecked |
 | 00:42 | min 12 | **D4 sheds in a declared order** within 5 s for the first action and 60 s for the sequence: throttle before shed (for example G5 to its 8 kW low-power mode, G2 to standby), the winner kept alive, every guest's loss stated | Ladder with timestamps against the 5 s and 60 s ceilings; one line per guest |
-| 00:60 | | **Breadth strip**, one line each, labelled live or replayed (below) | |
+| 01:00 | | **Breadth strip**, one line each, labelled live or replayed (below) | |
 | 01:25 | | Close: "Same code, two ships, explained in one sentence each." | |
 
 The exact shed order comes from the ledger and the active priority file, not from this script.
@@ -47,7 +47,7 @@ Pick four on the day; each is labelled **live** or **replayed** on screen.
 
 - **Camera (replayed):** a leak under chilled-water pump 1 makes the governor plan cooling as degraded
   before any pump alarm; it sheds only on a confirmed fault ([camera design, C1](../research/cv_equipment_monitoring.md)).
-- **Crew dial 14 to 0:** the same shed step flips from "crew confirms" to "automatic", and the standing
+- **Crew dial 14 to 0:** the same drone recovery under rule R3 moves from "bridge confirms the clear deck" (14) to a standing plan approved at launch (6) to an automatic hold or a refused launch (0), and the standing
   plan approved ahead of time is shown ([Scenario C memo](SCENARIO_C_MEMO.md)).
 - **Landing zone not clear:** a marked item on the landing zone holds the drone's recovery (rule R3).
 - **Cable pull (live):** the link path flips to Wi-Fi and no decision is missed.
@@ -73,10 +73,11 @@ Prepared drills (the jury chooses, but we rehearse these):
 
 - **The 35 kg case:** installed G1, G2, G3; card G4. Mass 10.035 t against 10 t: refused by 35 kg;
   yes-if G1 disembarks. Changing the hangar to 800 kg flips it to yes.
-- **The free mast slot:** installed G2, G3, G4; card G1 or G5. G1 takes the mast; G5's antenna has
+- **The free mast slot:** installed G2, G3, G4; card G1 or G5. G1 fits the free mast slot, but G1 to G4 together weigh 10.035 t against 10 t (the 35 kg case again), so it is yes-if one guest disembarks; G5 (13.015 t) is refused on mass, and its antenna has
   the mast or the hangar roof, but its node has no bay.
-- **The bay story:** installed G1, G2, G5; card G3. G3 needs all of Bay 1, so yes-if one of G2 or G5
-  leaves, ranked by the active priority file.
+- **The bay story:** installed G1, G2, G5; card G3. Two lines bind: G3 needs all of Bay 1, and the four
+  weigh 12.07 t against the 10 t margin. Yes-if G5 leaves (9.045 t) or G2 leaves (8.57 t, G5 moves to
+  Bay 2, Arch Q4), ranked by the active priority file.
 - **Scenario A-prime (if time):** the same card under way gets "not now", with the next installation
   window and, at 0 crew, a logical reconfiguration instead.
 

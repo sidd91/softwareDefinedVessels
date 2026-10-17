@@ -12,7 +12,7 @@ and design only; nothing is built.
   governor works exactly the same with none. Where a camera exists, it turns a late or unknown signal
   into an early, explained one.
 - In the demo the camera appears as **one breadth line**: the cooling-loop leak (C1). The deep demo
-  examples are Scenarios A and B (DEC-26). C2 and C3 below are design depth for the team, not demo beats.
+  examples are Scenarios A and B (DEC-26). C2 below is design depth for the team, not a demo beat. C3 is the evidence behind the Scenario C breadth line (rule R3 holds recovery on a marked item; `docs/DEMO_SCRIPT.md`, `docs/SCENARIO_C_MEMO.md`), not a camera beat of its own.
 - Person detection of any kind is optional and last (section 7).
 
 Worked examples are numbered C1 to C3 so they never collide with the brief's decision classes D1 to D6.
@@ -56,7 +56,7 @@ Scores shown are a **confidence index (uncalibrated)**, illustrative until we me
   guests, so nothing new starts on the loop and G5 drops to low power on a confirmed pump fault."
 - **When the camera is unknown.** The leak field shows "unknown" on screen and cooling planning falls
   back to plant sensors, where pump status unknown already counts as degraded [3]. This is a deliberate
-  exception to "camera unknown means changed", recorded in the Physical Account.
+  exception to "camera unknown means changed"; it is not yet in the Physical Account and must be added there.
 - **Demo.** One webcam, and the growth window is longer than a breadth line, so C1 is shown from the
   replayed stream by default. It goes live only if the tray fits in the same webcam frame as any other
   live region, with its own region and reference.

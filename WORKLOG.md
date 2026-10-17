@@ -428,3 +428,27 @@ Work done:
 
 Conflicts: the one-page Physical Account is not yet proven (R-552). Deferrals: none.
 Requirements touched: R-004, R-009, R-010, R-024, R-120, R-203, R-408, R-435, R-552.
+
+### Sat 00:49 PDT · Three-lens document review applied · Claude Opus 5.5 on behalf of Logan Walker (GhostWalka)
+
+All work in this entry was done by Claude on Logan's behalf while he sleeps.
+
+Work done:
+- A 3-agent review (brief compliance, cross-document consistency, numbers) proposed 36 exact fixes; 19
+  applied directly, 11 were duplicates of applied ones, 6 to the Physical Account were made in its
+  generator. Highest-value catches:
+  - The "free mast slot" drill (installed G2, G3, G4; card G1) is refused on mass by 35 kg after the
+    850 kg hangar correction; the bay drill (G1, G2, G5 plus G3) is also 2.07 t over. Both drills in
+    `docs/DEMO_SCRIPT.md` now say so instead of rehearsing a wrong yes.
+  - In Scenario B the drone is airborne at minute 0, not in its hangar.
+  - The storyboard no longer assumes the jury picks survey first; we swap to the other file.
+  - The Physical Account's power line said 810 less 455 is 200; it is 355 (200 reserve plus 155 spare).
+  - The closing question now names one change and an amount, as Annex C requires: a 50 kW, 12.5 kWh
+    battery bridge lifting the one-genset-down reserve from 100 to 150 kW (draft, team to confirm).
+  - The account now lists the 850 kg hangar override, the over-margin Scenario B load-out, the slow-end
+    choice of A.6 crew timings, and the mission weights; card kW values are credited to Annex B.
+  - GAMEPLAN: schedule, priority-file count, declaration file names, hull length and G6's role made
+    consistent with later decisions; README and team brief now say 12 tests.
+
+Conflicts: none new. Deferrals: none.
+Requirements touched: Physical Account rows (R-411 to R-434 area) and demo rows; matrix re-rendered.
