@@ -15,13 +15,18 @@ const TAGS = [
   ['EXECUTED', 'Shed step', 'Step applied. Demand is back within the limit.'],
   ['COMMANDED', 'Shed step', 'Step decided on this tick, applied on the next.'],
   ['ARMED', 'Shed step', 'Next steps, recomputed every tick. Applied automatically when demand exceeds the limit.'],
-  ['LAST', 'Shed step', 'Mission-critical guest under the active priority file. Shed only after every other step. Safety-critical guests are never on the ladder.'],
+  ['LAST', 'Shed step', 'Mission-critical guest under the active priority file. Shed only after every other step.'],
+  ['NEVER', 'Shed step', 'Vessel-critical guest: never shed under the active profile, like a safety-critical card.'],
+  ['VC / MC / DISC', 'Guest tier', 'Vessel critical, mission critical, discretionary. Untagged guests are mission support.'],
   ['ALARM', 'Event log', 'Plant fault confirmed. Genset trip: 2 of 3 signals. CHW pump trip: plant alarm plus low flow or high delta-T.'],
   ['SHED', 'Event log', 'Load management step executed by D4.'],
   ['HOLD', 'Event log', 'D4 checked the load against the new limit and took 0 steps. The next step stays armed.'],
   ['ARBITRATION', 'Event log', 'Right-of-way decision by D3 between incompatible guest conditions.'],
+  ['CREW POLICY', 'Event log', 'D5 decision on rule R3 at the crew level aboard: confirm, standing plan, automatic, forbidden, held or cleared.'],
   ['STATE', 'Event log', 'Guest or ship state change completed or reported.'],
   ['INJECTED', 'Event log marker', 'Fault entered by the scenario timeline, not by plant behaviour.'],
+  ['VALID / PROBLEMS', 'Profile builder', 'The loader accepts the file, or names each field it refuses.'],
+  ['STANDBY IN STEP', 'Title bar', 'The standby board, running its own estimator and core on the same frames, decides the same. OUT OF STEP names the first field that differs.'],
   ['YES', 'Admission verdict', 'Fits every line at the envelope: both gensets, 200 kW reserve, seawater 30 °C. Holds with one genset down.'],
   ['YES-IF', 'Admission verdict', 'Fits only after the listed conditions, ranked by mission value lost. Also set when one genset down does not hold.'],
   ['NO', 'Admission verdict', 'No removal or throttle set makes the card fit.'],
@@ -66,8 +71,11 @@ const TERMS = [
   ['USABLE', 'Power still free under the active limit while cooling binds.'],
   ['STAB', 'Stability load in tonne-equivalent.'],
   ['PRIORITY', 'The priority file in force: mission weights and mission-critical guests.'],
-  ['SIM ×12', 'Replay pace. One ship minute every 5 s.'],
+  ['SIM ×12', 'Run pace. One ship minute every 5 s.'],
+  ['LIVE', 'The tick loop running now: simulator frames, the state estimator, the core’s decisions.'],
   ['REPLAY', 'Recorded snapshots and decision records played back in ship time.'],
+  ['PROFILE', 'A priority file: weights, mission-critical guests, tiers, shed order, crew policy. Applied at sea or saved as a new file.'],
+  ['TIER', 'Criticality tier of a guest under the active profile.'],
   ['T+', 'Scenario ship time, hh:mm:ss.'],
   ['SW', 'Seawater temperature.'],
   ['ENV', 'Mission envelope: seawater 12 to 30 °C, slow and cruise bands, sea state up to 5, wind up to 30 kn.'],
@@ -86,7 +94,7 @@ const UNITS = [
   ['Seawater', '°C', 'Admission judged at 30 °C.'],
   ['Speed', 'kn', 'Bands: slow 3 to 5, cruise 10 to 14, fast 18.'],
   ['Battery', '%', 'G4 below 20 %: land within 12 min or ditch.'],
-  ['Response', 's', 'From the raw fault event to the first action applied, ship time.'],
+  ['Response', 's', 'Decision compute time against the A.8 ceiling. Replayed: ship time from the raw fault event to the first action.'],
 ];
 
 const CLASSES = [
@@ -105,7 +113,16 @@ const CREW = [
   ['0', 'AUTO / FORBIDDEN', 'Recovery only if the deck was latched clear at the last crew sweep with no deck activity since. Otherwise forbidden.'],
 ];
 
-const SECTIONS = [['tags', 'STATUS TAGS'], ['terms', 'TERMS'], ['units', 'UNITS AND LIMITS'], ['classes', 'DECISIONS'], ['crew', 'CREW'], ['guests', 'GUESTS'], ['files', 'PRIORITY FILES']];
+const ORDER = [
+  ['1', 'Vessel critical', 'Never shed. Safety-critical cards and the profile’s vessel_critical list.'],
+  ['2', 'Hard limits', 'A guest’s hard limit binds before any weight.'],
+  ['3', 'Throttle before shed', 'Every throttle step of every tier comes before any switch-off.'],
+  ['4', 'Tier', 'Discretionary first, then mission support, then mission critical.'],
+  ['5', 'Declared order', 'The profile’s shed_order, when it has one.'],
+  ['6', 'Least value lost per kW', 'Mission weight × capability lost ÷ kW freed, lowest first. Ties by guest id.'],
+];
+
+const SECTIONS = [['tags', 'STATUS TAGS'], ['terms', 'TERMS'], ['units', 'UNITS AND LIMITS'], ['classes', 'DECISIONS'], ['order', 'DEGRADATION'], ['crew', 'CREW'], ['guests', 'GUESTS'], ['files', 'PRIORITY FILES'], ['kit', 'COMPUTERS']];
 
 let data = null;
 
@@ -126,11 +143,13 @@ ${section('tags', 'STATUS TAGS · CRITERIA', table(['TAG', 'APPLIES TO', 'SET WH
   <div class="col" style="flex: 1 1 560px">
     ${section('units', 'UNITS AND LIMITS', table(['QUANTITY', 'UNIT', 'LIMIT OR RULE'], UNITS.map(u => [`<b>${esc(u[0])}</b>`, `<span class="mono">${esc(u[1])}</span>`, esc(u[2])])))}
     ${section('classes', 'DECISION CLASSES', table(['CLASS', 'DECIDES', 'CEILING'], CLASSES.map(c => [`<b>${esc(c[0])}</b>`, esc(c[1]), `<span class="mono">${esc(c[2])}</span>`])))}
+    ${section('order', 'DEGRADATION ORDER · D4', table(['#', 'RULE', 'MEANING'], ORDER.map(o => [`<span class="mono">${esc(o[0])}</span>`, `<b>${esc(o[1])}</b>`, esc(o[2])])))}
     ${section('crew', 'CREW LEVELS', table(['CREW', 'RULE ACTION', 'DECK CLEAR, RECOVERY'], CREW.map(c => [`<span class="mono" style="font-weight: 600">${esc(c[0])}</span>`, `<b>${esc(c[1])}</b>`, esc(c[2])])))}
   </div>
 </div>
 ${section('guests', 'GUESTS', table(['ID', 'GUEST', 'POSITION', 'COOLING', 'MODES, kW'], data.guests.map(g => [`<b>${esc(g.id)}</b>`, esc(g.name), esc(g.pos), esc(g.cooling), `<span class="mono">${esc(g.modes)}</span>`]), '', 700))}
-${section('files', 'PRIORITY FILES', table(['FILE', 'WEIGHTS', 'MISSION CRITICAL'], data.missions.map(m => [`<b>${esc(m.name)}</b> <span class="mono" style="color: var(--muted)">${esc(m.id)}.yaml</span>`, `<span class="mono">${esc(m.weights)}</span>`, esc(m.mc)]), '', 700))}`;
+${section('files', 'PRIORITY FILES', table(['FILE', 'WEIGHTS', 'MISSION CRITICAL', 'TIERS'], data.missions.map(m => [`<b>${esc(m.name)}</b> <span class="mono" style="color: var(--muted)">${esc(m.id)}.yaml</span>`, `<span class="mono">${esc(m.weights)}</span>`, esc(m.mc), `<span class="mono">${esc(m.tiers)}</span>`]), '', 900))}
+${data.devices.length ? section('kit', 'GOVERNOR COMPUTERS', table(['ID', 'KIND', 'ROLE', 'SITE', 'STORAGE'], data.devices.map(d => [`<b class="mono">${esc(d.id)}</b>`, esc(String(d.kind || '').replace(/_/g, ' ').toUpperCase()), esc(String(d.role || '').replace(/_/g, ' ').toUpperCase()), esc(String(d.site || '').replace(/_/g, ' ').toUpperCase()), d.storage_gb != null ? `<span class="mono">${esc(d.storage_gb)} GB</span>` : '--']), '', 700)) : ''}`;
 }
 
 function section(id, title, inner, cls = '', style = '') {

@@ -260,3 +260,32 @@ table.big { font-size: 14px; }
 }
 .t-INJECTED { background: var(--white); color: var(--muted); border: 1px solid var(--frame); }
 .t-OK-OVER { background: var(--calm); color: var(--navy); }
+
+/* live run additions: R3 strip, tiers, standby, builder */
+.r3 { border-top: 1px solid var(--line); padding: 8px 10px; background: var(--white); }
+.r3h { display: flex; gap: 8px; align-items: baseline; font-size: 12px; font-weight: 700; letter-spacing: 0.08em; color: var(--navy); }
+.r3h .mono { margin-left: auto; font-weight: 500; }
+.r3s { font-size: 14px; font-weight: 600; margin-top: 4px; }
+.t-CREW-POLICY { background: var(--navy); color: var(--white); }
+.t-NEVER { background: var(--white); color: var(--ink); border: 1px solid var(--navy); }
+.chip.alarm { background: var(--red); border-color: var(--red); font-weight: 700; }
+.sim-note { font: 600 12px var(--mono); color: #F6B8B3; letter-spacing: 0.02em; }
+.fields { display: grid; grid-template-columns: 140px minmax(0, 1fr); gap: 8px 10px; align-items: center; }
+.fields label, .flabel { font-size: 13px; font-weight: 600; color: var(--muted); letter-spacing: 0.02em; }
+.txt { min-height: 36px; font: 500 14px var(--sans); padding: 0 8px; border: 1px solid var(--frame); background: var(--white); color: var(--ink); width: 100%; }
+.txt.mono { font-family: var(--mono); }
+textarea.txt { min-height: 60px; padding: 6px 8px; resize: vertical; }
+.num-in { min-height: 34px; width: 84px; font: 600 14px var(--mono); padding: 0 6px; border: 1px solid var(--frame); background: var(--white); }
+.sel.sm { min-height: 34px; font-size: 13px; }
+.txt:focus, .num-in:focus { outline: 2px solid var(--blue); outline-offset: 1px; }
+.changed { border-color: var(--amber) !important; border-width: 2px !important; }
+.problems { margin: 0; padding: 0 10px 10px 28px; color: var(--red); font: 500 13px var(--mono); }
+.problems li { margin: 3px 0; }
+.status-line { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 10px; }
+.btn.primary { background: var(--navy); color: var(--white); border-color: var(--navy); }
+.btn.primary:hover { background: var(--navy-2); }
+.btn[disabled] { opacity: 0.45; cursor: not-allowed; }
+.yaml { margin: 0; padding: 10px; font: 500 12px var(--mono); background: var(--white); border-top: 1px solid var(--rule); max-height: 320px; overflow: auto; white-space: pre; }
+.rule-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; padding: 10px; align-items: end; border-top: 1px solid var(--rule); }
+.rule-form label { display: flex; flex-direction: column; gap: 3px; font-size: 12px; font-weight: 700; letter-spacing: 0.06em; color: var(--muted); }
+.hint { font: 500 12px var(--mono); color: var(--muted); }
