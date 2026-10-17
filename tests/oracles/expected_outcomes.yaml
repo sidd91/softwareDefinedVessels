@@ -1,0 +1,717 @@
+# Expected outcomes for Scenarios A and B, as data.
+#
+# Every number here is copied from docs/EXPECTED_OUTCOMES.md (the hand-computed test oracles).
+# tests/test_expected_outcomes_data.py recomputes what it can from the cards in manifests/ and
+# config/assumptions.yaml, so a typo here or a changed card shows up before any engine exists.
+# Once the governor exists, an engine test can load this file and compare its decisions to it.
+#
+# Conventions:
+# - Envelope draw of a guest = max(nominal, any peak lasting over 60 s), as in the doc's assumption 1.
+# - Slots: bay1 (whole Bay 1), bay1_half, bay2, flight_deck, mast_free, hangar_roof.
+#   G3 has two parts, cradle and vehicle; the vehicle rides on the cradle, so both take Bay 1.
+#   A slot of null means the part has no position as given (the case is then yes-if).
+# - Line classes: mass (t), stability (t_eq), power (kW, guest reserve), heat (kW of chilled water at
+#   30 C), line_port and line_stbd (kW on each 150 kW mission line), placement (positions).
+# - Ladder steps: a step whose to_mode is "off" is a shed; any other step is a throttle.
+# - "off" and "yes" are quoted because YAML would read them as booleans.
+
+source: docs/EXPECTED_OUTCOMES.md
+
+# Assumption 8: SATCOM judged at the guests' minimums.
+satcom:
+  guests: [G1, G2, G5]
+  demand_mbps_at_min: 1.2
+  capacity_mbps: 2
+  g5_nominal_mbps: 6
+
+scenario_a:
+  # A1, the 35 kg case: installed G1, G2, G3; card G4 (DEMO_SCRIPT prepared drills).
+  - case: A1
+    file: survey
+    installed: [G1, G2, G3]
+    card: G4
+    card_edits: {}
+    verdict: "yes-if"
+    binding: {class: mass, demand: 10.035, capacity: 10, unit: t}
+    other_lines:
+      - {class: stability, demand: 10.323, capacity: 12, unit: t_eq}
+      - {class: power, demand: 81.5, capacity: 200, unit: kW}
+      - {class: heat, demand: 80, capacity: 120, unit: kW}
+      - {class: line_port, demand: 26.5, capacity: 150, unit: kW}
+      - {class: line_stbd, demand: 55, capacity: 150, unit: kW}
+    placement:
+      G1.sensor: mast_free
+      G2.module: bay2
+      G3.cradle: bay1
+      G3.vehicle: bay1
+      G4.drone: flight_deck
+      G4.hangar: flight_deck
+    yes_if:
+      - {remove: [G1], value_lost: 0.2, mass_after_t: 9.990}
+      - {remove: [G2], value_lost: 1.0, mass_after_t: 6.535}
+      - {remove: [G3], value_lost: 1.0, mission_critical: true, mass_after_t: 4.535}
+    one_genset_down: {holds: true, load_kw: 81.5, reserve_kw: 100}
+    seawater_tip_c: 48.0
+
+  - case: A1
+    file: sar
+    installed: [G1, G2, G3]
+    card: G4
+    card_edits: {}
+    verdict: "yes-if"
+    binding: {class: mass, demand: 10.035, capacity: 10, unit: t}
+    other_lines:
+      - {class: stability, demand: 10.323, capacity: 12, unit: t_eq}
+      - {class: power, demand: 81.5, capacity: 200, unit: kW}
+      - {class: heat, demand: 80, capacity: 120, unit: kW}
+      - {class: line_port, demand: 26.5, capacity: 150, unit: kW}
+      - {class: line_stbd, demand: 55, capacity: 150, unit: kW}
+    placement:
+      G1.sensor: mast_free
+      G2.module: bay2
+      G3.cradle: bay1
+      G3.vehicle: bay1
+      G4.drone: flight_deck
+      G4.hangar: flight_deck
+    # G1 and G2 tie on value lost and size; the tie is broken by id.
+    yes_if:
+      - {remove: [G3], value_lost: 0.2}
+      - {remove: [G1], value_lost: 0.5}
+      - {remove: [G2], value_lost: 0.5}
+    one_genset_down: {holds: true, load_kw: 81.5, reserve_kw: 100}
+    seawater_tip_c: 48.0
+
+  # A2, the free mast slot with card G1: installed G2, G3, G4; card G1.
+  - case: A2
+    file: survey
+    installed: [G2, G3, G4]
+    card: G1
+    card_edits: {}
+    verdict: "yes-if"
+    binding: {class: mass, demand: 10.035, capacity: 10, unit: t}
+    other_lines:
+      - {class: mast_mass, demand: 45, capacity: 60, unit: kg}
+      - {class: mast_area, demand: 0.5, capacity: 0.6, unit: m2}
+      - {class: mast_air_cooling, demand: 1.5, capacity: 2, unit: kW}
+    placement:
+      G1.sensor: mast_free
+      G2.module: bay2
+      G3.cradle: bay1
+      G3.vehicle: bay1
+      G4.drone: flight_deck
+      G4.hangar: flight_deck
+    yes_if:
+      - {remove: [G4], value_lost: 0.2, mass_after_t: 9.045}
+      - {remove: [G2], value_lost: 1.0}
+      - {remove: [G3], value_lost: 1.0, mission_critical: true}
+    one_genset_down: {holds: true, load_kw: 81.5, reserve_kw: 100}
+    seawater_tip_c: 48.0
+
+  - case: A2
+    file: sar
+    installed: [G2, G3, G4]
+    card: G1
+    card_edits: {}
+    verdict: "yes-if"
+    binding: {class: mass, demand: 10.035, capacity: 10, unit: t}
+    other_lines:
+      - {class: mast_mass, demand: 45, capacity: 60, unit: kg}
+      - {class: mast_area, demand: 0.5, capacity: 0.6, unit: m2}
+      - {class: mast_air_cooling, demand: 1.5, capacity: 2, unit: kW}
+    placement:
+      G1.sensor: mast_free
+      G2.module: bay2
+      G3.cradle: bay1
+      G3.vehicle: bay1
+      G4.drone: flight_deck
+      G4.hangar: flight_deck
+    yes_if:
+      - {remove: [G3], value_lost: 0.2}
+      - {remove: [G2], value_lost: 0.5}
+      - {remove: [G4], value_lost: 1.0, mission_critical: true}
+    one_genset_down: {holds: true, load_kw: 81.5, reserve_kw: 100}
+    seawater_tip_c: 48.0
+
+  # A3, the free mast slot with card G5: installed G2, G3, G4; card G5.
+  # As given the node has no bay, so the as-given placement leaves it null; each yes-if option
+  # carries its own placement, one-genset-down result and seawater tipping point.
+  - case: A3
+    file: survey
+    installed: [G2, G3, G4]
+    card: G5
+    card_edits: {}
+    verdict: "yes-if"
+    binding: {class: mass, demand: 13.015, capacity: 10, unit: t}
+    other_lines:
+      - {class: stability, demand: 13.263, capacity: 12, unit: t_eq, fails: true}
+      - {class: heat, demand: 125, capacity: 120, unit: kW, fails: true}
+      - {class: placement, detail: no bay for the G5 node, fails: true}
+    not_enough:
+      - {remove: [G4], mass_after_t: 12.025}
+    placement:
+      G2.module: bay2
+      G3.cradle: bay1
+      G3.vehicle: bay1
+      G4.drone: flight_deck
+      G4.hangar: flight_deck
+      G5.node: null
+      G5.antenna: mast_free
+    seawater_tip_c: 27.75
+    seawater_scan: {holds_at_c: 27.7, fails_at_c: 27.8}
+    yes_if:
+      - remove: [G2]
+        value_lost: 1.0
+        mass_after_t: 9.515
+        stability_after_t_eq: 9.763
+        placement:
+          G3.cradle: bay1
+          G3.vehicle: bay1
+          G4.drone: flight_deck
+          G4.hangar: flight_deck
+          G5.node: bay2
+          G5.antenna: mast_free
+        one_genset_down:
+          holds: false
+          load_kw: 105
+          reserve_kw: 100
+          short_kw: 5
+          fix:
+            - {guest: G4, from_mode: fast_charge, to_mode: charge, frees_kw: 25, load_after_kw: 80}
+        seawater_tip_c: 36.75
+      - remove: [G3]
+        value_lost: 1.0
+        mission_critical: true
+        mass_after_t: 7.515
+        stability_after_t_eq: 7.763
+        placement:
+          G2.module: bay2
+          G4.drone: flight_deck
+          G4.hangar: flight_deck
+          G5.node: bay1_half
+          G5.antenna: mast_free
+        # Exactly 100 kW against 100 holds ("<="); against the 95 kW shed ceiling the ladder acts.
+        one_genset_down:
+          holds: true
+          load_kw: 100
+          reserve_kw: 100
+          spare_kw: 0
+          against_ceiling_kw: 95
+          fix:
+            - {guest: G4, from_mode: fast_charge, to_mode: charge, frees_kw: 25}
+        seawater_tip_c: 39.0
+    one_genset_down: null
+
+  - case: A3
+    file: sar
+    installed: [G2, G3, G4]
+    card: G5
+    card_edits: {}
+    verdict: "yes-if"
+    binding: {class: mass, demand: 13.015, capacity: 10, unit: t}
+    other_lines:
+      - {class: stability, demand: 13.263, capacity: 12, unit: t_eq, fails: true}
+      - {class: heat, demand: 125, capacity: 120, unit: kW, fails: true}
+      - {class: placement, detail: no bay for the G5 node, fails: true}
+    not_enough:
+      - {remove: [G4], mass_after_t: 12.025}
+    placement:
+      G2.module: bay2
+      G3.cradle: bay1
+      G3.vehicle: bay1
+      G4.drone: flight_deck
+      G4.hangar: flight_deck
+      G5.node: null
+      G5.antenna: mast_free
+    seawater_tip_c: 27.75
+    seawater_scan: {holds_at_c: 27.7, fails_at_c: 27.8}
+    yes_if:
+      - remove: [G3]
+        value_lost: 0.2
+        mass_after_t: 7.515
+        stability_after_t_eq: 7.763
+        placement:
+          G2.module: bay2
+          G4.drone: flight_deck
+          G4.hangar: flight_deck
+          G5.node: bay1_half
+          G5.antenna: mast_free
+        one_genset_down:
+          holds: true
+          load_kw: 100
+          reserve_kw: 100
+          spare_kw: 0
+          against_ceiling_kw: 95
+          fix:
+            - {guest: G2, from_mode: winch, to_mode: sampling, frees_kw: 14}
+        seawater_tip_c: 39.0
+      - remove: [G2]
+        value_lost: 0.5
+        mass_after_t: 9.515
+        stability_after_t_eq: 9.763
+        placement:
+          G3.cradle: bay1
+          G3.vehicle: bay1
+          G4.drone: flight_deck
+          G4.hangar: flight_deck
+          G5.node: bay2
+          G5.antenna: mast_free
+        one_genset_down:
+          holds: false
+          load_kw: 105
+          reserve_kw: 100
+          short_kw: 5
+          fix:
+            - {guest: G5, from_mode: full, to_mode: low_power, frees_kw: 37, load_after_kw: 68, capability_lost_pct: 70}
+        seawater_tip_c: 36.75
+    one_genset_down: null
+
+  # A4, the bay story: installed G1, G2, G5; card G3. Two lines bind.
+  # The placement line: G3 needs both halves of Bay 1 and the G5 node holds one, so 1 half is free.
+  - case: A4
+    file: survey
+    installed: [G1, G2, G5]
+    card: G3
+    card_edits: {}
+    verdict: "yes-if"
+    binding: {class: mass, demand: 12.07, capacity: 10, unit: t}
+    also_binding:
+      - {class: placement, slot: bay1, demand: 2, capacity: 1, unit: free_halves}
+    other_lines:
+      - {class: stability, demand: 12.165, capacity: 12, unit: t_eq, fails: true}
+    not_enough:
+      - {remove: [G1], mass_after_t: 12.025, note: bay still blocked}
+    placement:
+      G1.sensor: mast_free
+      G2.module: bay2
+      G5.node: bay1_half
+      G5.antenna: hangar_roof
+      G3.cradle: null
+      G3.vehicle: null
+    # The doc gives the tipping point only after each yes-if (G3 cannot be placed as given).
+    seawater_tip_c: null
+    yes_if:
+      - remove: [G5]
+        value_lost: 0.2
+        mass_after_t: 9.045
+        stability_after_t_eq: 9.135
+        placement:
+          G1.sensor: mast_free
+          G2.module: bay2
+          G3.cradle: bay1
+          G3.vehicle: bay1
+        one_genset_down: {holds: true, load_kw: 46.5, reserve_kw: 100}
+        seawater_tip_c: 63.75
+      - remove: [G2]
+        value_lost: 1.0
+        also: {move: {G5.node: bay2}, crane_moves: 1, hours: [4, 8]}
+        mass_after_t: 8.57
+        stability_after_t_eq: 8.665
+        placement:
+          G1.sensor: mast_free
+          G3.cradle: bay1
+          G3.vehicle: bay1
+          G5.node: bay2
+          G5.antenna: hangar_roof
+        one_genset_down: {holds: true, load_kw: 71.5, reserve_kw: 100}
+        seawater_tip_c: 52.5
+    one_genset_down: null
+
+  - case: A4
+    file: sar
+    installed: [G1, G2, G5]
+    card: G3
+    card_edits: {}
+    verdict: "yes-if"
+    binding: {class: mass, demand: 12.07, capacity: 10, unit: t}
+    also_binding:
+      - {class: placement, slot: bay1, demand: 2, capacity: 1, unit: free_halves}
+    other_lines:
+      - {class: stability, demand: 12.165, capacity: 12, unit: t_eq, fails: true}
+    not_enough:
+      - {remove: [G1], mass_after_t: 12.025, note: bay still blocked}
+    placement:
+      G1.sensor: mast_free
+      G2.module: bay2
+      G5.node: bay1_half
+      G5.antenna: hangar_roof
+      G3.cradle: null
+      G3.vehicle: null
+    # The doc gives the tipping point only after each yes-if (G3 cannot be placed as given).
+    seawater_tip_c: null
+    yes_if:
+      - remove: [G2]
+        value_lost: 0.5
+        also: {move: {G5.node: bay2}, crane_moves: 1, hours: [4, 8]}
+        mass_after_t: 8.57
+        stability_after_t_eq: 8.665
+        placement:
+          G1.sensor: mast_free
+          G3.cradle: bay1
+          G3.vehicle: bay1
+          G5.node: bay2
+          G5.antenna: hangar_roof
+        one_genset_down: {holds: true, load_kw: 71.5, reserve_kw: 100}
+        seawater_tip_c: 52.5
+      - remove: [G5]
+        value_lost: 1.0
+        mass_after_t: 9.045
+        stability_after_t_eq: 9.135
+        placement:
+          G1.sensor: mast_free
+          G2.module: bay2
+          G3.cradle: bay1
+          G3.vehicle: bay1
+        one_genset_down: {holds: true, load_kw: 46.5, reserve_kw: 100}
+        seawater_tip_c: 63.75
+    one_genset_down: null
+
+  # A5: G1, G2, G4, G5 aboard together. The doc does not name the card; the placement column
+  # describes G4's position and says the antenna "stays", so we read it as installed G1, G2, G5
+  # with card G4.
+  # The fix is a trip ladder (assumption 7), not a yes-if: all four steps are listed in ladder order
+  # and only the first is needed.
+  - case: A5
+    file: survey
+    installed: [G1, G2, G5]
+    card: G4
+    card_edits: {}
+    verdict: "yes"
+    binding: {class: heat, demand: 100, capacity: 120, unit: kW}
+    other_lines:
+      - {class: mass, demand: 7.56, capacity: 10, unit: t}
+      - {class: stability, demand: 7.853, capacity: 12, unit: t_eq}
+      - {class: power, demand: 101.5, capacity: 200, unit: kW}
+      - {class: line_port, demand: 46.5, capacity: 150, unit: kW}
+      - {class: line_stbd, demand: 55, capacity: 150, unit: kW}
+      - {class: flight_deck_drone, demand: 140, capacity: 150, unit: kg}
+    placement:
+      G1.sensor: mast_free
+      G2.module: bay2
+      G5.node: bay1_half
+      G5.antenna: hangar_roof
+      G4.drone: flight_deck
+      G4.hangar: flight_deck
+    yes_if: []
+    one_genset_down:
+      holds: false
+      load_kw: 101.5
+      reserve_kw: 100
+      short_kw: 1.5
+      steps_needed: 1
+      fix:
+        - {guest: G4, from_mode: fast_charge, to_mode: charge, frees_kw: 25, value_lost: 0.06}
+        - {guest: G5, from_mode: full, to_mode: low_power, value_lost: 0.14}
+        - {guest: G2, from_mode: winch, to_mode: sampling, value_lost: 0.2}
+        - {guest: G1, from_mode: full, to_mode: "off", value_lost: 0.2}
+    seawater_tip_c: 39.0
+
+  - case: A5
+    file: sar
+    installed: [G1, G2, G5]
+    card: G4
+    card_edits: {}
+    verdict: "yes"
+    binding: {class: heat, demand: 100, capacity: 120, unit: kW}
+    other_lines:
+      - {class: mass, demand: 7.56, capacity: 10, unit: t}
+      - {class: stability, demand: 7.853, capacity: 12, unit: t_eq}
+      - {class: power, demand: 101.5, capacity: 200, unit: kW}
+      - {class: line_port, demand: 46.5, capacity: 150, unit: kW}
+      - {class: line_stbd, demand: 55, capacity: 150, unit: kW}
+      - {class: flight_deck_drone, demand: 140, capacity: 150, unit: kg}
+    placement:
+      G1.sensor: mast_free
+      G2.module: bay2
+      G5.node: bay1_half
+      G5.antenna: hangar_roof
+      G4.drone: flight_deck
+      G4.hangar: flight_deck
+    yes_if: []
+    one_genset_down:
+      holds: false
+      load_kw: 101.5
+      reserve_kw: 100
+      short_kw: 1.5
+      steps_needed: 1
+      fix:
+        - {guest: G2, from_mode: winch, to_mode: sampling, frees_kw: 14, value_lost: 0.1}
+        - {guest: G5, from_mode: full, to_mode: low_power, value_lost: 0.7}
+        - {guest: G4, from_mode: fast_charge, to_mode: charge, value_lost: 0.3, mission_critical: true}
+        - {guest: G1, from_mode: full, to_mode: "off", value_lost: 0.5}
+    seawater_tip_c: 39.0
+
+  # A6: A1 with the G4 hangar edited live to 800 kg ("Changing the hangar to 800 kg flips it to yes").
+  - case: A6
+    file: survey
+    installed: [G1, G2, G3]
+    card: G4
+    card_edits: {G4.hangar.mass_t: 0.8}
+    verdict: "yes"
+    binding: {class: mass, demand: 9.985, capacity: 10, unit: t}
+    other_lines:
+      - {class: stability, demand: 10.263, capacity: 12, unit: t_eq}
+    placement:
+      G1.sensor: mast_free
+      G2.module: bay2
+      G3.cradle: bay1
+      G3.vehicle: bay1
+      G4.drone: flight_deck
+      G4.hangar: flight_deck
+    yes_if: []
+    one_genset_down: {holds: true, load_kw: 81.5, reserve_kw: 100}
+    seawater_tip_c: 48.0
+
+  - case: A6
+    file: sar
+    installed: [G1, G2, G3]
+    card: G4
+    card_edits: {G4.hangar.mass_t: 0.8}
+    verdict: "yes"
+    binding: {class: mass, demand: 9.985, capacity: 10, unit: t}
+    other_lines:
+      - {class: stability, demand: 10.263, capacity: 12, unit: t_eq}
+    placement:
+      G1.sensor: mast_free
+      G2.module: bay2
+      G3.cradle: bay1
+      G3.vehicle: bay1
+      G4.drone: flight_deck
+      G4.hangar: flight_deck
+    yes_if: []
+    one_genset_down: {holds: true, load_kw: 81.5, reserve_kw: 100}
+    seawater_tip_c: 48.0
+
+  # A7, our own card: installed G4, G5; card G6, under disaster relief (the file G6 was written for)
+  # and sar. Not one of the brief's jury cards. G5 holds its preferred Bay 2, so G6 takes half of
+  # Bay 1, a tolerated position. Heat binds. One genset down: 98 kW fits the 100 kW reserve but is
+  # over the 95 kW gate (DEC-35), so the ladder acts. All three steps are listed in ladder order;
+  # only the first is needed. Disaster relief keeps G6 (mission-critical, last); sar throttles it first.
+  - case: A7
+    file: disaster_relief
+    installed: [G4, G5]
+    card: G6
+    card_edits: {}
+    verdict: "yes"
+    binding: {class: heat, demand: 98, capacity: 120, unit: kW}
+    other_lines:
+      - {class: mass, demand: 6.815, capacity: 10, unit: t}
+      - {class: stability, demand: 7.063, capacity: 12, unit: t_eq}
+      - {class: power, demand: 98, capacity: 200, unit: kW}
+      - {class: line_port, demand: 18, capacity: 150, unit: kW}
+      - {class: line_stbd, demand: 80, capacity: 150, unit: kW}
+      - {class: flight_deck_drone, demand: 140, capacity: 150, unit: kg}
+    placement:
+      G4.drone: flight_deck
+      G4.hangar: flight_deck
+      G5.node: bay2
+      G5.antenna: mast_free
+      G6.unit: bay1_half
+    yes_if: []
+    one_genset_down:
+      holds: true
+      load_kw: 98
+      reserve_kw: 100
+      spare_kw: 2
+      against_ceiling_kw: 95
+      steps_needed: 1
+      fix:
+        - {guest: G4, from_mode: fast_charge, to_mode: charge, frees_kw: 25, load_after_kw: 73, value_lost: 0.3}
+        - {guest: G5, from_mode: full, to_mode: low_power, value_lost: 0.7, mission_critical: true}
+        - {guest: G6, from_mode: production, to_mode: recirculate, value_lost: 0.9, mission_critical: true}
+    seawater_tip_c: 39.9
+
+  - case: A7
+    file: sar
+    installed: [G4, G5]
+    card: G6
+    card_edits: {}
+    verdict: "yes"
+    binding: {class: heat, demand: 98, capacity: 120, unit: kW}
+    other_lines:
+      - {class: mass, demand: 6.815, capacity: 10, unit: t}
+      - {class: stability, demand: 7.063, capacity: 12, unit: t_eq}
+      - {class: power, demand: 98, capacity: 200, unit: kW}
+      - {class: line_port, demand: 18, capacity: 150, unit: kW}
+      - {class: line_stbd, demand: 80, capacity: 150, unit: kW}
+      - {class: flight_deck_drone, demand: 140, capacity: 150, unit: kg}
+    placement:
+      G4.drone: flight_deck
+      G4.hangar: flight_deck
+      G5.node: bay2
+      G5.antenna: mast_free
+      G6.unit: bay1_half
+    yes_if: []
+    one_genset_down:
+      holds: true
+      load_kw: 98
+      reserve_kw: 100
+      spare_kw: 2
+      against_ceiling_kw: 95
+      steps_needed: 1
+      fix:
+        - {guest: G6, from_mode: production, to_mode: recirculate, frees_kw: 14, load_after_kw: 84, value_lost: 0.18, capability_lost_pct: 90}
+        - {guest: G5, from_mode: full, to_mode: low_power, value_lost: 0.7}
+        - {guest: G4, from_mode: fast_charge, to_mode: charge, value_lost: 0.3, mission_critical: true}
+    seawater_tip_c: 39.9
+
+scenario_b:
+  seawater_c: 24
+
+  # Assumption 9: ceiling = min(one-genset reserve, cooling at 24 C) minus the 5 kW shed headroom.
+  ceiling:
+    kw: 95
+    reserve_kw: 100
+    cooling_kw: 133.3
+    headroom_kw: 5
+
+  # "Heat passes throughout: chilled load is at most 111 kW against 128.3."
+  heat_check: {max_chilled_kw: 111, capacity_kw: 128.3}
+
+  # Draw sets at minute 12. Both share G2 sampling (6), G4 fast charge (35) and G5 full (45).
+  # Set L: G3 on its own battery (standby, 1 kW). Set B: G3 charging (25 kW), the brief's 105 kW sum.
+  draw_set_modes:
+    L: {G2: sampling, G3: standby, G4: fast_charge, G5: full}
+    B: {G2: sampling, G3: charging, G4: fast_charge, G5: full}
+
+  loadouts:
+    - id: i
+      guests: [G2, G3, G4, G5]
+      mass_t: 13.015
+      mass_over_t: 3.015
+      stability_t_eq: 13.263
+      stability_over_t_eq: 1.263
+      chilled_kw_at_30c: 125
+      note: Bay 2 needed twice (CON-12)
+      minute_12:
+        L:
+          draws: {G2: 6, G3: 1, G4: 35, G5: 45}
+          load_kw: 87
+          short_kw: 0
+          spare_kw: 8
+          ladder: {survey: [], sar: []}
+        B:
+          draws: {G2: 6, G3: 25, G4: 35, G5: 45}
+          load_kw: 111
+          short_kw: 16
+          ladder:
+            survey:
+              - {guest: G4, from_mode: fast_charge, to_mode: charge, frees_kw: 25, cumulative_kw: 25, load_after_kw: 86, capability_lost_pct: 30}
+            sar:
+              - {guest: G5, from_mode: full, to_mode: low_power, frees_kw: 37, cumulative_kw: 37, load_after_kw: 74, capability_lost_pct: 70}
+
+    - id: ii
+      guests: [G3, G4, G5]
+      mass_t: 9.515
+      stability_t_eq: 9.763
+      one_genset_down_envelope: {load_kw: 105, reserve_kw: 100}
+      minute_12:
+        L:
+          draws: {G3: 1, G4: 35, G5: 45}
+          load_kw: 81
+          short_kw: 0
+          spare_kw: 14
+          ladder: {survey: [], sar: []}
+        B:
+          draws: {G3: 25, G4: 35, G5: 45}
+          load_kw: 105
+          short_kw: 10
+          ladder:
+            survey:
+              - {guest: G4, from_mode: fast_charge, to_mode: charge, frees_kw: 25, cumulative_kw: 25, load_after_kw: 80}
+            sar:
+              - {guest: G5, from_mode: full, to_mode: low_power, frees_kw: 37, cumulative_kw: 37, load_after_kw: 68}
+
+    - id: iii
+      guests: [G2, G3, G4]
+      mass_t: 9.99
+      mass_spare_t: 0.01
+      stability_t_eq: 10.188
+      minute_12:
+        L:
+          draws: {G2: 6, G3: 1, G4: 35}
+          load_kw: 42
+          short_kw: 0
+          ladder: {survey: [], sar: []}
+        B:
+          draws: {G2: 6, G3: 25, G4: 35}
+          load_kw: 66
+          short_kw: 0
+          ladder: {survey: [], sar: []}
+
+  # Price lists at minute 12 (cost per kW, then kW freed), in ladder order:
+  # non-critical throttles, mission-critical throttles, then sheds in the same order.
+  # G3 charging cannot be interrupted, so it never appears.
+  price_lists:
+    survey:
+      throttles:
+        - {guest: G4, from_mode: fast_charge, to_mode: charge, cost_per_kw: 0.0024, frees_kw: 25}
+        - {guest: G5, from_mode: full, to_mode: low_power, cost_per_kw: 0.0038, frees_kw: 37}
+        - {guest: G4, from_mode: charge, to_mode: standby, cost_per_kw: 0.010, frees_kw: 8}
+        - {guest: G2, from_mode: sampling, to_mode: standby, cost_per_kw: 0.16, frees_kw: 5}
+      sheds:
+        - {guest: G2, from_mode: standby, to_mode: "off", cost_per_kw: 0}
+        - {guest: G5, from_mode: low_power, to_mode: "off", cost_per_kw: 0.0075}
+        - {guest: G4, from_mode: standby, to_mode: "off", cost_per_kw: 0.03}
+        - {guest: G3, from_mode: standby, to_mode: "off", cost_per_kw: 0.3, mission_critical: true}
+    sar:
+      throttles:
+        - {guest: G5, from_mode: full, to_mode: low_power, cost_per_kw: 0.0189, frees_kw: 37}
+        - {guest: G2, from_mode: sampling, to_mode: standby, cost_per_kw: 0.08, frees_kw: 5}
+        - {guest: G4, from_mode: fast_charge, to_mode: charge, cost_per_kw: 0.012, frees_kw: 25, mission_critical: true}
+        - {guest: G4, from_mode: charge, to_mode: standby, cost_per_kw: 0.05, frees_kw: 8, mission_critical: true}
+      sheds:
+        - {guest: G2, from_mode: standby, to_mode: "off", cost_per_kw: 0}
+        - {guest: G5, from_mode: low_power, to_mode: "off", cost_per_kw: 0.0375}
+        - {guest: G3, from_mode: standby, to_mode: "off", cost_per_kw: 0.06}
+        - {guest: G4, from_mode: standby, to_mode: "off", cost_per_kw: 0.15, mission_critical: true}
+
+  robustness:
+    # If G2's probe has paused because the course is free, every load is 5 kW lower.
+    probe_paused: {guest: G2, from_mode: sampling, to_mode: standby, load_drop_kw: 5}
+    # Under survey, if G4 has not landed (2 kW, no reservation), (i) B is 78 kW and nothing is shed.
+    g4_not_landed_survey:
+      loadout: i
+      draws: {G2: 6, G3: 25, G4: 2, G5: 45}
+      g4_mode: standby
+      load_kw: 78
+      sheds: false
+
+  minute_8:
+    same_for_all_loadouts: true
+    timing:
+      # 18 % at minute 8 is the brief's timeline (GAMEPLAN 00:08); the rest is from EXPECTED_OUTCOMES.
+      battery_pct_at_report: 18
+      threshold_pct: 20
+      land_within_min: 12
+      drain_pct_per_min: 1.11
+      decision_at_min: 8
+      crossed_threshold_at_min: 6.2
+      deadline_min: 18.2
+      remaining_min: 10.2
+      approach_min: 4
+      after_approach_min: 6.2
+      confirm_min: 1
+      clear_deck_min: 5
+      margin_s: 12
+      if_counted_from_report: {deadline_min: 20, margin_min: 2}
+      leg_ends_at_min: 40
+      wait_for_leg_end: infeasible
+      ditching_offered: false
+    by_file:
+      survey:
+        proceeds: G4
+        hard_limit: {guest: G4, when: battery_pct < 20, then: land within 12 min or ditch}
+        charge_reserved: false
+        g3_holds_kw: 1
+        survey_minutes_lost: [25, 27]
+        open_ended: false
+        # 8 flown + 15 paused + 2 to 4 to settle and go quiet.
+        components: {flown_min: 8, paused_min: 15, settle_min: [2, 4]}
+        leg_ends_at_min: [65, 67]
+      sar:
+        proceeds: G4
+        hard_limit: {guest: G4, when: battery_pct < 20, then: land within 12 min or ditch}
+        charge_reserved: true
+        reserved_kw: 35
+        survey_minutes_lost: [25, 27]
+        open_ended: true

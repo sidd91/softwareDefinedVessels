@@ -1,0 +1,5 @@
+id: survey
+name: Seabed survey
+weights: {seabed_inspection: 1.0, ocean_data: 1.0, sar_air: 0.2, passive_rf_detection: 0.2, coastal_connectivity: 0.2, fresh_water: 0.2}
+mission_critical: [G3]
+notes: Survey primary. The rescue drone's hard limits still bind; everything else yields to the survey.

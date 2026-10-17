@@ -1,0 +1,166 @@
+"""Checks the DEC-40 Scenario B numbers against the timeline, cards and assumptions (no engine needed),
+and the arithmetic behind the Physical Account's closing answer (a standby chilled-water pump)."""
+from pathlib import Path
+
+import pytest
+import yaml
+
+from test_envelope_gate_data import A, CARDS, MISSIONS, first_throttle
+
+ROOT = Path(__file__).resolve().parents[1]
+TL = yaml.safe_load((ROOT / "config/scenarios/scenario_b.yaml").read_text())
+
+
+def cooling_kw(seawater_c, factor=1.0):
+    (t0, c0), (t1, c1) = sorted(A["heat"]["capacity_kw_at"].items())
+    return (c0 + (c1 - c0) * (seawater_c - t0) / (t1 - t0)) * factor
+
+
+def ceiling(gensets_online, factor=1.0, seawater_c=None):
+    # DEC-35: the 60 s peak allowance is never credited (admission.peak_credit_kw is 0).
+    reserve = A["power"]["guest_reserve_kw"]["one_genset_down" if gensets_online == 1 else "cruise"] + A["admission"]["peak_credit_kw"]
+    sea = TL["location"]["seawater_c"] if seawater_c is None else seawater_c
+    return min(reserve, cooling_kw(sea, factor)) - A["power"]["shed_headroom_kw"]
+
+
+def mode_kw(guest, name):
+    return next(m["power_kw"] for m in CARDS[guest]["modes"] if m["name"] == name)
+
+
+def fault_event():
+    return next(e for e in TL["events"] if e["type"] == "cooling_degraded")
+
+
+def chilled_envelope_kw(guests):
+    """Stacked envelope draws of the chilled-water guests (max of nominal and any peak over 60 s)."""
+    total = 0
+    for g in guests:
+        p = CARDS[g]["consumes"]["power_kw"]
+        peak = p.get("peak", 0) if p.get("peak_duration_s", 0) > A["power"]["peak_max_s"] else 0
+        total += max(p["nominal"], peak) if CARDS[g]["cooling"] == "chilled_water" else 0
+    return total
+
+
+def test_load_out_is_the_dec32_set_and_fits_the_margin():
+    assert TL["guests"] == ["G3", "G4", "G5"]
+    mass = sum(p["mass_t"] for g in TL["guests"] for p in CARDS[g]["placement"]["parts"])
+    brief = sum(p["mass_t"] for g in ["G2", "G3", "G4", "G5"] for p in CARDS[g]["placement"]["parts"])
+    assert mass == pytest.approx(9.515) and mass <= A["mass"]["margin_t"]
+    assert brief == pytest.approx(13.015) and brief > A["mass"]["margin_t"]
+
+
+def test_landing_beats_the_drone_deadline_with_the_seed_and_the_worst_case():
+    report = next(e for e in TL["events"] if e["type"] == "guest_report")
+    r3 = A["rules"]["r3"]
+    deadline = report["t_min"] - (20 - report["battery_pct"]) / r3["drain_pct_min"] + 12  # brief B, G4: land within 12 min
+    worst = A["transition_picks"]["r3_worst_case"]
+    worst_landing = report["t_min"] + worst["confirm_min"][14] + worst["clear_deck_min"][14] + r3["approach_min"]
+    assert TL["seed_pins"]["g4_lands_at_min"] < worst_landing <= deadline
+    assert TL["seed_pins"]["approach_min"] == r3["approach_min"]
+
+
+def test_timeline_events_in_order_and_landing_pinned():
+    times = [e["t_min"] for e in TL["events"]]
+    assert times == sorted(times)
+    landing = next(e for e in TL["events"] if e.get("state") == "landed_fast_charging")
+    pins = TL["seed_pins"]
+    assert landing["t_min"] == 8 + pins["confirm_min"] + pins["deck_clear_min"] + pins["approach_min"] == pins["g4_lands_at_min"]
+
+
+def test_minute_12_trip_holds_under_both_files():
+    c = ceiling(1)
+    assert c == pytest.approx(95) == A["admission"]["one_genset_down_gate"]["kw"]
+    survey = mode_kw("G3", "standby") + mode_kw("G4", "standby") + mode_kw("G5", "full")
+    sar = mode_kw("G3", "standby") + mode_kw("G4", "fast_charge") + mode_kw("G5", "full")
+    assert (survey, sar) == (pytest.approx(48), pytest.approx(81))
+    assert survey <= c and sar <= c
+
+
+@pytest.mark.parametrize("mission,guest,after", [("survey", "G4", 56), ("sar", "G5", 44)])
+def test_minute_19_cooling_fault_forces_the_ladder(mission, guest, after):
+    fault = fault_event()
+    c = ceiling(1, fault["factor"])
+    assert c == pytest.approx(75)
+    assert fault["load_modes"] == {"G3": "standby", "G4": "fast_charge", "G5": "full"}
+    load = sum(mode_kw(g, m) for g, m in fault["load_modes"].items())
+    assert load == pytest.approx(81) and load > c
+    first = first_throttle(["G4", "G5"], mission)
+    assert first[0] == guest
+    after_kw = load - first[1]
+    assert after_kw == pytest.approx(after)
+    assert after_kw <= c
+
+
+def test_fault_follows_the_landing_inside_the_fast_charge():
+    fault = next(e for e in TL["events"] if e["type"] == "cooling_degraded")
+    landing = next(e for e in TL["events"] if e.get("state") == fault["trigger"]["after"]["state"])
+    assert landing["guest"] == fault["trigger"]["after"]["guest"] == "G4"
+    assert fault["t_min"] == landing["t_min"] + fault["trigger"]["delay_min"]
+    fast = next(m for m in CARDS["G4"]["modes"] if m["name"] == "fast_charge")
+    assert landing["t_min"] < fault["t_min"] < landing["t_min"] + fast["duration_s"] / 60
+
+
+def cheapest_step(current, mission):
+    """Same rule as first_throttle, but from each guest's current mode."""
+    m = MISSIONS[mission]
+    options = []
+    for g, mode_name in current.items():
+        card = CARDS[g]
+        mode = next(x for x in card["modes"] if x["name"] == mode_name)
+        if mode.get("interruptible") is False:
+            continue
+        lower = [x for x in card["modes"] if x["power_kw"] < mode["power_kw"] and x["capability_retained"] > 0]
+        if not lower:
+            continue
+        to = max(lower, key=lambda x: x["power_kw"])
+        freed = mode["power_kw"] - to["power_kw"]
+        cost = m["weights"][card["capability"]["name"]] * (mode["capability_retained"] - to["capability_retained"]) / freed
+        options.append((g in m["mission_critical"], cost, g, to["name"], freed))
+    return min(options)[2:] if options else None
+
+
+@pytest.mark.parametrize("req", TL["g3_charge_requests"], ids=lambda r: r["mission"])
+def test_g3_charge_start_after_the_fault(req):
+    c = ceiling(1, next(e for e in TL["events"] if e["type"] == "cooling_degraded")["factor"])
+    others = sum(mode_kw(g, mode) for g, mode in req["others"].items())
+    load = mode_kw("G3", "charging") + others
+    if req["mission"] == "survey":
+        assert load == pytest.approx(80) and load > c
+        step = cheapest_step(req["others"], "survey")
+        assert step[:2] == ("G5", "low_power")
+        assert load - step[2] == pytest.approx(43) and load - step[2] <= c
+    else:
+        assert load == pytest.approx(68) and load <= c
+
+
+def test_closing_answer_a_standby_pump_removes_the_cooling_sheds():
+    """Physical Account closing answer: with a standby pump, losing one pump no longer costs 40 %."""
+    fault = fault_event()
+    load = sum(mode_kw(g, m) for g, m in fault["load_modes"].items())
+    today, with_pump = ceiling(1, fault["factor"]), ceiling(1)
+    assert today == pytest.approx(75) and load > today  # today: a throttle at minute 19
+    assert with_pump == pytest.approx(95) and load <= with_pump  # the loop stays at 133.3 kW, nothing shed
+    t30 = A["envelope"]["judge_cooling_at_c"]
+    a5 = A["account"]["closing"]["a5_guests"]
+    for guests, kw in ((TL["guests"], 105), (a5, 100)):
+        chilled = chilled_envelope_kw(guests)
+        assert chilled == pytest.approx(kw)
+        today, with_pump = ceiling(2, A["heat"]["degraded_factor"], t30), ceiling(2, 1.0, t30)
+        assert today == pytest.approx(67) and chilled > today  # a pump loss today, for up to 14 days
+        assert with_pump == pytest.approx(115) and chilled <= with_pump
+    assert cooling_kw(t30) - cooling_kw(t30, A["heat"]["degraded_factor"]) == pytest.approx(48)
+
+
+def test_closing_answer_a_battery_bridge_is_capped_by_cooling_at_30c():
+    battery = A["account"]["closing"]["battery_kw"]
+    t30 = A["envelope"]["judge_cooling_at_c"]
+    one_set = A["power"]["guest_reserve_kw"]["one_genset_down"]
+    usable = min(one_set + battery, cooling_kw(t30)) - min(one_set, cooling_kw(t30))
+    assert usable == pytest.approx(20) and usable < battery
+
+
+def test_every_scenario_b_choice_is_a_physical_account_row():
+    rows = {k for r in A["account"]["rows"] for k in r.get("keys", [])}
+    ours = {f"scenario_b.{k}" for k, p in TL["provenance"].items() if p["source"] == "assumed"}
+    assert ours and ours <= rows
+    assert all(TL["provenance"][k[len("scenario_b."):]].get("why") for k in ours)

@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/sidd91/softwareDefinedVessels/config/missions/schema.json",
+  "title": "Mission priority file",
+  "description": "Swappable input that sets what matters on this mission. The jury may hand us an unseen one, so the governor validates it before use and refuses a bad file with the field that is wrong.",
+  "type": "object",
+  "required": ["id", "name", "weights", "mission_critical"],
+  "additionalProperties": false,
+  "properties": {
+    "id": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$"},
+    "name": {"type": "string"},
+    "weights": {
+      "type": "object",
+      "description": "Weight 0 to 1 for every capability name a guest card can return.",
+      "minProperties": 1,
+      "additionalProperties": {"type": "number", "minimum": 0, "maximum": 1}
+    },
+    "mission_critical": {"type": "array", "items": {"type": "string", "pattern": "^G[0-9]+$"}, "uniqueItems": true},
+    "notes": {"type": "string"}
+  }
+}
