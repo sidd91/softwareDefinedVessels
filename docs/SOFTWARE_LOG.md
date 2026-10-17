@@ -24,6 +24,7 @@ Policy: open-source third-party code only (OSI licence, no AGPL), or our own; ev
 | pytest (+ iniconfig, packaging, pluggy, pygments) | 9.1.1 | MIT (deps MIT / Apache-2.0 / BSD-2) | pytest devs | tests | no (dev) | installed Fri 21:40 PDT |
 | hatchling | build backend, fetched by uv into an isolated build env | MIT | PyPA | builds the `sdv-governor` package | no (build) | used by `uv sync` |
 | OpenCV (opencv-python-headless) and NumPy | 5.0.0.93 and 2.5.3 | Apache-2.0; BSD-3 | OpenCV.org; NumPy devs | CPU timing benches by a camera research agent, Fri about 23:30 PDT, on synthetic frames | no | nothing installed: both were already in the laptop's uv cache from Oct 9 and were used through PYTHONPATH; the project environment is unchanged |
+| LibreOffice | 26.2.6.3 (system package) | MPL-2.0 | The Document Foundation | page-count renders of the Scenario C memo and README by a requirements agent, Sat about 00:20 PDT | no | nothing installed: already on the system; renders went to /tmp, nothing added to the repo |
 | Superpowers plugin for Claude Code (obra/superpowers) | 6.4.2 | MIT | Jesse Vincent, Anthropic plugin directory (partner tier) | development workflow skills: TDD, plans, debugging, verification, subagent-driven development | no (dev) | install card shown to Logan Fri 21:36 PDT |
 
 ## Planned (added to the table above when actually installed)
