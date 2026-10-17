@@ -87,6 +87,9 @@ Deadline: **Sun 2026-10-18 10:00 PDT**.
 | DEC-46 | Sat 12:06 | Build hold (DEC-33) lifted. Order: finish the deliverable fixes, align docs and data with the freeze (DEC-44), then start typed conditions and hard limits (F2), following `docs/DESIGN_FREEZE.md` section 7 | Logan | Claude for Logan |
 | DEC-47 | Sat 12:09 | Work split (freeze F6): Siddharth builds the simulator, owns the ship-state machine with its transition times, and defines the commands the core sends to the simulator. Logan (with Claude) builds the core (ledger, D1 to D5, decision records) and the UI, and owns the 1 Hz snapshot schema, the clock and replay. The snapshot schema and the typed signal vocabulary (F2) come first, because the simulator emits them. Then merge everything into main | Logan | Claude for Logan |
 | DEC-48 | Sat 12:25 | Merge PR #2 (feat/governor-core) into main now; docs errors and the freeze alignment are fixed after the merge, on a follow-up branch | Logan | Claude for Logan |
+| DEC-49 | Sat 12:31 | Organizer message (docs/ORGANIZER_MESSAGE.md) sent by Logan. Answers as relayed by Logan: the questions are fine and there is some flexibility; there is no organizer simulator, so ArgOS runs its own seeded simulator (Siddharth, DEC-47) (req R-492) | Logan | Claude for Logan |
+| DEC-50 | Sat 12:31 | Memo: assume the brief's Scenario C memo and slide 14's architecture-and-constraint-handling memo are different documents, and write the one 2-page memo so it serves both (req R-004) | Logan | Claude for Logan |
+| DEC-51 | Sat 12:31 | Scenario B minute 12 (organizer question 5, freeze F4) is Siddharth's to decide as owner of the simulator and scenario timing; DEC-40 stands until he does | Logan | Claude for Logan |
 
 ## Conflicts and risks to watch
 
@@ -710,3 +713,11 @@ with Claude builds the core, the UI, the snapshot schema, the clock and replay. 
 through every doc (cameras, failover and the other cut items still appear in places); that alignment follows on a
 branch after the merge. UI critique of the ArgOS screens done, kept for later.
 Decisions: DEC-47, DEC-48 (Logan). Conflicts: CON-21 (snapshot and command contract must agree). Deferrals: none.
+
+### Sat 12:31 PDT · Organizer answers and routing (DEC-49 to DEC-51) · Claude Opus 5.5 on behalf of Logan Walker (GhostWalka)
+
+Logan sent the organizer message and relayed the answers: all fine with some flexibility, and no organizer simulator
+(the team runs its own, built by Siddharth). Logan decided the memo question: treat the two memos as different and
+write one 2-page memo that serves both the Scenario C rule and the architecture and constraint-handling reading.
+The minute-12 question goes to Siddharth. Logged on main at Logan's request.
+Decisions: DEC-49, DEC-50, DEC-51 (Logan). Conflicts: none new. Deferrals: DEC-51 routes minute 12 to Siddharth.
