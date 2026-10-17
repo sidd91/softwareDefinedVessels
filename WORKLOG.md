@@ -772,3 +772,14 @@ config/assumptions.yaml and refuses a bad card or priority file with the file an
 one (try_load). tests/test_loader.py: 15 hostile cards and 8 hostile priority files refused, a one-number edit
 accepted. The contract test's temporary name-translation tables are gone. 657 tests pass.
 Decisions: DEC-53. Conflicts: none new. Deferrals: none.
+
+### Sat 14:13 PDT · Ledger and shed-ladder core on main · Claude Opus 5.5 on behalf of Logan Walker (GhostWalka)
+
+src/sdv/ledger.py: capacity, demand and free per class in two views (admission at envelope draws, judged at both
+gensets and 30 C cooling; operations at current modes with reservations and fresh readings), the shed limit
+min(power, cooling) - 5 kW, and the precomputed ladder (throttles before sheds, mission-critical last, price =
+weight x capability lost / kW freed, non-interruptible modes skipped, safety-critical never shed, optional
+shed_order per F3). tests/test_ledger.py: every Scenario A oracle line, the brief's checks, Scenario B limits 95
+and 75 kW, loads 48 and 81 kW, minute-19 first steps (survey G4 to 10 kW, 56 kW; sar G5 to 8 kW, 44 kW), the
+minute-12 armed G5 step, the DEC-35 gate cases. 734 tests pass.
+Decisions: none new. Conflicts: none new. Deferrals: none.
