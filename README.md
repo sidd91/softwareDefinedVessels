@@ -27,6 +27,7 @@ uv run sdv run --mission sar --log-dir runs/b-sar && uv run sdv replay runs/b-sa
 yes-if options and the one-genset-down check, with the time taken against the 30 s ceiling. `sdv run` plays
 Scenario B through the tick loop (simulator, estimator, decisions) and prints each decision's sentence;
 `sdv replay` re-runs the logs without the simulator and checks every snapshot and record byte for byte.
+`sdv kit` plans the governor's own computers and builds the Deployment Reference Kit ([deployment](docs/DEPLOYMENT.md)).
 
 The one demo command (planned; it needs the real engine, which the brief forbids mocking) starts the
 decision engine and the screen and loads Scenario B; the priority file is picked and swapped on screen.

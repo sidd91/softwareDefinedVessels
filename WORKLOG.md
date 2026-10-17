@@ -876,3 +876,20 @@ in the input log so a replay reproduces it. The core now reads a profile's own R
 the ship default. tests/test_tiers.py: 11 tests. 922 tests pass. The UI session (argos-ui) is building the screen and
 the builder view (DEC-55); the core session stays out of UI files.
 Decisions: none new (implements DEC-58, DEC-59). Conflicts: none new. Deferrals: tier names for Logan to confirm.
+
+### Sat 15:02 PDT · Governor compute, Deployment Reference Kit, port upload, standby in lockstep (DEC-56, DEC-57) · Claude Opus 5.5 on behalf of Logan Walker (GhostWalka)
+
+config/assumptions.yaml governor: the VENTUNO Q board (measured) is the primary; 2 boards on any hull plus one per
+started 25 m beyond the first 25 m (60 m: 4: primary on the bridge, standby in the engine control room, two zone
+boards); 1 s heartbeat, takeover after 3 s; Pi-class edge nodes at six sites holding the latest shed table; the kit
+on every device within its share (20 GB of a board, 8 GB of an edge node), one printed copy and two SSDs. All
+assumed keys carry provenance and sit in the Physical Account's compute row (account table now prints at 8.1 pt to
+stay on one Letter page). src/sdv/kit.py and `sdv kit plan|build|verify|install|rollback`: the kit is generated from
+the repository (vessel docs and config, a runbook per event, one page per guest with technical data, conditions,
+hard limits, tier per profile, troubleshooting per signal, FAQ and the vendor documents it must bring), with a
+SHA-256 manifest and a per-device placement; install copies into the idle slot, verifies, switches and keeps the
+old slot for rollback; a damaged kit is refused and the previous kept. Loop(standby=True) runs a second estimator and
+core on the primary's frames and inputs and reports "in step" or the first differing field. docs/DEPLOYMENT.md
+explains it in plain words. tests/test_kit.py: 14 tests. 936 tests pass.
+Decisions: none new (implements DEC-56, DEC-57). Conflicts: none new. Deferrals: the reading of "per additional
+25 m" (4 boards at 60 m) for Logan to confirm; real vendor manuals come with each guest.

@@ -74,14 +74,18 @@ class TickOut:
     records: list
     commands: list
     inputs: list = field(default_factory=list)
+    standby: str | None = None          # "in step", or the first field where the standby's decision differs
 
 
 class Loop:
     def __init__(self, sim, mission="survey", variant="default", scenario="scenario_b", inputs: dict | None = None,
-                 log_dir: Path | None = None, seed=0):
+                 log_dir: Path | None = None, seed=0, standby: bool = False):
         self.sim = sim
         self.est = Estimator(scenario, mission, variant, seed)
         self.core = Core(mission)
+        # DEC-56: the standby board runs its own estimator and core on the primary's frames and inputs, in lockstep
+        self.standby = (Estimator(scenario, mission, variant, seed), Core(mission)) if standby else None
+        self.standby_state = "in step" if standby else None
         self.inputs = {int(k): list(v) for k, v in (inputs or {}).items()}
         self.tick = -1
         self.commands: list = []
@@ -107,6 +111,15 @@ class Loop:
         snap = self.est.step(frame)
         k = len(self.core.timing)
         records, commands = self.core.decide(snap, to_core)
+        if self.standby:
+            s_snap = self.standby[0].step(json.loads(canonical(frame)))
+            s_recs, s_cmds = self.standby[1].decide(s_snap, json.loads(canonical(to_core)))
+            if self.standby_state == "in step":
+                diff = (first_difference([canonical(snap)], [canonical(s_snap)])
+                        or first_difference([canonical(r) for r in records], [canonical(r) for r in s_recs])
+                        or first_difference([canonical(c) for c in commands], [canonical(c) for c in s_cmds]))
+                if diff:
+                    self.standby_state = f"out of step at tick {n}: {diff}"
         self.commands, self.tick = commands, n
         ms = (time.perf_counter() - t0) * 1000
         self.wall.append({"tick": n, "compute_ms": round(ms, 3)})
@@ -120,7 +133,7 @@ class Loop:
             for t in self.core.timing[k:]:
                 self.logs["timing"].write(canonical(t) + "\n")
             self.logs["timing"].write(canonical({"tick": n, "compute_ms": round(ms, 3)}) + "\n")
-        return TickOut(n, frame, snap, records, commands, stamped)
+        return TickOut(n, frame, snap, records, commands, stamped, self.standby_state)
 
     def ticks(self, until: int, pace: float | None = None):
         """Every tick up to `until`; with pace (ticks per wall second) the loop sleeps to each deadline and logs overruns."""

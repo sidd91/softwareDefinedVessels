@@ -107,6 +107,28 @@ instrument:
   status: planned
   results: null
 
+# The governor's own computers (DEC-56), apart from A.7's mission rack that the guests use. Two boards on any
+# hull, one more per started 25 m beyond the first 25 m, so 60 m gives 4: primary, standby and two zone boards.
+# Every board runs the same container; the standby replays the primary's frames and inputs in lockstep, so its
+# records must equal the primary's byte for byte, and it takes over after the heartbeat is lost for 3 s.
+# Pi-class edge nodes at the high-priority sites do local monitoring and hold the latest shed table (DEC-16).
+governor:
+  board: {model: VENTUNO Q, cores: 8, ram_gb: 14, storage_gb: 55}
+  boards: {base: 2, base_loa_m: 25, per_extra_m: 25}
+  roles: [primary, standby, zone_forward, zone_aft]
+  placement: {primary: bridge, standby: engine_control_room, zone_forward: forward_equipment_room, zone_aft: hangar}
+  heartbeat_s: 1
+  takeover_after_s: 3
+  edge_nodes:
+    class: Raspberry Pi 5 class, 8 GB RAM
+    storage_gb: 64
+    sites: [engine_control_room, chilled_water_plant, bridge, hangar_flight_deck, stern_ramp, mission_bays]
+  kit:
+    copies: {print: 1, ssd: 2}
+    ssd_gb: 1000
+    ssd_places: [bridge, engine_control_room]
+    share_gb: {board: 20, edge: 8}
+
 # Discrete positions. Units: a 20-ft bay is two 10-ft halves; a whole-bay guest takes both.
 positions:
   bay1: {kind: bay, size_ft: 20, halves: 2, max_t: 8, power_line: port, cooling: chilled_water, zone: bay}
@@ -245,6 +267,14 @@ provenance:
   decision_watchdog: {source: assumed, why: "Annex C asks for solver budget and timeout behaviour. Each decision's budget is its A.8 ceiling (admission and placement 30 s, arbitration 2 s, first shed 5 s). On a miss a watchdog emits the safe default with a sentence naming the ceiling (GAMEPLAN, watchdogs and safe defaults): admission answers no, placement keeps the current plan, arbitration keeps the current ship state and retries, and shedding runs the ladder precomputed on the last tick (DEC-16), so a slow solver never delays the first shed."}
   safety_commands: {source: assumed, why: "A.8 gives stop, hold and secure 200 ms, too short to run admission or arbitration. Each tick the engine rebuilds a table of the requests the present state may need, beside the D4 ladder (DEC-16), and answers by lookup when the event arrives. The requests come from the cards and the brief: R3's hold, G3 holding depth (demo moment), G2's winch stop (G2 excludes the winch while G3 listens or G4 recovers) and G4's return home in silence. The governor only requests ship states; it does not control machinery (brief, out of scope)."}
   stale_feed: {source: assumed, why: "The brief: 'keeps working when a data feed drops'. A feed silent for 3 s, three 1 Hz ticks, is stale and falls to the value that tightens limits (research/SENSOR_CATALOG.md, 'When lost or stale'): a genset counts as down, cooling as degraded, the deck as occupied, the course as free, an unknown speed band closes the flight deck and the ramp, the acoustic link counts as down, and stale environment data may only tighten a limit. The decision sentence names the stale feed. G4 battery telemetry keeps R3's 10 s limit (rules.r3.stale_s.g4_telemetry), then falls to the earliest 20 % crossing."}
+  governor.board: {source: measured, why: "The board on hand (docs/NODE_B_BOARD.md): 8 cores, 14 GiB RAM, 55 GB eMMC. It is the primary governor in the design; the demo still runs on the laptop."}
+  governor.boards: {source: assumed, why: "DEC-56 (Logan): every vessel carries a second identical board, and one more per additional 25 m of length. We read 'additional' as each started 25 m beyond the first 25 m: 60 m gives 2 + 2 = 4."}
+  governor.roles: {source: assumed, why: "Primary on the bridge, standby in the engine control room (a separate fire zone), two zone boards that aggregate their zone's edge nodes and can each take over."}
+  governor.placement: {source: assumed, why: "One board per fire zone where the 60 m layout allows; the hangar board sits by the flight deck and stern ramp, the busiest deck sites."}
+  governor.heartbeat_s: {source: assumed, why: "The board-to-board heartbeat runs at the tick rate, 1 Hz."}
+  governor.takeover_after_s: {source: assumed, why: "The same 3 s after which any 1 Hz feed is stale: three missed heartbeats. The standby already holds the same state, because it replays the same frames and inputs (deterministic ticks)."}
+  governor.edge_nodes: {source: assumed, why: "DEC-56 (Logan): small Pi-class computers at the high-priority sites do local compute and monitoring. Each holds the latest shed table pushed every tick, so a site keeps its last good plan if every board is lost."}
+  governor.kit: {source: assumed, why: "DEC-57 (Logan): the Deployment Reference Kit sits on every device whose storage allows, plus one printed copy and two SSD copies aboard; a device gives the kit at most share_gb (20 GB of a board, 8 GB of an edge node); if the full kit is larger it takes its site's part."}
   instrument: {source: measured, status: planned, why: "Brief A.7 is a modelling constraint, so the governor's own footprint is measured, not assumed: the board runs the same container and reports its watts, the latency of each decision class against A.8 and its CPU share, scaled to A.7's 4 x 32 cores. It is an 8-core board (docs/NODE_B_BOARD.md), not the A.7 rack, so its figures stand in for the rack's and are labelled so."}
   # Mission priorities / crew
   rules.r3.approach_min: {source: assumed, why: "Scenario C rule R3: final approach and landing from the loiter point; G4's own estimate is used if longer. Transit from range runs alongside deck clearing."}
@@ -350,8 +380,8 @@ account:
       why: "no solver on 200 ms"
     - row: Compute / response time
       what: compute
-      keys: [instrument]
-      value: "cores {{cards.cores}}; own use: watts, latency, CPU share"
+      keys: [instrument, governor.board, governor.boards, governor.roles, governor.placement, governor.heartbeat_s, governor.takeover_after_s, governor.edge_nodes, governor.kit]
+      value: "cores {{cards.cores}}; 4 boards, 6 Pi nodes"
       why: "Annex B gives no compute"
       trace: ['compute_cores: \{nominal: \d+, assumed: true\}']
     - row: Mission priorities / crew

@@ -3,6 +3,7 @@
     uv run sdv admit G4 --installed G1,G2,G3 [--mission survey] [--set G4.hangar.mass_t=0.8]
     uv run sdv run [--mission sar] [--log-dir runs/b-sar]        Scenario B through the loop, one line per decision
     uv run sdv replay runs/b-sar [--mission sar]                 the logs replayed and compared byte for byte
+    uv run sdv kit plan|build|verify|install|rollback            the governor's computers and the Reference Kit
 
 prints the D1 verdict with the binding line, every ledger line, the placement, the ranked yes-if options and the
 one-genset-down check, and how long the decision took against its 30 s ceiling. A one-number edit is applied to
@@ -138,6 +139,41 @@ def cmd_replay(args) -> int:
     return 0
 
 
+def cmd_kit(args) -> int:
+    from pathlib import Path
+
+    from sdv import kit as K
+    A = Ld.load_assumptions()
+    if args.action == "plan":
+        print(f"HULL {A['hull']['loa_m']} m · {K.governor_boards(A)} governor boards")
+        for d in K.devices(A):
+            size = f"{d['storage_gb']} GB" if d["storage_gb"] else "paper"
+            print(f"  {d['id']:26} {d['kind']:6} {d['site']:24} {size:>8}  {d['role']}")
+        return 0
+    if args.action == "build":
+        m = K.build(Path(args.path or "dist/kit"))
+        print(f"BUILT {args.path or 'dist/kit'}: {len(m['files'])} files, {m['bytes'] / 1e6:.2f} MB, commit {m['commit']}")
+        for d in m["placement"]:
+            print(f"  {d['id']:26} {d['holds']}")
+        return 0
+    if args.action == "verify":
+        problems = K.verify(Path(args.path))
+        print("VERIFIED every file against the manifest" if not problems else "FAILED " + "; ".join(problems[:5]))
+        return 1 if problems else 0
+    if args.action == "install":
+        r = K.install(Path(args.path), Path(args.root))
+        if not r["installed"]:
+            print(f"REFUSED kit kept {r['kept']}: " + "; ".join(r["problems"][:5]))
+            return 1
+        print(f"INSTALLED commit {r['commit']} in {r['slot']}, rollback {r['rollback'] or 'none'}")
+        return 0
+    if args.action == "rollback":
+        slot = K.rollback(Path(args.root))
+        print(f"ROLLED BACK to {slot}" if slot else "NOTHING to roll back to")
+        return 0 if slot else 1
+    return 2
+
+
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(prog="sdv", description="ArgOS resource governor")
     sub = p.add_subparsers(dest="cmd", required=True)
@@ -160,6 +196,11 @@ def main(argv: list[str] | None = None) -> int:
     p2.add_argument("--mission", default="survey")
     p2.add_argument("--variant", default="default")
     p2.set_defaults(func=cmd_replay)
+    k = sub.add_parser("kit", help="the governor's computers and the Deployment Reference Kit")
+    k.add_argument("action", choices=["plan", "build", "verify", "install", "rollback"])
+    k.add_argument("path", nargs="?", help="kit directory (build: output, default dist/kit)")
+    k.add_argument("--root", default="kit_slots", help="install and rollback: the device's kit root")
+    k.set_defaults(func=cmd_kit)
     args = p.parse_args(argv)
     return args.func(args)
 

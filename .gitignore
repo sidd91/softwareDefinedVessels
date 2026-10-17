@@ -7,3 +7,5 @@ build/
 *.egg-info/
 runs/
 runs/
+dist/
+kit_slots/

@@ -21,7 +21,7 @@ Every number we rely on beyond Annex A and B, every Annex value we changed, and 
 <tr><td></td><td>Scenario B seed</td><td>confirm 1, clear 4, approach 4 min: G4 lands at minute 17</td><td>replayable, inside A.6</td><td>test</td></tr>
 <tr><td>Compute / response time</td><td>fault entry</td><td>trip on 2 of 3 signals, pump on alarm plus flow or delta-T, held 1 s; restore after 60 s; a feed silent 3 s falls to its conservative value</td><td>one reading never sheds</td><td>test</td></tr>
 <tr><td></td><td>timeout, safety</td><td>on a miss: admit no, hold, run the ready ladder; safety by table lookup</td><td>no solver on 200 ms</td><td>not yet</td></tr>
-<tr><td></td><td>compute</td><td>cores G1 2, G2 2, G3 4, G4 4; own use: watts, latency, CPU share</td><td>Annex B gives no compute</td><td>card, planned</td></tr>
+<tr><td></td><td>compute</td><td>cores G1 2, G2 2, G3 4, G4 4; 4 boards, 6 Pi nodes</td><td>Annex B gives no compute</td><td>card, measured, planned</td></tr>
 <tr><td>Mission priorities / crew</td><td>R3 deck rules</td><td>14: officer reports, bridge confirms; 6: standing plan from launch; 0: only on a deck latched clear at the last sweep, else forbidden</td><td>no one clears deck at 0</td><td>test</td></tr>
 <tr><td></td><td>R3 timing</td><td>approach 4 min; drain 1.11 %/min; stale 10 s; secured 60 s</td><td>drain unverified</td><td>test</td></tr>
 <tr><td></td><td>mission weights</td><td>high 1.0, medium 0.5, low 0.2, ours if unstated; 1-2 critical each</td><td>Annex B: high/medium/low</td><td>code, missions, test</td></tr>

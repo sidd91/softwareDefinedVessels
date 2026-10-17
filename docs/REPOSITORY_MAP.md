@@ -8,8 +8,10 @@ What each folder and file holds. Back to the [README](../README.md).
 | `config/missions/` | Four priority files (survey, rescue, patrol, disaster relief) and their schema, with the optional `shed_order` and per-rule `confirm` fields |
 | `config/scenarios/scenario_b.yaml` | Scenario B event timeline (WORKLOG DEC-32, DEC-40) |
 | `manifests/` | Guest manifest schema, the six cards G1-G6 (G6 is our desalination unit), and [how to add a card](../manifests/README.md) |
-| `src/sdv/` | The ArgOS package. Planned modules: `cli.py` (the `sdv` command), `ledger.py`, `admission.py` (D1), `placement.py` (D2), `right_of_way.py` (D3), `shedding.py` (D4), `crew_policy.py` (D5); also the loader, decision records, explainer, clock and replay. The simulator is Siddharth's track (WORKLOG DEC-47) |
+| `src/sdv/` | The ArgOS package: `cli.py` (the `sdv` command: admit, run, replay, kit), `loader.py`, `ledger.py`, `admission.py` (D1), `placement.py` (D2), `arbitration.py` (D3), `shedding.py` (D4), `core.py` (runs the decisions per snapshot, R3 by crew level as D5), `estimator.py` (frames to snapshots), `loop.py` (the tick loop, logs, replay, the standby in lockstep), `records.py` and `explain.py` (decision records and their sentences), `kit.py` (the governor's computers and the Deployment Reference Kit). The simulator is Siddharth's track (WORKLOG DEC-47) |
 | `tests/` | Checks that the data reproduces the brief's numbers, the expected outcomes and the Scenario B timeline, and that every requirement link resolves |
+| `tests/support/sim_stub.py` | A labelled test double of Siddharth's simulator, built from the contract only, so the estimator, loop and screen run before his lands |
+| `docs/DEPLOYMENT.md` | The governor's computers aboard (boards, standby, edge nodes), the Deployment Reference Kit and its port upload (DEC-56 to DEC-58) |
 | `tests/oracles/expected_outcomes.yaml` | Expected verdicts, numbers and ladders for the Scenario A drills and Scenario B, checked against the cards |
 | `tools/physical_account.py` | Writes the one-page [PHYSICAL_ACCOUNT.md](PHYSICAL_ACCOUNT.md) and the full [PHYSICAL_ACCOUNT_DETAIL.md](PHYSICAL_ACCOUNT_DETAIL.md) from the assumptions and the cards |
 | `tools/build_pdfs.py` | Builds the README, Scenario C memo and Physical Account PDFs and checks their page limits |
