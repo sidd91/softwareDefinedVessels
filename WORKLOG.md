@@ -92,6 +92,7 @@ Deadline: **Sun 2026-10-18 10:00 PDT**.
 | DEC-51 | Sat 12:31 | Scenario B minute 12 (organizer question 5, freeze F4) is Siddharth's to decide as owner of the simulator and scenario timing; DEC-40 stands until he does | Logan | Claude for Logan |
 | DEC-52 | Sat 13:15 | Freeze alignment applied across docs and data: R3 at 0 aboard on a deck latched clear at the last crew sweep, otherwise forbidden; minute-12 armed ladders corrected (survey 48 and rescue 81 of 95 kW, first armed step G5 to low power in both); rescue minute 8 has G3 aborted and holding until G4 has landed; F3 precedence (safety and hard limits, throttle before shed, shed_order if present, then price; no file sets shed_order); one screen with three views; board as instrument with every demo input on the laptop; breadth strip with a data-feed-drop line; INJECTED, never ADDED; replay identical except wall-clock fields. DEC-44 also supersedes DEC-13 (SSDlite), DEC-14 (node B as second process), DEC-26's camera and failover lines, DEC-31's ONNX on the board and DEC-39's opencv and onnxruntime approval | Logan (DEC-44); details applied by Claude | Claude for Logan |
 | DEC-53 | Sat 14:09 | Typed conditions (F2): card conditions map signal names from config/signals.yaml to an exact value, a list, or a {min, max} range; exclusions name an own activity and another guest's activity (Gx.activity); hard limits are {signal, op, value} then {action, within_min or mode}. Drift fixed: G4.recovering is G4.launch_recovery, ramp not_in_use is free, deck_machinery_allowed is deck_machinery or deck_machinery_permitted. G1's mast competition moves to placement; G5's duplicate silence exclusion dropped; G6's compound limit becomes its start condition; G4's endurance is land within 90 min of airborne; G3 ramp recovery gains A.3's steady course. src/sdv/loader.py refuses unknown names with the field named and keeps the previous file (req R-064, R-100, R-152) | Logan (F2, DEC-44); format by Claude as core owner | Claude for Logan |
+| DEC-54 | Sat 14:21 | D3 right of way is computed from the priority file, never written per file: hard limits first; the winner's next demand is reserved when its weight is at least the loser's or it is mission-critical; the loser pauses and resumes when its weight is at least the winner's, otherwise it is suspended, open-ended. A land-by deadline alone (G4's 90 min endurance) calls for recovery only once the recovery lead time is needed (bridge confirm + deck clear + approach: 10 min at 14 aboard); the battery limit acts at once. Reproduces the survey and sar minute-8 oracle and gives patrol and disaster relief a coherent answer (review design-1, critic-2; req R-066, R-110) | Claude as core owner (DEC-47); Logan to confirm | Claude for Logan |
 
 ## Conflicts and risks to watch
 
@@ -796,3 +797,16 @@ tests/test_admission.py reproduces all 14 Scenario A oracle cases: verdicts, bin
 options with mass, stability, placement, port moves and one-genset-down blocks, and the 35 kg case flipping to YES
 on the 0.8 t hangar edit. 799 tests pass. CON-18 (a fuller D2 objective for the mast slot) stays open.
 Decisions: none new. Conflicts: none new. Deferrals: none.
+
+### Sat 14:21 PDT · D3 and D4 on main (DEC-54) · Claude Opus 5.5 on behalf of Logan Walker (GhostWalka)
+
+src/sdv/arbitration.py (D3): finds the two incompatible condition sets (speed 3 kn against 5 to 12 kn, deck
+machinery none against the hangar doors, plus the card exclusion), puts the hard limit first (land by 18.2 min,
+waiting for the leg end infeasible) and computes reserve or pause from the file (DEC-54). src/sdv/shedding.py (D4):
+load from committed draws against the snapshot's shed ceiling; holds with the armed ladder or takes the shortest
+prefix; never acts on a stale feed; carries raw-event and confirmation times. tests/test_decisions_b.py: minute 8
+under survey and sar matches the oracle (survey pauses, 25 to 27 min lost, leg ends at 65 to 67 min; sar reserves
+35 kW and aborts the leg), patrol and disaster relief computable, minute 12 holds at 48 and 81 of 95 kW with G5
+armed first, minute 19 sheds G4 to 10 kW (56 kW) or G5 to 8 kW (44 kW) against the 75 kW cooling limit, nothing
+shed on a stale feed. 814 tests pass.
+Decisions: DEC-54. Conflicts: none new. Deferrals: none.
