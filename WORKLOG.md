@@ -72,6 +72,7 @@ Deadline: **Sun 2026-10-18 10:00 PDT**.
 | DEC-31 | Sat 09:52 | Local only: no AI Hub or Edge Impulse (cloud compile and training); models run with ONNX Runtime on the board's CPU; no proprietary NPU runtime unless the organizers clear it (narrows CON-04) | Logan | Claude for Logan |
 | DEC-32 | Sat 09:52 | Scenario B runs with G3, G4, G5. At the pier the brief's G2-G5 load-out is refused and flagged, with G3, G4, G5 recommended as the alternative; a logged override exists for extreme situations (resolves CON-12) | Logan | Claude for Logan |
 | DEC-33 | Sat 09:52 | Hold the core build about an hour more; first a full Phase 1 rundown | Logan | Claude for Logan |
+| DEC-34 | Sat 09:56 | Open a pull request for `feat/governor-core` into main (sidd91/softwareDefinedVessels#2); it includes PR #1's commits, so merging it alone is enough. Siddharth merges as repo owner | Logan | Claude for Logan |
 
 ## Conflicts and risks to watch
 
@@ -557,3 +558,9 @@ on G3, G4, G5 with the pier refusal, recommended alternative and override), `GAM
 Q; local-only model runtime), `docs/ARCHITECTURE.md` (admission override proposal), `docs/OPEN_QUESTIONS.md`
 (decided items marked) and the requirement rows that cited CON-12. No teammate activity yet.
 Conflicts: CON-12 resolved by DEC-32; CON-04 narrowed by DEC-31. Deferrals: none.
+
+### Sat 09:56 PDT · PR #2 opened · Claude Opus 5.5 on behalf of Logan Walker (GhostWalka)
+
+At Logan's request, opened sidd91/softwareDefinedVessels#2 from `feat/governor-core` into main: 37 commits
+(30 beyond PR #1), the Phase 1 data model, requirements trace, plans and expected outcomes; no engine yet.
+Decisions: DEC-34. Conflicts: CON-06 now covers both PRs (Siddharth to review and merge). Deferrals: none.
