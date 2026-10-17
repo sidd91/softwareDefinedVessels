@@ -1,0 +1,2387 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/GhostWalka/softwareDefinedVessels/config/snapshot.schema.json",
+  "title": "ArgOS conditions snapshot",
+  "description": "One snapshot per tick (1 Hz in ship time): what the state estimator hands the core. Every field carries value, source, age_s, confidence and stale. Signal names, types, stale limits and fallbacks are in config/signals.yaml; the contract is docs/STATE_ESTIMATION.md. The snapshot holds no wall-clock time, so a replay reproduces it exactly; wall-clock timing goes to the timing log.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "run",
+    "held_by_core",
+    "plant",
+    "ship_state",
+    "environment",
+    "links",
+    "crew",
+    "guests",
+    "capacity",
+    "faults",
+    "events"
+  ],
+  "properties": {
+    "run": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contract",
+        "scenario",
+        "mission",
+        "seed",
+        "tick",
+        "t_ship_s",
+        "installed"
+      ],
+      "properties": {
+        "contract": {
+          "const": "argos-snapshot/1"
+        },
+        "scenario": {
+          "type": "string"
+        },
+        "mission": {
+          "type": "string",
+          "description": "the priority file in force (config/missions/<id>.yaml)"
+        },
+        "seed": {
+          "type": "integer"
+        },
+        "tick": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "snapshot counter; tick n is at t_ship_s = n"
+        },
+        "t_ship_s": {
+          "type": "number",
+          "minimum": 0,
+          "description": "ship time in seconds since minute 0 of the timeline"
+        },
+        "installed": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "G1",
+              "G2",
+              "G3",
+              "G4",
+              "G5",
+              "G6"
+            ]
+          },
+          "uniqueItems": true
+        }
+      }
+    },
+    "held_by_core": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "reservations_kw"
+      ],
+      "description": "core state fed back into the estimate (recorded in the decision log, so replay reproduces it)",
+      "properties": {
+        "reservations_kw": {
+          "type": "object",
+          "propertyNames": {
+            "enum": [
+              "G1",
+              "G2",
+              "G3",
+              "G4",
+              "G5",
+              "G6"
+            ]
+          },
+          "additionalProperties": {
+            "type": "number",
+            "minimum": 0
+          }
+        }
+      }
+    },
+    "plant": {
+      "type": "object",
+      "description": "plant",
+      "additionalProperties": false,
+      "required": [
+        "genset_1_relay_trip",
+        "genset_2_relay_trip",
+        "genset_1_kw",
+        "genset_2_kw",
+        "bus_frequency_hz",
+        "gensets_online",
+        "tripped_genset",
+        "chw_pump_1_running",
+        "chw_pump_2_running",
+        "chw_pump_1_alarm",
+        "chw_pump_2_alarm",
+        "chw_flow_pct",
+        "chw_supply_c",
+        "chw_return_c",
+        "cooling_state"
+      ],
+      "properties": {
+        "genset_1_relay_trip": {
+          "description": "plant; 1 Hz; stale after 3 s",
+          "allOf": [
+            {
+              "$ref": "#/$defs/field"
+            }
+          ],
+          "properties": {
+            "value": {
+              "type": "boolean"
+            },
+            "source": {
+              "enum": [
+                "plant"
+              ]
+            }
+          }
+        },
+        "genset_2_relay_trip": {
+          "description": "plant; 1 Hz; stale after 3 s",
+          "allOf": [
+            {
+              "$ref": "#/$defs/field"
+            }
+          ],
+          "properties": {
+            "value": {
+              "type": "boolean"
+            },
+            "source": {
+              "enum": [
+                "plant"
+              ]
+            }
+          }
+        },
+        "genset_1_kw": {
+          "description": "kW; plant; 1 Hz; stale after 3 s",
+          "allOf": [
+            {
+              "$ref": "#/$defs/field"
+            }
+          ],
+          "properties": {
+            "value": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 450
+            },
+            "source": {
+              "enum": [
+                "plant"
+              ]
+            }
+          }
+        },
+        "genset_2_kw": {
+          "description": "kW; plant; 1 Hz; stale after 3 s",
+          "allOf": [
+            {
+              "$ref": "#/$defs/field"
+            }
+          ],
+          "properties": {
+            "value": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 450
+            },
+            "source": {
+              "enum": [
+                "plant"
+              ]
+            }
+          }
+        },
+        "bus_frequency_hz": {
+          "description": "Hz; plant; 1 Hz; stale after 3 s",
+          "allOf": [
+            {
+              "$ref": "#/$defs/field"
+            }
+          ],
+          "properties": {
+            "value": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 70
+            },
+            "source": {
+              "enum": [
+                "plant"
+              ]
+            }
+          }
+        },
+        "gensets_online": {
+          "description": "derived; per tick; stale after 3 s",
+          "allOf": [
+            {
+              "$ref": "#/$defs/field"
+            }
+          ],
+          "properties": {
+            "value": {
+              "enum": [
+                1,
+                2
+              ]
+            },
+            "source": {
+              "enum": [
+                "derived"
+              ]
+            }
+          }
+        },
+        "tripped_genset": {
+          "description": "derived; per tick; stale after 3 s",
+          "allOf": [
+            {
+              "$ref": "#/$defs/field"
+            }
+          ],
+          "properties": {
+            "value": {
+              "enum": [
+                "none",
+                "genset_1",
+                "genset_2"
+              ]
+            },
+            "source": {
+              "enum": [
+                "derived"
+              ]
+            }
+          }
+        },
+        "chw_pump_1_running": {
+          "description": "plant; 1 Hz; stale after 3 s",
+          "allOf": [
+            {
+              "$ref": "#/$defs/field"
+            }
+          ],
+          "properties": {
+            "value": {
+              "type": "boolean"
+            },
+            "source": {
+              "enum": [
+                "plant"
+              ]
+            }
+          }
+        },
+        "chw_pump_2_running": {
+          "description": "plant; 1 Hz; stale after 3 s",
+          "allOf": [
+            {
+              "$ref": "#/$defs/field"
+            }
+          ],
+          "properties": {
+            "value": {
+              "type": "boolean"
+            },
+            "source": {
+              "enum": [
+                "plant"
+              ]
+            }
+          }
+        },
+        "chw_pump_1_alarm": {
+          "description": "plant; 1 Hz; stale after 3 s",
+          "allOf": [
+            {
+              "$ref": "#/$defs/field"
+            }
+          ],
+          "properties": {
+            "value": {
+              "type": "boolean"
+            },
+            "source": {
+              "enum": [
+                "plant"
+              ]
+            }
+          }
+        },
+        "chw_pump_2_alarm": {
+          "description": "plant; 1 Hz; stale after 3 s",
+          "allOf": [
+            {
+              "$ref": "#/$defs/field"
+            }
+          ],
+          "properties": {
+            "value": {
+              "type": "boolean"
+            },
+            "source": {
+              "enum": [
+                "plant"
+              ]
+            }
+          }
+        },
+        "chw_flow_pct": {
+          "description": "% of nominal; plant; 1 Hz; stale after 3 s",
+          "allOf": [
+            {
+              "$ref": "#/$defs/field"
+            }
+          ],
+          "properties": {
+            "value": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 150
+            },
+            "source": {
+              "enum": [
+                "plant"
+              ]
+            }
+          }
+        },
+        "chw_supply_c": {
+          "description": "C; plant; 1 Hz; stale after 3 s",
+          "allOf": [
+            {
+              "$ref": "#/$defs/field"
+            }
+          ],
+          "properties": {
+            "value": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 40
+            },
+            "source": {
+              "enum": [
+                "plant"
+              ]
+            }
+          }
+        },
+        "chw_return_c": {
+          "description": "C; plant; 1 Hz; stale after 3 s",
+          "allOf": [
+            {
+              "$ref": "#/$defs/field"
+            }
+          ],
+          "properties": {
+            "value": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 40
+            },
+            "source": {
+              "enum": [
+                "plant"
+              ]
+            }
+          }
+        },
+        "cooling_state": {
+          "description": "derived; per tick; stale after 3 s",
+          "allOf": [
+            {
+              "$ref": "#/$defs/field"
+            }
+          ],
+          "properties": {
+            "value": {
+              "enum": [
+                "nominal",
+                "degraded"
+              ]
+            },
+            "source": {
+              "enum": [
+                "derived"
+              ]
+            }
+          }
+        }
+      }
+    },
+    "ship_state": {
+      "type": "object",
+      "description": "ship_state",
+      "additionalProperties": false,
+      "required": [
+        "course",
+        "speed_kn",
+        "speed_band",
+        "noise",
+        "deck_flight_deck",
+        "deck_bays",
+        "emission",
+        "ramp",
+        "deck_machinery",
+        "radar_transmitting",
+        "situation",
+        "heading_free",
+        "deck_machinery_permitted",
+        "flight_deck_ops"
+      ],
+      "properties": {
+        "course": {
+          "description": "ship_state; 1 Hz; stale after 3 s",
+          "allOf": [
+            {
+              "$ref": "#/$defs/field"
+            }
+          ],
+          "properties": {
+            "value": {
+              "enum": [
+                "free",
+                "steady"
+              ]
+            },
+            "source": {
+              "enum": [
+                "plant"
+              ]
+            }
+          }
+        },
+        "speed_kn": {
+          "description": "kn; ship_state; 1 Hz; stale after 3 s",
+          "allOf": [
+            {
+              "$ref": "#/$defs/field"
+            }
+          ],
+          "properties": {
+            "value": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 25
+            },
+            "source": {
+              "enum": [
+                "plant"
+              ]
+            }
+          }
+        },
+        "speed_band": {
+          "description": "derived; per tick; stale after 3 s",
+          "allOf": [
+            {
+              "$ref": "#/$defs/field"
+            }
+          ],
+          "properties": {
+            "value": {
+              "enum": [
+                "stopped",
+                "slow",
+                "cruise",
+                "fast"
+              ]
+            },
+            "source": {
+              "enum": [
+                "derived"
+              ]
+            }
+          }
+        },
+        "noise": {
+          "description": "ship_state; 1 Hz; stale after 3 s",
+          "allOf": [
+            {
+              "$ref": "#/$defs/field"
+            }
+          ],
+          "properties": {
+            "value": {
+              "enum": [
+                "quiet",
+                "normal",
+                "manoeuvring"
+              ]
+            },
+            "source": {
+              "enum": [
+                "plant"
+              ]
+            }
+          }
+        },
+        "deck_flight_deck": {
+          "description": "ship_state; 1 Hz; stale after 3 s",
+          "allOf": [
+            {
+              "$ref": "#/$defs/field"
+            }
+          ],
+          "properties": {
+            "value": {
+              "enum": [
+                "clear",
+                "occupied"
+              ]
+            },
+            "source": {
+              "enum": [
+                "plant",
+                "crew_report"
+              ]
+            }
+          }
+        },
+        "deck_bays": {
+          "description": "ship_state; 1 Hz; stale after 3 s",
+          "allOf": [
+            {
+              "$ref": "#/$defs/field"
+            }
+          ],
+          "properties": {
+            "value": {
+              "enum": [
+                "clear",
+                "occupied"
+              ]
+            },
+            "source": {
+              "enum": [
+                "plant",
+                "crew_report"
+              ]
+            }
+          }
+        },
+        "emission": {
+          "description": "ship_state; 1 Hz; stale after 3 s",
+          "allOf": [
+            {
+              "$ref": "#/$defs/field"
+            }
+          ],
+          "properties": {
+            "value": {
+              "enum": [
+                "normal",
+                "silent"
+              ]
+            },
+            "source": {
+              "enum": [
+                "plant",
+                "laptop"
+              ]
+            }
+          }
+        },
+        "ramp": {
+          "description": "ship_state; 1 Hz; stale after 3 s",
+          "allOf": [
+            {
+              "$ref": "#/$defs/field"
+            }
+          ],
+          "properties": {
+            "value": {
+              "enum": [
+                "free",
+                "in_use"
+              ]
+            },
+            "source": {
+              "enum": [
+                "plant"
+              ]
+            }
+          }
+        },
+        "deck_machinery": {
+          "description": "ship_state; 1 Hz; stale after 3 s",
+          "allOf": [
+            {
+              "$ref": "#/$defs/field"
+            }
+          ],
+          "properties": {
+            "value": {
+              "type": "boolean"
+            },
+            "source": {
+              "enum": [
+                "plant"
+              ]
+            }
+          }
+        },
+        "radar_transmitting": {
+          "description": "ship_state; 1 Hz; stale after 3 s",
+          "allOf": [
+            {
+              "$ref": "#/$defs/field"
+            }
+          ],
+          "properties": {
+            "value": {
+              "type": "boolean"
+            },
+            "source": {
+              "enum": [
+                "plant"
+              ]
+            }
+          }
+        },
+        "situation": {
+          "description": "ship_state; on change; stale after 3 s",
+          "allOf": [
+            {
+              "$ref": "#/$defs/field"
+            }
+          ],
+          "properties": {
+            "value": {
+              "enum": [
+                "alongside",
+                "at_sea"
+              ]
+            },
+            "source": {
+              "enum": [
+                "scenario",
+                "laptop"
+              ]
+            }
+          }
+        },
+        "heading_free": {
+          "description": "derived; per tick; stale after 3 s",
+          "allOf": [
+            {
+              "$ref": "#/$defs/field"
+            }
+          ],
+          "properties": {
+            "value": {
+              "type": "boolean"
+            },
+            "source": {
+              "enum": [
+                "derived"
+              ]
+            }
+          }
+        },
+        "deck_machinery_permitted": {
+          "description": "derived; per tick; stale after 3 s",
+          "allOf": [
+            {
+              "$ref": "#/$defs/field"
+            }
+          ],
+          "properties": {
+            "value": {
+              "type": "boolean"
+            },
+            "source": {
+              "enum": [
+                "derived"
+              ]
+            }
+          }
+        },
+        "flight_deck_ops": {
+          "description": "derived; per tick; stale after 3 s",
+          "allOf": [
+            {
+              "$ref": "#/$defs/field"
+            }
+          ],
+          "properties": {
+            "value": {
+              "enum": [
+                "free",
+                "in_use"
+              ]
+            },
+            "source": {
+              "enum": [
+                "derived"
+              ]
+            }
+          }
+        }
+      }
+    },
+    "environment": {
+      "type": "object",
+      "description": "environment",
+      "additionalProperties": false,
+      "required": [
+        "seawater_c",
+        "sea_state",
+        "wind_kn",
+        "wind_from_deg",
+        "layered_water"
+      ],
+      "properties": {
+        "seawater_c": {
+          "description": "C; environment; hourly; stale after 10800 s",
+          "allOf": [
+            {
+              "$ref": "#/$defs/field"
+            }
+          ],
+          "properties": {
+            "value": {
+              "type": "number",
+              "minimum": -2,
+              "maximum": 40
+            },
+            "source": {
+              "enum": [
+                "scenario",
+                "public_data",
+                "plant"
+              ]
+            }
+          }
+        },
+        "sea_state": {
+          "description": "Douglas; environment; hourly; stale after 10800 s",
+          "allOf": [
+            {
+              "$ref": "#/$defs/field"
+            }
+          ],
+          "properties": {
+            "value": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9
+            },
+            "source": {
+              "enum": [
+                "scenario",
+                "public_data"
+              ]
+            }
+          }
+        },
+        "wind_kn": {
+          "description": "kn; environment; 1 Hz; stale after 3 s",
+          "allOf": [
+            {
+              "$ref": "#/$defs/field"
+            }
+          ],
+          "properties": {
+            "value": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 80
+            },
+            "source": {
+              "enum": [
+                "plant",
+                "public_data"
+              ]
+            }
+          }
+        },
+        "wind_from_deg": {
+          "description": "deg; environment; 1 Hz; stale after 3 s",
+          "allOf": [
+            {
+              "$ref": "#/$defs/field"
+            }
+          ],
+          "properties": {
+            "value": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 360
+            },
+            "source": {
+              "enum": [
+                "plant",
+                "public_data"
+              ]
+            }
+          }
+        },
+        "layered_water": {
+          "description": "environment; hourly; stale after 10800 s",
+          "allOf": [
+            {
+              "$ref": "#/$defs/field"
+            }
+          ],
+          "properties": {
+            "value": {
+              "type": "boolean"
+            },
+            "source": {
+              "enum": [
+                "scenario",
+                "public_data"
+              ]
+            }
+          }
+        }
+      }
+    },
+    "links": {
+      "type": "object",
+      "description": "links",
+      "additionalProperties": false,
+      "required": [
+        "satcom_mbps",
+        "los_radio_mbps",
+        "acoustic_link_up",
+        "acoustic_kbps"
+      ],
+      "properties": {
+        "satcom_mbps": {
+          "description": "Mbit/s; link; 1 Hz; stale after 3 s",
+          "allOf": [
+            {
+              "$ref": "#/$defs/field"
+            }
+          ],
+          "properties": {
+            "value": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 8
+            },
+            "source": {
+              "enum": [
+                "plant"
+              ]
+            }
+          }
+        },
+        "los_radio_mbps": {
+          "description": "Mbit/s; link; 1 Hz; stale after 3 s",
+          "allOf": [
+            {
+              "$ref": "#/$defs/field"
+            }
+          ],
+          "properties": {
+            "value": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 20
+            },
+            "source": {
+              "enum": [
+                "plant"
+              ]
+            }
+          }
+        },
+        "acoustic_link_up": {
+          "description": "derived; per tick; stale after 3 s",
+          "allOf": [
+            {
+              "$ref": "#/$defs/field"
+            }
+          ],
+          "properties": {
+            "value": {
+              "type": "boolean"
+            },
+            "source": {
+              "enum": [
+                "derived"
+              ]
+            }
+          }
+        },
+        "acoustic_kbps": {
+          "description": "kbit/s; derived; per tick; stale after 3 s",
+          "allOf": [
+            {
+              "$ref": "#/$defs/field"
+            }
+          ],
+          "properties": {
+            "value": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 5
+            },
+            "source": {
+              "enum": [
+                "derived"
+              ]
+            }
+          }
+        }
+      }
+    },
+    "crew": {
+      "type": "object",
+      "description": "crew",
+      "additionalProperties": false,
+      "required": [
+        "crew_aboard",
+        "people_available",
+        "bridge_confirmation",
+        "hlo_deck_report",
+        "standing_plan",
+        "deck_activity_since_sweep",
+        "deck_latched_clear"
+      ],
+      "properties": {
+        "crew_aboard": {
+          "description": "crew; on change, relayed every tick; stale after 3 s",
+          "allOf": [
+            {
+              "$ref": "#/$defs/field"
+            }
+          ],
+          "properties": {
+            "value": {
+              "enum": [
+                14,
+                6,
+                0
+              ]
+            },
+            "source": {
+              "enum": [
+                "laptop"
+              ]
+            }
+          }
+        },
+        "people_available": {
+          "description": "people; crew; on change, relayed every tick; stale after 3 s",
+          "allOf": [
+            {
+              "$ref": "#/$defs/field"
+            }
+          ],
+          "properties": {
+            "value": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 14
+            },
+            "source": {
+              "enum": [
+                "crew_report"
+              ]
+            }
+          }
+        },
+        "bridge_confirmation": {
+          "description": "crew; event, relayed every tick; stale after 3 s",
+          "allOf": [
+            {
+              "$ref": "#/$defs/field"
+            }
+          ],
+          "properties": {
+            "value": {
+              "enum": [
+                "none",
+                "pending",
+                "confirmed",
+                "denied"
+              ]
+            },
+            "source": {
+              "enum": [
+                "crew_report"
+              ]
+            }
+          }
+        },
+        "hlo_deck_report": {
+          "description": "crew; event, relayed every tick; stale after 3 s",
+          "allOf": [
+            {
+              "$ref": "#/$defs/field"
+            }
+          ],
+          "properties": {
+            "value": {
+              "enum": [
+                "none",
+                "clear",
+                "not_clear"
+              ]
+            },
+            "source": {
+              "enum": [
+                "crew_report"
+              ]
+            }
+          }
+        },
+        "standing_plan": {
+          "description": "crew; event, relayed every tick; stale after 3 s",
+          "allOf": [
+            {
+              "$ref": "#/$defs/field"
+            }
+          ],
+          "properties": {
+            "value": {
+              "enum": [
+                "none",
+                "approved"
+              ]
+            },
+            "source": {
+              "enum": [
+                "crew_report"
+              ]
+            }
+          }
+        },
+        "deck_activity_since_sweep": {
+          "description": "plant; event; stale after 3 s",
+          "allOf": [
+            {
+              "$ref": "#/$defs/field"
+            }
+          ],
+          "properties": {
+            "value": {
+              "type": "boolean"
+            },
+            "source": {
+              "enum": [
+                "plant"
+              ]
+            }
+          }
+        },
+        "deck_latched_clear": {
+          "description": "derived; per tick; stale after 3 s",
+          "allOf": [
+            {
+              "$ref": "#/$defs/field"
+            }
+          ],
+          "properties": {
+            "value": {
+              "type": "boolean"
+            },
+            "source": {
+              "enum": [
+                "derived"
+              ]
+            }
+          }
+        }
+      }
+    },
+    "capacity": {
+      "type": "object",
+      "description": "capacity",
+      "additionalProperties": false,
+      "required": [
+        "power",
+        "port_line",
+        "stbd_line",
+        "heat",
+        "satcom",
+        "los_radio",
+        "acoustic",
+        "shed_ceiling_kw"
+      ],
+      "properties": {
+        "power": {
+          "description": "kW; derived; per tick; stale after 3 s",
+          "allOf": [
+            {
+              "$ref": "#/$defs/field"
+            }
+          ],
+          "properties": {
+            "value": {
+              "$ref": "#/$defs/capacity_value"
+            },
+            "source": {
+              "enum": [
+                "derived"
+              ]
+            }
+          }
+        },
+        "port_line": {
+          "description": "kW; derived; per tick; stale after 3 s",
+          "allOf": [
+            {
+              "$ref": "#/$defs/field"
+            }
+          ],
+          "properties": {
+            "value": {
+              "$ref": "#/$defs/capacity_value"
+            },
+            "source": {
+              "enum": [
+                "derived"
+              ]
+            }
+          }
+        },
+        "stbd_line": {
+          "description": "kW; derived; per tick; stale after 3 s",
+          "allOf": [
+            {
+              "$ref": "#/$defs/field"
+            }
+          ],
+          "properties": {
+            "value": {
+              "$ref": "#/$defs/capacity_value"
+            },
+            "source": {
+              "enum": [
+                "derived"
+              ]
+            }
+          }
+        },
+        "heat": {
+          "description": "kW; derived; per tick; stale after 3 s",
+          "allOf": [
+            {
+              "$ref": "#/$defs/field"
+            }
+          ],
+          "properties": {
+            "value": {
+              "$ref": "#/$defs/capacity_value"
+            },
+            "source": {
+              "enum": [
+                "derived"
+              ]
+            }
+          }
+        },
+        "satcom": {
+          "description": "Mbit/s; derived; per tick; stale after 3 s",
+          "allOf": [
+            {
+              "$ref": "#/$defs/field"
+            }
+          ],
+          "properties": {
+            "value": {
+              "$ref": "#/$defs/capacity_value"
+            },
+            "source": {
+              "enum": [
+                "derived"
+              ]
+            }
+          }
+        },
+        "los_radio": {
+          "description": "Mbit/s; derived; per tick; stale after 3 s",
+          "allOf": [
+            {
+              "$ref": "#/$defs/field"
+            }
+          ],
+          "properties": {
+            "value": {
+              "$ref": "#/$defs/capacity_value"
+            },
+            "source": {
+              "enum": [
+                "derived"
+              ]
+            }
+          }
+        },
+        "acoustic": {
+          "description": "kbit/s; derived; per tick; stale after 3 s",
+          "allOf": [
+            {
+              "$ref": "#/$defs/field"
+            }
+          ],
+          "properties": {
+            "value": {
+              "$ref": "#/$defs/capacity_value"
+            },
+            "source": {
+              "enum": [
+                "derived"
+              ]
+            }
+          }
+        },
+        "shed_ceiling_kw": {
+          "description": "kW; derived; per tick; stale after 3 s",
+          "allOf": [
+            {
+              "$ref": "#/$defs/field"
+            }
+          ],
+          "properties": {
+            "value": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 300
+            },
+            "source": {
+              "enum": [
+                "derived"
+              ]
+            }
+          }
+        }
+      }
+    },
+    "guests": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "one entry per installed guest",
+      "properties": {
+        "G1": {
+          "type": "object",
+          "description": "G1",
+          "additionalProperties": false,
+          "required": [
+            "mode",
+            "activity",
+            "kw_actual",
+            "data_demand"
+          ],
+          "properties": {
+            "mode": {
+              "description": "guest; 1 Hz; stale after 3 s",
+              "allOf": [
+                {
+                  "$ref": "#/$defs/field"
+                }
+              ],
+              "properties": {
+                "value": {
+                  "enum": [
+                    "full",
+                    "off"
+                  ]
+                },
+                "source": {
+                  "enum": [
+                    "plant"
+                  ]
+                }
+              }
+            },
+            "activity": {
+              "description": "guest; 1 Hz; stale after 3 s",
+              "allOf": [
+                {
+                  "$ref": "#/$defs/field"
+                }
+              ],
+              "properties": {
+                "value": {
+                  "enum": [
+                    "none",
+                    "listening"
+                  ]
+                },
+                "source": {
+                  "enum": [
+                    "guest_report"
+                  ]
+                }
+              }
+            },
+            "kw_actual": {
+              "description": "kW; guest; 1 Hz; stale after 3 s",
+              "allOf": [
+                {
+                  "$ref": "#/$defs/field"
+                }
+              ],
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 3
+                },
+                "source": {
+                  "enum": [
+                    "plant"
+                  ]
+                }
+              }
+            },
+            "data_demand": {
+              "description": "guest; 1 Hz; stale after 3 s",
+              "allOf": [
+                {
+                  "$ref": "#/$defs/field"
+                }
+              ],
+              "properties": {
+                "value": {
+                  "$ref": "#/$defs/rates_value"
+                },
+                "source": {
+                  "enum": [
+                    "plant"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "G2": {
+          "type": "object",
+          "description": "G2",
+          "additionalProperties": false,
+          "required": [
+            "mode",
+            "activity",
+            "kw_actual",
+            "data_demand",
+            "mode_ends_t_s"
+          ],
+          "properties": {
+            "mode": {
+              "description": "guest; 1 Hz; stale after 3 s",
+              "allOf": [
+                {
+                  "$ref": "#/$defs/field"
+                }
+              ],
+              "properties": {
+                "value": {
+                  "enum": [
+                    "winch",
+                    "sampling",
+                    "standby",
+                    "off"
+                  ]
+                },
+                "source": {
+                  "enum": [
+                    "plant"
+                  ]
+                }
+              }
+            },
+            "activity": {
+              "description": "guest; 1 Hz; stale after 3 s",
+              "allOf": [
+                {
+                  "$ref": "#/$defs/field"
+                }
+              ],
+              "properties": {
+                "value": {
+                  "enum": [
+                    "none",
+                    "probe",
+                    "winch"
+                  ]
+                },
+                "source": {
+                  "enum": [
+                    "guest_report"
+                  ]
+                }
+              }
+            },
+            "kw_actual": {
+              "description": "kW; guest; 1 Hz; stale after 3 s",
+              "allOf": [
+                {
+                  "$ref": "#/$defs/field"
+                }
+              ],
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 30
+                },
+                "source": {
+                  "enum": [
+                    "plant"
+                  ]
+                }
+              }
+            },
+            "data_demand": {
+              "description": "guest; 1 Hz; stale after 3 s",
+              "allOf": [
+                {
+                  "$ref": "#/$defs/field"
+                }
+              ],
+              "properties": {
+                "value": {
+                  "$ref": "#/$defs/rates_value"
+                },
+                "source": {
+                  "enum": [
+                    "plant"
+                  ]
+                }
+              }
+            },
+            "mode_ends_t_s": {
+              "description": "derived; per tick; stale after 3 s",
+              "allOf": [
+                {
+                  "$ref": "#/$defs/field"
+                }
+              ],
+              "properties": {
+                "value": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "source": {
+                  "enum": [
+                    "derived"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "G3": {
+          "type": "object",
+          "description": "G3",
+          "additionalProperties": false,
+          "required": [
+            "mode",
+            "activity",
+            "kw_actual",
+            "data_demand",
+            "mode_ends_t_s",
+            "leg_state",
+            "leg_started_t_s",
+            "leg_flown_s",
+            "hold_ack"
+          ],
+          "properties": {
+            "mode": {
+              "description": "guest; 1 Hz; stale after 3 s",
+              "allOf": [
+                {
+                  "$ref": "#/$defs/field"
+                }
+              ],
+              "properties": {
+                "value": {
+                  "enum": [
+                    "charging",
+                    "standby",
+                    "off"
+                  ]
+                },
+                "source": {
+                  "enum": [
+                    "plant"
+                  ]
+                }
+              }
+            },
+            "activity": {
+              "description": "guest; event (acoustic message, 10-60 s latency); stale after 900 s",
+              "allOf": [
+                {
+                  "$ref": "#/$defs/field"
+                }
+              ],
+              "properties": {
+                "value": {
+                  "enum": [
+                    "none",
+                    "surveying",
+                    "launch_recovery",
+                    "holding_depth",
+                    "holding_at_sea",
+                    "on_cradle"
+                  ]
+                },
+                "source": {
+                  "enum": [
+                    "guest_report"
+                  ]
+                }
+              }
+            },
+            "kw_actual": {
+              "description": "kW; guest; 1 Hz; stale after 3 s",
+              "allOf": [
+                {
+                  "$ref": "#/$defs/field"
+                }
+              ],
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 40
+                },
+                "source": {
+                  "enum": [
+                    "plant"
+                  ]
+                }
+              }
+            },
+            "data_demand": {
+              "description": "guest; 1 Hz; stale after 3 s",
+              "allOf": [
+                {
+                  "$ref": "#/$defs/field"
+                }
+              ],
+              "properties": {
+                "value": {
+                  "$ref": "#/$defs/rates_value"
+                },
+                "source": {
+                  "enum": [
+                    "plant"
+                  ]
+                }
+              }
+            },
+            "mode_ends_t_s": {
+              "description": "derived; per tick; stale after 3 s",
+              "allOf": [
+                {
+                  "$ref": "#/$defs/field"
+                }
+              ],
+              "properties": {
+                "value": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "source": {
+                  "enum": [
+                    "derived"
+                  ]
+                }
+              }
+            },
+            "leg_state": {
+              "description": "guest; event (acoustic message); stale after 900 s",
+              "allOf": [
+                {
+                  "$ref": "#/$defs/field"
+                }
+              ],
+              "properties": {
+                "value": {
+                  "enum": [
+                    "none",
+                    "running",
+                    "paused",
+                    "aborted",
+                    "done"
+                  ]
+                },
+                "source": {
+                  "enum": [
+                    "guest_report"
+                  ]
+                }
+              }
+            },
+            "leg_started_t_s": {
+              "description": "guest; event (acoustic message); stale after 900 s",
+              "allOf": [
+                {
+                  "$ref": "#/$defs/field"
+                }
+              ],
+              "properties": {
+                "value": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "source": {
+                  "enum": [
+                    "guest_report"
+                  ]
+                }
+              }
+            },
+            "leg_flown_s": {
+              "description": "s; guest; event (acoustic message); stale after 900 s",
+              "allOf": [
+                {
+                  "$ref": "#/$defs/field"
+                }
+              ],
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 2400
+                },
+                "source": {
+                  "enum": [
+                    "guest_report"
+                  ]
+                }
+              }
+            },
+            "hold_ack": {
+              "description": "guest; event (acoustic message); stale after 900 s",
+              "allOf": [
+                {
+                  "$ref": "#/$defs/field"
+                }
+              ],
+              "properties": {
+                "value": {
+                  "type": "boolean"
+                },
+                "source": {
+                  "enum": [
+                    "guest_report"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "G4": {
+          "type": "object",
+          "description": "G4",
+          "additionalProperties": false,
+          "required": [
+            "mode",
+            "activity",
+            "kw_actual",
+            "data_demand",
+            "mode_ends_t_s",
+            "battery_pct",
+            "range_km",
+            "airborne_since_t_s",
+            "battery_crossing_t_s",
+            "land_by_t_s"
+          ],
+          "properties": {
+            "mode": {
+              "description": "guest; 1 Hz; stale after 3 s",
+              "allOf": [
+                {
+                  "$ref": "#/$defs/field"
+                }
+              ],
+              "properties": {
+                "value": {
+                  "enum": [
+                    "fast_charge",
+                    "charge",
+                    "standby",
+                    "off"
+                  ]
+                },
+                "source": {
+                  "enum": [
+                    "plant"
+                  ]
+                }
+              }
+            },
+            "activity": {
+              "description": "guest; 1 Hz (LOS radio telemetry); stale after 10 s",
+              "allOf": [
+                {
+                  "$ref": "#/$defs/field"
+                }
+              ],
+              "properties": {
+                "value": {
+                  "enum": [
+                    "none",
+                    "launch_recovery",
+                    "airborne",
+                    "landed"
+                  ]
+                },
+                "source": {
+                  "enum": [
+                    "guest_report"
+                  ]
+                }
+              }
+            },
+            "kw_actual": {
+              "description": "kW; guest; 1 Hz; stale after 3 s",
+              "allOf": [
+                {
+                  "$ref": "#/$defs/field"
+                }
+              ],
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 50
+                },
+                "source": {
+                  "enum": [
+                    "plant"
+                  ]
+                }
+              }
+            },
+            "data_demand": {
+              "description": "guest; 1 Hz; stale after 3 s",
+              "allOf": [
+                {
+                  "$ref": "#/$defs/field"
+                }
+              ],
+              "properties": {
+                "value": {
+                  "$ref": "#/$defs/rates_value"
+                },
+                "source": {
+                  "enum": [
+                    "plant"
+                  ]
+                }
+              }
+            },
+            "mode_ends_t_s": {
+              "description": "derived; per tick; stale after 3 s",
+              "allOf": [
+                {
+                  "$ref": "#/$defs/field"
+                }
+              ],
+              "properties": {
+                "value": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "source": {
+                  "enum": [
+                    "derived"
+                  ]
+                }
+              }
+            },
+            "battery_pct": {
+              "description": "%; guest; event (a report; Scenario B has one at minute 8); stale after 10 s",
+              "allOf": [
+                {
+                  "$ref": "#/$defs/field"
+                }
+              ],
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 100
+                },
+                "source": {
+                  "enum": [
+                    "guest_report"
+                  ]
+                }
+              }
+            },
+            "range_km": {
+              "description": "km; guest; 1 Hz (LOS radio telemetry); stale after 10 s",
+              "allOf": [
+                {
+                  "$ref": "#/$defs/field"
+                }
+              ],
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 60
+                },
+                "source": {
+                  "enum": [
+                    "guest_report"
+                  ]
+                }
+              }
+            },
+            "airborne_since_t_s": {
+              "description": "derived; per tick; stale after 3 s",
+              "allOf": [
+                {
+                  "$ref": "#/$defs/field"
+                }
+              ],
+              "properties": {
+                "value": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "source": {
+                  "enum": [
+                    "derived"
+                  ]
+                }
+              }
+            },
+            "battery_crossing_t_s": {
+              "description": "derived; per tick; stale after 3 s",
+              "allOf": [
+                {
+                  "$ref": "#/$defs/field"
+                }
+              ],
+              "properties": {
+                "value": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "source": {
+                  "enum": [
+                    "derived"
+                  ]
+                }
+              }
+            },
+            "land_by_t_s": {
+              "description": "derived; per tick; stale after 3 s",
+              "allOf": [
+                {
+                  "$ref": "#/$defs/field"
+                }
+              ],
+              "properties": {
+                "value": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "source": {
+                  "enum": [
+                    "derived"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "G5": {
+          "type": "object",
+          "description": "G5",
+          "additionalProperties": false,
+          "required": [
+            "mode",
+            "activity",
+            "kw_actual",
+            "data_demand"
+          ],
+          "properties": {
+            "mode": {
+              "description": "guest; 1 Hz; stale after 3 s",
+              "allOf": [
+                {
+                  "$ref": "#/$defs/field"
+                }
+              ],
+              "properties": {
+                "value": {
+                  "enum": [
+                    "full",
+                    "low_power",
+                    "off"
+                  ]
+                },
+                "source": {
+                  "enum": [
+                    "plant"
+                  ]
+                }
+              }
+            },
+            "activity": {
+              "description": "guest; 1 Hz; stale after 3 s",
+              "allOf": [
+                {
+                  "$ref": "#/$defs/field"
+                }
+              ],
+              "properties": {
+                "value": {
+                  "enum": [
+                    "none",
+                    "transmitting"
+                  ]
+                },
+                "source": {
+                  "enum": [
+                    "guest_report"
+                  ]
+                }
+              }
+            },
+            "kw_actual": {
+              "description": "kW; guest; 1 Hz; stale after 3 s",
+              "allOf": [
+                {
+                  "$ref": "#/$defs/field"
+                }
+              ],
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 70
+                },
+                "source": {
+                  "enum": [
+                    "plant"
+                  ]
+                }
+              }
+            },
+            "data_demand": {
+              "description": "guest; 1 Hz; stale after 3 s",
+              "allOf": [
+                {
+                  "$ref": "#/$defs/field"
+                }
+              ],
+              "properties": {
+                "value": {
+                  "$ref": "#/$defs/rates_value"
+                },
+                "source": {
+                  "enum": [
+                    "plant"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "G6": {
+          "type": "object",
+          "description": "G6",
+          "additionalProperties": false,
+          "required": [
+            "mode",
+            "activity",
+            "kw_actual",
+            "data_demand"
+          ],
+          "properties": {
+            "mode": {
+              "description": "guest; 1 Hz; stale after 3 s",
+              "allOf": [
+                {
+                  "$ref": "#/$defs/field"
+                }
+              ],
+              "properties": {
+                "value": {
+                  "enum": [
+                    "production",
+                    "recirculate",
+                    "off"
+                  ]
+                },
+                "source": {
+                  "enum": [
+                    "plant"
+                  ]
+                }
+              }
+            },
+            "activity": {
+              "description": "guest; 1 Hz; stale after 3 s",
+              "allOf": [
+                {
+                  "$ref": "#/$defs/field"
+                }
+              ],
+              "properties": {
+                "value": {
+                  "enum": [
+                    "none",
+                    "production",
+                    "start"
+                  ]
+                },
+                "source": {
+                  "enum": [
+                    "guest_report"
+                  ]
+                }
+              }
+            },
+            "kw_actual": {
+              "description": "kW; guest; 1 Hz; stale after 3 s",
+              "allOf": [
+                {
+                  "$ref": "#/$defs/field"
+                }
+              ],
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 30
+                },
+                "source": {
+                  "enum": [
+                    "plant"
+                  ]
+                }
+              }
+            },
+            "data_demand": {
+              "description": "guest; 1 Hz; stale after 3 s",
+              "allOf": [
+                {
+                  "$ref": "#/$defs/field"
+                }
+              ],
+              "properties": {
+                "value": {
+                  "$ref": "#/$defs/rates_value"
+                },
+                "source": {
+                  "enum": [
+                    "plant"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "faults": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/fault"
+      }
+    },
+    "notes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "free text for fixtures and replays; never read by the core"
+    },
+    "events": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/event"
+      }
+    }
+  },
+  "$defs": {
+    "field": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "value",
+        "source",
+        "age_s",
+        "confidence",
+        "stale"
+      ],
+      "properties": {
+        "value": true,
+        "source": {
+          "enum": [
+            "plant",
+            "guest_report",
+            "crew_report",
+            "laptop",
+            "public_data",
+            "scenario",
+            "derived"
+          ]
+        },
+        "age_s": {
+          "type": "number",
+          "minimum": 0,
+          "description": "ship seconds since the reading was taken"
+        },
+        "confidence": {
+          "enum": [
+            "substituted",
+            "assumed",
+            "reported",
+            "measured",
+            "confirmed"
+          ]
+        },
+        "stale": {
+          "type": "boolean",
+          "description": "age_s is above the signal's stale_after_s"
+        },
+        "since_t_s": {
+          "type": "number",
+          "description": "ship time the value last changed"
+        },
+        "transition": {
+          "$ref": "#/$defs/transition"
+        },
+        "substituted": {
+          "$ref": "#/$defs/substituted"
+        }
+      }
+    },
+    "transition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "to",
+        "started_t_s",
+        "expected_end_t_s"
+      ],
+      "description": "an A.6 transition in progress, as Siddharth's ship-state machine reports it",
+      "properties": {
+        "to": true,
+        "started_t_s": {
+          "type": "number"
+        },
+        "expected_end_t_s": {
+          "type": "number"
+        },
+        "latest_end_t_s": {
+          "type": "number"
+        }
+      }
+    },
+    "substituted": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "last_value",
+        "last_good_t_s",
+        "rule"
+      ],
+      "description": "the conservative fallback in use, for the decision sentence",
+      "properties": {
+        "last_value": true,
+        "last_good_t_s": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "rule": {
+          "type": "string"
+        },
+        "scope": {
+          "type": "string"
+        }
+      }
+    },
+    "capacity_value": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "capacity",
+        "committed",
+        "free",
+        "unit",
+        "degraded_by"
+      ],
+      "properties": {
+        "capacity": {
+          "type": "number",
+          "minimum": 0
+        },
+        "committed": {
+          "type": "number",
+          "minimum": 0
+        },
+        "free": {
+          "type": "number"
+        },
+        "reserved": {
+          "type": "number",
+          "minimum": 0
+        },
+        "unit": {
+          "enum": [
+            "kW",
+            "Mbit/s",
+            "kbit/s"
+          ]
+        },
+        "degraded_by": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "rates_value": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "backbone_mbps": {
+          "type": "number",
+          "minimum": 0
+        },
+        "satcom_mbps": {
+          "type": "number",
+          "minimum": 0
+        },
+        "los_radio_mbps": {
+          "type": "number",
+          "minimum": 0
+        },
+        "acoustic_kbps": {
+          "type": "number",
+          "minimum": 0
+        }
+      }
+    },
+    "fault": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "fault",
+        "subject",
+        "state",
+        "raw_event_t_s",
+        "confirmed_t_s",
+        "votes",
+        "injected"
+      ],
+      "properties": {
+        "fault": {
+          "enum": [
+            "genset_trip",
+            "cooling_degraded"
+          ]
+        },
+        "subject": {
+          "type": "string"
+        },
+        "state": {
+          "enum": [
+            "pending",
+            "confirmed",
+            "restoring",
+            "cleared"
+          ]
+        },
+        "raw_event_t_s": {
+          "type": "number"
+        },
+        "confirmed_t_s": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "votes": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "relay_trip",
+              "kw_near_zero",
+              "frequency_dip",
+              "pump_alarm",
+              "flow_low",
+              "delta_t_high"
+            ]
+          }
+        },
+        "first_shed_budget_s": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "5 s (A.8) less the ship time from raw event to confirmation"
+        },
+        "healthy_since_t_s": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "injected": {
+          "type": "boolean"
+        }
+      }
+    },
+    "event": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "t_s",
+        "type",
+        "origin",
+        "injected"
+      ],
+      "description": "timeline or laptop events applied at this tick",
+      "properties": {
+        "t_s": {
+          "type": "number"
+        },
+        "type": {
+          "type": "string"
+        },
+        "origin": {
+          "enum": [
+            "timeline",
+            "laptop"
+          ]
+        },
+        "injected": {
+          "type": "boolean"
+        },
+        "payload": {
+          "type": "object"
+        }
+      }
+    }
+  }
+}

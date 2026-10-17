@@ -1,0 +1,304 @@
+# ArgOS signal vocabulary: every input to state estimation, and every value the estimator derives.
+# Status: proposal, Sat 2026-10-17, written by Claude Opus 5.5 on behalf of Logan Walker (GhostWalka), who owns
+# the inputs (everything that goes into state estimation). Nothing here is decided until a WORKLOG DEC- row
+# says so. Read with docs/STATE_ESTIMATION.md; the snapshot that carries these signals is
+# config/snapshot.schema.json; tests/test_snapshot_contract.py checks the three agree.
+#
+# One entry per signal. Fields:
+#   name           the key in the snapshot. Guest signals are "Gx.key" and sit under guests.Gx.key.
+#   group          the snapshot group: plant, ship_state, environment, links, crew, guests, capacity.
+#   kind           plant, ship_state, guest, crew, link, environment or derived.
+#   type           enum (values), number (unit, range), integer (unit, range or values), boolean,
+#                  ship_time (seconds of ship time), capacity (capacity, committed, free, degraded_by),
+#                  rates (data demand per link: backbone_mbps, satcom_mbps, los_radio_mbps, acoustic_kbps).
+#   nullable       true when "no value" is a legal reading (a deadline that does not apply).
+#   producer       simulator (Siddharth emits it), laptop (a demo input the simulator relays), or estimator
+#                  (Logan's core derives it).
+#   source         the field's `source` in the snapshot (one value, or the list it may take).
+#   rate           how often a fresh value arrives, in ship time.
+#   stale_after_s  ship seconds after which the reading is stale: the feed itself has gone quiet.
+#   expires_after_s  for relayed crew answers only: how long the answer itself stays good (by_crew when A.6
+#                  gives a time per crew level). Expiry is meaning; staleness is feed health.
+#   fallback       what the estimator uses once the reading is stale: a value, a rule, or by_use.
+#                  `scope` limits where a fallback may act.
+#   read_by        which consumers read it: ledger, D1, D2, D3, D4, D5, safety, link (the acoustic rule),
+#                  window (A.11 installation window), record (the decision sentence only).
+#   provenance     a brief section, a repo key, or "assumed: reason". Assumed values go to the Physical Account
+#                  once they move into config/assumptions.yaml (see `pending_moves` at the bottom).
+
+version: 1
+default_stale_after_s: 3          # config/assumptions.yaml stale_feed.after_s: three 1 Hz ticks
+clock: ship time                  # every rate, age, limit, debounce and deadline below is in ship seconds
+
+field_metadata:
+  source: [plant, guest_report, crew_report, laptop, public_data, scenario, derived]
+  # Weakest first. A derived field takes the weakest confidence among its inputs.
+  confidence: [substituted, assumed, reported, measured, confirmed]
+  confidence_means:
+    confirmed: a plant signal that passed its confirmation rule (2 of 3 for a trip, alarm plus flow or delta-T for cooling) and held debounce_s
+    measured: a single valid plant reading, fresh
+    reported: a person's or a guest's report
+    assumed: a scenario or configuration value, not read from the ship
+    substituted: stale or missing; the fallback is in use and the field says which rule applied
+
+# Fault confirmation. The 2-of-3 and alarm-plus-flow-or-delta-T rules are in config/assumptions.yaml
+# (power.trip_confirm, heat.degraded_confirm, fault_entry). The thresholds are new and assumed.
+confirm_rules:
+  genset_trip:
+    votes: {relay_trip: "genset_N_relay_trip is true", kw_near_zero: "genset_N_kw below 22.5 kW", frequency_dip: "bus_frequency_hz below 58.8 Hz"}
+    needed: 2                     # power.trip_confirm.needed
+    hold_s: 1                     # fault_entry.debounce_s, counted from raw_event_t_s
+    provenance: "assumed: kW near zero is below 5 % of the 450 kW rating; a dip is more than 2 % below a 60 Hz bus. The brief gives neither threshold, nor the bus frequency."
+  cooling_degraded:
+    needs: "chw_pump_N_alarm is true"
+    plus_any: {flow_low: "chw_flow_pct below 70", delta_t_high: "chw_return_c minus chw_supply_c above 8 C"}
+    hold_s: 1
+    provenance: "assumed: one of two pumps lost leaves about half the flow; a nominal chilled-water delta-T is about 5 C (7 C supply, 12 C return), so 8 C means the loop is not carrying its heat. The brief gives none of these."
+  restore:
+    healthy_hold_s: 60            # fault_entry.restore_hold_s
+    provenance: config/assumptions.yaml fault_entry.restore_hold_s
+
+derivations:
+  speed_band:
+    rule: "stopped below 0.5 kn; slow 0.5 to 5 kn; cruise above 5 to 14 kn; fast above 14 kn"
+    provenance: "assumed: A.6 gives stopped, slow 3-5, cruise 10-14 and fast above 18 kn, which leaves 0-3, 5-10 and 14-18 kn uncovered. A speed in a gap takes the faster band, whose guest reserve is lower (power.guest_reserve_kw_by_speed), so the gap never loosens the budget. Cards read the numeric speed_kn, never the band (freeze_check delta-2)."
+  stopped_reserve_kw:
+    value: 200
+    provenance: "assumed: power.guest_reserve_kw_by_speed has no stopped entry; we use the cruise 200 kW, A.1's nominal, rather than credit the slow band's 250 kW."
+  heat_capacity:
+    rule: "160 kW at 12 C falling linearly to 120 kW at 30 C, times 0.6 when cooling is degraded; 160 kW below 12 C"
+    provenance: brief A.2 (config/assumptions.yaml heat.capacity_kw_at, heat.degraded_factor)
+  shed_ceiling_kw:
+    rule: "min(power capacity, heat capacity) minus power.shed_headroom_kw"
+    provenance: config/assumptions.yaml power.shed_headroom_kw; tests/oracles minute_12 and minute_19
+  g4_land_by:
+    rule: "earliest of (airborne_since + 90 min endurance) and (20 % crossing + 12 min). The crossing is dated back from the last report below 20 % at the slowest drain, rules.r3.drain_pct_min. A report at or above 20 % sets no battery deadline. The deadline may move earlier, never later."
+    provenance: "brief Annex B G4 (20 %, 12 min, 90 min); config/assumptions.yaml rules.r3.drain_pct_min; docs/EXPECTED_OUTCOMES.md minute 8 (18.2)"
+  acoustic_link_up:
+    rule: "course steady and noise quiet and deck_machinery false and layered_water false; drop delay 0 s"
+    provenance: brief A.5; config/assumptions.yaml data.acoustic_link
+  committed:
+    rule: "sum of the declared kW of each guest's current mode, plus reservations the core holds (recorded in the decision log, fed back by replay)"
+    provenance: docs/ARCHITECTURE.md contract 8; DEC-40 (sar reserves G4's 35 kW)
+
+# Activities each guest may report, qualified as Gx.activity. `card: true` means the card's conditions name it.
+# `modes` lists the card modes it runs in (no card says this today). `effects` is what the activity does to
+# ship state, so the estimator can predict deck machinery, ramp and heading use. "none" is always allowed.
+activities:
+  G1:
+    listening: {card: true, modes: [full], effects: {}, provenance: "manifests/G1.yaml; not the 'listening' of G3 (see G3.surveying)"}
+  G2:
+    probe: {card: true, modes: [sampling], effects: {}, provenance: "manifests/G2.yaml; the sampling mode by the oracle's convention (expected_outcomes probe_paused)"}
+    winch: {card: true, modes: [winch], effects: {deck_machinery: true}, provenance: "manifests/G2.yaml; a winch is deck machinery (brief A.6)"}
+  G3:
+    surveying: {card: true, modes: [standby], effects: {heading_free: false}, provenance: "manifests/G3.yaml; the cable route pins the heading. Also called 'listening' in G2's note and survey_vehicle_listening in installation.at_sea_crewed.window"}
+    launch_recovery: {card: true, modes: [standby], effects: {ramp: in_use}, provenance: "manifests/G3.yaml; over the stern ramp (A.3). G4's stern_ramp_ops means this"}
+    holding_depth: {card: false, modes: [standby], effects: {}, provenance: "assumed: the safety command 'G3 hold depth' (assumptions safety_commands) and the survey oracle g3.holds depth"}
+    holding_at_sea: {card: false, modes: [standby], effects: {}, provenance: "assumed: the sar oracle g3.holds at_sea, the leg aborted"}
+    on_cradle: {card: false, modes: [charging, standby, "off"], effects: {}, provenance: "assumed: the vehicle aboard in Bay 1, where it charges (G3 card, charging after each leg)"}
+  G4:
+    launch_recovery: {card: true, modes: [standby], effects: {flight_deck_ops: in_use, deck_machinery: true, heading_free: false}, provenance: "manifests/G4.yaml; hangar doors are deck machinery (A.6) and the ship turns into the wind. G2 and G3 call it G4.recovering"}
+    airborne: {card: false, modes: [standby], effects: {}, provenance: "manifests/G4.yaml hard limit 'airborne'; Scenario B G4 airborne at 2 kW (DEC-40)"}
+    landed: {card: false, modes: [fast_charge, charge, standby, "off"], effects: {}, provenance: "assumed: config/scenarios/scenario_b.yaml guest_state landed_fast_charging, split into activity landed and mode fast_charge"}
+  G5:
+    transmitting: {card: true, modes: [full, low_power], effects: {}, provenance: manifests/G5.yaml}
+  G6:
+    production: {card: true, modes: [production], effects: {noise: normal}, provenance: "manifests/G6.yaml; the pump is machinery above minimum, so the ship cannot be quiet (effect: noise at least normal)"}
+    start: {card: true, modes: ["off"], transition: {from: "off", to: production}, effects: {}, provenance: "manifests/G6.yaml; really a transition from off to production, needing two people"}
+
+signals:
+  # ---------------------------------------------------------------- plant (platform automation, 1 Hz)
+  - {name: genset_1_relay_trip, group: plant, kind: plant, type: boolean, producer: simulator, source: plant, rate: 1 Hz, stale_after_s: 3,
+     fallback: {rule: "casts no vote; gensets_online falls back instead"}, read_by: [D4], provenance: "assumptions power.trip_confirm (relay_flag)"}
+  - {name: genset_2_relay_trip, group: plant, kind: plant, type: boolean, producer: simulator, source: plant, rate: 1 Hz, stale_after_s: 3,
+     fallback: {rule: "casts no vote; gensets_online falls back instead"}, read_by: [D4], provenance: "assumptions power.trip_confirm (relay_flag)"}
+  - {name: genset_1_kw, group: plant, kind: plant, type: number, unit: kW, range: [0, 450], producer: simulator, source: plant, rate: 1 Hz, stale_after_s: 3,
+     fallback: {rule: "casts no vote; gensets_online falls back instead"}, read_by: [D4], provenance: "brief A.1 (2 x about 450 kW); assumptions power.trip_confirm (kw_near_zero)"}
+  - {name: genset_2_kw, group: plant, kind: plant, type: number, unit: kW, range: [0, 450], producer: simulator, source: plant, rate: 1 Hz, stale_after_s: 3,
+     fallback: {rule: "casts no vote; gensets_online falls back instead"}, read_by: [D4], provenance: "brief A.1; assumptions power.trip_confirm (kw_near_zero)"}
+  - {name: bus_frequency_hz, group: plant, kind: plant, type: number, unit: Hz, range: [0, 70], producer: simulator, source: plant, rate: 1 Hz, stale_after_s: 3,
+     fallback: {rule: "casts no vote; gensets_online falls back instead"}, read_by: [D4], provenance: "assumptions power.trip_confirm (frequency_dip); assumed: a 60 Hz bus"}
+  - {name: gensets_online, group: plant, kind: derived, type: integer, values: [1, 2], producer: estimator, source: derived, rate: per tick, stale_after_s: 3,
+     fallback: {value: 1, scope: "admission and arming the D4 ladder only; D4 never runs on it, only on a confirmed trip"}, read_by: [ledger, D1, D4],
+     provenance: "brief A.6 (2 or 1 online); confirm_rules.genset_trip; fallback from stale_feed.falls_to (one down) split per research/SENSOR_CATALOG.md rule 4"}
+  - {name: tripped_genset, group: plant, kind: derived, type: enum, values: [none, genset_1, genset_2], producer: estimator, source: derived, rate: per tick, stale_after_s: 3,
+     fallback: {rule: "keeps the last confirmed value"}, read_by: [ledger, record], provenance: "brief A.9 (a line may be lost depending on which genset tripped); assumptions power.line_lost_on_trip none"}
+  - {name: chw_pump_1_running, group: plant, kind: plant, type: boolean, producer: simulator, source: plant, rate: 1 Hz, stale_after_s: 3,
+     fallback: {value: false}, read_by: [D4, record], provenance: "assumptions heat.degraded_means (one pump of two); SENSOR_CATALOG pump status unknown counts as degraded"}
+  - {name: chw_pump_2_running, group: plant, kind: plant, type: boolean, producer: simulator, source: plant, rate: 1 Hz, stale_after_s: 3,
+     fallback: {value: false}, read_by: [D4, record], provenance: "assumptions heat.degraded_means; SENSOR_CATALOG"}
+  - {name: chw_pump_1_alarm, group: plant, kind: plant, type: boolean, producer: simulator, source: plant, rate: 1 Hz, stale_after_s: 3,
+     fallback: {rule: "casts no vote; cooling_state falls back instead"}, read_by: [D4], provenance: "assumptions heat.degraded_confirm (plant alarm)"}
+  - {name: chw_pump_2_alarm, group: plant, kind: plant, type: boolean, producer: simulator, source: plant, rate: 1 Hz, stale_after_s: 3,
+     fallback: {rule: "casts no vote; cooling_state falls back instead"}, read_by: [D4], provenance: "assumptions heat.degraded_confirm (plant alarm)"}
+  - {name: chw_flow_pct, group: plant, kind: plant, type: number, unit: "% of nominal", range: [0, 150], producer: simulator, source: plant, rate: 1 Hz, stale_after_s: 3,
+     fallback: {rule: "casts no vote; cooling_state falls back instead"}, read_by: [D4], provenance: "assumptions heat.degraded_confirm (flow); threshold in confirm_rules.cooling_degraded"}
+  - {name: chw_supply_c, group: plant, kind: plant, type: number, unit: C, range: [0, 40], producer: simulator, source: plant, rate: 1 Hz, stale_after_s: 3,
+     fallback: {rule: "casts no vote; cooling_state falls back instead"}, read_by: [D4], provenance: "assumptions heat.degraded_confirm (delta-T); research chw_supply_temp_c"}
+  - {name: chw_return_c, group: plant, kind: plant, type: number, unit: C, range: [0, 40], producer: simulator, source: plant, rate: 1 Hz, stale_after_s: 3,
+     fallback: {rule: "casts no vote; cooling_state falls back instead"}, read_by: [D4], provenance: "assumptions heat.degraded_confirm (delta-T); research chw_return_temp_c"}
+  - {name: cooling_state, group: plant, kind: derived, type: enum, values: [nominal, degraded], producer: estimator, source: derived, rate: per tick, stale_after_s: 3,
+     fallback: {value: degraded, scope: "admission and arming the D4 ladder only; D4 never runs on it, only on a confirmed fault"}, read_by: [ledger, D1, D4],
+     provenance: "brief A.2, A.6 (nominal or -40 %, no repair at sea); confirm_rules.cooling_degraded; fallback from stale_feed.falls_to"}
+
+  # ---------------------------------------------------------------- ship state (Siddharth's A.6 machine, reported 1 Hz)
+  - {name: course, group: ship_state, kind: ship_state, type: enum, values: [free, steady], producer: simulator, source: plant, rate: 1 Hz, stale_after_s: 3,
+     fallback: {value: free}, read_by: [D3, link, window], provenance: "brief A.6 (1-3 min to settle); assumptions ship_state.course; stale_feed.falls_to"}
+  - {name: speed_kn, group: ship_state, kind: ship_state, type: number, unit: kn, range: [0, 25], producer: simulator, source: plant, rate: 1 Hz, stale_after_s: 3,
+     fallback: {rule: "unknown: every speed condition fails, which closes the flight deck and the ramp; speed_band falls to fast"}, read_by: [D3, window],
+     provenance: "assumed: A.6 gives bands only, but G3 3 kn, G4 5-12 kn, G3 ramp and the A.11 window 4-8 kn and G2 5 kn need knots (freeze_check delta-2, OPEN_QUESTIONS #44)"}
+  - {name: speed_band, group: ship_state, kind: derived, type: enum, values: [stopped, slow, cruise, fast], producer: estimator, source: derived, rate: per tick, stale_after_s: 3,
+     fallback: {value: fast, scope: "the guest reserve only (150 kW, the lowest)"}, read_by: [ledger, D1],
+     provenance: "brief A.6 (2-5 min per band); derivations.speed_band; stale_feed.falls_to closes flight deck and ramp through speed_kn"}
+  - {name: noise, group: ship_state, kind: ship_state, type: enum, values: [quiet, normal, manoeuvring], producer: simulator, source: plant, rate: 1 Hz, stale_after_s: 3,
+     fallback: {value: manoeuvring}, read_by: [D3, link], provenance: "brief A.6 (2-4 min to go quiet, instant to leave); assumed fallback: not quiet, so the acoustic link counts as down"}
+  - {name: deck_flight_deck, group: ship_state, kind: ship_state, type: enum, values: [clear, occupied], producer: simulator, source: [plant, crew_report], rate: 1 Hz, stale_after_s: 3,
+     fallback: {value: occupied}, read_by: [D3, D5, window], provenance: "brief A.6 deck state, per zone (assumptions positions.flight_deck.zone); stale_feed.falls_to"}
+  - {name: deck_bays, group: ship_state, kind: ship_state, type: enum, values: [clear, occupied], producer: simulator, source: [plant, crew_report], rate: 1 Hz, stale_after_s: 3,
+     fallback: {value: occupied}, read_by: [D3], provenance: "brief A.6 deck state, per zone (positions.bay1/bay2.zone bay); G2 deck_around_bay"}
+  - {name: emission, group: ship_state, kind: ship_state, type: enum, values: [normal, silent], producer: simulator, source: [plant, laptop], rate: 1 Hz, stale_after_s: 3,
+     fallback: {by_use: {conflicts: normal, link_budget: silent}}, read_by: [ledger, D3, D4, safety],
+     provenance: "brief A.6 (instant to go silent; leaving is a mission decision); fallback from research/SENSOR_CATALOG.md (emission state)"}
+  - {name: ramp, group: ship_state, kind: ship_state, type: enum, values: [free, in_use], producer: simulator, source: plant, rate: 1 Hz, stale_after_s: 3,
+     fallback: {value: in_use}, read_by: [D3, window], provenance: "assumed: brief A.3 (one craft; flight deck and ramp mutually exclusive) needs a ramp state that A.6 does not list; G3 ramp free, G4 ramp not_in_use"}
+  - {name: deck_machinery, group: ship_state, kind: ship_state, type: boolean, producer: simulator, source: plant, rate: 1 Hz, stale_after_s: 3,
+     fallback: {value: true}, read_by: [D3, D5, link, safety], provenance: "assumed: brief A.6 (winches, hangar doors) and A.5 need a running-machinery state that A.6 does not list; SENSOR_CATALOG winch unknown means in use"}
+  - {name: radar_transmitting, group: ship_state, kind: ship_state, type: boolean, producer: simulator, source: plant, rate: 1 Hz, stale_after_s: 3,
+     fallback: {value: true}, read_by: [ledger, record], provenance: "assumed: Annex B G1 loses 30 % while the ship's own radar transmits nearby, unless quiet radio is declared"}
+  - {name: situation, group: ship_state, kind: ship_state, type: enum, values: [alongside, at_sea], producer: simulator, source: [scenario, laptop], rate: on change, stale_after_s: 3,
+     fallback: {value: at_sea}, read_by: [D1, window], provenance: "brief Scenario A and A.11 (alongside is the only place the whole configuration can change)"}
+  - {name: heading_free, group: ship_state, kind: derived, type: boolean, producer: estimator, source: derived, rate: per tick, stale_after_s: 3,
+     fallback: {value: false}, read_by: [D3], provenance: "assumed: G4's turn_into_wind: free read as 'no running activity pins the heading' (activities effects heading_free); A.3 still asks a steady course for the landing itself"}
+  - {name: deck_machinery_permitted, group: ship_state, kind: derived, type: boolean, producer: estimator, source: derived, rate: per tick, stale_after_s: 3,
+     fallback: {value: false}, read_by: [D3, safety], provenance: "assumed: G2's deck_machinery_allowed: true; emission normal (A.6 silence forbids it) and no running activity that excludes it (G3.surveying, G4.launch_recovery)"}
+  - {name: flight_deck_ops, group: ship_state, kind: derived, type: enum, values: [free, in_use], producer: estimator, source: derived, rate: per tick, stale_after_s: 3,
+     fallback: {value: in_use}, read_by: [D3, window], provenance: "brief A.3 (flight deck and ramp mutually exclusive); in_use while G4.launch_recovery runs"}
+
+  # ---------------------------------------------------------------- environment
+  - {name: seawater_c, group: environment, kind: environment, type: number, unit: C, range: [-2, 40], producer: simulator, source: [scenario, public_data, plant], rate: hourly, stale_after_s: 10800,
+     fallback: {value: 30, rule: "the worse (higher) of the last value and 30 C"}, read_by: [ledger, D1, D4],
+     provenance: "brief A.2, A.10 (judge cooling at 30 C); assumed: hourly public data tolerates two missed hours"}
+  - {name: sea_state, group: environment, kind: environment, type: integer, unit: Douglas, range: [0, 9], producer: simulator, source: [scenario, public_data], rate: hourly, stale_after_s: 10800,
+     fallback: {value: 5, rule: "the worse of the last value and the envelope bound 5"}, read_by: [D3, window, D1],
+     provenance: "brief A.3, A.10, A.11 (thresholds 3, 4, 5); assumed stale limit as seawater_c; Scenario B gives no value"}
+  - {name: wind_kn, group: environment, kind: environment, type: number, unit: kn, range: [0, 80], producer: simulator, source: [plant, public_data], rate: 1 Hz, stale_after_s: 3,
+     fallback: {value: 30, rule: "the worse of the last value and the envelope bound 30 kn, which closes the flight deck (25 kn)"}, read_by: [D3, window],
+     provenance: "brief A.3 (25 kn), A.10 (30 kn), A.11 (20 kn); assumed: the ship's anemometer, not the drone's report"}
+  - {name: wind_from_deg, group: environment, kind: environment, type: number, unit: deg, range: [0, 360], producer: simulator, source: [plant, public_data], rate: 1 Hz, stale_after_s: 3,
+     fallback: {rule: "unknown: a turn into the wind cannot be planned, so G4 launch and recovery wait"}, read_by: [D3],
+     provenance: "assumed: G4's 'freedom to turn into wind' needs a direction; no file has one"}
+  - {name: layered_water, group: environment, kind: environment, type: boolean, producer: simulator, source: [scenario, public_data], rate: hourly, stale_after_s: 10800,
+     fallback: {value: true}, read_by: [link], provenance: "brief A.5; assumptions data.acoustic_link.layered_water; scenario_b location.layered"}
+
+  # ---------------------------------------------------------------- links (comms system, 1 Hz)
+  - {name: satcom_mbps, group: links, kind: link, type: number, unit: Mbit/s, range: [0, 8], producer: simulator, source: plant, rate: 1 Hz, stale_after_s: 3,
+     fallback: {value: 0}, read_by: [ledger], provenance: "brief A.5 (2-8 Mbit/s shared, 70-95 % available, zero in silence); SENSOR_CATALOG path down after missed heartbeats"}
+  - {name: los_radio_mbps, group: links, kind: link, type: number, unit: Mbit/s, range: [0, 20], producer: simulator, source: plant, rate: 1 Hz, stale_after_s: 3,
+     fallback: {value: 0}, read_by: [ledger], provenance: "brief A.5 (1-20 Mbit/s, zero in silence)"}
+  - {name: acoustic_link_up, group: links, kind: derived, type: boolean, producer: estimator, source: derived, rate: per tick, stale_after_s: 3,
+     fallback: {value: false}, read_by: [D3, safety, ledger], provenance: "derivations.acoustic_link_up; stale_feed.falls_to (acoustic_link: down)"}
+  - {name: acoustic_kbps, group: links, kind: derived, type: number, unit: kbit/s, range: [0, 5], producer: estimator, source: derived, rate: per tick, stale_after_s: 3,
+     fallback: {value: 0}, read_by: [ledger], provenance: "assumed: 3 kbit/s while the link is up (inside A.5's 1-5), 0 while down"}
+
+  # ---------------------------------------------------------------- crew (laptop inputs relayed by the simulator)
+  - {name: crew_aboard, group: crew, kind: crew, type: integer, values: [14, 6, 0], producer: laptop, source: laptop, rate: "on change, relayed every tick", stale_after_s: 3,
+     fallback: {rule: "the next lower level: 14 to 6, 6 to 0"}, read_by: [D1, D3, D5], provenance: "brief A.6 and Scenario C (14, 6, 0); fallback from docs/SCENARIO_C_MEMO.md (unreported: assume the next lower)"}
+  - {name: people_available, group: crew, kind: crew, type: integer, unit: people, range: [0, 14], producer: laptop, source: crew_report, rate: "on change, relayed every tick", stale_after_s: 3,
+     fallback: {value: 0}, read_by: [window, D3], provenance: "brief A.11 (3 people for the flight deck, 4 for the ramp); G6 start needs 2"}
+  - {name: bridge_confirmation, group: crew, kind: crew, type: enum, values: [none, pending, confirmed, denied], producer: laptop, source: crew_report, rate: "event, relayed every tick", stale_after_s: 3,
+     expires_after_s: {by_crew: {14: 60, 6: 180, 0: 0}},
+     fallback: {value: denied, rule: "a lost feed, or a request still pending after expires_after_s, counts as no"}, read_by: [D3, D5], provenance: "brief A.6 (15-60 s, 1-3 min, impossible uncrewed); assumptions crew.confirm_s"}
+  - {name: hlo_deck_report, group: crew, kind: crew, type: enum, values: [none, clear, not_clear], producer: laptop, source: crew_report, rate: "event, relayed every tick", stale_after_s: 3, expires_after_s: 300,
+     fallback: {value: not_clear, rule: "a lost feed, or a clear report older than expires_after_s, counts as not clear"}, read_by: [D5, safety], provenance: "assumptions rules.r3.deck_evidence; assumed: a clear report is good for 5 min, the slow end of A.6's clearing time, since a deck can fill again in that time"}
+  - {name: standing_plan, group: crew, kind: crew, type: enum, values: [none, approved], producer: laptop, source: crew_report, rate: "event, relayed every tick", stale_after_s: 3, expires_after_s: 5400,
+     fallback: {value: none, rule: "a lost feed, a plan older than expires_after_s, or a change of guests, priorities or crew level, leaves no plan"}, read_by: [D5], provenance: "assumptions rules.r3.confirm (6 aboard); assumed: good for one 90 min sortie; lapses per docs/SCENARIO_C_MEMO.md"}
+  - {name: deck_activity_since_sweep, group: crew, kind: plant, type: boolean, producer: simulator, source: plant, rate: event, stale_after_s: 3,
+     fallback: {value: true}, read_by: [D5], provenance: "assumptions rules.r3.latched_deck (a hatch, a hangar door, a winch; G4's own launch excepted)"}
+  - {name: deck_latched_clear, group: crew, kind: derived, type: boolean, producer: estimator, source: derived, rate: per tick, stale_after_s: 3,
+     fallback: {value: false}, read_by: [D5], provenance: "assumptions rules.r3.latched_deck; brief A.6 (uncrewed only if already clear)"}
+
+  # ---------------------------------------------------------------- guests: every installed guest reports these four
+  # Mode and draw come from the guest's connection on the ship (1 Hz). Activity comes from the guest itself.
+  - {name: G1.mode, group: guests, kind: guest, type: enum, values: [full, "off"], producer: simulator, source: plant, rate: 1 Hz, stale_after_s: 3, fallback: {rule: "the card's highest-draw mode"}, read_by: [ledger, D4], provenance: manifests/G1.yaml modes}
+  - {name: G1.activity, group: guests, kind: guest, type: enum, values: [none, listening], producer: simulator, source: guest_report, rate: 1 Hz, stale_after_s: 3, fallback: {value: listening}, read_by: [D3], provenance: activities.G1}
+  - {name: G1.kw_actual, group: guests, kind: guest, type: number, unit: kW, range: [0, 3], producer: simulator, source: plant, rate: 1 Hz, stale_after_s: 3, fallback: {rule: "the card's declared peak, or nominal without one"}, read_by: [ledger], provenance: "brief synthetic feeds (per-guest consumption from min, nominal, peak); over-draw 10-20 % (brief State)"}
+  - {name: G1.data_demand, group: guests, kind: guest, type: rates, producer: simulator, source: plant, rate: 1 Hz, stale_after_s: 3, fallback: {rule: "the card's nominal rates"}, read_by: [ledger], provenance: manifests/G1.yaml consumes}
+  - {name: G2.mode, group: guests, kind: guest, type: enum, values: [winch, sampling, standby, "off"], producer: simulator, source: plant, rate: 1 Hz, stale_after_s: 3, fallback: {rule: "the card's highest-draw mode"}, read_by: [ledger, D4], provenance: manifests/G2.yaml modes}
+  - {name: G2.activity, group: guests, kind: guest, type: enum, values: [none, probe, winch], producer: simulator, source: guest_report, rate: 1 Hz, stale_after_s: 3, fallback: {value: winch}, read_by: [D3, safety], provenance: "activities.G2; SENSOR_CATALOG winch unknown means in use"}
+  - {name: G2.kw_actual, group: guests, kind: guest, type: number, unit: kW, range: [0, 30], producer: simulator, source: plant, rate: 1 Hz, stale_after_s: 3, fallback: {rule: "the card's declared peak, or nominal without one"}, read_by: [ledger], provenance: "brief synthetic feeds"}
+  - {name: G2.data_demand, group: guests, kind: guest, type: rates, producer: simulator, source: plant, rate: 1 Hz, stale_after_s: 3, fallback: {rule: "the card's nominal rates"}, read_by: [ledger], provenance: manifests/G2.yaml consumes}
+  - {name: G3.mode, group: guests, kind: guest, type: enum, values: [charging, standby, "off"], producer: simulator, source: plant, rate: 1 Hz, stale_after_s: 3, fallback: {rule: "the card's highest-draw mode"}, read_by: [ledger, D4], provenance: manifests/G3.yaml modes}
+  - {name: G3.activity, group: guests, kind: guest, type: enum, values: [none, surveying, launch_recovery, holding_depth, holding_at_sea, on_cradle], producer: simulator, source: guest_report, rate: "event (acoustic message, 10-60 s latency)", stale_after_s: 900,
+     fallback: {value: surveying}, read_by: [D3, D1, safety, window],
+     provenance: "activities.G3; fallback from SENSOR_CATALOG (sonar unknown means active); assumed: 900 s because the vehicle is out of contact by design while the ship manoeuvres and the minimum recovery window is 15 min (brief demo moment)"}
+  - {name: G3.kw_actual, group: guests, kind: guest, type: number, unit: kW, range: [0, 40], producer: simulator, source: plant, rate: 1 Hz, stale_after_s: 3, fallback: {rule: "the card's declared peak, or nominal without one"}, read_by: [ledger], provenance: "brief synthetic feeds; metered at the cradle"}
+  - {name: G3.data_demand, group: guests, kind: guest, type: rates, producer: simulator, source: plant, rate: 1 Hz, stale_after_s: 3, fallback: {rule: "the card's nominal rates"}, read_by: [ledger], provenance: manifests/G3.yaml consumes}
+  - {name: G4.mode, group: guests, kind: guest, type: enum, values: [fast_charge, charge, standby, "off"], producer: simulator, source: plant, rate: 1 Hz, stale_after_s: 3, fallback: {rule: "the card's highest-draw mode"}, read_by: [ledger, D4], provenance: manifests/G4.yaml modes}
+  - {name: G4.activity, group: guests, kind: guest, type: enum, values: [none, launch_recovery, airborne, landed], producer: simulator, source: guest_report, rate: 1 Hz (LOS radio telemetry), stale_after_s: 10,
+     fallback: {value: airborne}, read_by: [D3, D5, safety], provenance: "activities.G4; assumptions rules.r3.stale_s.g4_telemetry 10 s; assumed fallback: a drone we cannot hear is taken as still flying and needing recovery"}
+  - {name: G4.kw_actual, group: guests, kind: guest, type: number, unit: kW, range: [0, 50], producer: simulator, source: plant, rate: 1 Hz, stale_after_s: 3, fallback: {rule: "the card's declared peak, or nominal without one"}, read_by: [ledger], provenance: "brief synthetic feeds; metered at the hangar"}
+  - {name: G4.data_demand, group: guests, kind: guest, type: rates, producer: simulator, source: plant, rate: 1 Hz, stale_after_s: 3, fallback: {rule: "the card's nominal rates"}, read_by: [ledger], provenance: manifests/G4.yaml consumes}
+  - {name: G5.mode, group: guests, kind: guest, type: enum, values: [full, low_power, "off"], producer: simulator, source: plant, rate: 1 Hz, stale_after_s: 3, fallback: {rule: "the card's highest-draw mode"}, read_by: [ledger, D4], provenance: manifests/G5.yaml modes}
+  - {name: G5.activity, group: guests, kind: guest, type: enum, values: [none, transmitting], producer: simulator, source: guest_report, rate: 1 Hz, stale_after_s: 3, fallback: {value: transmitting}, read_by: [D3], provenance: activities.G5}
+  - {name: G5.kw_actual, group: guests, kind: guest, type: number, unit: kW, range: [0, 70], producer: simulator, source: plant, rate: 1 Hz, stale_after_s: 3, fallback: {rule: "the card's declared peak, or nominal without one"}, read_by: [ledger], provenance: "brief synthetic feeds; the 15 % over-draw demo case (DEMO_SCRIPT)"}
+  - {name: G5.data_demand, group: guests, kind: guest, type: rates, producer: simulator, source: plant, rate: 1 Hz, stale_after_s: 3, fallback: {rule: "the card's nominal rates"}, read_by: [ledger], provenance: manifests/G5.yaml consumes}
+  - {name: G6.mode, group: guests, kind: guest, type: enum, values: [production, recirculate, "off"], producer: simulator, source: plant, rate: 1 Hz, stale_after_s: 3, fallback: {rule: "the card's highest-draw mode"}, read_by: [ledger, D4], provenance: manifests/G6.yaml modes}
+  - {name: G6.activity, group: guests, kind: guest, type: enum, values: [none, production, start], producer: simulator, source: guest_report, rate: 1 Hz, stale_after_s: 3, fallback: {value: production}, read_by: [D3], provenance: activities.G6}
+  - {name: G6.kw_actual, group: guests, kind: guest, type: number, unit: kW, range: [0, 30], producer: simulator, source: plant, rate: 1 Hz, stale_after_s: 3, fallback: {rule: "the card's declared peak, or nominal without one"}, read_by: [ledger], provenance: "brief synthetic feeds"}
+  - {name: G6.data_demand, group: guests, kind: guest, type: rates, producer: simulator, source: plant, rate: 1 Hz, stale_after_s: 3, fallback: {rule: "the card's nominal rates"}, read_by: [ledger], provenance: manifests/G6.yaml consumes}
+
+  # ---------------------------------------------------------------- guests: telemetry specific to one guest
+  - {name: G2.mode_ends_t_s, group: guests, kind: derived, type: ship_time, nullable: true, producer: estimator, source: derived, rate: per tick, stale_after_s: 3,
+     fallback: {rule: "keeps the last value"}, read_by: [ledger, D4], provenance: "manifests/G2.yaml winch duration_s 300; mode start plus duration"}
+  - {name: G3.mode_ends_t_s, group: guests, kind: derived, type: ship_time, nullable: true, producer: estimator, source: derived, rate: per tick, stale_after_s: 3,
+     fallback: {rule: "keeps the last value"}, read_by: [ledger, D4], provenance: "manifests/G3.yaml charging duration_s 3600, not interruptible"}
+  - {name: G3.leg_state, group: guests, kind: guest, type: enum, values: [none, running, paused, aborted, done], producer: simulator, source: guest_report, rate: event (acoustic message), stale_after_s: 900,
+     fallback: {value: running}, read_by: [D3, record], provenance: "tests/oracles minute_8 g3.leg paused or aborted; stale limit as G3.activity"}
+  - {name: G3.leg_started_t_s, group: guests, kind: guest, type: ship_time, nullable: true, producer: simulator, source: guest_report, rate: event (acoustic message), stale_after_s: 900,
+     fallback: {rule: "keeps the last value"}, read_by: [D3], provenance: "brief Scenario B (40 min leg); the leg length sits only in the G3 card note today"}
+  - {name: G3.leg_flown_s, group: guests, kind: guest, type: number, unit: s, range: [0, 2400], producer: simulator, source: guest_report, rate: event (acoustic message), stale_after_s: 900,
+     fallback: {rule: "keeps the last value; the cost to G3 is computed from it and says it is old"}, read_by: [D3, record], provenance: "tests/oracles minute_8 (8 min flown); docs/EXPECTED_OUTCOMES.md cost to the loser"}
+  - {name: G3.hold_ack, group: guests, kind: guest, type: boolean, producer: simulator, source: guest_report, rate: event (acoustic message), stale_after_s: 900,
+     fallback: {value: false}, read_by: [D3, safety], provenance: "assumptions safety_commands (G3 hold depth), data.acoustic_link.judged_latency_s 60"}
+  - {name: G4.mode_ends_t_s, group: guests, kind: derived, type: ship_time, nullable: true, producer: estimator, source: derived, rate: per tick, stale_after_s: 3,
+     fallback: {rule: "keeps the last value"}, read_by: [ledger, D4], provenance: "manifests/G4.yaml fast_charge duration_s 1200 (minutes 17 to 37 in Scenario B)"}
+  - {name: G4.battery_pct, group: guests, kind: guest, type: number, unit: "%", range: [0, 100], producer: simulator, source: guest_report, rate: event (a report; Scenario B has one at minute 8), stale_after_s: 10,
+     fallback: {rule: "keeps the last report and its age; the land-by deadline from it stands and never moves later (the earliest 20 % crossing the report allows)"}, read_by: [D3, D5, safety],
+     provenance: "brief Annex B G4 and Scenario B (18 % at minute 8); assumptions rules.r3.stale_s 10 s and stale_feed.except"}
+  - {name: G4.range_km, group: guests, kind: guest, type: number, unit: km, range: [0, 60], producer: simulator, source: guest_report, rate: 1 Hz (LOS radio telemetry), stale_after_s: 10,
+     fallback: {rule: "beyond data.los_radio_drone_range_km_max: the radio is taken at its 1 Mbit/s floor"}, read_by: [ledger, D3], provenance: "brief A.5 (20-40 km); assumptions data.los_radio_drone_range_km_max"}
+  - {name: G4.airborne_since_t_s, group: guests, kind: derived, type: ship_time, nullable: true, producer: estimator, source: derived, rate: per tick, stale_after_s: 3,
+     fallback: {rule: "keeps the last value"}, read_by: [D3, D5], provenance: "Annex B G4 endurance 90 min; set when G4.activity turns airborne"}
+  - {name: G4.battery_crossing_t_s, group: guests, kind: derived, type: ship_time, nullable: true, producer: estimator, source: derived, rate: per tick, stale_after_s: 3,
+     fallback: {rule: "keeps the last value"}, read_by: [D3, record], provenance: "derivations.g4_land_by; tests/oracles crossed_threshold_at_min 6.2"}
+  - {name: G4.land_by_t_s, group: guests, kind: derived, type: ship_time, nullable: true, producer: estimator, source: derived, rate: per tick, stale_after_s: 3,
+     fallback: {rule: "never moves later"}, read_by: [D3, D5, safety, record], provenance: "derivations.g4_land_by; tests/oracles deadline_min 18.2"}
+
+  # ---------------------------------------------------------------- capacity per class (what the ledger starts from)
+  - {name: power, group: capacity, kind: derived, type: capacity, unit: kW, producer: estimator, source: derived, rate: per tick, stale_after_s: 3,
+     fallback: {rule: "computed from the inputs' fallbacks"}, read_by: [ledger, D1, D4],
+     provenance: "brief A.1, A.9; assumptions power.guest_reserve_kw (one genset down) and guest_reserve_kw_by_speed (by band); derivations.stopped_reserve_kw"}
+  - {name: port_line, group: capacity, kind: derived, type: capacity, unit: kW, producer: estimator, source: derived, rate: per tick, stale_after_s: 3,
+     fallback: {rule: "computed from the inputs' fallbacks"}, read_by: [ledger, D2, D4], provenance: "brief A.1 (150 kW per line); assumptions positions.*.power_line, power.line_lost_on_trip"}
+  - {name: stbd_line, group: capacity, kind: derived, type: capacity, unit: kW, producer: estimator, source: derived, rate: per tick, stale_after_s: 3,
+     fallback: {rule: "computed from the inputs' fallbacks"}, read_by: [ledger, D2, D4], provenance: "brief A.1; assumptions positions.*.power_line"}
+  - {name: heat, group: capacity, kind: derived, type: capacity, unit: kW, producer: estimator, source: derived, rate: per tick, stale_after_s: 3,
+     fallback: {rule: "computed from the inputs' fallbacks"}, read_by: [ledger, D1, D4], provenance: "derivations.heat_capacity; chilled-water guests count 1:1 (A.2)"}
+  - {name: satcom, group: capacity, kind: derived, type: capacity, unit: Mbit/s, producer: estimator, source: derived, rate: per tick, stale_after_s: 3,
+     fallback: {rule: "computed from the inputs' fallbacks"}, read_by: [ledger], provenance: "links.satcom_mbps, zero in silence (assumptions data.silent_zeroes)"}
+  - {name: los_radio, group: capacity, kind: derived, type: capacity, unit: Mbit/s, producer: estimator, source: derived, rate: per tick, stale_after_s: 3,
+     fallback: {rule: "computed from the inputs' fallbacks"}, read_by: [ledger], provenance: "links.los_radio_mbps, zero in silence"}
+  - {name: acoustic, group: capacity, kind: derived, type: capacity, unit: kbit/s, producer: estimator, source: derived, rate: per tick, stale_after_s: 3,
+     fallback: {rule: "computed from the inputs' fallbacks"}, read_by: [ledger, D3], provenance: "links.acoustic_kbps"}
+  - {name: shed_ceiling_kw, group: capacity, kind: derived, type: number, unit: kW, range: [0, 300], producer: estimator, source: derived, rate: per tick, stale_after_s: 3,
+     fallback: {rule: "computed from the inputs' fallbacks"}, read_by: [D4], provenance: "derivations.shed_ceiling_kw"}
+
+# New values in this file that belong in config/assumptions.yaml with provenance once the agents editing it
+# are done (DEC row needed). Until then they are proposals, not Physical Account rows.
+pending_moves:
+  - confirm_rules.genset_trip thresholds (22.5 kW, 58.8 Hz, 60 Hz bus)
+  - confirm_rules.cooling_degraded thresholds (70 % flow, 8 C delta-T)
+  - derivations.speed_band bounds and derivations.stopped_reserve_kw
+  - stale limits other than 3 s (hourly data 10800 s, G3 acoustic 900 s, HLO report 300 s, standing plan 5400 s) and every fallback not in stale_feed.falls_to
+  - ship_state.ramp, ship_state.deck_machinery, ship_state.radar_transmitting, deck zones, numeric speed_kn
+  - acoustic_kbps 3 while the link is up
