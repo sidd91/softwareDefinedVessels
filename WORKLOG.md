@@ -102,6 +102,8 @@ Deadline: **Sun 2026-10-18 10:00 PDT**.
 | CON-14 | Sat 10:08 | Resolution of CON-13: closed by DEC-36 (cooling loss stays an information line) | Closed | Claude for Logan |
 | CON-15 | Sat 11:15 | Node B runs SSH on the shared venue Wi-Fi with the default login from the workshop slide; anyone at the event can log in and use sudo | Open: Logan to change the password (`adb shell -t passwd`) | Claude for Logan |
 | CON-16 | Sat 11:15 | Venue Wi-Fi heartbeats have a long tail (95th percentile 96 ms, max 116 ms, 3 of 100 over 100 ms) against 100 ms heartbeats; USB holds 6.5 ms (req R-458) | Open: team to set failover timeouts per path; numbers in docs/NODE_B_BOARD.md | Claude for Logan |
+| CON-17 | Sat 11:24 | Whole-plan review: schedule rated red. The DEC-33 hold has run past its hour with no engine code; BUILD_PLAN milestones are missed and stale against DEC-35 to DEC-40, with no sleep block (extends CON-10) | Open: Logan to decide on lifting the hold; the review recommends now | Claude for Logan |
+| CON-18 | Sat 11:24 | D2 placement: the test fixtures put G5's antenna on the last free mast slot although the hangar roof is allowed, which blocks G1 and contradicts our declared D2 objective and the brief's "free mast slot" story for that set | Open: the team writes the D2 rule before T2 | Claude for Logan |
 
 ## Deferrals
 
@@ -637,3 +639,19 @@ heartbeat tail). Deferrals: DEF-01, wired path and power arrangement to the team
 Logan chose to keep the board's default password for now. CON-15 stays open: SSH on the shared venue Wi-Fi
 still accepts the published default login.
 Decisions: DEC-42 (Logan). Conflicts: CON-15 remains open. Deferrals: none.
+
+### Sat 11:24 PDT · Whole-plan review finished · Claude Opus 5.5 on behalf of Logan Walker (GhostWalka)
+
+At Logan's request Claude ran a whole-plan review: seven area reviewers (brief coverage, consistency,
+schedule, demo, deliverables and compliance, design, arithmetic), skeptics on every finding, and a
+completeness critic. Logan asked to wrap up at the critic stage, so Claude stopped the workflow and checked
+the critic's seven findings against the repo and brief itself. Result: 88 findings, 86 kept (1 critical,
+8 high, 47 medium, 30 low), 2 refuted. Schedule rated red, every other area amber. Top risks: the build hold,
+a stale schedule, no task for the jury's live card edit, the priority-swap run model, the mast placement, stale
+test fixtures, the Physical Account closing answer, and no submission route. The full list is in
+`docs/PLAN_REVIEW_FINDINGS.md`, uncommitted, pending Logan. No fixes applied.
+No teammate changes since the last check: main still holds only the initial commit, and PRs #1 and #2 have
+no comments or reviews.
+Decisions: none new (lifting the hold is Logan's call). Conflicts: CON-17 (schedule red, hold past its hour),
+CON-18 (D2 mast placement). Deferrals: none new; the critic's point that the USB-C cable carries both power
+and data adds to DEF-01, which already sits with the team.
