@@ -25,7 +25,20 @@ Policy: open-source third-party code only (OSI licence, no AGPL), or our own; ev
 | hatchling | build backend, fetched by uv into an isolated build env | MIT | PyPA | builds the `sdv-governor` package | no (build) | used by `uv sync` |
 | OpenCV (opencv-python-headless) and NumPy | 5.0.0.93 and 2.5.3 | Apache-2.0; BSD-3 | OpenCV.org; NumPy devs | CPU timing benches by a camera research agent, Fri about 23:30 PDT, on synthetic frames | no | nothing installed: both were already in the laptop's uv cache from Oct 9 and were used through PYTHONPATH; the project environment is unchanged |
 | LibreOffice | 26.2.6.3 (system package) | MPL-2.0 | The Document Foundation | page-count renders of the Scenario C memo and README by a requirements agent, Sat about 00:20 PDT | no | nothing installed: already on the system; renders went to /tmp, nothing added to the repo |
+| adb (Android Debug Bridge) | 1:34.0.5-12build1, Ubuntu universe | Apache-2.0 | AOSP source, built by Ubuntu | headless shell and port forwarding to node B over USB-C | no (dev); the USB link may carry the demo's wired path (DEF-01) | installed Sat 11:07 PDT at Logan's request; Logan typed sudo |
+| android-sdk-platform-tools-common | 28.0.2+12, Ubuntu universe | Apache-2.0 | AOSP, Ubuntu | udev rules giving USB access without root | no | installed Sat 11:07 PDT with adb |
 | Superpowers plugin for Claude Code (obra/superpowers) | 6.4.2 | MIT | Jesse Vincent, Anthropic plugin directory (partner tier) | development workflow skills: TDD, plans, debugging, verification, subagent-driven development | no (dev) | install card shown to Logan Fri 21:36 PDT |
+
+## Present on node B (VENTUNO Q `training05`); nothing installed by us
+Survey Sat 11:12 PDT; details in [NODE_B_BOARD.md](NODE_B_BOARD.md).
+| Software | Version | Licence | Purpose | Ships | Status |
+|---|---|---|---|---|---|
+| Ubuntu | 24.04.4 LTS, kernel 6.8.0-1084-qcom | mixed open source | board OS | yes (runs node B) | preinstalled by the organizers |
+| Python | 3.12.3 | PSF | node B runtime | yes | preinstalled |
+| PyYAML, jsonschema | system packages | MIT | cards and assumptions | yes | preinstalled |
+| git, Docker, OpenSSH, NetworkManager | system packages | GPL-2.0, Apache-2.0, BSD, GPL-2.0 | repo copy, network | no | preinstalled; Docker unused |
+| arduino-app-cli | preinstalled | not checked | Arduino App Lab back end | no | preinstalled; unused by us |
+| Echo server for link timing | our own, 15 lines | ours | measure USB and Wi-Fi heartbeat round trips | no | ran Sat 11:14 PDT from /tmp, then removed |
 
 ## Planned (approved by Logan, DEC-39; added to the table above when actually installed)
 | Software | Licence | Origin | Purpose | Ships |

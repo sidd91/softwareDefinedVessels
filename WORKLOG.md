@@ -79,6 +79,7 @@ Deadline: **Sun 2026-10-18 10:00 PDT**.
 | DEC-38 | Sat 10:12 | Admission judges data links at guests' minimum rates and reports the nominal shortfall as degraded quality | Logan | Claude for Logan |
 | DEC-39 | Sat 10:12 | Install approval: FastAPI, uvicorn and websockets now; opencv-python-headless and onnxruntime when the camera and UNO Q steps start; all open-source, logged in docs/SOFTWARE_LOG.md when installed | Logan | Claude for Logan |
 | DEC-40 | Sat 10:25 | Scenario B setup: the brief's story at minutes 0, 8 and 12 (G3 underwater; the minute-12 trip holds and D4 runs on screen with 0 steps and both armed ladders shown); G4 lands at minute 17 (seed); ADDED, labelled event at minute 19: a chilled-water pump fails (x0.6, 80 kW loop, 75 kW ceiling), so cooling binds against 81 kW: survey slows G4's charge to 10 kW (56 kW), sar takes G5 to 8 kW (44 kW). Robot-charging start rejected because it removes the minute-8 conflict. Confirmed by four critics and a judge (req R-066, R-067) | Logan (option); critics and judge (timing) | Claude for Logan |
+| DEC-41 | Sat 11:15 | Bring up node B now, headless over ADB on USB-C; ADB installed on the laptop from Ubuntu's packages (req R-458) | Logan | Claude for Logan |
 
 ## Conflicts and risks to watch
 
@@ -98,12 +99,14 @@ Deadline: **Sun 2026-10-18 10:00 PDT**.
 | CON-12 | Fri 23:56 | The brief's Scenario B load-out (G2, G3, G4, G5) is 13.015 t against the 10 t mass margin and needs Bay 2 twice; G2+G3+G4 (9.99 t) or G3+G4+G5 (9.5 t) fit | Open: team to choose; proposal in docs/DEMO_SCRIPT.md is to run it as given and flag it on screen | Claude for Logan |
 | CON-13 | Sat 10:06 | Dissent from the envelope review: a 40 % cooling loss cannot be repaired at sea for 14 days and may be the worse single failure; DEC-35 shows it only as an information line because A.10 names one genset down as the envelope corner. A5 needs 100 kW chilled against 72 kW and holds only by throttling two guests for the rest of the voyage | Open: team to decide whether cooling loss enters the verdict | Claude for Logan |
 | CON-14 | Sat 10:08 | Resolution of CON-13: closed by DEC-36 (cooling loss stays an information line) | Closed | Claude for Logan |
+| CON-15 | Sat 11:15 | Node B runs SSH on the shared venue Wi-Fi with the default login from the workshop slide; anyone at the event can log in and use sudo | Open: Logan to change the password (`adb shell -t passwd`) | Claude for Logan |
+| CON-16 | Sat 11:15 | Venue Wi-Fi heartbeats have a long tail (95th percentile 96 ms, max 116 ms, 3 of 100 over 100 ms) against 100 ms heartbeats; USB holds 6.5 ms (req R-458) | Open: team to set failover timeouts per path; numbers in docs/NODE_B_BOARD.md | Claude for Logan |
 
 ## Deferrals
 
 | ID | When (PDT) | Deferred to | On | Our prior position | Logged by |
 |---|---|---|---|---|---|
-| - | none yet | | | | |
+| DEF-01 | Sat 11:15 | Team (hardware) | Node B's wired path (the USB-C link with ADB port forwarding, or an Ethernet cable through a switch) and its power arrangement (laptop port or powered hub) | USB works now with no extra hardware; the Ethernet port has no cable | Claude for Logan |
 
 ## Entries
 
@@ -615,3 +618,15 @@ Since the DEC-40 entry Claude applied two more of the judge's refinements: the p
 request is checked in both files (survey: 80 against 75, so G5 goes to low power first, then 43; rescue: 68, starts
 at once). Restore order after the fault is left to the engine build. Test count 258 to 265 in README and TEAM_BRIEF.
 Decisions: none new (refinements of DEC-40, the judge's). Conflicts: none new. Deferrals: none.
+
+### Sat 11:15 PDT · Node B brought up over ADB (DEC-41) · Claude Opus 5.5 on behalf of Logan Walker (GhostWalka)
+
+Logan asked to set up the Qualcomm board headless over ADB. ADB and its USB rules were installed on the
+laptop from Ubuntu's packages (Apache-2.0); Logan typed the sudo password. The board first showed only a
+flashing red LED and did not enumerate (likely power: it needs 5 V at 3 A); it came up at 11:11 PDT. It is an
+Arduino VENTUNO Q named `training05`: 8 cores, 14 GiB RAM, Ubuntu 24.04.4, Python 3.12.3, already on the
+venue Wi-Fi. Heartbeat timing: USB 6.5 ms at the 95th percentile, Wi-Fi 96 ms with a 116 ms worst case.
+Nothing was installed on the board; a temporary echo server ran from /tmp and was removed. Facts in
+`docs/NODE_B_BOARD.md`; GAMEPLAN, OPEN_QUESTIONS and BUILD_PLAN corrected (VENTUNO Q, Ubuntu, landed).
+Decisions: DEC-41 (Logan). Conflicts: CON-15 (default login with SSH open on shared Wi-Fi), CON-16 (Wi-Fi
+heartbeat tail). Deferrals: DEF-01, wired path and power arrangement to the team (hardware).

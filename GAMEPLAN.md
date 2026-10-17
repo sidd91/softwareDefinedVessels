@@ -237,10 +237,11 @@ A ship is several computers on two cables, not one laptop. The governor is desig
 distributed system from the first commit, and the demo shows it surviving the things that actually
 break at sea: a node, a cable, a radio, a camera.
 
-- **Hardware (Logan, DEC-30, DEC-31).** Node B is an Arduino UNO Q (Dragonwing QCS8275: Debian Linux plus an
+- **Hardware (Logan, DEC-30, DEC-31).** Node B is an Arduino VENTUNO Q, board `training05` (Dragonwing QCS8275: Ubuntu 24.04 Linux plus an
   STM32 real-time MCU, MIPI-CSI camera, Ethernet, Wi-Fi, CAN-FD). Models run with ONNX Runtime on its CPU;
   no cloud compile or training (AI Hub, Edge Impulse) and no proprietary NPU runtime unless the organizers
   clear it. The MCU is the natural home for the 200 ms safety commands (stop, hold, secure).
+  Brought up over USB Sat 11:11 PDT; measured facts in [docs/NODE_B_BOARD.md](docs/NODE_B_BOARD.md).
 - **Topology.** Governor = replicated service on the ship's rack (A.7) plus edge inference nodes
   next to sensors. Demo: laptop is node A (governor primary + screen), Qualcomm box is node B
   (camera equipment-watch inference + governor hot standby). Until the box lands, node B is a second process on

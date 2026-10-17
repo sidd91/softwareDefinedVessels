@@ -19,7 +19,7 @@ are in `tests/oracles/expected_outcomes.yaml`, already checked against the cards
 | M4 Breadth | Sun 01:30 | each breadth line works live or replayed and is labelled so |
 | Freeze | Sun 09:15 | five rehearsals done; PDFs exported; backup recording made |
 
-The Qualcomm box lands about Sat 10:00; until then node B is a second process on the laptop.
+The Qualcomm box lands about Sat 10:00; until then node B is a second process on the laptop. Landed: board `training05` came up over USB at Sat 11:11 PDT ([NODE_B_BOARD.md](NODE_B_BOARD.md)).
 
 ## Tasks
 

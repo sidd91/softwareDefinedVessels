@@ -22,7 +22,7 @@ is decided, add a WORKLOG Decisions row and update the source document.
 |---|---|---|---|
 | 8 | Two-node bus: our own UDP layer or existing middleware? | Own layer; replay stays simple | architecture Q5 |
 | 9 | Screen technology? | Plain HTML and JS, no build step | architecture Q6 |
-| 10 | What demo hardware do we have (second machine, cable, router)? | **Partly decided (DEC-30):** node B is an Arduino UNO Q; still need a travel router or hotspot | architecture Q7 |
+| 10 | What demo hardware do we have (second machine, cable, router)? | **Partly decided (DEC-30, DEC-41):** node B is an Arduino VENTUNO Q, up over USB-C ([NODE_B_BOARD.md](NODE_B_BOARD.md)); still need a travel router or hotspot for a private Wi-Fi path, and the team's call on a wired path (DEF-01) | architecture Q7 |
 | 11 | Second USB or phone camera for the leak line? | Only if cheap; the line works replayed | [camera design](../research/cv_equipment_monitoring.md) Q4 |
 
 ## Demo

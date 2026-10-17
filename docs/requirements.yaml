@@ -13723,10 +13723,14 @@ requirements:
     path: docs/DEMO_SCRIPT.md#breadth-strip-one-line-each-about-5-s-each
   - label: 'ARCHITECTURE: conditions snapshot'
     path: docs/ARCHITECTURE.md#data-contracts
+  - label: Node B board and link timing
+    path: docs/NODE_B_BOARD.md
   decisions:
   - DEC-06
   - DEC-27
   - DEC-23
+  - DEC-41
+  - CON-16
   status: planned
   question: 'Which feed do we drop live inside the 90 s: the deck camera (hold, then crew confirms), the Ethernet
     path (flip to Wi-Fi) or genset telemetry (admit as if one is down)?'
