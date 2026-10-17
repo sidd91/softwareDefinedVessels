@@ -63,6 +63,10 @@ Deadline: **Sun 2026-10-18 10:00 PDT**.
 | DEC-23 | Fri 23:10 | Cameras and computer vision focus on changes in equipment where other sensors are missing or weak: leaks, small fires or smoke, damaged or out-of-place fixed equipment. Person tracking of any kind, especially identifying specific people, is a nice-to-have done last | Logan | Claude for Logan |
 | DEC-24 | Fri 23:10 | Depth policy: anything the brief or slides call out explicitly is addressed at a granular level with evidence; our own additions stay light where facts are unclear; the demo shows breadth with a few deep examples | Logan | Claude for Logan |
 | DEC-25 | Fri 23:12 | Keep `docs/REQUIREMENTS.md` as the traceability matrix: every requirement from the brief and slides, how we address it, links to files and decisions; worklog rows carry IDs and cite requirement IDs | Logan | Claude for Logan |
+| DEC-26 | Fri 23:40 | Deep demo examples: Scenario B with the live priority swap, and Scenario A with the jury's card and one number changed live. Everything else (cameras, failover, crew dial, Scenario C) is a one-line breadth example | Logan | Claude for Logan |
+| DEC-27 | Fri 23:40 | Cameras are not the hero, because we cannot assume a ship has them. The camera example is a leak at the cooling loop, shown as breadth: where a camera exists it turns cooling to degraded early; with no camera the governor works exactly as before | Logan | Claude for Logan |
+| DEC-28 | Fri 23:40 | Overnight priority after the requirements and camera documents: planning docs (README skeleton, demo storyboard, team brief). Work until 06:00 PDT or 20 % weekly usage, then pause | Logan | Claude for Logan |
+| DEC-29 | Fri 23:40 | Do not propose a work split between Logan and Siddharth; they decide together | Logan | Claude for Logan |
 
 ## Conflicts and risks to watch
 
