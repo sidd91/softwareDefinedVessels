@@ -124,4 +124,4 @@ one-genset-down line now has three states, tested against a 95 kW gate. Checked 
 | Scenario B (DEC-32) | G3, G4, G5 | 105, 5 short | G4 charge 35 to 10 kW, 80 kW | G5 to low power, 68 kW |
 
 G3 charging cannot be interrupted, so it never earns throttle credit. Information line only: with cooling at
--40 % the chilled-water gate at 30 °C is 67 kW (CON-13).
+-40 % the chilled-water gate at 30 °C is 67 kW; Logan kept this as information only (DEC-36, closing CON-13).

@@ -74,6 +74,7 @@ Deadline: **Sun 2026-10-18 10:00 PDT**.
 | DEC-33 | Sat 09:52 | Hold the core build about an hour more; first a full Phase 1 rundown | Logan | Claude for Logan |
 | DEC-34 | Sat 09:56 | Open a pull request for `feat/governor-core` into main (sidd91/softwareDefinedVessels#2); it includes PR #1's commits, so merging it alone is enough. Siddharth merges as repo owner | Logan | Claude for Logan |
 | DEC-35 | Sat 10:06 | Admission envelope rule, option 3 "survivable by throttling", confirmed by four critics and a judge with refinements: Judge the verdict at both gensets, the lower speed-band reserve (200 kW) and cooling at 30 °C. For each admitted set (each removal option for yes-if), report the raw one-genset-down line first: stacked envelope draws against 100 kW. Gate = min(100, cooling at 30 °C) minus 5 kW headroom = 95 kW. If the load is over 95 kW, walk the D4 ladder's throttle-only prefix: a step counts only if its mode is interruptible and keeps capability above 0; non-critical steps first, mission-critical last and named. Reaching 95 kW or less keeps the verdict, worded "holds by throttling". Otherwise the verdict becomes yes-if, adding the cheapest removal sets that pass the same check; no set passes means no. The 60 s peak allowance is never credited; cooling at -40 % is an information line, not part of the verdict. (req R-069, R-103) | Logan (option); critics and judge (refinements) | Claude for Logan |
+| DEC-36 | Sat 10:08 | Cooling loss (-40 %) stays an information line in admission verdicts, as the judge ruled under DEC-35; closes CON-13 | Logan | Claude for Logan |
 
 ## Conflicts and risks to watch
 
@@ -92,6 +93,7 @@ Deadline: **Sun 2026-10-18 10:00 PDT**.
 | CON-11 | Fri 23:54 | The camera design needs new conditions-snapshot fields (`zone_hazard`, latched readings, uncalibrated confidence index) not yet in `docs/ARCHITECTURE.md`; C2 has two open options (stop the charge at once vs arm and wait) | Open: team to choose; ARCHITECTURE to be updated after review | Claude for Logan |
 | CON-12 | Fri 23:56 | The brief's Scenario B load-out (G2, G3, G4, G5) is 13.015 t against the 10 t mass margin and needs Bay 2 twice; G2+G3+G4 (9.99 t) or G3+G4+G5 (9.5 t) fit | Open: team to choose; proposal in docs/DEMO_SCRIPT.md is to run it as given and flag it on screen | Claude for Logan |
 | CON-13 | Sat 10:06 | Dissent from the envelope review: a 40 % cooling loss cannot be repaired at sea for 14 days and may be the worse single failure; DEC-35 shows it only as an information line because A.10 names one genset down as the envelope corner. A5 needs 100 kW chilled against 72 kW and holds only by throttling two guests for the rest of the voyage | Open: team to decide whether cooling loss enters the verdict | Claude for Logan |
+| CON-14 | Sat 10:08 | Resolution of CON-13: closed by DEC-36 (cooling loss stays an information line) | Closed | Claude for Logan |
 
 ## Deferrals
 
@@ -577,3 +579,9 @@ at -40 % as information only. No Scenario A verdict changes; the one-genset-down
 `tests/test_envelope_gate_data.py` recomputes every gate result and the first throttle step from the cards
 and priority weights. Docs updated: ARCHITECTURE, EXPECTED_OUTCOMES, DEMO_SCRIPT, OPEN_QUESTIONS, R-069, R-103.
 Decisions: DEC-35. Conflicts: CON-13 (cooling-loss dissent). Deferrals: none.
+
+### Sat 10:08 PDT · CON-13 closed · Claude Opus 5.5 on behalf of Logan Walker (GhostWalka)
+
+Logan decided DEC-36: cooling at -40 % stays an information line in admission verdicts, as the judge ruled.
+CON-13 is closed (resolution row CON-14). Docs and requirement rows R-069 and R-103 updated.
+Decisions: DEC-36. Conflicts: CON-13 closed. Deferrals: none.

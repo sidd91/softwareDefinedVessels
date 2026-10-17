@@ -2318,7 +2318,7 @@ requirements:
     Scenario A ''Degraded check'' and ''Tipping point'' steps. Decided (DEC-35): verdict at both gensets and 30
     °C; the set must also survive one genset down by throttling alone against a 95 kW gate (interruptible steps
     that keep capability, mission-critical last and named), else yes-if; the raw as-loaded line is always shown;
-    cooling at -40 % is information only (CON-13). Checked by tests/test_envelope_gate_data.py.'
+    cooling at -40 % is information only (DEC-36, closing CON-13). Checked by tests/test_envelope_gate_data.py.'
   links:
   - label: 'assumptions.yaml: envelope, admission'
     path: config/assumptions.yaml
@@ -2336,6 +2336,7 @@ requirements:
   - DEC-26
   - DEC-35
   - CON-13
+  - DEC-36
   status: planned
   question: Since A.10 lets the jury narrow or widen the envelope, do we move it into a swappable file (or each
     mission file) so the jury's change is one edit, re-judged live?
@@ -3396,7 +3397,7 @@ requirements:
     DEMO_SCRIPT Scenario A "Degraded check" step. Decided (DEC-35): verdict at both gensets and 30 °C; the set must
     also survive one genset down by throttling alone against a 95 kW gate (interruptible steps that keep capability,
     mission-critical last and named), else yes-if; the raw as-loaded line is always shown; cooling at -40 % is information
-    only (CON-13). Checked by tests/test_envelope_gate_data.py.'
+    only (DEC-36, closing CON-13). Checked by tests/test_envelope_gate_data.py.'
   links:
   - label: Degraded values
     path: config/assumptions.yaml
@@ -3413,6 +3414,7 @@ requirements:
   - DEC-26
   - DEC-35
   - CON-13
+  - DEC-36
   status: planned
   question: If the one-genset-down check fails by a small margin (1.5 kW), is the verdict no, yes-if with a named
     throttle after a trip, or yes with the failure stated?
