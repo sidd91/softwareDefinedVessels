@@ -13615,7 +13615,7 @@ requirements:
   - label: 'Sensor catalog: data plan'
     path: research/SENSOR_CATALOG.md#data-plan
   - label: 'Software log: data sources'
-    path: docs/SOFTWARE_LOG.md#data-sources-planned-none-downloaded-yet
+    path: docs/SOFTWARE_LOG.md#data-sources
   - label: Public datasets and APIs
     path: research/sensors/navigation_environment.md#2-public-datasets-and-apis
   - label: Questions for the organizers
@@ -14741,7 +14741,7 @@ requirements:
   - label: APIs reviewed
     path: research/sensors/navigation_environment.md#2-public-datasets-and-apis
   - label: 'Software log: data sources'
-    path: docs/SOFTWARE_LOG.md#data-sources-planned-none-downloaded-yet
+    path: docs/SOFTWARE_LOG.md#data-sources
   - label: 'Demo storyboard: rehearsal and fallbacks'
     path: docs/DEMO_SCRIPT.md#rehearsal-and-fallbacks
   decisions:
@@ -15326,7 +15326,7 @@ requirements:
   - label: 'Sensor catalog: data plan'
     path: research/SENSOR_CATALOG.md#data-plan
   - label: 'Software log: data sources'
-    path: docs/SOFTWARE_LOG.md#data-sources-planned-none-downloaded-yet
+    path: docs/SOFTWARE_LOG.md#data-sources
   - label: 'Scenario C memo: r3 assumptions'
     path: docs/SCENARIO_C_MEMO.md#assumptions
   decisions:

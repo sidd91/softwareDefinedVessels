@@ -805,3 +805,26 @@ cooling, never restore it. Verified through a pseudo-terminal (`script`) with ke
 Decisions: none new (works under DEC-53). Conflicts: none. Deferrals: restore-in-reverse after `r` (modes stay
 throttled; GAMEPLAN ladder step 6) is not built. Requirements touched: R-082, R-083 (over-consumer detected and
 throttled with a sentence), R-146, R-152. Next: commit; rehearse on the demo laptop; minute-12 wording (DEC-51).
+
+### Sat 15:55 PDT · Environment from a mission plan and real public data (T10, R-080/R-081) · Claude Fable 5.1 on behalf of Siddharth Chawla (sidd91)
+
+On `feat/ship-state-fsm`, uncommitted. Siddharth's point: the governor's inputs were typed constants; nothing
+generated them from the ship's manual, the mission and the weather on its course. Built the weather/route layer
+(the manual side stays Annex A, see the 15:40 discussion): `config/plans/sicily_cable_survey.yaml` (Mazara del Vallo
+to Kelibia corridor, four points, 14 days from 1 Oct 2026, provenance inside); `tools/fetch_environment.py` pulled
+hourly sea-surface temperature, waves and 10 m wind/gusts from Open-Meteo Marine + Archive (stdlib urllib, no new
+dependency) into `config/environment/sicily_cable_survey.json` (60 kB, CC BY 4.0, attribution and fetch time inside;
+declared in SOFTWARE_LOG); `src/sdv/environment.py` interpolates along the route per hour, carries source/age/confidence
+(ARCHITECTURE contract 4), tightens to the A.10 worst case outside the data, maps wave height to Douglas sea state and
+judges wind limits on gusts (`assumptions.environment`, three assumed keys with reasons, account row). Wired:
+`sdv route` (summary, closed windows per card), `sdv admit --route` (D1 adds the route's lowest loop capacity against
+the set's chilled load, the degraded case, and the hours each weather-gated activity is closed; the verdict stays the
+brief's 30 C), `sdv sim/demo --env plan` (Scenario B's env follows the data from plan hour 30, `scenario_b.plan_start_h`,
+provenance + account row). What the data says: 1-15 Oct 2026 seawater 24.1-26.0 C (loop 128.9-133 kW; the brief's
+24 C is the cool end), sea state to 3, gusts to 32.2 kn (above G4's 25 kn landing limit for 31 h in 6 windows, and
+above the 30 kn envelope). August would have been 28.6-30.1 C. With real data the DEC-40 story holds unchanged
+(loop 130.3 -> 78.2 kW at the pump fault, G4 still throttled). Tests: `tests/test_environment.py` (10), all offline
+from the cache; 498 pass. Not built: forecasts ahead of the ship (the plan reads an archive), layering for the
+acoustic link, D3 using the wind window as a second hard limit.
+Decisions: none new. Conflicts: none. Deferrals: none. Requirements touched: R-080, R-081, R-273 (rows not yet edited
+in `docs/requirements.yaml`). Next: commit; rehearse; degradation per class (R-268) if time allows.

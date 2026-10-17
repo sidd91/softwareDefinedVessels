@@ -148,9 +148,45 @@ def _passes(a, cards, mission, guests, placement):
     return (lines, ogd) if ogd["passes"] else None
 
 
+def route_lines(a: dict, cards: dict, guests: list[str], card_id: str, route) -> dict:
+    """What the mission plan's real environment says about this set: the loop's lowest capacity on the
+    route against the set's chilled load, and the hours the card's weather-gated activities are closed.
+    Information beside the verdict: the verdict itself stays at the brief's 30 C worst case (A.10)."""
+    s = route.summary()
+    chilled = sum(envelope_kw(a, cards[g]) for g in guests if cards[g].get("cooling") == "chilled_water")
+    deg = route.summary(degraded=True)
+    return {"plan": s["plan"], "name": s["name"], "period": s["period"], "seawater_c": s["seawater_c"],
+            "loop_min_kw": s["cooling_kw_min"], "loop_min_degraded_kw": deg["cooling_kw_min"], "chilled_kw": round(chilled, 3),
+            "free_kw": round(s["cooling_kw_min"] - chilled, 3), "holds_degraded": chilled <= deg["cooling_kw_min"] + 1e-9,
+            "sea_state_max": s["sea_state_max"], "gust_kn_max": s["gust_kn_max"], "envelope_exceeded": s["envelope_exceeded"],
+            "activities": route.activity_windows(cards[card_id]), "source": s["source"], "licence": s["licence"]}
+
+
+def _route_sentence(r: dict) -> str:
+    s = (f" On the {r['name']} ({r['period']}, Open-Meteo): seawater {fmt(r['seawater_c'][0])}-{fmt(r['seawater_c'][1])} °C, "
+         f"loop never below {fmt(r['loop_min_kw'])} kW, {fmt(r['free_kw'])} kW free for this set"
+         + ("" if r["holds_degraded"] else f"; a pump loss there would leave {fmt(r['loop_min_degraded_kw'])} kW, below the {fmt(r['chilled_kw'])} kW load") + ".")
+    for act in r["activities"]:
+        if act["closed_h"]:
+            lim = " or ".join(x for x in [f"gusts over {fmt(float(act['wind_kn_max']))} kn" if act["wind_kn_max"] else "",
+                                          f"sea state over {act['sea_state_max']}" if act["sea_state_max"] is not None else ""] if x)
+            s += f" {act['activity'].replace('_', ' ').capitalize()} closed {act['closed_h']} h in {act['n_windows']} windows for {lim}."
+    return s
+
+
 def decide(a: dict, cards: dict, mission: dict, installed: dict[str, str], card_id: str, card_edits: dict | None = None,
-           t_s: float = 0.0, allow_moves: bool = True) -> Decision:
-    """`installed` maps part keys of the guests already aboard to their slots."""
+           t_s: float = 0.0, allow_moves: bool = True, route=None) -> Decision:
+    """`installed` maps part keys of the guests already aboard to their slots. `route` (a RouteEnvironment)
+    adds the mission plan's real-data lines beside the verdict."""
+    d = _decide(a, cards, mission, installed, card_id, card_edits, t_s, allow_moves)
+    if route is not None:
+        d.extras["route"] = route_lines(a, apply_edits(cards, card_edits), d.extras["guests"], card_id, route)
+        d.sentence += _route_sentence(d.extras["route"])
+    return d
+
+
+def _decide(a: dict, cards: dict, mission: dict, installed: dict[str, str], card_id: str, card_edits: dict | None,
+            t_s: float, allow_moves: bool) -> Decision:
     cards = apply_edits(cards, card_edits)
     installed_ids = sorted({k.split(".")[0] for k in installed})
     guests = installed_ids + [card_id]

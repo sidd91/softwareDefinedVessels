@@ -145,6 +145,12 @@ admission:
   one_genset_down_gate: {kw: 95, rule: "min(one-genset-down reserve, cooling at 30 C) minus shed headroom", over_gate: "throttle-only prefix of the D4 ladder; else yes-if; else no"}
   data_rates_judged_at: guest_minimum
 
+# Environment along a mission plan (config/plans/, data cached in config/environment/). Used by src/sdv/environment.py.
+environment:
+  sea_state_wave_m: [0.1, 0.5, 1.25, 2.5, 4.0, 6.0, 9.0, 14.0]
+  wind_limits_use_gusts: true
+  stale_after_h: 6
+
 # Plant (simulator) behaviour beyond the cards. Used by src/sdv/plant/.
 sim:
   tick_s: 1
@@ -180,6 +186,9 @@ provenance:
   heat.chillers_on_essential_board: {source: assumed, why: "Chillers and chilled-water pumps sit on the essential board inside the 55 kW ship auxiliaries, so the 150 kW non-essential hotel shed on a genset trip does not take cooling with it."}
   admission.seawater_scan_step_c: {source: assumed, why: "Resolution for reporting the seawater temperature at which a verdict flips."}
   admission.seawater_scan_max_c: {source: assumed, why: "Scan a little past the 30 C design point (A.10) to show the stress case off Florida (30.4 C)."}
+  environment.sea_state_wave_m: {source: assumed, short: "Douglas sea scale", why: "Public data gives significant wave height in metres; the brief's limits are sea states (A.10 envelope 5, cards 3-4). Upper bounds of the WMO Douglas scale: 0 calm 0.1 m, 1 to 0.5, 2 to 1.25, 3 to 2.5, 4 to 4, 5 to 6, 6 to 9, 7 to 14 m."}
+  environment.wind_limits_use_gusts: {source: assumed, why: "A card's wind limit (G4: 25 kn for landing) is judged against the hourly gust, not the mean: a gust is what upsets a drone on final approach. The conservative reading; 'unknown never means safe'."}
+  environment.stale_after_h: {source: assumed, why: "An environment reading older than 6 h counts as unknown and may only tighten a limit (research/SENSOR_CATALOG.md rules); the cached hourly series is never older than that inside its horizon."}
   sim.tick_s: {source: brief p4, short: "platform budget at 1 Hz", why: "The brief states the platform budget per class at 1 Hz; the plant ticks at the same rate."}
   sim.demo_seconds: {source: brief, live demo, short: "90 s of Scenario B", why: "The brief gives Scenario B 90 s of the live demo; the pace is derived from it (ship-minutes shown / 90 s), not fixed."}
   sim.demo_until_min: {source: assumed, short: "Scenario B shown to minute 20", why: "Minutes 0-20 hold every scored event: the drone report at 8, the trip at 12, the landing at 17 and the pump fault at 19 (DEC-40); 20 minutes in 90 s is 13.3 ship-minutes per wall minute. Decision latency is still measured in wall time."}
@@ -340,6 +349,11 @@ account:
       value: "kW/kept: {{cards.modes}}; {{cards.parts}}"
       why: "Annex B gives only kW"
       trace: ['\{name: \w+, power_kw: [\d.]+, capability_retained: [\d.]+, assumed: true', 'mass_t: [\d.]+,( length_m: [\d.]+,)? assumed: true']
+    - row: Anything else
+      what: environment data
+      keys: [environment.sea_state_wave_m, environment.wind_limits_use_gusts, environment.stale_after_h, scenario_b.plan_start_h]
+      value: "Open-Meteo hourly along the plan (CC BY 4.0); Douglas scale for sea state; wind limits on gusts; stale after {{environment.stale_after_h}} h; Scenario B at plan hour {{scenario_b.plan_start_h}}"
+      why: "real data drives cooling and deck"
     - row: Anything else
       what: simulator
       keys: [sim.demo_until_min, sim.g4_charge_pct_min]

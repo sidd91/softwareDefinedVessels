@@ -85,11 +85,11 @@ needs Logan's approval before it is.
 | ReportLab or WeasyPrint | BSD-3 | ReportLab Inc.; Kozea | memo and Physical Account to PDF | the PDF route is `tools/build_pdfs.py` instead |
 | Phi-4-mini or Mistral-7B-Instruct | MIT / Apache-2.0 | Microsoft / Mistral AI | offline paraphrase of free text into rule-grammar text | not in the build plan |
 
-## Data sources (planned; none downloaded yet)
+## Data sources
 Full tiered list with sizes in `research/SENSOR_CATALOG.md`. Each is declared here when pulled.
 | Source | Licence | Status |
 |---|---|---|
-| Open-Meteo Marine and Archive | CC BY 4.0, free tier non-commercial | planned; the brief itself names Open-Meteo Marine as a tier-2 public source (Stack, data and tools), so no organizer check is needed (CON-05); attribution line in the README when cached |
+| Open-Meteo Marine and Archive | CC BY 4.0, free tier non-commercial | **pulled Sat 15:49 PDT** by `tools/fetch_environment.py` (stdlib urllib, no client library): hourly sea-surface temperature, wave height and period (Marine API) and 10 m wind and gusts (Archive API) at four points on the Mazara del Vallo to Kelibia corridor, 1-15 Oct 2026, cached as `config/environment/sicily_cable_survey.json` (60 kB, attribution and fetch time inside); read offline by `src/sdv/environment.py`. The brief names Open-Meteo Marine as a tier-2 public source, so no organizer check (CON-05); attribution line in the README |
 | NOAA OISST via ERDDAP | public domain | planned |
 | Argo via Ifremer ERDDAP | free and open | planned |
 | UCI naval propulsion CBM | CC BY 4.0 | planned |

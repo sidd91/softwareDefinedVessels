@@ -55,7 +55,8 @@ The scenario's `initial` block sets minute 0: crew, ship state, guest modes, pla
              "age_s": {"course": 720, "speed_band": 720, "noise": 720, "deck": 0, "emission": 720, "genset": 0, "cooling": 720},
              "pending": [{"var": "deck", "value": "clear", "ready_at_s": 960, "eta_s": 240, "pick": "pinned"}],
              "forbidden_actions": [], "crew": 14},
-  "env":    {"seawater_c": 24, "sea_state": 2, "wind_kn": 22},
+  "env":    {"seawater_c": 24, "sea_state": 2, "wind_kn": 22,
+             "gust_kn": 25.3, "source": "open-meteo (cached)", "age_s": 1800, "confidence": 1.0, "time_utc": "2026-10-02T12:00"},
   "guests": {"G4": {"mode": "standby", "declared_kw": 2, "actual_kw": 2, "capability_retained": 0.3,
                     "placement": {"drone": "flight_deck", "hangar": "flight_deck"},
                     "battery_pct": 13.56, "airborne": true}},
@@ -74,6 +75,10 @@ The scenario's `initial` block sets minute 0: crew, ship state, guest modes, pla
 Every line has the same shape (`class, label, unit, capacity, committed, free, contributors`) so a decision
 can quote one verbatim: *"cooling loop at 30 °C has 12 kW free, guest needs 20 kW."* `gauges` is the
 eight-per-class pick for the screen; `lines` is everything, including the two mission power lines.
+
+`env` carries the scenario's constants by default; with `--env plan` (`Simulator(route=...)`) it follows the mission
+plan's cached public data each tick and gains `gust_kn`, `source`, `age_s`, `confidence` and `time_utc`; outside the
+data `tightened: true` and the envelope's worst case applies.
 
 ## 4. Run file and replay
 

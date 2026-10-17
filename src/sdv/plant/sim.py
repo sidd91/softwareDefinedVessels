@@ -35,6 +35,8 @@ class Simulator:
     seed: int = 1
     mission: str | None = None
     on_tick: Callable[[dict, "Simulator"], None] | None = None
+    route: object | None = None  # a RouteEnvironment: the environment follows real data along the plan
+    plan_start_h: float = 0.0  # plan hour at which the scenario's minute 0 falls
     rng: random.Random = field(init=False)
     fsm: ShipFSM = field(init=False)
     guests: dict[str, GuestRuntime] = field(init=False)
@@ -54,6 +56,9 @@ class Simulator:
                            pins=pins_from_scenario(sc))
         self.env = {"seawater_c": sc["location"]["seawater_c"], "sea_state": init.get("sea_state", 2),
                     "wind_kn": init.get("wind_kn", 10)}
+        if self.route is not None:
+            self.plan_start_h = float(sc.get("plan_start_h", self.plan_start_h))
+            self._env_from_route()
         self.guests = {}
         for gid in sc["guests"]:
             card = self.inputs.cards[gid]
@@ -80,6 +85,15 @@ class Simulator:
         e = dict(event, t_s=self.t_s, t_min=round(self.t_s / 60, 3), injected=True, source=source)
         self.events.append(e)
         return e
+
+    def _env_from_route(self) -> None:
+        """Real data along the plan replaces the scenario's constants (scripted environment values are
+        then ignored: the data is the environment). Carries source, age and confidence."""
+        c = self.route.at(self.plan_start_h + self.t_s / 3600.0)
+        self.env.update({"seawater_c": c["seawater_c"], "sea_state": c["sea_state"], "wind_kn": c["wind_kn"], "gust_kn": c["gust_kn"],
+                         "source": c["source"], "age_s": c["age_s"], "confidence": c["confidence"], "time_utc": c["time_utc"]})
+        if c.get("tightened"):
+            self.env["tightened"] = True
 
     # -- events -----------------------------------------------------------------------------------
     def _apply(self, e: dict) -> None:
@@ -136,6 +150,8 @@ class Simulator:
             if e["type"] in PLANT_EVENTS:
                 self._apply(e)
         self.fsm.tick(self.t_s)
+        if self.route is not None:
+            self._env_from_route()
         sim = a.get("sim", {})
         for g in self.guests.values():
             g.tick_battery(1.0, a["rules"]["r3"]["drain_pct_min"], sim.get("g4_charge_pct_min", {}))

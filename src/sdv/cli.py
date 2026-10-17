@@ -19,6 +19,7 @@ import yaml
 from . import admission, placement as P
 from .data import MANIFESTS, Inputs, load_assumptions, load_cards, load_inputs, load_missions
 from .decision import Decision, ceiling_ms, fmt, timed
+from .environment import RouteEnvironment
 from .governor import Governor
 from .plant.sim import Simulator, write_jsonl
 
@@ -36,9 +37,11 @@ def fmt_tick(s: dict) -> str:
     ev = ("  <- " + ", ".join(e["type"] for e in s["events"])) if s["events"] else ""
     res = s.get("governor", {}).get("reserved_kw") or {}
     reserved = f" (+{sum(res.values()):g} reserved)" if res else ""
+    env = s["env"]
+    sea = f" sea {env['seawater_c']:g}°C ss{env.get('sea_state', '?')} gust {env.get('gust_kn', env.get('wind_kn')):g}kn" if env.get("source") else ""
     return (f"{s['t_min']:6.2f} min | {ship['speed_band']:7} {ship['course']:6} {ship['noise']:7} deck={ship['deck']:8} "
             f"gen={ship['genset']} cool={ship['cooling']:8} | P {g['power']['committed']:6.1f}/{g['power']['capacity']:5.0f}{reserved}"
-            f"  H {g['heat']['committed']:6.1f}/{g['heat']['capacity']:5.1f} | {guests}{ev}")
+            f"  H {g['heat']['committed']:6.1f}/{g['heat']['capacity']:5.1f}{sea} | {guests}{ev}")
 
 
 def fmt_decision(d: dict, color: bool = False) -> str:
@@ -68,6 +71,15 @@ def print_admission(d: Decision, color: bool = False) -> None:
     if x["seawater"]:
         t = x["seawater"]
         print(f"  seawater tipping point: {fmt(t['tip_c'])} °C" + (f" (holds at {t['holds_at_c']}, fails at {t['fails_at_c']})" if t["inside_scan"] else " (outside the scan)"))
+    if x.get("route"):
+        r = x["route"]
+        print(f"  on the route ({r['name']}, {r['period']}, Open-Meteo CC BY 4.0): seawater {fmt(r['seawater_c'][0])}-{fmt(r['seawater_c'][1])} °C, "
+              f"loop min {fmt(r['loop_min_kw'])} kW ({fmt(r['free_kw'])} kW free; degraded {fmt(r['loop_min_degraded_kw'])} kW), "
+              f"sea state max {r['sea_state_max']}, gusts max {fmt(r['gust_kn_max'])} kn")
+        for act in r["activities"]:
+            if act["closed_h"]:
+                print(f"    {act['activity']}: closed {act['closed_h']} h in {act['n_windows']} windows "
+                      f"(wind > {act['wind_kn_max']} kn or sea state > {act['sea_state_max']}): first at plan hours {act['windows'][0]}")
     for i, o in enumerate(x["yes_if"], 1):
         og = o["one_genset_down"]
         mv = ("; move " + ", ".join(f"{m['part']} {m['from']}->{m['to']}" for m in o["moves"])) if o["moves"] else ""
@@ -97,31 +109,38 @@ def load_jury_card(path: str, cards: dict) -> dict:
 
 
 def admit(card_id: str, installed: list[str], mission: str, edits: dict | None = None, card_path: str | None = None,
-          installed_placement: dict | None = None) -> Decision:
+          installed_placement: dict | None = None, route: str | None = None) -> Decision:
     a, cards, missions = load_assumptions(), load_cards(), load_missions()
     if card_path:
         cards = load_jury_card(card_path, cards)
         card_id = card_id or yaml.safe_load(Path(card_path).read_text())["id"]
     placement = installed_placement or P.default_installed(a, cards, installed)
+    env = RouteEnvironment.load(a, route) if route else None
     holder: dict = {}
     with timed(holder):
-        d = admission.decide(a, cards, missions[mission], placement, card_id, edits)
+        d = admission.decide(a, cards, missions[mission], placement, card_id, edits, route=env)
     d.latency_ms, d.ceiling_ms = holder["latency_ms"], ceiling_ms(a, "D1")
     return d
 
 
 def cmd_admit(args: argparse.Namespace) -> int:
     installed = [g for g in (args.installed or "").split(",") if g]
-    d = admit(args.card, installed, args.mission, _parse_edits(args.edit), args.card_file)
+    d = admit(args.card, installed, args.mission, _parse_edits(args.edit), args.card_file, route=args.route)
     print_admission(d, color=not args.no_color)
     if args.json:
         print(json.dumps(d.as_dict(), indent=2, default=str))
     return 0
 
 
+def route_for(inputs: Inputs, args) -> RouteEnvironment | None:
+    """The mission plan to drive the environment from, when `--env plan` asks for it."""
+    plan = getattr(args, "route", None) or inputs.scenario.get("plan")
+    return RouteEnvironment.load(inputs.assumptions, plan) if getattr(args, "env", "scenario") == "plan" and plan else None
+
+
 def run_sim(inputs: Inputs, args, mission: str, sink=None, governor: bool = True):
     gov = Governor(inputs, mission) if governor else None
-    sim = Simulator(inputs, seed=args.seed, mission=mission, on_tick=gov.on_tick if gov else None)
+    sim = Simulator(inputs, seed=args.seed, mission=mission, on_tick=gov.on_tick if gov else None, route=route_for(inputs, args))
     h = sim.run(args.until_min, realtime_factor=getattr(args, "speed", 0.0), sink=sink)
     return gov, sim, h
 
@@ -249,8 +268,15 @@ def cmd_demo(args: argparse.Namespace) -> int:
     if args.speed and sys.stdin.isatty():
         print(_c(KEYS, DIM, color))
 
+    route = route_for(inputs, args)
+    plan_id = args.route or inputs.scenario.get("plan")
+    if plan_id:
+        rs = RouteEnvironment.load(inputs.assumptions, plan_id).summary()
+        print(_c(f"Route {rs['name']} ({rs['period']}, Open-Meteo, cached): seawater {rs['seawater_c'][0]:g}-{rs['seawater_c'][1]:g} °C, "
+                 f"loop {rs['cooling_kw_min']:g}-{rs['cooling_kw_max']:g} kW, sea state to {rs['sea_state_max']}, gusts to {rs['gust_kn_max']:g} kn"
+                 + ("; environment follows the data" if route else "; Scenario B keeps the brief's 24 °C (--env plan to follow the data)"), DIM, color))
     gov1 = Governor(inputs, files[0])
-    sim1 = Simulator(inputs, seed=args.seed, mission=files[0], on_tick=gov1.on_tick)
+    sim1 = Simulator(inputs, seed=args.seed, mission=files[0], on_tick=gov1.on_tick, route=route)
     keys = KeyInjector(sim1, gov1, files, color) if args.speed else None
 
     def sink(s: dict | None) -> None:
@@ -276,7 +302,7 @@ def cmd_demo(args: argparse.Namespace) -> int:
              + (f"; {len(keys.injected)} event(s) injected by the jury" if keys and keys.injected else "") + ".", DIM, color))
     print(_c(f"\nSame events under the {files[1]} file (replayed flat out, the jury's injections included):", BOLD, color))
     gov2 = Governor(inputs, files[1])
-    sim2 = Simulator(inputs, seed=args.seed, mission=files[1], on_tick=gov2.on_tick)
+    sim2 = Simulator(inputs, seed=args.seed, mission=files[1], on_tick=gov2.on_tick, route=route)
     for e in (keys.injected if keys else []):
         if e["type"] != "priority_swap":
             sim2.events.append(dict(e))
@@ -295,7 +321,7 @@ def cmd_demo(args: argparse.Namespace) -> int:
 
     print(_c("\nScenario A: the jury's card.", BOLD, color))
     if args.no_prompt:
-        d = admit("G4", ["G1", "G2", "G3"], files[0])
+        d = admit("G4", ["G1", "G2", "G3"], files[0], route=plan_id)
         print_admission(d, color)
         return 0
     _flush_stdin()  # anything typed while Scenario B was playing must not become the first answer
@@ -313,10 +339,35 @@ def cmd_demo(args: argparse.Namespace) -> int:
         edits = _parse_edits([b for b in bits[3:] if "=" in b])
         try:
             path = card if card.endswith((".yaml", ".yml")) else None
-            d = admit("" if path else card, installed.split(","), mission, edits, path)
+            d = admit("" if path else card, installed.split(","), mission, edits, path, route=plan_id)
             print_admission(d, color)
         except Exception as e:  # a bad card or a typo must not end the demo
             print(f"refused: {e.__class__.__name__}: {str(e).splitlines()[0]}")
+
+
+def cmd_route(args: argparse.Namespace) -> int:
+    a, cards = load_assumptions(), load_cards()
+    r = RouteEnvironment.load(a, args.plan)
+    s = r.summary()
+    print(f"{s['name']} ({s['plan']}), {s['period']}, {s['hours']} hours of hourly data; {s['source']}; {s['licence']}, fetched {s['fetched_at_utc']}")
+    print(f"  seawater {s['seawater_c'][0]:g}-{s['seawater_c'][1]:g} °C (max at {s['seawater_max_at']}): chilled-water loop {s['cooling_kw_min']:g}-{s['cooling_kw_max']:g} kW"
+          f" (brief judges at 30 °C: {cooling_at_30(a):g} kW)")
+    print(f"  sea state to {s['sea_state_max']}, wind to {s['wind_kn_max']:g} kn, gusts to {s['gust_kn_max']:g} kn; envelope exceeded: "
+          + ", ".join(k for k, v in s["envelope_exceeded"].items() if v) or "none")
+    for gid in ([args.card] if args.card else sorted(cards)):
+        for act in r.activity_windows(cards[gid]):
+            lim = f"wind > {act['wind_kn_max']} kn" if act["wind_kn_max"] else ""
+            lim += (" or " if lim and act["sea_state_max"] is not None else "") + (f"sea state > {act['sea_state_max']}" if act["sea_state_max"] is not None else "")
+            print(f"  {gid} {act['activity']}: closed {act['closed_h']} h in {act['n_windows']} windows ({lim})" + (f"; e.g. plan hours {act['windows'][:3]}" if act["windows"] else ""))
+    for h in (0, 24, 120, 240):
+        c = r.at(h)
+        print(f"  h{h:>4} {c['time_utc']} {c['waypoint']:>20}: {c['seawater_c']:g} °C, waves {c['wave_m']:g} m (sea state {c['sea_state']}), wind {c['wind_kn']:g} kn, gusts {c['gust_kn']:g} kn")
+    return 0
+
+
+def cooling_at_30(a: dict) -> float:
+    from .ledger import cooling_capacity_kw
+    return round(cooling_capacity_kw(a, a["envelope"]["judge_cooling_at_c"], False), 1)
 
 
 def gov_file(d: Decision) -> str:
@@ -357,6 +408,8 @@ def main(argv: list[str] | None = None) -> int:
     s.add_argument("--print-every", type=float, default=1.0, help="print a line every N ship-minutes (0 = events only)")
     s.add_argument("--quiet", action="store_true")
     s.add_argument("--no-governor", action="store_true", help="open loop: plant only")
+    s.add_argument("--env", choices=["scenario", "plan"], default="scenario", help="environment from the scenario's constants or from the plan's real data")
+    s.add_argument("--route", help="mission plan id (config/plans/); default: the scenario's `plan`")
     s.add_argument("--out")
     s.set_defaults(fn=cmd_sim)
 
@@ -371,6 +424,7 @@ def main(argv: list[str] | None = None) -> int:
     ad.add_argument("--edit", action="append", help="live card edit, e.g. G4.hangar.mass_t=0.8 (repeatable)")
     ad.add_argument("--card-file", help="a jury card as YAML, validated against manifests/schema.json")
     ad.add_argument("--json", action="store_true", help="also print the decision record")
+    ad.add_argument("--route", help="mission plan id (config/plans/): adds the real-data lines beside the verdict")
     ad.set_defaults(fn=cmd_admit)
 
     sim_a = load_assumptions()["sim"]
@@ -382,7 +436,14 @@ def main(argv: list[str] | None = None) -> int:
     d.add_argument("--seconds", type=float, default=sim_a["demo_seconds"], help="wall seconds for Scenario B (brief: 90)")
     d.add_argument("--speed", type=float, default=None, help="force a pace in ship-seconds per wall-second; 0 = flat out")
     d.add_argument("--no-prompt", action="store_true", help="run drill A1 instead of asking for a card")
+    d.add_argument("--env", choices=["scenario", "plan"], default="scenario", help="Scenario B environment: the brief's constants or the plan's real data")
+    d.add_argument("--route", help="mission plan id; default: the scenario's `plan`")
     d.set_defaults(fn=cmd_demo)
+
+    rt = sub.add_parser("route", help="the environment along a mission plan from cached public data")
+    rt.add_argument("plan", nargs="?", default="sicily_cable_survey")
+    rt.add_argument("--card", help="also list when this card's weather-gated activities are closed")
+    rt.set_defaults(fn=cmd_route)
 
     args = p.parse_args(argv)
     return args.fn(args)

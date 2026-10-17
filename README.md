@@ -30,7 +30,16 @@ uv run sdv demo                                     # Scenario B, then an intera
 uv run sdv admit G4 --installed G1,G2,G3 --mission sar --edit G4.hangar.mass_t=0.8
 uv run sdv sim scenario-b --mission sar             # closed loop, JSONL run file with every decision record
 uv run sdv replay-check scenario-b --mission sar    # two runs, decisions included, hashes must match
+uv run sdv route                                    # the real environment along the mission plan (cached Open-Meteo)
+uv run sdv admit G4 --installed G1,G2,G3 --route sicily_cable_survey   # verdict plus what the route's data says
+uv run sdv demo --env plan                          # Scenario B's seawater, sea state and wind follow the data
 ```
+
+The environment is generated from a **mission plan**, not typed in: `config/plans/sicily_cable_survey.yaml`
+(where the ship is, hour by hour, for the brief's 14 days) and hourly public data cached along it
+(`config/environment/`, Open-Meteo, fetched once). Admission reports, beside the brief's 30 °C verdict, the loop's
+lowest capacity on the route and the hours a card's weather-gated activities are closed; outside the data the
+envelope's worst case applies (unknown never means safe).
 
 ## The idea in one line
 
@@ -122,13 +131,16 @@ it: [docs/REQUIREMENTS.md](docs/REQUIREMENTS.md). Decisions and who made them: [
 - No graphical screen yet: the demo is the terminal output of `sdv demo`; edge failover is cut (DEC-44).
 - Launch and recovery are scripted plant events (the drone lands at the pinned minute 17); the governor
   decides and commands the ship state, it does not yet fly the drone.
-- Numbers come from the brief's annexes and our labelled assumptions, never from a real vessel.
+- Numbers come from the brief's annexes and our labelled assumptions, never from a real vessel; the environment is
+  real (Open-Meteo, Strait of Sicily, 1-15 Oct 2026) but the ship's response to it is modelled.
 - By choice, both power lines survive a genset trip (A.9); a 40 % cooling loss is information only (DEC-36).
 - Cameras are optional (the governor works with none); camera confidence is uncalibrated.
 
 ## With another week
 
-- Calibrate the simulator's sensor models against the public datasets already identified.
+- Calibrate the simulator's sensor models against the public datasets already identified; add forecasts ahead of
+  the ship (today the plan reads an archive), water-column layering for the acoustic link, and supply degradation
+  over the 14 days (exchanger fouling, generator derating) beyond the brief's step events.
 - Run the governor on two real edge nodes with wired and wireless paths, and measure failover.
 - Validate camera equipment checks on real shipboard footage, with exposure-locked cameras.
 - Work through more priority files and jury cards, and harden the crew rule compiler.
@@ -137,5 +149,5 @@ it: [docs/REQUIREMENTS.md](docs/REQUIREMENTS.md). Decisions and who made them: [
 
 AI and software, with licences and origins: [docs/SOFTWARE_LOG.md](docs/SOFTWARE_LOG.md). Claude (Anthropic) is the
 coding and research assistant; no model from a China-based company is used. Only open-source third-party
-code or our own; code licence [MIT](LICENSE). Data (planned): sea temperature, waves and wind from
-Open-Meteo (a source the brief names), cached offline. Weather data by [Open-Meteo.com](https://open-meteo.com/), CC BY 4.0.
+code or our own; code licence [MIT](LICENSE). Data: sea temperature, waves and wind from
+Open-Meteo (a source the brief names), fetched once and cached offline (`config/environment/`). Weather data by [Open-Meteo.com](https://open-meteo.com/), CC BY 4.0.
