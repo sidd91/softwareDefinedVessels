@@ -33,7 +33,7 @@ Deadline: **Sun 2026-10-18 10:00 PDT**.
 | Person | GitHub | Agents |
 |---|---|---|
 | Logan Walker | GhostWalka | Claude (Anthropic) in Claude Code desktop: Fable 5.1 until Fri 20:27 PDT, then Opus 5.5 |
-| Siddharth Chawla | sidd91 | to be filled in by Siddharth |
+| Siddharth Chawla | sidd91 | Claude (Anthropic) in Claude Code desktop: Fable 5.1 |
 
 ## Decisions
 
@@ -81,6 +81,9 @@ Deadline: **Sun 2026-10-18 10:00 PDT**.
 | DEC-40 | Sat 10:25 | Scenario B setup: the brief's story at minutes 0, 8 and 12 (G3 underwater; the minute-12 trip holds and D4 runs on screen with 0 steps and both armed ladders shown); G4 lands at minute 17 (seed); ADDED, labelled event at minute 19: a chilled-water pump fails (x0.6, 80 kW loop, 75 kW ceiling), so cooling binds against 81 kW: survey slows G4's charge to 10 kW (56 kW), sar takes G5 to 8 kW (44 kW). Robot-charging start rejected because it removes the minute-8 conflict. Confirmed by four critics and a judge (req R-066, R-067) | Logan (option); critics and judge (timing) | Claude for Logan |
 | DEC-41 | Sat 11:15 | Bring up node B now, headless over ADB on USB-C; ADB installed on the laptop from Ubuntu's packages (req R-458) | Logan | Claude for Logan |
 | DEC-42 | Sat 11:16 | Keep node B's default password for now; CON-15 stays open | Logan | Claude for Logan |
+| DEC-43 | Sat 11:50 | PROPOSED: design freeze. Base = this branch; typed conditions before engine code; priority file gains optional `shed_order` and per-rule `confirm`; admission by enumeration; board as instrument; cut cameras/CV, 3D, rule compiler, LLM paraphraser, person detection, NPU, two-node failover; Scenario C rule R3 without the camera; Scenario B minute 12 to be asked of the organisers. Full delta table in `docs/DESIGN_FREEZE.md` (req R-064 to R-067, R-069, R-146, R-458) | Proposed by Siddharth; awaiting Logan | Claude Fable 5.1 for Siddharth |
+| DEC-44 | Sat 12:04 | Design freeze approved as proposed in DEC-43 (`docs/DESIGN_FREEZE.md`): F1 our branch is the base; cut cameras and computer vision, 3D view, rule compiler, LLM paraphraser, person detection, NPU inference and two-node failover; the board is an instrument. F2 typed conditions and hard limits before any engine code. F3 priority files gain optional `shed_order` and per-rule `confirm`. F4 ask the organizers about minute 12, fallback as written. F5 Scenario C rule R3 without the camera. F6 (who builds what) stays with Logan and Siddharth. Supersedes DEC-02 (camera virtual sensors), DEC-04 (3D view), DEC-06 (multi-device emphasis), DEC-23 and DEC-27 (cameras) where they conflict (req R-064 to R-067, R-069, R-146, R-458) | Logan (approved Siddharth's proposal) | Claude for Logan |
+| DEC-45 | Sat 12:04 | Project name: ArgOS, after the Argo and the brief's "operating system the ship does not have"; used on the screens, the README title and the docs | Logan | Claude for Logan |
 
 ## Conflicts and risks to watch
 
@@ -104,6 +107,8 @@ Deadline: **Sun 2026-10-18 10:00 PDT**.
 | CON-16 | Sat 11:15 | Venue Wi-Fi heartbeats have a long tail (95th percentile 96 ms, max 116 ms, 3 of 100 over 100 ms) against 100 ms heartbeats; USB holds 6.5 ms (req R-458) | Open: team to set failover timeouts per path; numbers in docs/NODE_B_BOARD.md | Claude for Logan |
 | CON-17 | Sat 11:24 | Whole-plan review: schedule rated red. The DEC-33 hold has run past its hour with no engine code; BUILD_PLAN milestones are missed and stale against DEC-35 to DEC-40, with no sleep block (extends CON-10) | Open: Logan to decide on lifting the hold; the review recommends now | Claude for Logan |
 | CON-18 | Sat 11:24 | D2 placement: the test fixtures put G5's antenna on the last free mast slot although the hangar roof is allowed, which blocks G1 and contradicts our declared D2 objective and the brief's "free mast slot" story for that set | Open: the team writes the D2 rule before T2 | Claude for Logan |
+| CON-19 | Sat 11:50 | Two designs for the same core: Siddharth's handoff (protobuf, CP-SAT, policy compiler) and this branch. Building both wastes the day (CON-07) | Open: settle `docs/DESIGN_FREEZE.md` F1-F6 together, then split work | Claude Fable 5.1 for Siddharth |
+| CON-20 | Sat 12:04 | Resolution after DEC-44: CON-19 (two designs) closed, one design frozen; CON-01 (natural-language rules) and CON-02 (3D) closed, both cut; CON-04 (NPU runtime) closed, NPU cut; CON-11 (camera snapshot fields) closed, cameras cut; CON-16 (Wi-Fi heartbeat tail) off the demo path while failover is cut. CON-07 (work split) stays open until F6 | Closed except CON-07 | Claude for Logan |
 
 ## Deferrals
 
@@ -655,3 +660,28 @@ no comments or reviews.
 Decisions: none new (lifting the hold is Logan's call). Conflicts: CON-17 (schedule red, hold past its hour),
 CON-18 (D2 mast placement). Deferrals: none new; the critic's point that the USB-C cable carries both power
 and data adds to DEF-01, which already sits with the team.
+### Sat 11:50 PDT · Design freeze proposal · Claude Fable 5.1 on behalf of Siddharth Chawla (sidd91)
+
+Siddharth brought his pre-coding design (protobuf schema, policy compiler, CP-SAT admission, 10 Hz plant) and
+the brief PDF; this branch was read in full and its 265 tests run (all pass). `docs/DESIGN_FREEZE.md` lists
+where the two designs agree, sixteen deltas with the brief as referee and a recommendation for each, and six
+decisions for the team (F1-F6). Headlines: this branch is the base; conditions and hard limits must be typed
+against `assumptions.yaml` before any engine code (cards already drift: `G4.recovering` vs `launch_recovery`);
+cameras, CV and the other beyond-the-brief items come out; the board is an instrument; Scenario B minute 12
+versus the must-have's "explicit shedding sequence" is the one question for the organisers.
+Decisions: DEC-43 (PROPOSED; numbered DEC-42 on design/freeze). Conflicts: CON-19 (numbered CON-17 on design/freeze). Deferrals: none. Requirements touched: none yet (rows change
+once F1-F6 are decided). Next: Logan and Siddharth settle F1-F6; then the branch `design/freeze` merges into
+`feat/governor-core` and the build starts at typed conditions.
+
+### Sat 12:04 PDT · design/freeze merged, freeze approved (DEC-44), project named ArgOS (DEC-45) · Claude Opus 5.5 on behalf of Logan Walker (GhostWalka)
+
+Logan read Siddharth's design freeze and approved it as proposed ("go with the design freeze, all looks
+good"). Claude merged `design/freeze` into `feat/governor-core`. Both branches had used DEC-42 and CON-17 for
+different rows; ours landed first (Sat 11:16 and 11:24, pushed before design/freeze branched from f49aaaf),
+so Siddharth's rows were renumbered at the merge, text otherwise unchanged: his DEC-42 is now DEC-43 and his
+CON-17 is now CON-19. Siddharth, please object if you would rather renumber the other way.
+Logan also named the project ArgOS. The docs and data still describe the cut items; they are brought in line
+with the freeze next, after the deliverable fixes that are in flight land.
+Decisions: DEC-44 (Logan), DEC-45 (Logan). Conflicts: CON-20 closes CON-01, CON-02, CON-04, CON-11 and CON-19;
+CON-07 stays open until F6. Deferrals: none new; DEF-01's wired path falls away with failover, the board's
+power arrangement still stands.
