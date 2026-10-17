@@ -721,3 +721,25 @@ Logan sent the organizer message and relayed the answers: all fine with some fle
 write one 2-page memo that serves both the Scenario C rule and the architecture and constraint-handling reading.
 The minute-12 question goes to Siddharth. Logged on main at Logan's request.
 Decisions: DEC-49, DEC-50, DEC-51 (Logan). Conflicts: none new. Deferrals: DEC-51 routes minute 12 to Siddharth.
+
+### Sat 12:50 PDT · Simulator landed (plant, open loop); plant contract proposed · Claude Fable 5.1 on behalf of Siddharth Chawla (sidd91)
+
+Built on `main` after the PR #2 merge, per DEC-47 (Siddharth: simulator, ship-state machine, command set).
+`uv run sdv sim scenario-b --mission survey --until-min 21` ticks the plant at 1 Hz from
+`config/scenarios/scenario_b.yaml` and writes a JSONL run with every input hashed in the header;
+`uv run sdv replay-check scenario-b` runs twice and compares run hashes (identical). Modules: `src/sdv/data.py`
+(loaders, input hashes), `plant/fsm.py` (A.6 state machine: seven variables, transition times drawn once per
+request from the brief's ranges with the run seed; deck clearing refused at 0 aboard; cooling not repaired at
+sea), `plant/guests.py` (mode, declared vs actual draw, over-consumption factor, G4 battery), `plant/sim.py`
+(event loop; governor hook `on_tick`, `request_state`, `set_mode`), `ledger.py` (capacity and demand lines for
+the eight classes from assumptions and cards; the eight gauges; offered to Logan's core as the starting
+point, his to refine or replace). Open loop reproduces the DEC-40 numbers: 48 kW at the minute-12 trip, 81 kW
+after G4 lands at 17, loop 133.3 kW at 24 °C falling to 80 kW at the minute-19 pump fault with 81 kW on it
+(cooling binds, power does not). 16 new tests in `tests/test_sim.py`; 312 pass. Data edits: `scenario_b.yaml`
+gains an `initial` block; `assumptions.yaml` gains a `sim` section with provenance rows. No decision logic.
+`docs/PLANT_CONTRACT.md` answers CON-21 from the simulator side: the command set (Siddharth's) and the
+snapshot the plant emits today (Logan's to rename as owner of the schema). The DEC-43/CON-19 renumbering at the
+freeze merge is fine.
+Decisions: none (works under DEC-47). Conflicts: CON-21 stays open until Logan confirms the snapshot shape.
+Deferrals: none. Requirements touched: none yet. Next: Scenario B minute 12 (DEC-51) with Siddharth; then
+launch/recovery and G3 cycle commands so D3 can close the loop.
