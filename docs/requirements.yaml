@@ -308,7 +308,7 @@ requirements:
   - label: 'Memo: by crew level'
     path: docs/SCENARIO_C_MEMO.md#by-crew-level
   - label: 'Memo: assumptions'
-    path: docs/SCENARIO_C_MEMO.md#assumptions-physical-account-lines
+    path: docs/SCENARIO_C_MEMO.md#assumptions
   - label: 'Memo: live demo'
     path: docs/SCENARIO_C_MEMO.md#live-demo-two-levels-required-0-shown-too
   - label: Conditions snapshot
@@ -343,7 +343,7 @@ requirements:
   - label: Memo
     path: docs/SCENARIO_C_MEMO.md
   - label: 'Memo: assumptions'
-    path: docs/SCENARIO_C_MEMO.md#assumptions-physical-account-lines
+    path: docs/SCENARIO_C_MEMO.md#assumptions
   - label: Physical Account draft
     path: docs/PHYSICAL_ACCOUNT.md
   - label: PDF route (open)
@@ -463,7 +463,7 @@ requirements:
   - label: 'Memo: live demo'
     path: docs/SCENARIO_C_MEMO.md#live-demo-two-levels-required-0-shown-too
   - label: 'Memo: assumptions'
-    path: docs/SCENARIO_C_MEMO.md#assumptions-physical-account-lines
+    path: docs/SCENARIO_C_MEMO.md#assumptions
   - label: G4 card
     path: manifests/G4.yaml
   decisions:
@@ -795,7 +795,7 @@ requirements:
     ran to between 2.4 and 3 pages. Proof: regenerate in the Sun 01:00 to 05:30 block and check the page count.'
   links:
   - label: Physical Account draft
-    path: docs/PHYSICAL_ACCOUNT.md#physical-account-draft
+    path: docs/PHYSICAL_ACCOUNT.md
   - label: Generator script
     path: tools/physical_account.py
   - label: Provenance map
@@ -825,7 +825,7 @@ requirements:
     gives no ''by how much''. CON-09 backs the comparison.'
   links:
   - label: Physical Account draft
-    path: docs/PHYSICAL_ACCOUNT.md#physical-account-draft
+    path: docs/PHYSICAL_ACCOUNT.md
   - label: 'WORKLOG: conflicts'
     path: WORKLOG.md#conflicts-and-risks-to-watch
   - label: 'Fleet research: public numbers'
@@ -860,7 +860,7 @@ requirements:
   - label: Scenario A degraded check
     path: docs/DEMO_SCRIPT.md#scenario-a-jurys-card-deep
   - label: Power assumptions
-    path: docs/PHYSICAL_ACCOUNT.md#physical-account-draft
+    path: docs/PHYSICAL_ACCOUNT.md
   decisions:
   - DEC-15
   - CON-08
@@ -1486,7 +1486,7 @@ requirements:
   - label: Current tests
     path: tests/test_brief_arithmetic.py
   - label: Physical Account
-    path: docs/PHYSICAL_ACCOUNT.md#physical-account-draft
+    path: docs/PHYSICAL_ACCOUNT.md
   decisions:
   - DEC-15
   status: drafted
@@ -1515,7 +1515,7 @@ requirements:
   - label: Budget closure test
     path: tests/test_brief_arithmetic.py
   - label: Power assumptions
-    path: docs/PHYSICAL_ACCOUNT.md#physical-account-draft
+    path: docs/PHYSICAL_ACCOUNT.md
   - label: Scenario B 00:40
     path: docs/DEMO_SCRIPT.md#scenario-b-90-s-deep
   decisions:
@@ -1620,7 +1620,7 @@ requirements:
   - label: Free mast slot drill
     path: docs/DEMO_SCRIPT.md#scenario-a-jurys-card-deep
   - label: Hangar roof assumption
-    path: docs/PHYSICAL_ACCOUNT.md#physical-account-draft
+    path: docs/PHYSICAL_ACCOUNT.md
   decisions:
   - DEC-15
   - DEC-22
@@ -1848,9 +1848,9 @@ requirements:
   - label: 'REQUIREMENTS: Summary'
     path: docs/REQUIREMENTS.md#summary
   - label: 'REQUIREMENTS: Must-have section'
-    path: docs/REQUIREMENTS.md#must-have-success-criteria
+    path: docs/requirements/must-have-success-criteria.md
   - label: 'REQUIREMENTS: Should-have section'
-    path: docs/REQUIREMENTS.md#should-have-success-criteria
+    path: docs/requirements/should-have-success-criteria.md
   - label: 'GAMEPLAN: What the jury scores'
     path: GAMEPLAN.md#what-the-jury-scores-from-the-brief
   - label: Matrix source
@@ -2739,7 +2739,7 @@ requirements:
   - label: 'Memo: by crew level'
     path: docs/SCENARIO_C_MEMO.md#by-crew-level
   - label: 'Memo: r3 assumptions'
-    path: docs/SCENARIO_C_MEMO.md#assumptions-physical-account-lines
+    path: docs/SCENARIO_C_MEMO.md#assumptions
   - label: 'ARCHITECTURE: rule compiler component'
     path: docs/ARCHITECTURE.md#components
   - label: 'assumptions.yaml: crew, deck clear times'
@@ -2846,7 +2846,7 @@ requirements:
   - label: 'GAMEPLAN: compute-class honesty'
     path: GAMEPLAN.md#edge-compute-redundancy-and-failsafes-logans-emphasis
   - label: 'Memo: r3 camera in the reserve'
-    path: docs/SCENARIO_C_MEMO.md#assumptions-physical-account-lines
+    path: docs/SCENARIO_C_MEMO.md#assumptions
   decisions:
   - DEC-06
   - DEC-15
@@ -4471,7 +4471,7 @@ requirements:
   - label: Schema
     path: manifests/schema.json
   - label: Physical Account
-    path: docs/PHYSICAL_ACCOUNT.md#physical-account-draft
+    path: docs/PHYSICAL_ACCOUNT.md
   - label: Physical Account generator
     path: tools/physical_account.py
   - label: Patrol file
@@ -4520,7 +4520,7 @@ requirements:
   - label: 'Demo: Scenario B load-out flag'
     path: docs/DEMO_SCRIPT.md#decision-needed-first-scenario-bs-load-out-breaks-the-briefs-own-margins
   - label: Physical Account
-    path: docs/PHYSICAL_ACCOUNT.md#physical-account-draft
+    path: docs/PHYSICAL_ACCOUNT.md
   decisions:
   - DEC-22
   - DEC-26
@@ -5974,7 +5974,7 @@ requirements:
   - label: Sustained-draw helper
     path: tests/test_brief_arithmetic.py
   - label: Line assignment
-    path: docs/PHYSICAL_ACCOUNT.md#physical-account-draft
+    path: docs/PHYSICAL_ACCOUNT.md
   - label: 'Research E3: reserve before clearance'
     path: research/vessels/event_protocols_log.md#e3-helicopter-and-vtol-uav-flight-deck-operations-on-small-ships
   decisions:
@@ -6126,7 +6126,7 @@ requirements:
   - label: 'Memo: drone timing'
     path: docs/SCENARIO_C_MEMO.md#by-crew-level
   - label: 'Memo: assumptions'
-    path: docs/SCENARIO_C_MEMO.md#assumptions-physical-account-lines
+    path: docs/SCENARIO_C_MEMO.md#assumptions
   - label: 'Demo: Scenario B'
     path: docs/DEMO_SCRIPT.md#scenario-b-90-s-deep
   decisions:
@@ -6311,7 +6311,7 @@ requirements:
   - label: 'Memo: live demo'
     path: docs/SCENARIO_C_MEMO.md#live-demo-two-levels-required-0-shown-too
   - label: 'Memo: assumptions'
-    path: docs/SCENARIO_C_MEMO.md#assumptions-physical-account-lines
+    path: docs/SCENARIO_C_MEMO.md#assumptions
   decisions:
   - DEC-02
   - DEC-17
@@ -6372,7 +6372,7 @@ requirements:
   - label: 'Memo: live demo'
     path: docs/SCENARIO_C_MEMO.md#live-demo-two-levels-required-0-shown-too
   - label: 'Memo: assumptions'
-    path: docs/SCENARIO_C_MEMO.md#assumptions-physical-account-lines
+    path: docs/SCENARIO_C_MEMO.md#assumptions
   - label: 'WORKLOG: memo entry'
     path: WORKLOG.md#fri-2306-pdt--scenario-c-memo-draft--claude-opus-55-on-behalf-of-logan-walker-ghostwalka
   decisions:
@@ -6438,7 +6438,7 @@ requirements:
   - label: Physical Account generator
     path: tools/physical_account.py
   - label: Physical Account draft
-    path: docs/PHYSICAL_ACCOUNT.md#physical-account-draft
+    path: docs/PHYSICAL_ACCOUNT.md
   - label: Demo baseline 00:00
     path: docs/DEMO_SCRIPT.md#scenario-b-90-s-deep
   - label: Motion model
@@ -7151,7 +7151,7 @@ requirements:
   - label: Power budget test
     path: tests/test_brief_arithmetic.py
   - label: Trip assumptions
-    path: docs/PHYSICAL_ACCOUNT.md#physical-account-draft
+    path: docs/PHYSICAL_ACCOUNT.md
   - label: Event types
     path: docs/ARCHITECTURE.md#data-contracts
   - label: Trip confirmation
@@ -7444,7 +7444,7 @@ requirements:
   - label: Platform profile
     path: config/assumptions.yaml
   - label: Physical Account draft
-    path: docs/PHYSICAL_ACCOUNT.md#physical-account-draft
+    path: docs/PHYSICAL_ACCOUNT.md
   - label: 'Demo: Scenario B baseline'
     path: docs/DEMO_SCRIPT.md#scenario-b-90-s-deep
   - label: Motion model
@@ -7559,7 +7559,7 @@ requirements:
   - label: G5 card
     path: manifests/G5.yaml
   - label: Hangar roof assumption
-    path: docs/PHYSICAL_ACCOUNT.md#physical-account-draft
+    path: docs/PHYSICAL_ACCOUNT.md
   decisions: []
   status: drafted
   question: When G1 and G5 both want the one free mast slot, should D2 default G5's antenna to the hangar roof and
@@ -8474,11 +8474,9 @@ requirements:
   - label: 'Platform profile: power and envelope'
     path: config/assumptions.yaml
   - label: Physical Account draft
-    path: docs/PHYSICAL_ACCOUNT.md#physical-account-draft
+    path: docs/PHYSICAL_ACCOUNT.md
   - label: 'GAMEPLAN: D1 envelope grid'
     path: GAMEPLAN.md#declared-objectives-readme-table-one-line-each
-  - label: Physical Account
-    path: docs/PHYSICAL_ACCOUNT.md
   decisions: []
   status: drafted
   question: The brief gives only the cruise reserve (200 kW), so do we assume slow leaves more for guests because
@@ -8936,7 +8934,7 @@ requirements:
   - label: G5 card
     path: manifests/G5.yaml
   - label: 'Physical Account: hangar roof row'
-    path: docs/PHYSICAL_ACCOUNT.md#physical-account-draft
+    path: docs/PHYSICAL_ACCOUNT.md
   - label: 'Demo: Scenario A drills'
     path: docs/DEMO_SCRIPT.md#scenario-a-jurys-card-deep
   decisions: []
@@ -8966,7 +8964,7 @@ requirements:
   - label: Manifest schema
     path: manifests/schema.json
   - label: 'Physical Account: power-line rows'
-    path: docs/PHYSICAL_ACCOUNT.md#physical-account-draft
+    path: docs/PHYSICAL_ACCOUNT.md
   - label: 'Demo: Scenario A drills'
     path: docs/DEMO_SCRIPT.md#scenario-a-jurys-card-deep
   - label: 'Demo: Scenario B load-out'
@@ -9031,7 +9029,7 @@ requirements:
   - label: 'GAMEPLAN: one ledger, four roles'
     path: GAMEPLAN.md#one-ledger-one-manifest-language
   - label: Physical Account draft
-    path: docs/PHYSICAL_ACCOUNT.md#physical-account-draft
+    path: docs/PHYSICAL_ACCOUNT.md
   - label: tools/physical_account.py
     path: tools/physical_account.py
   - label: 'Demo: Scenario A'
@@ -9068,7 +9066,7 @@ requirements:
   - label: G5 card
     path: manifests/G5.yaml
   - label: Physical Account draft
-    path: docs/PHYSICAL_ACCOUNT.md#physical-account-draft
+    path: docs/PHYSICAL_ACCOUNT.md
   - label: 'Demo: breadth strip'
     path: docs/DEMO_SCRIPT.md#breadth-strip-one-line-each-about-5-s-each
   decisions: []
@@ -9164,7 +9162,7 @@ requirements:
   - label: 'WORKLOG: conflicts'
     path: WORKLOG.md#conflicts-and-risks-to-watch
   - label: Physical Account draft
-    path: docs/PHYSICAL_ACCOUNT.md#physical-account-draft
+    path: docs/PHYSICAL_ACCOUNT.md
   - label: 'README: limitations'
     path: README.md#limitations-today
   decisions:
@@ -9264,7 +9262,7 @@ requirements:
   - label: 'assumptions.yaml: power'
     path: config/assumptions.yaml
   - label: Physical Account draft
-    path: docs/PHYSICAL_ACCOUNT.md#physical-account-draft
+    path: docs/PHYSICAL_ACCOUNT.md
   - label: 'Platform research: generator specs'
     path: research/sensors/platform_power_thermal.md#3-synthetic-generator-specs
   decisions: []
@@ -9295,7 +9293,7 @@ requirements:
   - label: 'Platform research: chilled-water generator'
     path: research/sensors/platform_power_thermal.md#3-synthetic-generator-specs
   - label: 'Physical Account: seawater scan rows'
-    path: docs/PHYSICAL_ACCOUNT.md#physical-account-draft
+    path: docs/PHYSICAL_ACCOUNT.md
   - label: 'Demo: Scenario A'
     path: docs/DEMO_SCRIPT.md#scenario-a-jurys-card-deep
   decisions: []
@@ -9557,7 +9555,7 @@ requirements:
   - label: G5 card (antenna allowed positions)
     path: manifests/G5.yaml
   - label: 'Physical Account: hangar_roof row'
-    path: docs/PHYSICAL_ACCOUNT.md#physical-account-draft
+    path: docs/PHYSICAL_ACCOUNT.md
   - label: tests/test_brief_arithmetic.py (10.035 t)
     path: tests/test_brief_arithmetic.py
   - label: 'DEMO_SCRIPT: Scenario A drills'
@@ -9673,7 +9671,7 @@ requirements:
   - label: 'Platform research: generator specs (multipliers)'
     path: research/sensors/platform_power_thermal.md#3-synthetic-generator-specs
   - label: 'Physical Account: hangar_roof row'
-    path: docs/PHYSICAL_ACCOUNT.md#physical-account-draft
+    path: docs/PHYSICAL_ACCOUNT.md
   - label: 'DEMO_SCRIPT: Scenario A drills'
     path: docs/DEMO_SCRIPT.md#scenario-a-jurys-card-deep
   decisions:
@@ -9724,7 +9722,7 @@ requirements:
   - label: 'assumptions.yaml: data'
     path: config/assumptions.yaml
   - label: 'Physical Account: satcom_envelope_mbps row'
-    path: docs/PHYSICAL_ACCOUNT.md#physical-account-draft
+    path: docs/PHYSICAL_ACCOUNT.md
   - label: G1 card
     path: manifests/G1.yaml
   - label: G2 card
@@ -9757,7 +9755,7 @@ requirements:
   - label: 'assumptions.yaml: data'
     path: config/assumptions.yaml
   - label: Physical Account draft
-    path: docs/PHYSICAL_ACCOUNT.md#physical-account-draft
+    path: docs/PHYSICAL_ACCOUNT.md
   - label: G4 card
     path: manifests/G4.yaml
   - label: 'Comms research: generator specs'
@@ -9826,7 +9824,7 @@ requirements:
   - label: 'GAMEPLAN: Edge compute and failsafes'
     path: GAMEPLAN.md#edge-compute-redundancy-and-failsafes-logans-emphasis
   - label: 'Scenario C memo: assumptions'
-    path: docs/SCENARIO_C_MEMO.md#assumptions-physical-account-lines
+    path: docs/SCENARIO_C_MEMO.md#assumptions
   decisions:
   - DEC-15
   status: drafted
@@ -9865,7 +9863,7 @@ requirements:
   - label: 'DEMO_SCRIPT: Scenario A'
     path: docs/DEMO_SCRIPT.md#scenario-a-jurys-card-deep
   - label: Physical Account draft
-    path: docs/PHYSICAL_ACCOUNT.md#physical-account-draft
+    path: docs/PHYSICAL_ACCOUNT.md
   decisions:
   - DEC-26
   status: planned
@@ -9972,7 +9970,7 @@ requirements:
   - label: 'DEMO_SCRIPT: Scenario B'
     path: docs/DEMO_SCRIPT.md#scenario-b-90-s-deep
   - label: Physical Account draft
-    path: docs/PHYSICAL_ACCOUNT.md#physical-account-draft
+    path: docs/PHYSICAL_ACCOUNT.md
   decisions:
   - DEC-17
   - DEC-26
@@ -10025,7 +10023,7 @@ requirements:
   - label: 'assumptions.yaml: ship_state.genset, power'
     path: config/assumptions.yaml
   - label: 'Physical Account: trip_confirm row'
-    path: docs/PHYSICAL_ACCOUNT.md#physical-account-draft
+    path: docs/PHYSICAL_ACCOUNT.md
   - label: 'GAMEPLAN: Shedding ladder (D4)'
     path: GAMEPLAN.md#shedding-ladder-d4-precomputed-every-tick
   - label: 'ARCHITECTURE: data contracts (event types)'
@@ -10066,7 +10064,7 @@ requirements:
   - label: tests/test_brief_arithmetic.py
     path: tests/test_brief_arithmetic.py
   - label: 'Physical Account: line_lost_on_trip row'
-    path: docs/PHYSICAL_ACCOUNT.md#physical-account-draft
+    path: docs/PHYSICAL_ACCOUNT.md
   - label: 'WORKLOG: conflicts (CON-08)'
     path: WORKLOG.md#conflicts-and-risks-to-watch
   - label: 'GAMEPLAN: Shedding ladder (D4)'
@@ -11697,7 +11695,7 @@ requirements:
   - label: G4 card
     path: manifests/G4.yaml
   - label: 'Scenario C memo: assumptions'
-    path: docs/SCENARIO_C_MEMO.md#assumptions-physical-account-lines
+    path: docs/SCENARIO_C_MEMO.md#assumptions
   - label: 'Payload research: generator specs'
     path: research/sensors/payload_deck_human.md#4-synthetic-generator-specs
   decisions: []
@@ -11865,7 +11863,7 @@ requirements:
   - label: 'assumptions.yaml: positions'
     path: config/assumptions.yaml
   - label: Physical Account draft
-    path: docs/PHYSICAL_ACCOUNT.md#physical-account-draft
+    path: docs/PHYSICAL_ACCOUNT.md
   decisions: []
   status: drafted
   question: How do we check drone clearance if G5's antenna goes on the hangar roof?
@@ -12047,7 +12045,7 @@ requirements:
     own electrical draw (its nodes and CV inference) is not listed.'
   links:
   - label: Physical Account
-    path: docs/PHYSICAL_ACCOUNT.md#physical-account-draft
+    path: docs/PHYSICAL_ACCOUNT.md
   - label: Power section
     path: config/assumptions.yaml
   decisions:
@@ -12075,7 +12073,7 @@ requirements:
     keys tagged assumed would join the table and fall under test_every_assumed_number_has_a_reason.'
   links:
   - label: Physical Account draft
-    path: docs/PHYSICAL_ACCOUNT.md#physical-account-draft
+    path: docs/PHYSICAL_ACCOUNT.md
   - label: 'assumptions.yaml: heat'
     path: config/assumptions.yaml
   - label: Cooling tests
@@ -12102,7 +12100,7 @@ requirements:
     rule comes from A.3. The governor''s own rack space is not stated.'
   links:
   - label: Physical Account
-    path: docs/PHYSICAL_ACCOUNT.md#physical-account-draft
+    path: docs/PHYSICAL_ACCOUNT.md
   - label: Positions
     path: config/assumptions.yaml
   decisions: []
@@ -12122,9 +12120,9 @@ requirements:
     and our measured decision latencies.'
   links:
   - label: Physical Account
-    path: docs/PHYSICAL_ACCOUNT.md#physical-account-draft
+    path: docs/PHYSICAL_ACCOUNT.md
   - label: r3 assumptions
-    path: docs/SCENARIO_C_MEMO.md#assumptions-physical-account-lines
+    path: docs/SCENARIO_C_MEMO.md#assumptions
   - label: Failover timings
     path: research/sensors/comms_network_compute.md#4-redundancy-and-failover-patterns-for-a-two-node-demo
   decisions:
@@ -12158,7 +12156,7 @@ requirements:
   - label: 'assumptions.yaml: compute'
     path: config/assumptions.yaml
   - label: 'Memo: r3.camera'
-    path: docs/SCENARIO_C_MEMO.md#assumptions-physical-account-lines
+    path: docs/SCENARIO_C_MEMO.md#assumptions
   - label: 'Camera design: compute reserve'
     path: research/cv_equipment_monitoring.md#6-how-detections-enter-the-governor
   decisions:
@@ -12188,7 +12186,7 @@ requirements:
     amount the final paragraph uses, cited beside it.'
   links:
   - label: 'Physical Account: closing question'
-    path: docs/PHYSICAL_ACCOUNT.md#physical-account-draft
+    path: docs/PHYSICAL_ACCOUNT.md
   - label: Generator (closing text)
     path: tools/physical_account.py
   - label: Fleet numbers (plausibility only)
@@ -12281,7 +12279,7 @@ requirements:
   - label: Reason test
     path: tests/test_brief_arithmetic.py
   - label: Memo assumptions (r3.*)
-    path: docs/SCENARIO_C_MEMO.md#assumptions-physical-account-lines
+    path: docs/SCENARIO_C_MEMO.md#assumptions
   - label: G6 card (all assumed)
     path: manifests/G6.yaml
   decisions:
@@ -12311,11 +12309,11 @@ requirements:
     until all four hold.'
   links:
   - label: Physical Account draft
-    path: docs/PHYSICAL_ACCOUNT.md#physical-account-draft
+    path: docs/PHYSICAL_ACCOUNT.md
   - label: Generator
     path: tools/physical_account.py
   - label: Memo assumptions (r3.*)
-    path: docs/SCENARIO_C_MEMO.md#assumptions-physical-account-lines
+    path: docs/SCENARIO_C_MEMO.md#assumptions
   - label: 'README: deliverables'
     path: README.md#deliverables
   decisions:
@@ -12340,7 +12338,7 @@ requirements:
   - label: 'assumptions.yaml: power'
     path: config/assumptions.yaml
   - label: Physical Account draft
-    path: docs/PHYSICAL_ACCOUNT.md#physical-account-draft
+    path: docs/PHYSICAL_ACCOUNT.md
   decisions: []
   status: drafted
   question: We chose 'no line lost'; would losing starboard (Bay 2 plus flight deck, up to 80 kW) make a stronger,
@@ -12369,9 +12367,9 @@ requirements:
   - label: Generator
     path: tools/physical_account.py
   - label: Physical Account draft
-    path: docs/PHYSICAL_ACCOUNT.md#physical-account-draft
+    path: docs/PHYSICAL_ACCOUNT.md
   - label: Memo assumptions (r3.*)
-    path: docs/SCENARIO_C_MEMO.md#assumptions-physical-account-lines
+    path: docs/SCENARIO_C_MEMO.md#assumptions
   - label: 'assumptions.yaml: provenance'
     path: config/assumptions.yaml
   - label: Reason test
@@ -12398,11 +12396,11 @@ requirements:
   - label: 'assumptions.yaml: provenance'
     path: config/assumptions.yaml
   - label: Physical Account draft
-    path: docs/PHYSICAL_ACCOUNT.md#physical-account-draft
+    path: docs/PHYSICAL_ACCOUNT.md
   - label: Generator script
     path: tools/physical_account.py
   - label: 'Scenario C memo: assumptions'
-    path: docs/SCENARIO_C_MEMO.md#assumptions-physical-account-lines
+    path: docs/SCENARIO_C_MEMO.md#assumptions
   - label: 'WORKLOG: Scenario C memo entry'
     path: WORKLOG.md#fri-2306-pdt--scenario-c-memo-draft--claude-opus-55-on-behalf-of-logan-walker-ghostwalka
   decisions:
@@ -12425,8 +12423,6 @@ requirements:
   - label: Generator script
     path: tools/physical_account.py
   - label: Physical Account draft
-    path: docs/PHYSICAL_ACCOUNT.md#physical-account-draft
-  - label: Where-used column
     path: docs/PHYSICAL_ACCOUNT.md
   decisions:
   - DEC-24
@@ -12451,7 +12447,7 @@ requirements:
     that every row''s class is one of the nine.'
   links:
   - label: Physical Account draft
-    path: docs/PHYSICAL_ACCOUNT.md#physical-account-draft
+    path: docs/PHYSICAL_ACCOUNT.md
   - label: Generator
     path: tools/physical_account.py
   - label: 'assumptions.yaml: provenance'
@@ -12474,7 +12470,7 @@ requirements:
     reading of the post-trip peak (CON-08) is missing.'
   links:
   - label: Physical Account draft
-    path: docs/PHYSICAL_ACCOUNT.md#physical-account-draft
+    path: docs/PHYSICAL_ACCOUNT.md
   - label: 'assumptions.yaml: power'
     path: config/assumptions.yaml
   decisions:
@@ -12494,7 +12490,7 @@ requirements:
     air-cooled guests off the loop.'
   links:
   - label: Physical Account draft
-    path: docs/PHYSICAL_ACCOUNT.md#physical-account-draft
+    path: docs/PHYSICAL_ACCOUNT.md
   - label: 'assumptions.yaml: heat'
     path: config/assumptions.yaml
   decisions: []
@@ -12511,7 +12507,7 @@ requirements:
     bay-sharing rule (halves 2, needs_bay_clear) and mast eligibility (mast_free 0.6 m2, 60 kg, air-cooled, 2 kW).'
   links:
   - label: Physical Account draft
-    path: docs/PHYSICAL_ACCOUNT.md#physical-account-draft
+    path: docs/PHYSICAL_ACCOUNT.md
   - label: Manifest schema
     path: manifests/schema.json
   decisions: []
@@ -12528,7 +12524,7 @@ requirements:
     mast 3.0). No margin is kept, and that 'none' is not written down.
   links:
   - label: Physical Account draft
-    path: docs/PHYSICAL_ACCOUNT.md#physical-account-draft
+    path: docs/PHYSICAL_ACCOUNT.md
   - label: 'assumptions.yaml: mass'
     path: config/assumptions.yaml
   decisions: []
@@ -12546,7 +12542,7 @@ requirements:
     or above 6 kn, all assumed).
   links:
   - label: Physical Account draft
-    path: docs/PHYSICAL_ACCOUNT.md#physical-account-draft
+    path: docs/PHYSICAL_ACCOUNT.md
   - label: 'Comms research: generator specs'
     path: research/sensors/comms_network_compute.md#3-synthetic-generator-specs
   decisions: []
@@ -12581,7 +12577,7 @@ requirements:
     a row.
   links:
   - label: Physical Account draft
-    path: docs/PHYSICAL_ACCOUNT.md#physical-account-draft
+    path: docs/PHYSICAL_ACCOUNT.md
   - label: 'GAMEPLAN: Edge compute and failsafes'
     path: GAMEPLAN.md#edge-compute-redundancy-and-failsafes-logans-emphasis
   decisions: []
@@ -12626,7 +12622,7 @@ requirements:
     today). Proof: the generator reads card flags plus new environment and cameras blocks; one-page check (R-552).'
   links:
   - label: Physical Account draft
-    path: docs/PHYSICAL_ACCOUNT.md#physical-account-draft
+    path: docs/PHYSICAL_ACCOUNT.md
   - label: G6 card
     path: manifests/G6.yaml
   - label: 'GAMEPLAN: camera inventory'
@@ -13301,7 +13297,7 @@ requirements:
   - label: Closure tests
     path: tests/test_brief_arithmetic.py
   - label: 'Physical Account: keys taken from the brief'
-    path: docs/PHYSICAL_ACCOUNT.md#physical-account-draft
+    path: docs/PHYSICAL_ACCOUNT.md
   decisions:
   - CON-03
   - DEC-22
@@ -13530,7 +13526,7 @@ requirements:
   - label: 'assumptions.yaml: provenance'
     path: config/assumptions.yaml
   - label: 'Physical Account: closing question'
-    path: docs/PHYSICAL_ACCOUNT.md#physical-account-draft
+    path: docs/PHYSICAL_ACCOUNT.md
   decisions:
   - CON-03
   - DEC-19
@@ -13778,7 +13774,7 @@ requirements:
   - label: Power closure test
     path: tests/test_brief_arithmetic.py
   - label: 'Physical Account: hotel rows'
-    path: docs/PHYSICAL_ACCOUNT.md#physical-account-draft
+    path: docs/PHYSICAL_ACCOUNT.md
   - label: 'GAMEPLAN: host commitments'
     path: GAMEPLAN.md#one-ledger-one-manifest-language
   - label: 'Research E1: PMS load shedding'
@@ -13876,7 +13872,7 @@ requirements:
   - label: tests/test_brief_arithmetic.py
     path: tests/test_brief_arithmetic.py
   - label: Physical Account draft
-    path: docs/PHYSICAL_ACCOUNT.md#physical-account-draft
+    path: docs/PHYSICAL_ACCOUNT.md
   decisions:
   - DEC-24
   status: drafted
@@ -13899,7 +13895,7 @@ requirements:
   - label: 'assumptions.yaml: power'
     path: config/assumptions.yaml
   - label: Physical Account draft
-    path: docs/PHYSICAL_ACCOUNT.md#physical-account-draft
+    path: docs/PHYSICAL_ACCOUNT.md
   - label: 'Platform research: generator specs'
     path: research/sensors/platform_power_thermal.md#3-synthetic-generator-specs
   - label: 'Research E10: cascades'
@@ -13929,7 +13925,7 @@ requirements:
   - label: 'assumptions.yaml: positions, power'
     path: config/assumptions.yaml
   - label: Physical Account draft
-    path: docs/PHYSICAL_ACCOUNT.md#physical-account-draft
+    path: docs/PHYSICAL_ACCOUNT.md
   - label: 'ARCHITECTURE: data contracts (ledger line)'
     path: docs/ARCHITECTURE.md#data-contracts
   - label: 'Platform research: generator specs'
@@ -13951,7 +13947,7 @@ requirements:
   - label: 'assumptions.yaml: positions'
     path: config/assumptions.yaml
   - label: Physical Account draft
-    path: docs/PHYSICAL_ACCOUNT.md#physical-account-draft
+    path: docs/PHYSICAL_ACCOUNT.md
   decisions: []
   status: drafted
   question: The brief lists no hangar-roof connection; should G5's roof antenna draw through the flight-deck connection
@@ -14039,7 +14035,7 @@ requirements:
   - label: G2 card
     path: manifests/G2.yaml
   - label: Physical Account draft
-    path: docs/PHYSICAL_ACCOUNT.md#physical-account-draft
+    path: docs/PHYSICAL_ACCOUNT.md
   decisions: []
   status: drafted
   question: Only G2 sets needs_bay_clear, so G2 in half Bay 1 can never share and G5 must take Bay 2; do we accept
@@ -15203,7 +15199,7 @@ requirements:
   - label: 'Software log: data sources'
     path: docs/SOFTWARE_LOG.md#data-sources-planned-none-downloaded-yet
   - label: 'Scenario C memo: r3 assumptions'
-    path: docs/SCENARIO_C_MEMO.md#assumptions-physical-account-lines
+    path: docs/SCENARIO_C_MEMO.md#assumptions
   decisions:
   - DEC-22
   - CON-03
