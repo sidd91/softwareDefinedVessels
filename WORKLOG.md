@@ -819,5 +819,5 @@ here instead. config/decision_record.schema.json (ARCHITECTURE contract 6; ship 
 log), src/sdv/records.py (records from D1, D3 and D4 outputs with an inputs hash), src/sdv/explain.py (one sentence
 from the record's fields: verdict, binding line with numbers, the top yes-if condition, D3 hard limit and cost to the
 loser, D4 hold or step with kW freed and capability kept, R3 by crew level). tests/test_explain.py: every Scenario A
-case and every Scenario B decision validates; key sentences pinned.  prints the sentence first. 861 pass.
+case and every Scenario B decision validates; key sentences pinned. The sdv admit command prints the sentence first. 861 pass.
 Decisions: none new. Conflicts: none new. Deferrals: none.
