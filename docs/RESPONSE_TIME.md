@@ -16,7 +16,7 @@ in what order, when the ship loses a generator or a cooling pump.
 | **60 S** | the profile's mission-critical guests | Gives power last, only if the ship is still short after every 5 S step: one step per second, each after a fresh reading, all within 60 s of the fault. |
 
 Inside each class: slow down before switching off, then the profile's shed order, then the least mission value
-lost per kW freed. The order of the classes is fixed in code; which guest sits in which class is the profile's.
+lost per kW freed. The order of the classes is fixed in code. Which guest sits in which class is the profile's.
 
 ## The decisions every record is tagged with
 
@@ -31,13 +31,17 @@ lost per kW freed. The order of the classes is fixed in code; which guest sits i
 **Restore (30 S).** Once every fault has read healthy for 60 s, ArgOS steps the last guest it shed back up,
 one step per decision, only if the load still fits under the limit.
 
-## Status words on screen
+## Status words
+
+On screen today: the class tags (200 MS, 5 S, 60 S, 30 S) on every guest and every shed-order row, the
+response-class form in the profile builder, and the Reference page. The words below are in every decision record
+(due ticks, queued steps) and in each tick's safety table. The screen does not show them yet.
 
 | Word | Means |
 |---|---|
 | MET | applied by its due tick, and computed inside its limit |
 | MISSED | applied after its due tick, or computed slower than its limit |
-| DUE | a fault is open and the step is not yet applied; the due tick is shown |
+| DUE | a fault is open and the step is not yet applied, with its due tick |
 | QUEUED | a 60 S step that will go next second if a fresh reading shows it is still needed |
 | READY | a safety command that would go out now if asked |
 | NOT NEEDED | a safety command with nothing to do now; the reason is named |

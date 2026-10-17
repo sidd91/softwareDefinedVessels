@@ -49,7 +49,7 @@ def catalog(I: Inputs) -> dict:
                     "modes": [m["name"] for m in c["modes"]], "hard_limits": c.get("hard_limits", []),
                     "conditions": c.get("conditions", [])} for g, c in sorted(I.cards.items())],
         "capabilities": [{"name": k, "guests": v} for k, v in sorted(caps.items())],
-        "tiers": list(Lg.TIERS),
+        "responses": [{"id": c, "tag": Lg.response_tag(I.A, c)} for c in Lg.RESPONSE],
         "rules": sorted(I.vocab.rules),
         "crew_levels": [int(k) for k in sorted(policy, key=lambda k: -int(k))],
         "policies": {k: v["enum"] for k, v in policy.items()},

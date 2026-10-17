@@ -1,10 +1,10 @@
-// Profile builder: forms over a priority file (weights, tiers, shed order, crew policy) and over a guest card's
+// Profile builder: forms over a priority file (weights, response classes, shed order, crew policy) and over a guest card's
 // typed rules. Every check is the loader's (POST /api/builder/check). A valid profile is saved as a new file or
 // applied at sea through the live run; a valid card is saved as a new draft.
 import { esc, panel, paint, getJSON } from './util.js';
 import { app } from './app.js';
 
-const TIER_WORDS = { vessel_critical: 'VESSEL CRITICAL', mission_critical: 'MISSION CRITICAL', mission_support: 'MISSION SUPPORT', discretionary: 'DISCRETIONARY' };
+const CLASS_WORDS = { safety_command: 'SAFETY COMMANDS ONLY', shed_first_action: 'FIRST ACTION', shed_full_sequence: 'MISSION CRITICAL' };
 const ORDER = [['', 'COMPUTED'], ['1', 'FIRST 1'], ['2', 'FIRST 2'], ['3', 'FIRST 3'], ['-3', 'LAST 3'], ['-2', 'LAST 2'], ['-1', 'LAST 1']];
 const SHIP_GROUPS = ['plant', 'ship_state', 'environment', 'links', 'crew'];
 
@@ -40,10 +40,9 @@ function start(id) {
   st.order = { ...(p.shed_order || {}) };
   st.tier = {};
   for (const g of st.cat.guests) {
-    const t = p.tiers || {};
-    st.tier[g.id] = g.safety_critical || (t.vessel_critical || []).includes(g.id) ? 'vessel_critical'
-      : p.mission_critical.includes(g.id) ? 'mission_critical'
-        : (t.discretionary || []).includes(g.id) ? 'discretionary' : 'mission_support';
+    const safety = (p.response || {}).safety_command || [];
+    st.tier[g.id] = g.safety_critical || safety.includes(g.id) ? 'safety_command'
+      : p.mission_critical.includes(g.id) ? 'shed_full_sequence' : 'shed_first_action';
   }
   st.confirm = {};
   for (const [rule, levels] of Object.entries(p.confirm || {})) st.confirm[rule] = Object.fromEntries(Object.entries(levels).map(([k, v]) => [String(k), v]));
@@ -54,15 +53,13 @@ function start(id) {
 function profileDoc() {
   const d = { id: st.id, name: st.name, weights: {}, mission_critical: [] };
   for (const [k, v] of Object.entries(st.weights)) d.weights[k] = v;
-  const tiers = { vessel_critical: [], discretionary: [] };
+  const safety = [];
   for (const g of st.cat.guests) {
     const t = st.tier[g.id];
-    if (t === 'mission_critical') d.mission_critical.push(g.id);
-    else if (t === 'vessel_critical' && !g.safety_critical) tiers.vessel_critical.push(g.id);
-    else if (t === 'discretionary') tiers.discretionary.push(g.id);
+    if (t === 'shed_full_sequence') d.mission_critical.push(g.id);
+    else if (t === 'safety_command' && !g.safety_critical) safety.push(g.id);
   }
-  const tiersOut = Object.fromEntries(Object.entries(tiers).filter(([, v]) => v.length));
-  if (Object.keys(tiersOut).length) d.tiers = tiersOut;
+  if (safety.length) d.response = { safety_command: safety };
   const order = Object.fromEntries(Object.entries(st.order).filter(([, v]) => v));
   if (Object.keys(order).length) d.shed_order = order;
   const confirm = {};
@@ -236,12 +233,12 @@ function weightsForm() {
 function tiersForm() {
   const rows = st.cat.guests.map(g => {
     const sel = g.safety_critical
-      ? `<span class="tag t-NEVER">VESSEL CRITICAL · CARD</span>`
-      : `<select class="sel sm" data-t="${esc(g.id)}" aria-label="tier ${esc(g.id)}">${st.cat.tiers.map(t => opt(t, TIER_WORDS[t], st.tier[g.id])).join('')}</select>`;
+      ? `<span class="tag t-NEVER">200 MS · CARD</span>`
+      : `<select class="sel sm" data-t="${esc(g.id)}" aria-label="response class ${esc(g.id)}">${st.cat.responses.map(r => opt(r.id, `${r.tag} · ${CLASS_WORDS[r.id]}`, st.tier[g.id])).join('')}</select>`;
     return `<tr><th scope="row" class="b">${esc(g.id)}</th><td>${esc(g.name)}</td><td>${sel}</td></tr>`;
   }).join('');
-  return panel('CRITICALITY TIERS', `<table class="big"><thead><tr><th scope="col">GUEST</th><th scope="col">NAME</th><th scope="col">TIER</th></tr></thead><tbody>${rows}</tbody></table>
-<div class="foot">VESSEL CRITICAL NEVER SHED · THEN DISCRETIONARY, MISSION SUPPORT, MISSION CRITICAL · THROTTLE BEFORE SHED</div>`);
+  return panel('RESPONSE CLASS', `<table class="big"><thead><tr><th scope="col">GUEST</th><th scope="col">NAME</th><th scope="col">CLASS</th></tr></thead><tbody>${rows}</tbody></table>
+<div class="foot">200 MS NEVER SHED · 5 S FIRST ACTION · 60 S MISSION CRITICAL, ONE STEP A SECOND · THROTTLE BEFORE SHED IN EACH CLASS</div>`);
 }
 
 function crewForm() {

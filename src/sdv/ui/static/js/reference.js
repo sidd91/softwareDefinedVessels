@@ -15,9 +15,9 @@ const TAGS = [
   ['EXECUTED', 'Shed step', 'Step applied. Demand is back within the limit.'],
   ['COMMANDED', 'Shed step', 'Step decided on this tick, applied on the next.'],
   ['ARMED', 'Shed step', 'Next steps, recomputed every tick. Applied automatically when demand exceeds the limit.'],
-  ['LAST', 'Shed step', 'Mission-critical guest under the active priority file. Shed only after every other step.'],
-  ['NEVER', 'Shed step', 'Vessel-critical guest: never shed under the active profile, like a safety-critical card.'],
-  ['VC / MC / DISC', 'Guest tier', 'Vessel critical, mission critical, discretionary. Untagged guests are mission support.'],
+  ['LAST', 'Shed step', '60 S guest. Gives power only after every 5 S step, one step a second, all within 60 s of the fault.'],
+  ['NEVER', 'Shed step', '200 MS guest. Never shed. Only stop, hold or secure, answered within 200 ms.'],
+  ['200 MS / 5 S / 60 S', 'Response class', 'A.8 time limits as shed priority. 200 MS never shed, 5 S first action, 60 S mission critical. 30 S marks a restore.'],
   ['ALARM', 'Event log', 'Plant fault confirmed. Genset trip: 2 of 3 signals. CHW pump trip: plant alarm plus low flow or high delta-T.'],
   ['SHED', 'Event log', 'Load management step executed by D4.'],
   ['HOLD', 'Event log', 'D4 checked the load against the new limit and took 0 steps. The next step stays armed.'],
@@ -44,7 +44,7 @@ const TERMS = [
   ['D1 ADMISSION', 'Whether a guest card can come aboard: YES, YES-IF, NO or NOT NOW, with the binding line named. Within 30 s.'],
   ['D2 PLACEMENT', 'Where an admitted guest goes: bay, flight deck or mast position, with rejected alternatives. Within 30 s.'],
   ['D3 RIGHT OF WAY', 'Who wins when two guests need ship states that cannot both hold. Hard limits first, then mission weights. Within 2 s.'],
-  ['D4 SHEDDING', 'Degradation in a declared order when demand exceeds the limit. Throttle before switch-off, mission-critical last. First step within 5 s, all within 60 s.'],
+  ['D4 SHEDDING', 'Degradation by response class when demand exceeds the limit. 5 S guests first, then mission-critical 60 S guests one step a second. Throttle before switch-off inside each class. First step within 5 s, all within 60 s.'],
   ['D5 CREW POLICY', 'How each rule acts at 14, 6 or 0 aboard: crew confirms, standing plan, automatic or forbidden.'],
   ['D6 PHYSICAL ACCOUNT', 'Every number assumed, narrowed or invented beyond the ship and guest data, with its reason.'],
   ['MRV-60', 'Multi-role vessel, 60 m reference hull.'],
@@ -74,8 +74,8 @@ const TERMS = [
   ['SIM ×12', 'Run pace. One ship minute every 5 s.'],
   ['LIVE', 'The tick loop running now: simulator frames, the state estimator, the core’s decisions.'],
   ['REPLAY', 'Recorded snapshots and decision records played back in ship time.'],
-  ['PROFILE', 'A priority file: weights, mission-critical guests, tiers, shed order, crew policy. Applied at sea or saved as a new file.'],
-  ['TIER', 'Criticality tier of a guest under the active profile.'],
+  ['PROFILE', 'A priority file: weights, mission-critical guests, response classes, shed order, crew policy. Applied at sea or saved as a new file.'],
+  ['CLASS', 'Response class of a guest under the active profile: 200 MS, 5 S or 60 S.'],
   ['T+', 'Scenario ship time, hh:mm:ss.'],
   ['SW', 'Seawater temperature.'],
   ['ENV', 'Mission envelope: seawater 12 to 30 °C, slow and cruise bands, sea state up to 5, wind up to 30 kn.'],
@@ -114,10 +114,10 @@ const CREW = [
 ];
 
 const ORDER = [
-  ['1', 'Vessel critical', 'Never shed. Safety-critical cards and the profile’s vessel_critical list.'],
+  ['1', '200 MS', 'Never shed. Safety-critical cards and the profile’s response.safety_command list.'],
   ['2', 'Hard limits', 'A guest’s hard limit binds before any weight.'],
-  ['3', 'Throttle before shed', 'Every throttle step of every tier comes before any switch-off.'],
-  ['4', 'Tier', 'Discretionary first, then mission support, then mission critical.'],
+  ['3', 'Class', 'Every 5 S step before any 60 S step. 60 S steps go one a second after a fresh reading.'],
+  ['4', 'Throttle before shed', 'Inside each class, every throttle step comes before any switch-off.'],
   ['5', 'Declared order', 'The profile’s shed_order, when it has one.'],
   ['6', 'Least value lost per kW', 'Mission weight × capability lost ÷ kW freed, lowest first. Ties by guest id.'],
 ];
@@ -148,7 +148,7 @@ ${section('tags', 'STATUS TAGS · CRITERIA', table(['TAG', 'APPLIES TO', 'SET WH
   </div>
 </div>
 ${section('guests', 'GUESTS', table(['ID', 'GUEST', 'POSITION', 'COOLING', 'MODES, kW'], data.guests.map(g => [`<b>${esc(g.id)}</b>`, esc(g.name), esc(g.pos), esc(g.cooling), `<span class="mono">${esc(g.modes)}</span>`]), '', 700))}
-${section('files', 'PRIORITY FILES', table(['FILE', 'WEIGHTS', 'MISSION CRITICAL', 'TIERS'], data.missions.map(m => [`<b>${esc(m.name)}</b> <span class="mono" style="color: var(--muted)">${esc(m.id)}.yaml</span>`, `<span class="mono">${esc(m.weights)}</span>`, esc(m.mc), `<span class="mono">${esc(m.tiers)}</span>`]), '', 900))}
+${section('files', 'PRIORITY FILES', table(['FILE', 'WEIGHTS', 'MISSION CRITICAL', 'CLASSES'], data.missions.map(m => [`<b>${esc(m.name)}</b> <span class="mono" style="color: var(--muted)">${esc(m.id)}.yaml</span>`, `<span class="mono">${esc(m.weights)}</span>`, esc(m.mc), `<span class="mono">${esc(m.tiers)}</span>`]), '', 900))}
 ${data.devices.length ? section('kit', 'GOVERNOR COMPUTERS', table(['ID', 'KIND', 'ROLE', 'SITE', 'STORAGE'], data.devices.map(d => [`<b class="mono">${esc(d.id)}</b>`, esc(String(d.kind || '').replace(/_/g, ' ').toUpperCase()), esc(String(d.role || '').replace(/_/g, ' ').toUpperCase()), esc(String(d.site || '').replace(/_/g, ' ').toUpperCase()), d.storage_gb != null ? `<span class="mono">${esc(d.storage_gb)} GB</span>` : '--']), '', 700)) : ''}`;
 }
 

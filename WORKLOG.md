@@ -928,3 +928,24 @@ of his own (D1-D4, decision record, closed loop, `sdv demo`, commit 9a99dc7), ne
 core on main is for the team to settle.
 Decisions: none new. Conflicts: the second governor on feat/ship-state-fsm against DEC-47's split (for the team).
 Deferrals: the globe waits for the weather API and for Logan's yes to install CesiumJS.
+
+### Sat 16:18 PDT · DEC-60 review fixes and the screen on response classes, merged to main · Claude Opus 5.5 on behalf of Logan Walker (GhostWalka)
+
+An adversarial review of the response-class change (four dimensions, each finding put to a skeptic) confirmed 23
+findings and refuted 5. Fixed: the 200 MS landing hold is now a flag that withholds R3's deck work until a fresh
+landing-officer clear report, answers "cannot" with the crew action once the deck is being cleared (the hold had
+sent nothing while the record said held), and never turns a bridge denial or a forbidden recovery into a clearance;
+a recall of G4 answers from the R3 crew policy, and a recall the bridge let lapse is asked again at the hard limit
+with the old request closed; D3 sets an open recovery's deadline; a hold on its way to G3 expires on acknowledgement,
+link loss or the link's judged latency; the first action is due by the 5 s tick and later steps by the 60 s tick,
+both counted from the overload's onset; restore leaves a guest the crew lowered by hand; an unknown safety request
+is refused before anything is logged; every input reaches the input log for replay; minutes print as minutes. The
+screen moved to the response classes: class tags on guests and shed rows, a response-class form in the profile
+builder, Reference text; docs/RESPONSE_TIME.md now says which status words the screen does not show yet. Logan
+asked to finish it locally (the cloud move failed: Claude's GitHub App has no access to sidd91/softwareDefinedVessels)
+and to merge when ready. 1277 tests pass. Then the hard pause Logan asked for: the weather listener had fired at
+16:05 and ended, the worklog cron is deleted, the old background waiter and the UI session's local server are
+stopped, the globe session was stopped before it changed anything (globe on hold), and the helper sessions are idle.
+Decisions: none new. Conflicts: Siddharth's feat/ship-state-fsm carries his weather support (fbe59a5) and a second
+governor (9a99dc7), neither on main, for the team sync. Deferrals: DEC-60's two calls (5 S guests may be switched
+off before a 60 S guest is throttled; discretionary tiers folded into shed_order) to Logan's team.

@@ -29,8 +29,11 @@ CLASS_NAMES = {"heat": "COOLING CHW", "power": "POWER"}
 SIGNAL_NAMES = {"speed_kn": "SPEED", "deck_machinery": "DECK MACHINERY", "heading_free": "HEADING", "noise": "NOISE",
                 "course": "COURSE", "deck_flight_deck": "FLIGHT DECK", "ramp": "RAMP", "emission": "EMISSION"}
 CEILING_S = {"D1": 30.0, "D2": 30.0, "D3": 2.0, "D4": 5.0, "D5": 2.0}
-TIER_NAMES = {"vessel_critical": "VESSEL CRITICAL", "mission_critical": "MISSION CRITICAL", "mission_support": "MISSION SUPPORT",
-              "discretionary": "DISCRETIONARY"}
+
+
+def _tag(I: Inputs, cls: str) -> str:
+    """A response class as its A.8 tag (200 MS, 5 S, 60 S, 30 S), formatted from response_time_s (DEC-60)."""
+    return Lg.response_tag(I.A, cls)
 
 
 # ------------------------------------------------------------------------------------------- formatting
@@ -301,7 +304,7 @@ def guest_rows(I: Inputs, m: Moment, gs: dict) -> list[dict]:
         out.append({"id": g, "pos": _pos(I, g, s, placement), "mode": words(s["mode"]) + (f" · RSV {kw(s['reserved_kw'])}" if _reserved_only(s) else ""),
                     "kw": kw(_drawing_kw(s)),
                     "cap": f"{s['capability'] * 100:.0f} %", "rsv": f"{kw(s['reserved_kw'])} kW" if s.get("reserved_kw") else "",
-                    "activity": words(s["activity"]), "tier": TIER_NAMES[Lg.tier_of(I.cards, g, file)]})
+                    "activity": words(s["activity"]), "tier": _tag(I, Lg.response_of(I.cards, g, file))})
     return out
 
 
@@ -626,20 +629,20 @@ def shed_order(I: Inputs, m: Moment) -> dict:
             rows.append((s, "ARMED"))
     out = []
     for i, (s, state) in enumerate(rows, 1):
-        tier = s.get("tier") or Lg.tier_of(I.cards, s["guest"], file)
+        cls = s.get("response") or Lg.response_of(I.cards, s["guest"], file)
         out.append({"n": str(i), "g": s["guest"], "step": f"{words(s['from_mode'])} → {words(s['to_mode'])}",
-                    "kw": f"-{kw(s['frees_kw'])}", "loss": f"{s.get('capability_lost_pct', 0):.0f} %", "tier": TIER_NAMES[tier],
-                    "mc": tier == "mission_critical", "shed": bool(s.get("shed")), "state": state})
+                    "kw": f"-{kw(s['frees_kw'])}", "loss": f"{s.get('capability_lost_pct', 0):.0f} %", "tier": _tag(I, cls),
+                    "mc": cls == "shed_full_sequence", "shed": bool(s.get("shed")), "state": state})
     listed = {s["g"] for s in out}
     for g in m.snapshot["guests"]:
-        tier = Lg.tier_of(I.cards, g, file)
-        if g not in listed and tier in ("mission_critical", "vessel_critical"):
-            out.append({"n": "--" if tier == "vessel_critical" else str(len(out) + 1), "g": g,
-                        "step": "VESSEL CRITICAL" if tier == "vessel_critical" else "MISSION CRITICAL", "kw": "--", "loss": "--",
-                        "tier": TIER_NAMES[tier], "mc": tier == "mission_critical", "shed": False,
-                        "state": "NEVER" if tier == "vessel_critical" else "LAST"})
+        cls = Lg.response_of(I.cards, g, file)
+        if g not in listed and cls in ("shed_full_sequence", "safety_command"):
+            safety = cls == "safety_command"
+            out.append({"n": "--" if safety else str(len(out) + 1), "g": g,
+                        "step": "SAFETY COMMANDS ONLY" if safety else "MISSION CRITICAL", "kw": "--", "loss": "--",
+                        "tier": _tag(I, cls), "mc": not safety, "shed": False, "state": "NEVER" if safety else "LAST"})
     src = r["order_source"] if r else ("declared" if file.get("shed_order") else "computed")
-    return {"rows": out, "source": f"ORDER {words(src)} · TIER, THEN LOSS PER kW", "mission": mission_name(m.mission, file)}
+    return {"rows": out, "source": f"ORDER {words(src)} · CLASS, THEN LOSS PER kW", "mission": mission_name(m.mission, file)}
 
 
 # ------------------------------------------------------------------------------------------- event log
@@ -1050,7 +1053,7 @@ def reference(I: Inputs) -> dict:
                        "cooling": "CHW" if c["cooling"] == "chilled_water" else "AIR"})
     missions = [{"id": k, "name": mission_name(k, m), "weights": " · ".join(f"{words(w)} {v:.1f}" for w, v in m["weights"].items()),
                  "mc": " ".join(m["mission_critical"]) or "--",
-                 "tiers": " · ".join(f"{g} {TIER_NAMES[Lg.tier_of(I.cards, g, m)]}" for g in sorted(I.cards))} for k, m in I.missions.items()]
+                 "tiers": " · ".join(f"{g} {_tag(I, Lg.response_of(I.cards, g, m))}" for g in sorted(I.cards))} for k, m in I.missions.items()]
     try:
         from sdv import kit
         devices = [{k: d.get(k) for k in ("id", "kind", "role", "site", "storage_gb")} for d in kit.devices(I.A)]

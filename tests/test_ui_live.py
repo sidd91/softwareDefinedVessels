@@ -72,12 +72,12 @@ def test_a_priority_swap_mid_run_decides_under_the_new_file():
 
 
 def test_a_profile_applied_at_sea_takes_effect_and_a_bad_one_is_refused():
-    prof = dict(I.missions["sar"], id="sar_tiers", name="Rescue with tiers", tiers={"discretionary": ["G5"]})
+    prof = dict(I.missions["sar"], id="sar_tiers", name="Rescue with tiers", shed_order={"coastal_connectivity": 1})
     lr = live.LiveReplay("sar", 600, running=False)
     assert lr.command({"cmd": "input", "input": {"type": "profile_applied", "payload": {"profile": prof}}}) is None
     lr.run.advance_to(1150)
     shed = next(r for r in lr.run.records if r["kind"] == "D4" and r["verdict"] == "shed")
-    assert shed["mission"] == "sar_tiers" and shed["steps"][0]["tier"] == "discretionary"
+    assert shed["mission"] == "sar_tiers" and shed["steps"][0]["guest"] == "G5" and shed["steps"][0]["response"] == "shed_first_action"
     v = view.screen(I, lr.run.moment())
     assert v["header"]["priority_file"] == "sar_tiers · AT SEA" and v["header"]["mission"] == "RESCUE WITH TIERS"
     bad = dict(prof, id="bad_one", weights={"sar_air": 2})

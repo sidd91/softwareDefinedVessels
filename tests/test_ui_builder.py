@@ -14,7 +14,8 @@ def test_the_catalog_comes_from_the_loaded_inputs():
     c = builder.catalog(I)
     assert {p["id"] for p in c["profiles"]} >= {"survey", "sar"}
     assert {x["name"] for x in c["capabilities"]} == {card["capability"]["name"] for card in I.cards.values()}
-    assert c["tiers"] == ["vessel_critical", "mission_critical", "mission_support", "discretionary"]
+    assert c["responses"] == [{"id": "safety_command", "tag": "200 MS"}, {"id": "shed_first_action", "tag": "5 S"},
+                              {"id": "shed_full_sequence", "tag": "60 S"}]
     assert c["crew_levels"] == [14, 6, 0] and "confirm" not in c["policies"]["0"]
     assert c["defaults"]["r3"] == {"14": "confirm", "6": "standing_plan", "0": "automatic"}
     names = {s["name"] for s in c["signals"]}
@@ -24,11 +25,11 @@ def test_the_catalog_comes_from_the_loaded_inputs():
 
 
 def test_profile_checks_are_the_loaders():
-    good = dict(copy.deepcopy(I.missions["sar"]), id="sar_edit", tiers={"discretionary": ["G5"]}, confirm={"r3": {"6": "forbidden"}})
+    good = dict(copy.deepcopy(I.missions["sar"]), id="sar_edit", shed_order={"coastal_connectivity": 1}, confirm={"r3": {"6": "forbidden"}})
     assert builder.check(I, "profile", good) == []
     assert builder.check(I, "profile", dict(good, weights={"sar_air": 2})) == ["weights.sar_air: 2 is greater than the maximum of 1"]
-    both = dict(good, tiers={"discretionary": ["G4"]})
-    assert builder.check(I, "profile", both) == ["tiers.discretionary[0]: G4 is already mission_critical; a guest sits in one tier only"]
+    both = dict(good, response={"safety_command": ["G4"]})
+    assert builder.check(I, "profile", both) == ["response.safety_command[0]: G4 is mission_critical (60 S); a guest has one response class"]
     assert builder.check(I, "nonsense", good) == ["kind: 'nonsense' is not profile or card"]
 
 

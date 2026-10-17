@@ -2,10 +2,10 @@
 // the constraint ledger. Both render the `view` the server builds from one snapshot and its records.
 import { esc, tag, injected, stateWord, meter, panel, paint } from './util.js';
 
-const TIER_TAG = { 'VESSEL CRITICAL': 'VC', 'MISSION CRITICAL': 'MC', 'DISCRETIONARY': 'DISC' };
+const CLASS_TAGS = new Set(['200 MS', '5 S', '60 S', '30 S']);
 
-export function tierTag(tier) {
-  return TIER_TAG[tier] ? `<span class="mc" title="${esc(tier)}">${TIER_TAG[tier]}</span>` : '';
+export function tierTag(tag) {
+  return CLASS_TAGS.has(tag) ? `<span class="mc" title="RESPONSE CLASS">${esc(tag)}</span>` : '';
 }
 
 export function mountOps(root) {
