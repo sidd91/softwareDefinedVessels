@@ -84,6 +84,7 @@ Deadline: **Sun 2026-10-18 10:00 PDT**.
 | DEC-43 | Sat 11:50 | PROPOSED: design freeze. Base = this branch; typed conditions before engine code; priority file gains optional `shed_order` and per-rule `confirm`; admission by enumeration; board as instrument; cut cameras/CV, 3D, rule compiler, LLM paraphraser, person detection, NPU, two-node failover; Scenario C rule R3 without the camera; Scenario B minute 12 to be asked of the organisers. Full delta table in `docs/DESIGN_FREEZE.md` (req R-064 to R-067, R-069, R-146, R-458) | Proposed by Siddharth; awaiting Logan | Claude Fable 5.1 for Siddharth |
 | DEC-44 | Sat 12:04 | Design freeze approved as proposed in DEC-43 (`docs/DESIGN_FREEZE.md`): F1 our branch is the base; cut cameras and computer vision, 3D view, rule compiler, LLM paraphraser, person detection, NPU inference and two-node failover; the board is an instrument. F2 typed conditions and hard limits before any engine code. F3 priority files gain optional `shed_order` and per-rule `confirm`. F4 ask the organizers about minute 12, fallback as written. F5 Scenario C rule R3 without the camera. F6 (who builds what) stays with Logan and Siddharth. Supersedes DEC-02 (camera virtual sensors), DEC-04 (3D view), DEC-06 (multi-device emphasis), DEC-23 and DEC-27 (cameras) where they conflict (req R-064 to R-067, R-069, R-146, R-458) | Logan (approved Siddharth's proposal) | Claude for Logan |
 | DEC-45 | Sat 12:04 | Project name: ArgOS, after the Argo and the brief's "operating system the ship does not have"; used on the screens, the README title and the docs | Logan | Claude for Logan |
+| DEC-46 | Sat 12:06 | Build hold (DEC-33) lifted. Order: finish the deliverable fixes, align docs and data with the freeze (DEC-44), then start typed conditions and hard limits (F2), following `docs/DESIGN_FREEZE.md` section 7 | Logan | Claude for Logan |
 
 ## Conflicts and risks to watch
 
@@ -685,3 +686,10 @@ with the freeze next, after the deliverable fixes that are in flight land.
 Decisions: DEC-44 (Logan), DEC-45 (Logan). Conflicts: CON-20 closes CON-01, CON-02, CON-04, CON-11 and CON-19;
 CON-07 stays open until F6. Deferrals: none new; DEF-01's wired path falls away with failover, the board's
 power arrangement still stands.
+
+### Sat 12:06 PDT · Build hold lifted (DEC-46) · Claude Opus 5.5 on behalf of Logan Walker (GhostWalka)
+
+Logan lifted the build hold. Order agreed: the deliverable fixes in flight land first, then the docs and data are
+aligned with the freeze, then typed conditions (F2) start, per the freeze's build order. F6 (who builds what) is
+still Logan and Siddharth's to settle; CON-07 stays open, so Siddharth should know F2 is starting on this branch.
+Decisions: DEC-46 (Logan). Conflicts: none new. Deferrals: none.
