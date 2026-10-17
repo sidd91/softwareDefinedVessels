@@ -23,9 +23,10 @@ Deadline: **Sun 2026-10-18 10:00 PDT**.
    or slides call out explicitly must be addressed at a granular level there.
 9. **IDs and links:** every row in Decisions, Conflicts and Deferrals carries an ID (`DEC-nn`,
    `CON-nn`, `DEF-nn`, next number in sequence) and names the requirement IDs it touches, e.g.
-   "(req R-021, R-034)". When work changes how a requirement is addressed, update that row in
-   `docs/REQUIREMENTS.md` in the same commit, and list the IDs on the entry's "Requirements
-   touched" line.
+   "(req R-021, R-034)". When work changes how a requirement is addressed, edit that row in
+   `docs/requirements.yaml`, run `uv run python tools/render_requirements.py` to regenerate
+   `docs/REQUIREMENTS.md`, commit both together, and list the IDs on the entry's "Requirements
+   touched" line. IDs are never reused or renumbered; new requirements take the next free ID.
 
 ## Who's who
 
@@ -348,3 +349,25 @@ Work done:
 Decisions: none new. Conflicts: CON-12. Deferrals: none.
 Requirements touched: pending `docs/REQUIREMENTS.md`.
 Next: land the requirements matrix, fill the team brief's gaps, then a review workflow over all new docs.
+
+### Sat 00:03 PDT · Requirements traceability landed (checkpoint) · Claude Opus 5.5 on behalf of Logan Walker (GhostWalka)
+
+All work in this entry was done by Claude on Logan's behalf while he sleeps (DEC-25, DEC-28).
+
+Work done:
+- An 11-agent workflow read every page of the slides and the brief: 729 items extracted, 122 duplicate
+  groups merged, 550 requirements, each with how we address it, links, WORKLOG IDs, status and a
+  brainstorming question. Two checkers raised 41 issues (4 high).
+- Source of truth is now `docs/requirements.yaml`; `tools/render_requirements.py` renders
+  `docs/REQUIREMENTS.md` with a summary table and gap list. WORKLOG rule 9 updated accordingly.
+- Mechanical fixes applied: a new "Problem framing and resource classes" section for framing rows that
+  were filed as must-haves; call-out flags corrected; statuses fixed (README rows now drafted, R-236
+  planned, R-336 drafted); dead working IDs mapped to R-IDs; duplicate sources and links removed;
+  em-dashes removed from quotes; four missing called-out requirements added (R-551 undocumented
+  assumption is a defect, R-552 Physical Account is one page, R-553 flight-deck motion limits, R-554
+  budgets that shrink mid-run). README schema status aligned to drafted.
+- Now: 554 requirements, 509 called out; 11 done, 321 drafted, 188 planned, 24 gap, 10 not applicable.
+
+Conflicts: none new. Deferrals: none.
+Requirements touched: R-019 to R-023, R-124, R-236, R-336, R-551 to R-554.
+Next: depth pass on the 217 called-out rows with thin answers (DEC-24), then fill the team brief's gaps.

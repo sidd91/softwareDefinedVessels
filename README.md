@@ -82,7 +82,7 @@ the event log. Data contracts: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 | Deliverable | Where | Status |
 |---|---|---|
 | Working prototype, one documented command | `src/sdv/` | planned |
-| Manifest schema, five cards plus one of ours | [manifests/schema.json](manifests/schema.json), [G1-G6](manifests/) (G6 is our desalination unit) | done, validated by tests |
+| Manifest schema, five cards plus one of ours | [manifests/schema.json](manifests/schema.json), [G1-G6](manifests/) (G6 is our desalination unit) | drafted, validated by tests, pending team review |
 | README, at most 3 pages | this file | skeleton |
 | Physical Account | [docs/PHYSICAL_ACCOUNT.md](docs/PHYSICAL_ACCOUNT.md), from [config/assumptions.yaml](config/assumptions.yaml) | draft |
 | Scenario C memo, at most 2 pages | [docs/SCENARIO_C_MEMO.md](docs/SCENARIO_C_MEMO.md) | draft for team review |
