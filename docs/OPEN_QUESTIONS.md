@@ -62,10 +62,17 @@ is decided, add a WORKLOG Decisions row and update the source document.
 | 27 | Physical Account closing answer | a 50 kW, 12.5 kWh battery bridge lifting the one-genset-down reserve to 150 kW | Physical Account |
 | 28 | PDF route for the memo, README and Physical Account, and confirming page limits | pick one tool and check all three | R-552, [README](../README.md) |
 
+## From the expected outcomes
+
+| # | Question | Proposal | Source |
+|---|---|---|---|
+| 32 | At minute 12 of Scenario B, is the survey vehicle charging (the brief's 105 kW) or on its own battery? Only with it charging does the trip force any shedding | Charging, so the ladder is visible; say why on screen | [expected outcomes](EXPECTED_OUTCOMES.md) |
+| 33 | Judge data links at guests' minimum rates or nominal? At nominal, G5 alone exceeds the 2 Mbit/s SATCOM envelope | Minimum for admission, nominal reported as degraded quality | expected outcomes, assumption 8 |
+
 ## For the organizers
 
 | # | Question | Fallback | Source |
 |---|---|---|---|
-| 29 | Is Open-Meteo's free tier acceptable for the hackathon? | NOAA OISST and Argo | CON-05 |
-| 30 | Is Qualcomm's proprietary NPU runtime allowed (box arrives Sat 10:00)? | Run on its CPU | CON-04 |
-| 31 | If we used PaDiM, would a ResNet backbone from a Microsoft lab in China fall under the China-derived rule? | Do not use PaDiM | camera design Q3 |
+| 34 | Is Open-Meteo's free tier acceptable for the hackathon? | NOAA OISST and Argo | CON-05 |
+| 35 | Is Qualcomm's proprietary NPU runtime allowed (box arrives Sat 10:00)? | Run on its CPU | CON-04 |
+| 36 | If we used PaDiM, would a ResNet backbone from a Microsoft lab in China fall under the China-derived rule? | Do not use PaDiM | camera design Q3 |

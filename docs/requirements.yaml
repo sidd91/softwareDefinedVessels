@@ -2106,6 +2106,8 @@ requirements:
     path: tests/test_brief_arithmetic.py
   - label: Entry point declaration
     path: pyproject.toml
+  - label: Expected outcomes (test oracles)
+    path: docs/EXPECTED_OUTCOMES.md
   decisions:
   - DEC-26
   - CON-10
@@ -2138,6 +2140,8 @@ requirements:
     path: docs/ARCHITECTURE.md#data-contracts
   - label: 'DEMO_SCRIPT: Scenario A'
     path: docs/DEMO_SCRIPT.md#scenario-a-jurys-card-deep
+  - label: Expected outcomes (test oracles)
+    path: docs/EXPECTED_OUTCOMES.md
   decisions:
   - DEC-15
   - DEC-26
@@ -2179,6 +2183,8 @@ requirements:
     path: config/missions/sar.yaml
   - label: 'GAMEPLAN: D3 objective'
     path: GAMEPLAN.md#declared-objectives-readme-table-one-line-each
+  - label: Expected outcomes (test oracles)
+    path: docs/EXPECTED_OUTCOMES.md
   decisions:
   - DEC-26
   - CON-12
@@ -2216,6 +2222,8 @@ requirements:
     path: docs/ARCHITECTURE.md#decision-engines-inputs-objective-ceiling
   - label: 'DEMO_SCRIPT: Scenario B'
     path: docs/DEMO_SCRIPT.md#scenario-b-90-s-deep
+  - label: Expected outcomes (test oracles)
+    path: docs/EXPECTED_OUTCOMES.md
   decisions:
   - DEC-16
   - CON-12

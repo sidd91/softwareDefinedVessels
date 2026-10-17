@@ -73,7 +73,7 @@ Prepared drills (the jury chooses, but we rehearse these):
 
 - **The 35 kg case:** installed G1, G2, G3; card G4. Mass 10.035 t against 10 t: refused by 35 kg;
   yes-if G1 disembarks. Changing the hangar to 800 kg flips it to yes.
-- **The free mast slot:** installed G2, G3, G4; card G1 or G5. G1 fits the free mast slot, but G1 to G4 together weigh 10.035 t against 10 t (the 35 kg case again), so it is yes-if one guest disembarks; G5 (13.015 t) is refused on mass, and its antenna has
+- **The free mast slot:** installed G2, G3, G4; card G1 or G5. G1 fits the free mast slot, but G1 to G4 together weigh 10.035 t against 10 t (the 35 kg case again), so it is yes-if one guest disembarks; G5 (13.015 t, 3.0 t over) is yes-if G2 or G3 leaves (ranked by the priority file), and its antenna has
   the mast or the hangar roof, but its node has no bay.
 - **The bay story:** installed G1, G2, G5; card G3. Two lines bind: G3 needs all of Bay 1, and the four
   weigh 12.07 t against the 10 t margin. Yes-if G5 leaves (9.045 t) or G2 leaves (8.57 t, G5 moves to

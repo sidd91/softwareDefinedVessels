@@ -506,3 +506,16 @@ after"): `docs/OPEN_QUESTIONS.md` gathers all 31 open questions from the archite
 camera design, requirements matrix, assumptions and organizer list, grouped by when they need deciding,
 each with a proposal and its source; linked from the team brief. An expected-outcomes workflow is running.
 Decisions: none. Conflicts: none new. Deferrals: none.
+
+### Sat 01:40 PDT · Expected outcomes (test oracles) · Claude Opus 5.5 on behalf of Logan Walker (GhostWalka)
+
+Work done by Claude on Logan's behalf: `docs/EXPECTED_OUTCOMES.md`, hand-computed by two independent
+agents and reconciled by a third: every Scenario A drill under the survey and rescue files (verdict,
+binding line with numbers, placement, ranked yes-if, one-genset-down, seawater tipping point) and Scenario B
+minutes 8 and 12 for all three load-outs. Key results: the 35 kg case is yes-if G1 leaves (survey) or G3
+leaves (rescue); the brief's minute-12 load with the survey vehicle charging is 111 kW against a 95 kW
+ceiling, and survey throttles the drone's charge while rescue drops the comms node to 8 kW, so the two
+files give different, coherent ships. Linked from the build plan, team brief and R-064 to R-067.
+Storyboard corrected: card G5 in the mast drill is yes-if, not refused. Two new open questions (#32
+survey vehicle charging at minute 12; #33 data links judged at minimum or nominal).
+Decisions: none. Conflicts: none new. Deferrals: none.

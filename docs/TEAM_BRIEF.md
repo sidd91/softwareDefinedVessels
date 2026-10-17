@@ -60,7 +60,9 @@ overnight with honest answers; the ones that still need a team decision:
 
 ## Build plan
 
-A proposal with tasks, pass checks and re-timed milestones: [docs/BUILD_PLAN.md](BUILD_PLAN.md).
+A proposal with tasks, pass checks and re-timed milestones: [docs/BUILD_PLAN.md](BUILD_PLAN.md). Hand-computed
+expected outcomes for every Scenario A drill and Scenario B minutes 8 and 12, ready to become the first
+tests: [docs/EXPECTED_OUTCOMES.md](EXPECTED_OUTCOMES.md).
 
 ## A possible first hour together
 
