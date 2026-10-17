@@ -325,7 +325,7 @@ requirements:
   - label: 'Memo: by crew level'
     path: docs/SCENARIO_C_MEMO.md#by-crew-level
   - label: 'Memo: assumptions'
-    path: docs/SCENARIO_C_MEMO.md#assumptions
+    path: docs/SCENARIO_C_MEMO.md#live-demo-14-6-and-0-aboard
   - label: 'Memo: live demo'
     path: docs/SCENARIO_C_MEMO.md#live-demo-14-6-and-0-aboard
   - label: Conditions snapshot
@@ -361,7 +361,7 @@ requirements:
   - label: Memo
     path: docs/SCENARIO_C_MEMO.md
   - label: 'Memo: assumptions'
-    path: docs/SCENARIO_C_MEMO.md#assumptions
+    path: docs/SCENARIO_C_MEMO.md#live-demo-14-6-and-0-aboard
   - label: Physical Account draft
     path: docs/PHYSICAL_ACCOUNT.md
   - label: PDF route (open)
@@ -488,7 +488,7 @@ requirements:
   - label: 'Memo: live demo'
     path: docs/SCENARIO_C_MEMO.md#live-demo-14-6-and-0-aboard
   - label: 'Memo: assumptions'
-    path: docs/SCENARIO_C_MEMO.md#assumptions
+    path: docs/SCENARIO_C_MEMO.md#live-demo-14-6-and-0-aboard
   - label: G4 card
     path: manifests/G4.yaml
   decisions:
@@ -2881,7 +2881,7 @@ requirements:
   - label: 'Memo: by crew level'
     path: docs/SCENARIO_C_MEMO.md#by-crew-level
   - label: 'Memo: r3 assumptions'
-    path: docs/SCENARIO_C_MEMO.md#assumptions
+    path: docs/SCENARIO_C_MEMO.md#live-demo-14-6-and-0-aboard
   - label: 'BUILD_PLAN: T11'
     path: docs/BUILD_PLAN.md#stage-6-replay-then-breadth
   - label: 'assumptions.yaml: crew, deck clear times'
@@ -6349,7 +6349,7 @@ requirements:
   - label: 'Memo: drone timing'
     path: docs/SCENARIO_C_MEMO.md#by-crew-level
   - label: 'Memo: assumptions'
-    path: docs/SCENARIO_C_MEMO.md#assumptions
+    path: docs/SCENARIO_C_MEMO.md#live-demo-14-6-and-0-aboard
   - label: 'Demo: Scenario B'
     path: docs/DEMO_SCRIPT.md#scenario-b-90-s-deep
   decisions:
@@ -6542,7 +6542,7 @@ requirements:
   - label: 'Memo: live demo'
     path: docs/SCENARIO_C_MEMO.md#live-demo-14-6-and-0-aboard
   - label: 'Memo: assumptions'
-    path: docs/SCENARIO_C_MEMO.md#assumptions
+    path: docs/SCENARIO_C_MEMO.md#live-demo-14-6-and-0-aboard
   decisions:
   - DEC-02
   - DEC-17
@@ -6605,7 +6605,7 @@ requirements:
   - label: 'Memo: live demo'
     path: docs/SCENARIO_C_MEMO.md#live-demo-14-6-and-0-aboard
   - label: 'Memo: assumptions'
-    path: docs/SCENARIO_C_MEMO.md#assumptions
+    path: docs/SCENARIO_C_MEMO.md#live-demo-14-6-and-0-aboard
   - label: 'WORKLOG: memo entry'
     path: WORKLOG.md#fri-2306-pdt--scenario-c-memo-draft--claude-opus-55-on-behalf-of-logan-walker-ghostwalka
   decisions:
@@ -12025,7 +12025,7 @@ requirements:
   - label: G4 card
     path: manifests/G4.yaml
   - label: 'Scenario C memo: assumptions'
-    path: docs/SCENARIO_C_MEMO.md#assumptions
+    path: docs/SCENARIO_C_MEMO.md#live-demo-14-6-and-0-aboard
   - label: 'Payload research: generator specs'
     path: research/sensors/payload_deck_human.md#4-synthetic-generator-specs
   decisions: []
@@ -12465,7 +12465,7 @@ requirements:
   - label: Physical Account
     path: docs/PHYSICAL_ACCOUNT.md
   - label: r3 assumptions
-    path: docs/SCENARIO_C_MEMO.md#assumptions
+    path: docs/SCENARIO_C_MEMO.md#live-demo-14-6-and-0-aboard
   - label: Physical Account detail
     path: docs/PHYSICAL_ACCOUNT_DETAIL.md
   - label: Board instrument
@@ -12570,7 +12570,7 @@ requirements:
   - label: Physical Account
     path: docs/PHYSICAL_ACCOUNT.md
   - label: Scenario C memo
-    path: docs/SCENARIO_C_MEMO.md#scenario-c-memo-nobody-on-the-flight-deck-during-recovery
+    path: docs/SCENARIO_C_MEMO.md#design-memo-scenario-c-nobody-on-the-flight-deck-during-recovery
   - label: 'GAMEPLAN: schedule and never-cut list'
     path: GAMEPLAN.md#schedule-pacific-pdt
   - label: 'README: deliverables'
@@ -12630,7 +12630,7 @@ requirements:
   - label: Reason test
     path: tests/test_brief_arithmetic.py
   - label: Memo assumptions (r3.*)
-    path: docs/SCENARIO_C_MEMO.md#assumptions
+    path: docs/SCENARIO_C_MEMO.md#live-demo-14-6-and-0-aboard
   - label: G6 card (all assumed)
     path: manifests/G6.yaml
   decisions:
@@ -12665,7 +12665,7 @@ requirements:
   - label: Generator
     path: tools/physical_account.py
   - label: Memo assumptions (r3.*)
-    path: docs/SCENARIO_C_MEMO.md#assumptions
+    path: docs/SCENARIO_C_MEMO.md#live-demo-14-6-and-0-aboard
   - label: 'README: deliverables'
     path: README.md#deliverables
   decisions:
@@ -12721,7 +12721,7 @@ requirements:
   - label: Physical Account draft
     path: docs/PHYSICAL_ACCOUNT.md
   - label: Memo assumptions (r3.*)
-    path: docs/SCENARIO_C_MEMO.md#assumptions
+    path: docs/SCENARIO_C_MEMO.md#live-demo-14-6-and-0-aboard
   - label: 'assumptions.yaml: provenance'
     path: config/assumptions.yaml
   - label: Reason test
@@ -12752,7 +12752,7 @@ requirements:
   - label: Generator script
     path: tools/physical_account.py
   - label: 'Scenario C memo: assumptions'
-    path: docs/SCENARIO_C_MEMO.md#assumptions
+    path: docs/SCENARIO_C_MEMO.md#live-demo-14-6-and-0-aboard
   - label: 'WORKLOG: Scenario C memo entry'
     path: WORKLOG.md#fri-2306-pdt--scenario-c-memo-draft--claude-opus-55-on-behalf-of-logan-walker-ghostwalka
   decisions:
@@ -13241,7 +13241,7 @@ requirements:
     run python tools/build_pdfs.py memo` before the Sun 09:15 freeze.'
   links:
   - label: Scenario C memo
-    path: docs/SCENARIO_C_MEMO.md#scenario-c-memo-nobody-on-the-flight-deck-during-recovery
+    path: docs/SCENARIO_C_MEMO.md#design-memo-scenario-c-nobody-on-the-flight-deck-during-recovery
   - label: 'GAMEPLAN: PDF route'
     path: GAMEPLAN.md#stack-decided-unless-something-breaks
   - label: 'Software log: PDF tools planned'
@@ -15609,7 +15609,7 @@ requirements:
   - label: 'Software log: data sources'
     path: docs/SOFTWARE_LOG.md#data-sources-planned-none-downloaded-yet
   - label: 'Scenario C memo: r3 assumptions'
-    path: docs/SCENARIO_C_MEMO.md#assumptions
+    path: docs/SCENARIO_C_MEMO.md#live-demo-14-6-and-0-aboard
   decisions:
   - DEC-22
   - CON-03
