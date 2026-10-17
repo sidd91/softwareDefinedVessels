@@ -91,6 +91,9 @@ stability, SATCOM, backbone, line-of-sight radio, acoustic, compute cores, respo
 - **Rule parameters live in data.** Scenario C rule R3's parameters are `rules.r3.*` in
   `config/assumptions.yaml`, so every rule's numbers reach the Physical Account like any other
   assumption.
+- **Admission override** (Logan, DEC-32). A refused admission can be forced by an explicit captain override
+  for extreme situations. It needs a human, so it is not available at 0 aboard; the decision record keeps
+  the binding line, marks the decision overridden, and names who overrode and why.
 - **Requirements trace.** Every component above maps to rows in `docs/requirements.yaml`; edit the YAML
   and re-render (`tools/render_requirements.py`).
 

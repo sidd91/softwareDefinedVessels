@@ -11,7 +11,7 @@ is decided, add a WORKLOG Decisions row and update the source document.
 | 1 | Merge PR #1 (plan, research, worklog) into main? | Yes; Siddharth merges as repo owner | WORKLOG CON-06 |
 | 2 | Who owns what? | Team call; no split proposed | CON-07, DEC-29, [architecture](ARCHITECTURE.md) |
 | 3 | Accept the re-timed milestones? | Review 08:30, Scenario A 12:30, Scenario B 17:30, screen 21:30 | [build plan](BUILD_PLAN.md), CON-10 |
-| 4 | Scenario B load-out (13.0 t against 10 t, Bay 2 twice)? | Run as given and flag it on screen | [storyboard](DEMO_SCRIPT.md), CON-12 |
+| 4 | Scenario B load-out (13.0 t against 10 t, Bay 2 twice)? | **Decided (DEC-32):** run G3, G4, G5; refuse the full load-out at the pier, recommend this subset, logged override available | [storyboard](DEMO_SCRIPT.md), CON-12 |
 | 5 | Which envelope corner decides admission? | Both gensets at 30 °C; report one-genset-down separately | [architecture](ARCHITECTURE.md) Q3 |
 | 6 | In port, may installed guests move between bays to admit a card? | Yes, and report the moves | architecture Q4 |
 | 7 | Is the decision record the single source for screen and demo? | Yes | architecture Q2 |
@@ -22,7 +22,7 @@ is decided, add a WORKLOG Decisions row and update the source document.
 |---|---|---|---|
 | 8 | Two-node bus: our own UDP layer or existing middleware? | Own layer; replay stays simple | architecture Q5 |
 | 9 | Screen technology? | Plain HTML and JS, no build step | architecture Q6 |
-| 10 | What demo hardware do we have (second machine, cable, router)? | Bring a travel router or hotspot; never venue Wi-Fi | architecture Q7 |
+| 10 | What demo hardware do we have (second machine, cable, router)? | **Partly decided (DEC-30):** node B is an Arduino UNO Q; still need a travel router or hotspot | architecture Q7 |
 | 11 | Second USB or phone camera for the leak line? | Only if cheap; the line works replayed | [camera design](../research/cv_equipment_monitoring.md) Q4 |
 
 ## Demo
@@ -74,5 +74,5 @@ is decided, add a WORKLOG Decisions row and update the source document.
 | # | Question | Fallback | Source |
 |---|---|---|---|
 | 34 | Is Open-Meteo's free tier acceptable for the hackathon? | NOAA OISST and Argo | CON-05 |
-| 35 | Is Qualcomm's proprietary NPU runtime allowed (box arrives Sat 10:00)? | Run on its CPU | CON-04 |
+| 35 | Is Qualcomm's proprietary NPU runtime allowed (box arrives Sat 10:00)? | **Decided (DEC-31):** CPU via ONNX Runtime unless the organizers clear the proprietary runtime | CON-04 |
 | 36 | If we used PaDiM, would a ResNet backbone from a Microsoft lab in China fall under the China-derived rule? | Do not use PaDiM | camera design Q3 |

@@ -8,19 +8,13 @@ The brief's format: a live demo on our laptop, **90 s of Scenario B, then Scenar
 card**; the jury picks the priority set for B and a card (possibly with one number changed) for A. A
 backup recording is welcome but does not replace the live run.
 
-## Decision needed first: Scenario B's load-out breaks the brief's own margins
+## Scenario B load-out (decided, WORKLOG DEC-32)
 
-The brief's Scenario B narrative has the ocean module (G2), the survey vehicle (G3), the drone (G4)
-and the comms node (G5) aboard together. By Annexes A and B that is **13.015 t against the 10 t mass
-margin (3.0 t over)**, and G2 and G5 both need Bay 2 once G3 fills Bay 1. Checked against our cards
-(`manifests/`, `tests/test_brief_arithmetic.py`). Options (WORKLOG CON-12):
-
-1. **Run it as given and say so (proposed).** The screen opens with one flag: "This load-out would be
-   refused at the pier: mass 13.0 t against a 10 t margin, and Bay 2 is needed twice. Running the
-   scenario as given." It shows the jury the physical model is honest, which they score.
-2. Run G3, G4, G5 (9.5 t, fits) and drop the ocean module's shed step.
-3. Run G2, G3, G4 (9.99 t, 10 kg under) and lose the comms node's 45 kW, which the brief's minute-12
-   numbers rely on.
+The brief's narrative has G2, G3, G4 and G5 aboard together: 13.015 t against the 10 t mass margin, and
+Bay 2 needed twice. At the pier the governor refuses that load-out, names mass as the binding line, and
+recommends the feasible alternative G3, G4, G5 (9.515 t), which drops the ocean module. A captain can force
+a refused load-out with a logged override for extreme situations; the record keeps the binding line and
+marks the decision as overridden. The demo runs G3, G4, G5.
 
 ## Scenario B, 90 s (deep)
 
@@ -29,13 +23,13 @@ and show their latency against the ceiling. Location: Strait of Sicily cable cor
 
 | Clock | Ship time | What happens | What the jury sees |
 |---|---|---|---|
-| 00:00 | min 0 | Baseline: 3 kn over the cable route, G3 surveying on its acoustic link, G2 sampling, G5 at 45 kW, G4 airborne on a SAR sortie | Schematic, eight gauges steady, priority file the jury chose, crew 14 |
+| 00:00 | min 0 | Baseline: 3 kn over the cable route, G3 surveying on its acoustic link, G5 at 45 kW, G4 airborne on a SAR sortie | Schematic, eight gauges steady, priority file the jury chose, crew 14 |
 | 00:10 | min 8 | G4 reports 18 % battery in 22 kn wind. G3's conditions (3 kn, steady, quiet, no deck machinery) and G4's (deck clear, 5-12 kn, turn into wind, ramp free) collide | The conflict appears as two condition sets, not an alarm |
 | 00:12 | min 8 | **D3 decides within 2 s.** Hard limit first: below 20 % G4 must land within 12 min or ditch, so "wait for the end of the leg" is off the table | Decision record with latency, binding constraint and cost to the loser |
 | | | *Survey priority:* G3 holds depth before its acoustic link breaks; the survey pauses for the minimum 15-minute recovery window and the leg is re-run | Sentence names the survey minutes lost |
 | 00:25 | min 8 | **We swap to the other priority file (rescue if the jury chose survey, survey if it chose rescue). Same event, re-decided.** The survey is suspended, the ship is released to manoeuvre, and G4's 35 kW charge is reserved ahead of everything | Both decisions side by side: same code, two ships |
 | 00:40 | min 12 | **Genset trips.** The guest reserve halves to about 100 kW while G4 draws 35 kW and G5 45 kW | Power gauge drops; cooling gauge rechecked |
-| 00:42 | min 12 | **D4 sheds in a declared order** within 5 s for the first action and 60 s for the sequence: throttle before shed (for example G5 to its 8 kW low-power mode, G2 to standby), the winner kept alive, every guest's loss stated | Ladder with timestamps against the 5 s and 60 s ceilings; one line per guest |
+| 00:42 | min 12 | **D4 sheds in a declared order** within 5 s for the first action and 60 s for the sequence: throttle before shed (with G3 charging, 105 kW against a 95 kW ceiling: survey slows the drone's charge to 10 kW; rescue drops the comms node to 8 kW), the winner kept alive, every guest's loss stated | Ladder with timestamps against the 5 s and 60 s ceilings; one line per guest |
 | 01:00 | | **Breadth strip**, one line each, labelled live or replayed (below) | |
 | 01:25 | | Close: "Same code, two ships, explained in one sentence each." | |
 
@@ -91,7 +85,7 @@ Prepared drills (the jury chooses, but we rehearse these):
 
 ## Open questions for the team
 
-1. Scenario B load-out: run as given with the flag (proposed), or one of the feasible subsets?
+1. Decided (DEC-32): Scenario B runs G3, G4, G5; the full load-out is refused at the pier with an override available.
 2. Which four breadth lines?
 3. Who drives the laptop and who talks?
 4. Where does the breadth strip go? The brief asks for 90 s of Scenario B, then Scenario A; inside B it

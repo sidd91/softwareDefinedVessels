@@ -68,6 +68,10 @@ Deadline: **Sun 2026-10-18 10:00 PDT**.
 | DEC-27 | Fri 23:40 | Cameras are not the hero, because we cannot assume a ship has them. The camera example is a leak at the cooling loop, shown as breadth: where a camera exists it turns cooling to degraded early; with no camera the governor works exactly as before | Logan | Claude for Logan |
 | DEC-28 | Fri 23:40 | Overnight priority after the requirements and camera documents: planning docs (README skeleton, demo storyboard, team brief). Work until 06:00 PDT or 20 % weekly usage, then pause | Logan | Claude for Logan |
 | DEC-29 | Fri 23:40 | Do not propose a work split between Logan and Siddharth; they decide together | Logan | Claude for Logan |
+| DEC-30 | Sat 09:52 | Qualcomm test hardware is the Arduino UNO Q / Ventuno Q (Dragonwing QCS8275: Debian Linux plus an STM32 real-time MCU, MIPI-CSI camera, Ethernet, Wi-Fi, CAN-FD); it is node B | Logan | Claude for Logan |
+| DEC-31 | Sat 09:52 | Local only: no AI Hub or Edge Impulse (cloud compile and training); models run with ONNX Runtime on the board's CPU; no proprietary NPU runtime unless the organizers clear it (narrows CON-04) | Logan | Claude for Logan |
+| DEC-32 | Sat 09:52 | Scenario B runs with G3, G4, G5. At the pier the brief's G2-G5 load-out is refused and flagged, with G3, G4, G5 recommended as the alternative; a logged override exists for extreme situations (resolves CON-12) | Logan | Claude for Logan |
+| DEC-33 | Sat 09:52 | Hold the core build about an hour more; first a full Phase 1 rundown | Logan | Claude for Logan |
 
 ## Conflicts and risks to watch
 
@@ -545,3 +549,11 @@ time, so no work happened in between. Weekly usage at stop: 13 % (cap was 20 %).
 rows, 0 gaps, depth pass), Physical Account restructure, memo fit to 2 pages, build plan, 33 consolidated
 open questions, expected outcomes with fixtures (251 tests). The worklog check continues every 30 minutes.
 Logan is back; no teammate commits, worklog entries or PR comments yet.
+
+### Sat 09:52 PDT · Logan's morning decisions · Claude Opus 5.5 on behalf of Logan Walker (GhostWalka)
+
+Logan decided DEC-30 to DEC-33 (rows above). Claude updated, on his behalf: `docs/DEMO_SCRIPT.md` (Scenario B
+on G3, G4, G5 with the pier refusal, recommended alternative and override), `GAMEPLAN.md` (node B is the UNO
+Q; local-only model runtime), `docs/ARCHITECTURE.md` (admission override proposal), `docs/OPEN_QUESTIONS.md`
+(decided items marked) and the requirement rows that cited CON-12. No teammate activity yet.
+Conflicts: CON-12 resolved by DEC-32; CON-04 narrowed by DEC-31. Deferrals: none.

@@ -189,7 +189,8 @@ requirements:
     A (R-152, R-153, R-208). Today: docs/DEMO_SCRIPT.md has the 90 s Scenario B table, the Scenario A drills and
     a breadth strip; nothing runs. Slide p12 places the priority swap at 01:30, the script at 00:25. To settle first:
     CON-12, the B load-out at 13.015 t against the 10 t margin. Proof: five timed rehearsals Sun 05:30 to 09:15
-    and a backup recording from one.'
+    and a backup recording from one. Update: decided by DEC-32; Scenario B runs G3, G4, G5, and the full load-out
+    is refused at the pier with this alternative recommended and a logged override available.'
   links:
   - label: 'Demo: Scenario B'
     path: docs/DEMO_SCRIPT.md#scenario-b-90-s-deep
@@ -206,6 +207,7 @@ requirements:
   - DEC-26
   - DEC-27
   - CON-12
+  - DEC-32
   status: planned
   question: Do we follow slide p12 and swap the priority file near the end, re-running min 8 and min 12 under the
     jury's second file, or keep the script's swap at 00:25 so the genset trip is shown under one file only?
@@ -577,7 +579,8 @@ requirements:
     and schema validation. It mirrors the desalination unit shed on slide p10. Mismatches: GAMEPLAN''s demo beat
     sends G6 ''to standby'' but the card has no standby mode, and Scenario B''s load-out (G2 to G5) leaves no bay
     or mass for it. Missing: its values as Physical Account rows (today one pointer sentence) and a demo step that
-    uses it.'
+    uses it. Update: decided by DEC-32; Scenario B runs G3, G4, G5, and the full load-out is refused at the pier
+    with this alternative recommended and a logged override available.'
   links:
   - label: G6 card
     path: manifests/G6.yaml
@@ -592,6 +595,7 @@ requirements:
   decisions:
   - DEC-15
   - CON-12
+  - DEC-32
   status: drafted
   question: 'Since G6 cannot be aboard in Scenario B''s load-out, where does the jury see our invented card: as
     a Scenario A card under the disaster-relief file, or do we swap it for the SATCOM panel that competes for the
@@ -701,7 +705,8 @@ requirements:
     in the repo for the final list: CON-08 (peak power right after a trip is ambiguous), CON-12 (Scenario B''s load-out
     is 13.015 t against 10 t and needs Bay 2 twice), and power.line_lost_on_trip set to none in config/assumptions.yaml.
     Missing: a rewrite at freeze that lists what the built system cannot do, not what is still unbuilt. Proof: review
-    at the Sun 09:15 freeze against the open WORKLOG conflicts.'
+    at the Sun 09:15 freeze against the open WORKLOG conflicts. Update: decided by DEC-32; Scenario B runs G3, G4,
+    G5, and the full load-out is refused at the pier with this alternative recommended and a logged override available.'
   links:
   - label: 'README: Limitations'
     path: README.md#limitations-today
@@ -713,6 +718,7 @@ requirements:
   - DEC-27
   - CON-08
   - CON-12
+  - DEC-32
   status: drafted
   question: Should the final limitations list state our physics choices (both mission lines survive a trip, the
     CON-12 load-out) as deliberate model limits, so the jury reads honesty rather than unfinished work?
@@ -915,7 +921,9 @@ requirements:
     ramp one 7-9 m craft up to 5 t; Bay 1 takes two 10-ft guests only if neither needs the bay clear; flight deck
     and ramp are mutually exclusive. Today: assumptions.yaml positions.*; schema part preferred and allowed; G2
     needs_bay_clear. Finding CON-12: the brief''s Scenario B load-out needs Bay 2 twice. Missing: placement code,
-    ramp line, occupancy test. Shown: DEMO_SCRIPT drill ''The bay story''.'
+    ramp line, occupancy test. Shown: DEMO_SCRIPT drill ''The bay story''. Update: decided by DEC-32; Scenario B
+    runs G3, G4, G5, and the full load-out is refused at the pier with this alternative recommended and a logged
+    override available.'
   links:
   - label: Positions
     path: config/assumptions.yaml
@@ -930,6 +938,7 @@ requirements:
   decisions:
   - DEC-15
   - CON-12
+  - DEC-32
   status: planned
   question: When Scenario B runs as given with the CON-12 flag, should the screen name Bay 2 being needed twice
     as the binding line, or only the 3.0 t mass overrun?
@@ -1114,7 +1123,8 @@ requirements:
     frees {kW}; loses {capability}''. Numbers: 5 s and 60 s (A.8); G5 45 to 8 kW keeps 30 % (brief B, 70 % capability
     loss). The slide sheds a desalination unit; G6 is ours for that reason. Today: modes in six cards, weights in
     config/missions/, ARCHITECTURE D4 row. Missing: code; R-116 records that minute 12 loads only 87 kW against
-    95. Shown: DEMO_SCRIPT Scenario B 00:42.'
+    95. Shown: DEMO_SCRIPT Scenario B 00:42. Update: decided by DEC-32; Scenario B runs G3, G4, G5, and the full
+    load-out is refused at the pier with this alternative recommended and a logged override available.'
   links:
   - label: D4 objective and pattern
     path: docs/ARCHITECTURE.md#decision-engines-inputs-objective-ceiling
@@ -1129,6 +1139,7 @@ requirements:
   decisions:
   - DEC-16
   - CON-12
+  - DEC-32
   status: planned
   question: To give the sequencer a real shortfall at minute 12 (87 kW against a 95 kW ceiling today), do we count
     declared envelopes instead of current modes, or start Scenario B with G3 still charging from an earlier leg?
@@ -1574,7 +1585,8 @@ requirements:
     Today: assumptions.yaml positions.* (bay dimensions not encoded); schema part.area_m2 optional; G2 needs_bay_clear;
     G4 excludes stern_ramp_ops; G3 uses_ramp is only a flag: neither the schema''s position enum nor ARCHITECTURE
     contract 7 has a ramp entry. Missing: placement code, a ramp line, a footprint test. Shown: DEMO_SCRIPT drill
-    ''The bay story'' and the CON-12 flag (Bay 2 needed twice).'
+    ''The bay story'' and the CON-12 flag (Bay 2 needed twice). Update: decided by DEC-32; Scenario B runs G3, G4,
+    G5, and the full load-out is refused at the pier with this alternative recommended and a logged override available.'
   links:
   - label: Deck positions
     path: config/assumptions.yaml
@@ -1589,6 +1601,7 @@ requirements:
   decisions:
   - DEC-15
   - CON-12
+  - DEC-32
   status: drafted
   question: Is the flight deck one footprint owned by G4, or may a portable module (up to 250 kg at sea, A.11) share
     it when no recovery is planned?
@@ -1644,7 +1657,9 @@ requirements:
     cards stability never binds first, because every set above 12 t-eq is already above 10 t (G1+G2+G3+G5 is 12.07
     t and 12.165 t-eq, G5''s antenna on the hangar roof since G1 holds the mast); G2+G3+G4 is 9.99 t, 10 kg under;
     the Scenario B load-out is 13.015 t (CON-12). Missing: a stability test and any centre-of-gravity height. Shown:
-    DEMO_SCRIPT drill ''The 35 kg case'' (an 800 kg hangar flips it to yes) and the CON-12 flag.'
+    DEMO_SCRIPT drill ''The 35 kg case'' (an 800 kg hangar flips it to yes) and the CON-12 flag. Update: decided
+    by DEC-32; Scenario B runs G3, G4, G5, and the full load-out is refused at the pier with this alternative recommended
+    and a logged override available.'
   links:
   - label: Mass section
     path: config/assumptions.yaml
@@ -1659,6 +1674,7 @@ requirements:
   decisions:
   - DEC-22
   - CON-12
+  - DEC-32
   status: drafted
   question: Annex C asks for the mass margin kept in reserve; do we keep zero, or hold some back and accept that
     G2+G3+G4 (10 kg under today) would then be refused?
@@ -2171,7 +2187,9 @@ requirements:
     0.2). Cost to loser, our reading: survey primary loses 23 survey min (15-min recovery window plus the 8 min
     of leg to re-run); rescue primary suspends the survey, so the cost is the survey minutes lost while G4''s 35
     kW is reserved for 20 min. Caveat: the load-out is 13.015 t (CON-12). Missing: state machine, D3, simulator
-    (M2, slipping per CON-10). Shown: DEMO_SCRIPT 00:10 to 00:25.'
+    (M2, slipping per CON-10). Shown: DEMO_SCRIPT 00:10 to 00:25. Update: decided by DEC-32; Scenario B runs G3,
+    G4, G5, and the full load-out is refused at the pier with this alternative recommended and a logged override
+    available.'
   links:
   - label: 'DEMO_SCRIPT: Scenario B'
     path: docs/DEMO_SCRIPT.md#scenario-b-90-s-deep
@@ -2195,6 +2213,7 @@ requirements:
   - DEC-26
   - CON-12
   - CON-10
+  - DEC-32
   status: planned
   question: Do both priority sets state the loser's cost in one unit (survey minutes delayed against drone recharge
     minutes deferred), so the jury can compare the two outcomes side by side?
@@ -2214,7 +2233,9 @@ requirements:
     before sheds, power and heat rechecked each step, first action within 5 s, all within 60 s. Computed caveat
     (as R-116): on metered draw at min 12 (G4 35 + G5 45 + G2 6 + G3 1 = 87 kW) nothing needs shedding; on declared
     worst case (125 kW) the shortfall is 30 kW and the brief''s ''G5 to 8 kW'' appears. The load-out itself breaks
-    mass (CON-12). Missing: D4, ledger, tests. Shown: DEMO_SCRIPT 00:40 to 00:42.'
+    mass (CON-12). Missing: D4, ledger, tests. Shown: DEMO_SCRIPT 00:40 to 00:42. Update: decided by DEC-32; Scenario
+    B runs G3, G4, G5, and the full load-out is refused at the pier with this alternative recommended and a logged
+    override available.'
   links:
   - label: 'GAMEPLAN: shedding ladder'
     path: GAMEPLAN.md#shedding-ladder-d4-precomputed-every-tick
@@ -2235,6 +2256,7 @@ requirements:
   decisions:
   - DEC-16
   - CON-12
+  - DEC-32
   status: planned
   question: Does D4 shed against each guest's declared worst case (125 kW, 30 kW over the 95 kW ceiling) or its
     metered draw (87 kW, nothing to shed), and if metered, what min-12 load makes the brief's sequence happen?
@@ -2255,7 +2277,8 @@ requirements:
     G4''s charge 35 to 10 kW, then G5 to 8 kW; sar''s are G2''s winch to sampling (G3''s charge cannot be interrupted),
     then G5 to 8 kW, with G4 kept whole. At min 8, survey pauses 15 min; rescue suspends the survey. Both assume
     the 13.015 t load-out (CON-12). Missing: D3, D4, expected-outcome tests. Shown: DEMO_SCRIPT 00:25, the live
-    swap, both decisions side by side.'
+    swap, both decisions side by side. Update: decided by DEC-32; Scenario B runs G3, G4, G5, and the full load-out
+    is refused at the pier with this alternative recommended and a logged override available.'
   links:
   - label: Survey priority file
     path: config/missions/survey.yaml
@@ -2271,6 +2294,7 @@ requirements:
   - DEC-02
   - DEC-26
   - CON-12
+  - DEC-32
   status: planned
   question: Do we write each priority set's expected min-8 and min-12 outcome as a failing test before D3 and D4
     exist, so the team, not the code, decides what 'coherent' means?
@@ -3615,7 +3639,9 @@ requirements:
     45 kW is the brief''s 105 kW against the 100 kW degraded reserve. The brief''s Scenario B load-out (G2, G3,
     G4, G5) is 13.015 t against 10 t and needs Bay 2 twice (CON-12); DEMO_SCRIPT proposes running it as given with
     an on-screen flag, so D3 must run on a set our own D1 would refuse. G3, G4, G5 (9.515 t) fits. Today: conditions
-    and excludes in the cards only. Proof: DEMO_SCRIPT Scenario B 00:10, "two condition sets, not an alarm".'
+    and excludes in the cards only. Proof: DEMO_SCRIPT Scenario B 00:10, "two condition sets, not an alarm". Update:
+    decided by DEC-32; Scenario B runs G3, G4, G5, and the full load-out is refused at the pier with this alternative
+    recommended and a logged override available.'
   links:
   - label: 'Demo: Scenario B'
     path: docs/DEMO_SCRIPT.md#scenario-b-90-s-deep
@@ -3631,6 +3657,7 @@ requirements:
   - CON-12
   - DEC-26
   - DEC-22
+  - DEC-32
   status: planned
   question: Do we run Scenario B on the brief's over-mass load-out with a flag (the CON-12 proposal), or on G3,
     G4, G5 at 9.515 t, which loses G2's standby step from the min-12 shed?
@@ -3716,7 +3743,9 @@ requirements:
     a trip alone does not (R-116). A camera that sees a leak at the cooling loop plans cooling as degraded but sheds
     only on a confirmed fault (camera design C1, DEC-27); its snapshot fields are open in CON-11. Trips sharing
     one condition are reported as binding (Viking Sky, research E1). Today: event types and trip rule as text and
-    data. Proof: DEMO_SCRIPT Scenario B 00:40 trip; camera breadth line, replayed.'
+    data. Proof: DEMO_SCRIPT Scenario B 00:40 trip; camera breadth line, replayed. Update: decided by DEC-32; Scenario
+    B runs G3, G4, G5, and the full load-out is refused at the pier with this alternative recommended and a logged
+    override available.'
   links:
   - label: Event types
     path: docs/ARCHITECTURE.md#data-contracts
@@ -3733,6 +3762,7 @@ requirements:
   - DEC-27
   - CON-11
   - CON-12
+  - DEC-32
   status: planned
   question: Do we demo loss of cooling as its own D4 trigger (it forces a shed at min 12 where the trip alone does
     not), or keep cooling to the camera breadth line?
@@ -3787,7 +3817,9 @@ requirements:
     G3 is charging (111 kW, the brief''s 105 kW check plus G2) or the loop is also degraded (80 kW at 24 °C). Under
     sar our price order lists G5 to 8 kW then G2 to standby, the brief''s sequence, though at 111 kW the first step
     alone closes the gap. The min-12 load is a team choice tied to CON-12. Today: ceiling and headroom as data.
-    Proof: DEMO_SCRIPT 00:40-00:42; a test per priority file, not written.'
+    Proof: DEMO_SCRIPT 00:40-00:42; a test per priority file, not written. Update: decided by DEC-32; Scenario B
+    runs G3, G4, G5, and the full load-out is refused at the pier with this alternative recommended and a logged
+    override available.'
   links:
   - label: Shedding ladder
     path: GAMEPLAN.md#shedding-ladder-d4-precomputed-every-tick
@@ -3803,6 +3835,7 @@ requirements:
   - DEC-16
   - DEC-17
   - CON-12
+  - DEC-32
   status: planned
   question: Which load is on at min 12 so the trip really forces a shed (G3 charging at 25 kW, G2's winch at 20
     kW, or a degraded loop), and is that faithful to the brief's story?
@@ -4523,7 +4556,9 @@ requirements:
     four over 10 t; cooling 160/120/133.33/72 kW; the power budget closing (810 - 400 - 55 = 355 kW against 200
     at cruise; 405 - 250 - 55 = 100 kW with one genset down). Missing: the ledger, and stability (12 t-eq) and per-line
     (150 kW) tests. Proof: Scenario A''s ''holds with one genset down'' and tipping-point lines, the 35 kg drill,
-    and the CON-12 flag that Scenario B''s own load-out is 13.015 t.'
+    and the CON-12 flag that Scenario B''s own load-out is 13.015 t. Update: decided by DEC-32; Scenario B runs
+    G3, G4, G5, and the full load-out is refused at the pier with this alternative recommended and a logged override
+    available.'
   links:
   - label: Arithmetic tests
     path: tests/test_brief_arithmetic.py
@@ -4541,6 +4576,7 @@ requirements:
   - DEC-22
   - DEC-26
   - CON-12
+  - DEC-32
   status: drafted
   question: 'Which one honesty moment do we rehearse as the jury''s takeaway: cooling binding before power at 30
     °C, the 35 kg mass refusal, or the CON-12 flag that the brief''s own Scenario B load-out would be refused at
@@ -4642,7 +4678,8 @@ requirements:
     test_cooling_capacity_matches_annex_a, test_all_five_do_not_fit_a_degraded_loop_in_30c_water. G1''s 45 kg is
     what tips 9.99 t over 10 t. CON-12: the brief''s Scenario B set (G2, G3, G4, G5) is 13.015 t and needs Bay 2
     twice; DEMO_SCRIPT proposes running it as given with an on-screen flag. Missing: the ledger and a stability
-    test. Proof: the 35 kg drill and the CON-12 flag.'
+    test. Proof: the 35 kg drill and the CON-12 flag. Update: decided by DEC-32; Scenario B runs G3, G4, G5, and
+    the full load-out is refused at the pier with this alternative recommended and a logged override available.'
   links:
   - label: Mass and cooling tests
     path: tests/test_brief_arithmetic.py
@@ -4660,6 +4697,7 @@ requirements:
   - DEC-22
   - DEC-26
   - CON-12
+  - DEC-32
   status: drafted
   question: Our cards add at most about 0.29 t-eq of multiplier over their mass, so the 12 t-eq stability budget
     can never bind before the 10 t margin; do we say so in the Physical Account or keep stability as a silent ledger
@@ -5760,7 +5798,8 @@ requirements:
     nothing executes. Our data shows the brief''s load-out (G2, G3, G4, G5) is 13.015 t against 10 t and needs Bay
     2 twice (CON-12); G2+G3+G4 (9.99 t) or G3+G4+G5 (9.515 t) fit. Proof planned: docs/DEMO_SCRIPT.md ''Scenario
     B, 90 s (deep)'' with the jury''s live priority swap at 00:25 (DEC-26), and the load-out flag on screen if the
-    team keeps CON-12 option 1.'
+    team keeps CON-12 option 1. Update: decided by DEC-32; Scenario B runs G3, G4, G5, and the full load-out is
+    refused at the pier with this alternative recommended and a logged override available.'
   links:
   - label: 'Demo: Scenario B'
     path: docs/DEMO_SCRIPT.md#scenario-b-90-s-deep
@@ -5774,6 +5813,7 @@ requirements:
   - DEC-26
   - CON-12
   - DEC-16
+  - DEC-32
   status: planned
   question: Do we run the brief's load-out as given with the on-screen flag (CON-12 option 1), or stage a feasible
     subset, knowing G3+G4+G5 drops G2's shed step and G2+G3+G4 drops the 45 kW comms node the minute-12 story rests
@@ -6165,7 +6205,9 @@ requirements:
     kW and nothing must shed; a shortfall appears only if G3 is recovered and charging (25 kW, total 111 kW) or
     G2 winches (20 kW, total 101 kW). Also, survey.yaml does not make G4 mission-critical, and throttling its charge
     to 10 kW costs 0.0024 per kW, below G5''s 0.0038, so D4 would cut the drone''s charge first. Today: ladder text
-    in GAMEPLAN; power.shed_headroom_kw 5. Proof planned: DEMO_SCRIPT 00:42, ''the winner kept alive''.'
+    in GAMEPLAN; power.shed_headroom_kw 5. Proof planned: DEMO_SCRIPT 00:42, ''the winner kept alive''. Update:
+    decided by DEC-32; Scenario B runs G3, G4, G5, and the full load-out is refused at the pier with this alternative
+    recommended and a logged override available.'
   links:
   - label: Shedding ladder
     path: GAMEPLAN.md#shedding-ladder-d4-precomputed-every-tick
@@ -6180,6 +6222,7 @@ requirements:
   decisions:
   - DEC-16
   - CON-12
+  - DEC-32
   status: planned
   question: 'How is the min-8 winner protected at min 12: a ''protect'' entry that D3 writes into the override stack,
     or making the winner mission-critical for the rest of the event, given that survey.yaml alone would throttle
@@ -6479,7 +6522,9 @@ requirements:
     meet the 5 s first action and 60 s sequence (response_time_s). Design only: GAMEPLAN''s ladder and docs/DEMO_SCRIPT.md
     00:40-00:42; GAMEPLAN''s older 00:55 beat still sends G6 to ''standby'', a mode G6 lacks (it has recirculate,
     4 kW). Open: the brief''s load-out fails mass and Bay 2 (CON-12), and our min-12 load (87 kW) needs no shed
-    yet (R-230). Proof: DEMO_SCRIPT 00:42 shows ladder timestamps against 5 s and 60 s with no keypress.'
+    yet (R-230). Proof: DEMO_SCRIPT 00:42 shows ladder timestamps against 5 s and 60 s with no keypress. Update:
+    decided by DEC-32; Scenario B runs G3, G4, G5, and the full load-out is refused at the pier with this alternative
+    recommended and a logged override available.'
   links:
   - label: Shedding ladder, precomputed
     path: GAMEPLAN.md#shedding-ladder-d4-precomputed-every-tick
@@ -6498,6 +6543,7 @@ requirements:
   - DEC-17
   - DEC-26
   - CON-12
+  - DEC-32
   status: planned
   question: Does the crew approve the standing shed plan once at mission start, or must the screen show it re-approved
     whenever the priority file or the guest set changes?
@@ -6602,7 +6648,9 @@ requirements:
     swap at 01:30. The plan is docs/DEMO_SCRIPT.md ''Scenario B, 90 s'' (DEC-26): 00:00 baseline, 00:10 min-8 conflict,
     00:12 D3 within 2 s, 00:25 priority swap, 00:40 trip, 00:42 D4 ladder, a breadth strip at 01:00 (typed ''00:60''
     in the table), close 01:25. It supersedes GAMEPLAN''s older beats. Missing: simulator, screen, timeline file;
-    the opening load-out flag waits on CON-12. Proof: a stopwatch on each rehearsal against these marks.'
+    the opening load-out flag waits on CON-12. Proof: a stopwatch on each rehearsal against these marks. Update:
+    decided by DEC-32; Scenario B runs G3, G4, G5, and the full load-out is refused at the pier with this alternative
+    recommended and a logged override available.'
   links:
   - label: Scenario B, 90 s storyboard
     path: docs/DEMO_SCRIPT.md#scenario-b-90-s-deep
@@ -6617,6 +6665,7 @@ requirements:
   decisions:
   - DEC-26
   - CON-12
+  - DEC-32
   status: planned
   question: Does the 25 s breadth strip stay inside Scenario B's 90 s, or move after Scenario A so all 90 s show
     Scenario B?
@@ -6690,7 +6739,9 @@ requirements:
     each, same code two ships) and adds a breadth strip. Brief numbers bound inside it: 3 kn, 24 °C, 18 %, 22 kn,
     20 % and 12 min, 15 min, 35 kW, about 100 kW, 45 kW, 8 kW, six or none aboard. Nothing is built; the storyboard
     is a draft for team review (DEC-26), with the load-out question CON-12 first. Proof: a rehearsal checklist of
-    these rows, ticked on each of the five planned Sunday rehearsals.'
+    these rows, ticked on each of the five planned Sunday rehearsals. Update: decided by DEC-32; Scenario B runs
+    G3, G4, G5, and the full load-out is refused at the pier with this alternative recommended and a logged override
+    available.'
   links:
   - label: Scenario B storyboard
     path: docs/DEMO_SCRIPT.md#scenario-b-90-s-deep
@@ -6701,6 +6752,7 @@ requirements:
   decisions:
   - DEC-26
   - CON-12
+  - DEC-32
   status: planned
   question: Do we turn the brief's p6 paragraph into a scored rehearsal checklist (one line per row R-214 to R-235)
     and fix every miss before adding any breadth line?
@@ -7221,7 +7273,9 @@ requirements:
     shed and the brief''s shed steps (R-231, R-232) would not trigger. A shed becomes real if G3 is recovered and
     charging (25 kW: 111 kW), G2 runs its winch (20 kW: 101 kW, but the winch is excluded during recovery), G6 is
     aboard (18 kW: 105 kW, with no bay free), or we judge at the brief''s 90 kW low end of the degraded range (ceiling
-    85 kW). The load-out itself is CON-12. Proof: a scenario test asserting a positive shortfall at min 12.'
+    85 kW). The load-out itself is CON-12. Proof: a scenario test asserting a positive shortfall at min 12. Update:
+    decided by DEC-32; Scenario B runs G3, G4, G5, and the full load-out is refused at the pier with this alternative
+    recommended and a logged override available.'
   links:
   - label: G5 modes
     path: manifests/G5.yaml
@@ -7238,6 +7292,7 @@ requirements:
   decisions:
   - CON-12
   - DEC-16
+  - DEC-32
   status: drafted
   question: Which min-12 load state do we stage so a shed is genuinely needed (G3 recovered and charging at 25 kW,
     or the 90 kW low end of the degraded range), rather than shedding with 8 kW still free?
@@ -8376,7 +8431,9 @@ requirements:
     pauses for the minimum 15-minute recovery window and the leg is re-run, with the survey minutes lost stated
     (brief p6). Today: the file and manifests/G3.yaml exist and pass the tests. Missing: the engines. The brief''s
     Scenario B load-out (G2, G3, G4, G5) is 13.015 t against the 10 t margin and needs Bay 2 twice (CON-12). Proof:
-    the DEMO_SCRIPT Scenario B min 8 decision under survey priority.'
+    the DEMO_SCRIPT Scenario B min 8 decision under survey priority. Update: decided by DEC-32; Scenario B runs
+    G3, G4, G5, and the full load-out is refused at the pier with this alternative recommended and a logged override
+    available.'
   links:
   - label: Survey file
     path: config/missions/survey.yaml
@@ -8390,6 +8447,7 @@ requirements:
   - DEC-02
   - DEC-26
   - CON-12
+  - DEC-32
   status: drafted
   question: Should the survey file carry leg length and recovery window, so D3 computes the loser's cost in survey
     minutes from data rather than from engine constants?
@@ -8904,7 +8962,9 @@ requirements:
     t-eq while under 10 t, so mass always binds first. Where today: config/assumptions.yaml mass; test_three_of_five_sets_of_four_exceed_the_mass_margin
     and test_g4_hangar_is_850_kg_after_the_correction (DEC-22). Missing: any stability test or code; the WORKLOG
     Fri 20:53 entry notes no public stability data fits this hull, so the multipliers are the whole centre-of-gravity
-    model. Shown at docs/DEMO_SCRIPT.md Scenario A drill ''The 35 kg case'' and the CON-12 flag (13.0 t).'
+    model. Shown at docs/DEMO_SCRIPT.md Scenario A drill ''The 35 kg case'' and the CON-12 flag (13.0 t). Update:
+    decided by DEC-32; Scenario B runs G3, G4, G5, and the full load-out is refused at the pier with this alternative
+    recommended and a logged override available.'
   links:
   - label: 'Platform profile: mass'
     path: config/assumptions.yaml
@@ -8921,6 +8981,7 @@ requirements:
   decisions:
   - DEC-22
   - CON-12
+  - DEC-32
   status: drafted
   question: Stability (12 t-eq) can bind before the 10 t mass margin only if about 10 t sits on the flight deck
     or a jury card puts far more than 60 kg on the mast, so do we show a stability bar at all, or only when a card
@@ -8973,7 +9034,9 @@ requirements:
     positions.bay1 {halves 2, max_t 8, power_line port} and bay2 {halves 1, max_t 4, power_line stbd}, line choices
     assumed in the Physical Account; manifests/schema.json positions bay1, bay1_half, bay2. Missing: metre footprints
     on bays and cards and a per-bay data point, so no geometric fit check. Shown at docs/DEMO_SCRIPT.md Scenario
-    A drill ''The bay story'' and the CON-12 flag (Bay 2 needed twice).'
+    A drill ''The bay story'' and the CON-12 flag (Bay 2 needed twice). Update: decided by DEC-32; Scenario B runs
+    G3, G4, G5, and the full load-out is refused at the pier with this alternative recommended and a logged override
+    available.'
   links:
   - label: 'Platform profile: positions'
     path: config/assumptions.yaml
@@ -8987,6 +9050,7 @@ requirements:
     path: docs/DEMO_SCRIPT.md#decision-needed-first-scenario-bs-load-out-breaks-the-briefs-own-margins
   decisions:
   - CON-12
+  - DEC-32
   status: drafted
   question: Do we keep bays as discrete halves only, accepting that a jury card with an odd footprint cannot be
     checked, or add footprint metres to the schema and the cards now?
@@ -9602,7 +9666,9 @@ requirements:
     pins the hangar. Missing: ledger code, and the "margin kept" row that Annex C''s template asks for under mass
     and stability; we keep none today. CON-12: the brief''s Scenario B load-out is 13.015 t, which D1 would refuse.
     Proof: the 35 kg drill in docs/DEMO_SCRIPT.md Scenario A (refused by 35 kg; yes-if G1 disembarks; an 800 kg
-    hangar flips it to yes), and the CON-12 flag that opens Scenario B.'
+    hangar flips it to yes), and the CON-12 flag that opens Scenario B. Update: decided by DEC-32; Scenario B runs
+    G3, G4, G5, and the full load-out is refused at the pier with this alternative recommended and a logged override
+    available.'
   links:
   - label: 'assumptions.yaml: mass'
     path: config/assumptions.yaml
@@ -9622,6 +9688,7 @@ requirements:
   - DEC-22
   - DEC-26
   - CON-12
+  - DEC-32
   status: drafted
   question: Do we keep part of the 10 t as a declared margin (the US Navy recommends 10 % for warships), knowing
     that keeping even 100 kg refuses G2+G3+G4 at 9.99 t?
@@ -11190,7 +11257,9 @@ requirements:
     module 3.5 t, preferred [bay2], allowed [bay2, bay1_half], needs_bay_clear true; assumptions positions.bay1
     halves 2. The brief''s ''winch + probe as parts'' is a note, not parts (R-367). Missing: D2 and a rule that
     turns needs_bay_clear into a blocked half. With G3 in all of Bay 1, G2 and G5 both need Bay 2 (CON-12). Shown:
-    DEMO_SCRIPT Scenario A ''bay story'' drill and the Scenario B load-out flag.'
+    DEMO_SCRIPT Scenario A ''bay story'' drill and the Scenario B load-out flag. Update: decided by DEC-32; Scenario
+    B runs G3, G4, G5, and the full load-out is refused at the pier with this alternative recommended and a logged
+    override available.'
   links:
   - label: G2 card
     path: manifests/G2.yaml
@@ -11202,6 +11271,7 @@ requirements:
     path: docs/DEMO_SCRIPT.md#decision-needed-first-scenario-bs-load-out-breaks-the-briefs-own-margins
   decisions:
   - CON-12
+  - DEC-32
   status: drafted
   question: When G2 and G5 both want Bay 2, does D2 give it to G2 so G5 can share Bay 1 with another 10-ft guest,
     and does the sentence say that is why?
@@ -11847,7 +11917,8 @@ requirements:
     and G2 in Bay 2 the node has no position, which is why the brief''s Scenario B load-out needs Bay 2 twice (CON-12).
     Today: G5.yaml node 3.0 t, preferred [bay2], allowed [bay2, bay1_half], no needs_bay_clear. Missing: D2 and
     the ''no bay'' refusal sentence. Shown: DEMO_SCRIPT Scenario A free-mast-slot drill (installed G2, G3, G4; card
-    G5: its node has no bay) and the Scenario B load-out flag.'
+    G5: its node has no bay) and the Scenario B load-out flag. Update: decided by DEC-32; Scenario B runs G3, G4,
+    G5, and the full load-out is refused at the pier with this alternative recommended and a logged override available.'
   links:
   - label: G5 card
     path: manifests/G5.yaml
@@ -11859,6 +11930,7 @@ requirements:
     path: docs/DEMO_SCRIPT.md#decision-needed-first-scenario-bs-load-out-breaks-the-briefs-own-margins
   decisions:
   - CON-12
+  - DEC-32
   status: drafted
   question: When G5's node has no bay, should the yes-if list rank 'G2 disembarks' against 'G3 disembarks' by the
     active priority file and name the capability each loses?
@@ -12199,7 +12271,8 @@ requirements:
     °C (72 kW) is 53 kW short; test_all_five_do_not_fit_a_degraded_loop_in_30c_water asserts only that demand exceeds
     72 kW, not the 125, 27.75 or 53. The brief''s Scenario B load-out is 13.015 t against 10 t (CON-12). To measure
     first on a real hull: hotel 400 kW, auxiliaries 55 kW and the 150 kW PMS hotel shed. Proof: a test for each
-    amount the final paragraph uses, cited beside it.'
+    amount the final paragraph uses, cited beside it. Update: decided by DEC-32; Scenario B runs G3, G4, G5, and
+    the full load-out is refused at the pier with this alternative recommended and a logged override available.'
   links:
   - label: 'Physical Account: closing question'
     path: docs/PHYSICAL_ACCOUNT.md
@@ -12215,6 +12288,7 @@ requirements:
   - CON-09
   - CON-12
   - DEC-22
+  - DEC-32
   status: drafted
   question: 'Which single change and amount do we commit to in the closing paragraph: +5 kW degraded power reserve,
     about +53 kW degraded cooling at 30 °C, or +3.015 t mass margin for the brief''s own Scenario B load-out?'
@@ -12809,7 +12883,9 @@ requirements:
     of seven breadth lines at about 5 s each; 01:25 close. Scenario A follows with its own 30 s verdict ceiling,
     replacing GAMEPLAN''s older 01:20 slot. Slide p12 differs: conflict at 00:08, failure at 00:12, swap at 01:30.
     The CON-12 flag (13.015 t, Bay 2 needed twice) also costs seconds. Nothing is built. Proof: five timed rehearsals
-    Sun 05:30-09:15; a replay of the Scenario B timeline can check that each beat lands at its offset.'
+    Sun 05:30-09:15; a replay of the Scenario B timeline can check that each beat lands at its offset. Update: decided
+    by DEC-32; Scenario B runs G3, G4, G5, and the full load-out is refused at the pier with this alternative recommended
+    and a logged override available.'
   links:
   - label: 'Demo: Scenario B, 90 s'
     path: docs/DEMO_SCRIPT.md#scenario-b-90-s-deep
@@ -12825,6 +12901,7 @@ requirements:
   - DEC-26
   - CON-12
   - DEC-27
+  - DEC-32
   status: planned
   question: 'Do we keep the in-run priority swap at 00:25, or follow slide p12: run all 90 s on the jury''s file,
     then swap at 01:30 and replay the same timeline?'
