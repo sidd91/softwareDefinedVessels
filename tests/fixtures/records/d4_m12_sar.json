@@ -95,5 +95,5 @@
   "confirmed_t_s": 721,
   "first_shed_due_t_s": 725,
   "inputs_hash": "5ea5db553bf16c52",
-  "sentence": "Holds: 81 of 95 kW, power limits (one genset down). Next step if needed: G5 full to low power, 37 kW."
+  "sentence": "Holds: 81 of 95 kW with one genset down and G4's 35 kW reserved, 0 steps, no capability lost. First armed step: G5 full to low power, 45 to 8 kW, frees 37 kW."
 }

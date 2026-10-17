@@ -1,0 +1,57 @@
+{
+  "seq": 0,
+  "tick": 0,
+  "t_s": 0,
+  "applies_at_tick": 1,
+  "kind": "D1",
+  "subject": "G4 onto G1, G2, G3",
+  "mission": "survey",
+  "verdict": "no",
+  "ceiling_ms": 30000,
+  "binding": {
+    "class": "mass",
+    "label": "Mass",
+    "capacity": 10,
+    "demand": 19.185,
+    "free": -9.185,
+    "unit": "t"
+  },
+  "also_failing": [
+    {
+      "class": "stability",
+      "label": "Stability",
+      "capacity": 12,
+      "demand": 21.303,
+      "free": -9.303,
+      "unit": "t_eq"
+    }
+  ],
+  "card_alone": {
+    "class": "mass",
+    "label": "Mass",
+    "capacity": 10,
+    "demand": 10.14,
+    "free": -0.14,
+    "unit": "t"
+  },
+  "options": [],
+  "genset": {
+    "load_kw": 81.5,
+    "reserve_kw": 100,
+    "gate_kw": 95,
+    "state": "fits",
+    "steps": []
+  },
+  "seawater_tip_c": 48.0,
+  "placement": {
+    "G1.sensor": "mast_free",
+    "G2.module": "bay2",
+    "G3.cradle": "bay1",
+    "G3.vehicle": "bay1",
+    "G4.drone": "flight_deck",
+    "G4.hangar": "flight_deck"
+  },
+  "order_source": "computed",
+  "inputs_hash": "712acec7d9f168c3",
+  "sentence": "Mass binds: 19.185 t against 10 t, 9.185 t over. No: even alone, mass is 10.14 t against 10 t."
+}

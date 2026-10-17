@@ -1,0 +1,40 @@
+{
+  "seq": 0,
+  "tick": 0,
+  "t_s": 0,
+  "applies_at_tick": 1,
+  "kind": "D2",
+  "subject": "G6.unit",
+  "mission": "disaster_relief",
+  "verdict": "placed",
+  "ceiling_ms": 30000,
+  "binding": {
+    "class": "placement",
+    "label": "Bay 1",
+    "capacity": 2,
+    "demand": 1,
+    "free": 1,
+    "unit": "halves"
+  },
+  "placement": {
+    "G4.drone": "flight_deck",
+    "G4.hangar": "flight_deck",
+    "G5.node": "bay2",
+    "G5.antenna": "mast_free",
+    "G6.unit": "bay1_half"
+  },
+  "placement_rejected": [
+    {
+      "part": "G6.unit",
+      "position": "bay2",
+      "reason": "held",
+      "held_by": "G5.node",
+      "move_hours": [
+        4,
+        8
+      ]
+    }
+  ],
+  "inputs_hash": "441233a37878678c",
+  "sentence": "G6 unit to half of Bay 1: 1 of 2 halves used, 1 half spare. Bay 2 rejected: the G5 node holds it and moving it takes 4 to 8 h of crane work."
+}

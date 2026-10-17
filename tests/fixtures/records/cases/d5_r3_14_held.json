@@ -1,0 +1,39 @@
+{
+  "seq": 4,
+  "tick": 780,
+  "t_s": 780,
+  "applies_at_tick": 781,
+  "kind": "D5",
+  "subject": "G4 recovery under rule R3",
+  "mission": "survey",
+  "verdict": "held",
+  "ceiling_ms": 200,
+  "hard_limit": {
+    "guest": "G4",
+    "when": {
+      "signal": "G4.battery_pct",
+      "op": "<",
+      "value": 20
+    },
+    "then": {
+      "action": "land_or_ditch",
+      "within_min": 12
+    },
+    "reading": 18
+  },
+  "deadline_t_s": 1091.9,
+  "rule": "R3",
+  "crew_aboard": 14,
+  "crew_policy": "confirm",
+  "approach_min": 4,
+  "evidence": [
+    {
+      "signal": "hlo_deck_report",
+      "value": "not_clear",
+      "t_s": 780
+    }
+  ],
+  "deck_evidence": "the landing officer reports the zone not clear",
+  "inputs_hash": "38f61c76ddf9d9df",
+  "sentence": "Recovery held at 14 aboard: the landing officer reports the zone not clear. G4 at 18 % must start its 4 min approach by minute 14.2 to land by 18.2."
+}

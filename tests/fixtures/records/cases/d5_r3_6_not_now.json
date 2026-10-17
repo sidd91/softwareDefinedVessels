@@ -1,0 +1,61 @@
+{
+  "seq": 1,
+  "tick": 180,
+  "t_s": 180,
+  "applies_at_tick": 181,
+  "kind": "D5",
+  "subject": "deck work request",
+  "mission": "survey",
+  "verdict": "not-now",
+  "ceiling_ms": 200,
+  "binding": {
+    "class": "r3_lead",
+    "label": "Deck clearing lead",
+    "capacity": 8,
+    "demand": 15,
+    "free": -7,
+    "unit": "min"
+  },
+  "next_window": {
+    "kind": "event",
+    "event": "G4 is secured"
+  },
+  "hard_limit": {
+    "guest": "G4",
+    "when": {
+      "signal": "G4.battery_pct",
+      "op": "<",
+      "value": 20
+    },
+    "then": {
+      "action": "land_or_ditch",
+      "within_min": 12
+    },
+    "reading": 18
+  },
+  "deadline_t_s": 1448,
+  "injected": true,
+  "rule": "R3",
+  "crew_aboard": 6,
+  "crew_policy": "standing_plan",
+  "approach_min": 4,
+  "evidence": [
+    {
+      "signal": "crew_aboard",
+      "value": 6,
+      "t_s": 180
+    },
+    {
+      "signal": "standing_plan",
+      "value": "approved",
+      "t_s": 180
+    }
+  ],
+  "deck_evidence": "the standing plan approved at launch keeps the zone clear for the sortie",
+  "request": {
+    "what": "deck work",
+    "minutes": 3
+  },
+  "inputs_hash": "5ad14bc185458ca6",
+  "sentence": "Not now at 6 aboard: deck work (3 min) waits until G4 is secured. Deck clearing lead 15 min against 8 min, 7 min over."
+}

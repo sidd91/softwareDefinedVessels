@@ -1,0 +1,44 @@
+{
+  "seq": 0,
+  "tick": 0,
+  "t_s": 0,
+  "applies_at_tick": 1,
+  "kind": "D2",
+  "subject": "G5.node",
+  "mission": "survey",
+  "verdict": "unplaced",
+  "ceiling_ms": 30000,
+  "binding": {
+    "class": "placement",
+    "label": "Bay space for the G5 node",
+    "capacity": 0,
+    "demand": 1,
+    "free": -1,
+    "unit": "halves"
+  },
+  "placement": {
+    "G2.module": "bay2",
+    "G3.cradle": "bay1",
+    "G3.vehicle": "bay1",
+    "G4.drone": "flight_deck",
+    "G4.hangar": "flight_deck",
+    "G5.node": null,
+    "G5.antenna": "mast_free"
+  },
+  "placement_rejected": [
+    {
+      "part": "G5.node",
+      "position": "bay2",
+      "reason": "held",
+      "held_by": "G2.module"
+    },
+    {
+      "part": "G5.node",
+      "position": "bay1_half",
+      "reason": "held",
+      "held_by": "G3.cradle"
+    }
+  ],
+  "inputs_hash": "2aa949c0ad7c85f1",
+  "sentence": "G5 node has no position: it needs 1 half and 0 halves are free. Bay 2 is held by the G2 module and half of Bay 1 by the G3 cradle."
+}

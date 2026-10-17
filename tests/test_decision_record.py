@@ -21,7 +21,9 @@ SCHEMA = json.loads((ROOT / "config/decision_record.schema.json").read_text())
 VALIDATOR = jsonschema.Draft202012Validator(SCHEMA)
 ORACLE = yaml.safe_load((ROOT / "tests/oracles/expected_outcomes.yaml").read_text())
 FIXTURE_DIR = ROOT / "tests/fixtures/records"
-FIXTURES = {p.stem: json.loads(p.read_text()) for p in sorted(FIXTURE_DIR.glob("*.json"))}
+# The top folder holds the Scenario A records and the Scenario B timeline (the screen replays it); cases/ holds the
+# records for the verdicts and crew levels no oracle row covers (NO, NOT NOW, CARD REJECTED, D2, R3 at 14, 6, 0).
+FIXTURES = {p.stem: json.loads(p.read_text()) for p in sorted(FIXTURE_DIR.glob("*.json")) + sorted(FIXTURE_DIR.glob("cases/*.json"))}
 
 A = Ld.load_assumptions()
 VOCAB = Ld.load_vocabulary(assumptions=A)

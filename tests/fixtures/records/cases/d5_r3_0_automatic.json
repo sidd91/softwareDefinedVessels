@@ -1,0 +1,52 @@
+{
+  "seq": 2,
+  "tick": 480,
+  "t_s": 480,
+  "applies_at_tick": 481,
+  "kind": "D5",
+  "subject": "G4 recovery under rule R3",
+  "mission": "survey",
+  "verdict": "automatic",
+  "ceiling_ms": 200,
+  "hard_limit": {
+    "guest": "G4",
+    "when": {
+      "signal": "G4.battery_pct",
+      "op": "<",
+      "value": 20
+    },
+    "then": {
+      "action": "land_or_ditch",
+      "within_min": 12
+    },
+    "reading": 18
+  },
+  "deadline_t_s": 1091.9,
+  "rule": "R3",
+  "crew_aboard": 0,
+  "crew_policy": "automatic",
+  "approach_min": 4,
+  "evidence": [
+    {
+      "signal": "last_sweep",
+      "value": {
+        "t_s": -4200,
+        "result": "clear"
+      },
+      "t_s": -4200
+    },
+    {
+      "signal": "deck_activity_since_sweep",
+      "value": false,
+      "t_s": 480
+    },
+    {
+      "signal": "deck_latched_clear",
+      "value": true,
+      "t_s": 480
+    }
+  ],
+  "deck_evidence": "platform deck state latched at the last crew sweep",
+  "inputs_hash": "e68d65dc1e9195d0",
+  "sentence": "Recovery automatic at 0 aboard: platform deck state latched at the last crew sweep (78 min ago). G4 at 18 % must land by minute 18.2."
+}

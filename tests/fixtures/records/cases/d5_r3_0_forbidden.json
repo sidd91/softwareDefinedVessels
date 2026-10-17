@@ -1,0 +1,62 @@
+{
+  "seq": 2,
+  "tick": 480,
+  "t_s": 480,
+  "applies_at_tick": 481,
+  "kind": "D5",
+  "subject": "G4 recovery under rule R3",
+  "mission": "survey",
+  "verdict": "forbidden",
+  "ceiling_ms": 200,
+  "hard_limit": {
+    "guest": "G4",
+    "when": {
+      "signal": "G4.battery_pct",
+      "op": "<",
+      "value": 20
+    },
+    "then": {
+      "action": "land_or_ditch",
+      "within_min": 12
+    },
+    "reading": 18
+  },
+  "deadline_t_s": 1091.9,
+  "losses": {
+    "G4": {
+      "mode_before": "standby",
+      "mode_after": "off",
+      "capability_before": 0.3,
+      "capability_after": 0.0,
+      "capability": "sar_air"
+    }
+  },
+  "injected": true,
+  "rule": "R3",
+  "crew_aboard": 0,
+  "crew_policy": "automatic",
+  "approach_min": 4,
+  "evidence": [
+    {
+      "signal": "last_sweep",
+      "value": {
+        "t_s": -4200,
+        "result": "clear"
+      },
+      "t_s": -4200
+    },
+    {
+      "signal": "deck_activity_since_sweep",
+      "value": true,
+      "t_s": 480
+    },
+    {
+      "signal": "deck_latched_clear",
+      "value": false,
+      "t_s": 480
+    }
+  ],
+  "deck_evidence": "deck activity since the last crew sweep voided the latch",
+  "inputs_hash": "653c0f9bcb142d57",
+  "sentence": "Recovery forbidden at 0 aboard: deck activity since the last crew sweep voided the latch. G4 at 18 % ditches by minute 18.2 and its air rescue capability is lost."
+}

@@ -94,5 +94,5 @@
   "confirmed_t_s": 1141,
   "first_shed_due_t_s": 1145,
   "inputs_hash": "33172f7a5aab8fd3",
-  "sentence": "Cooling binds (cooling degraded): 81 kW against a 75 kW limit. G5 full to low power frees 37 kW. Load 44 of 75 kW. G5 keeps 30 %."
+  "sentence": "Cooling binds with one chilled-water pump down: 81 kW against the 75 kW limit. G5 full to low power, 45 to 8 kW, frees 37 kW and the load is 44 kW: G5 loses 70 %, G3 and G4 nothing."
 }

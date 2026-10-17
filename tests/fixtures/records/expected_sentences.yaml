@@ -1,0 +1,98 @@
+# The expected sentence for every decision-record fixture in this folder and in cases/, and where its numbers come
+# from. tests/test_explain.py checks that src/sdv/explain.py builds exactly this sentence from the record's fields and
+# that the record's own `sentence` field says the same. Change a sentence here and in the record together.
+d1_A1_sar:
+  sentence: 'Mass binds: 10.035 t against 10 t, 35 kg over. Yes if G3 disembarks, mission value lost 0.2.'
+  source: oracle scenario_a A1 sar
+d1_A1_survey:
+  sentence: 'Mass binds: 10.035 t against 10 t, 35 kg over. Yes if G1 disembarks, mission value lost 0.2.'
+  source: oracle scenario_a A1 survey
+d1_A2_sar:
+  sentence: 'Mass binds: 10.035 t against 10 t, 35 kg over. Yes if G3 disembarks, mission value lost 0.2.'
+  source: oracle scenario_a A2 sar
+d1_A2_survey:
+  sentence: 'Mass binds: 10.035 t against 10 t, 35 kg over. Yes if G4 disembarks, mission value lost 0.2.'
+  source: oracle scenario_a A2 survey
+d1_A3_sar:
+  sentence: 'Mass binds: 13.015 t against 10 t, 3.015 t over. Yes if G3 disembarks, mission value lost 0.2.'
+  source: oracle scenario_a A3 sar
+d1_A3_survey:
+  sentence: 'Mass binds: 13.015 t against 10 t, 3.015 t over. Yes if G2 disembarks, mission value lost 1.'
+  source: oracle scenario_a A3 survey
+d1_A4_sar:
+  sentence: 'Mass binds: 12.07 t against 10 t, 2.07 t over. Yes if G2 disembarks and the G5 node moves to Bay 2 (4 to 8 h by crane), mission value lost 0.5.'
+  source: oracle scenario_a A4 sar
+d1_A4_survey:
+  sentence: 'Mass binds: 12.07 t against 10 t, 2.07 t over. Yes if G5 disembarks, mission value lost 0.2.'
+  source: oracle scenario_a A4 survey
+d1_A5_sar:
+  sentence: 'Admitted: cooling is the tightest line, 100 kW against 120 kW, 20 kW spare. With one genset down 101.5 kW is over the 95 kW gate and holds once G2 goes from winch to sampling, 14 kW freed.'
+  source: oracle scenario_a A5 sar
+d1_A5_survey:
+  sentence: 'Admitted: cooling is the tightest line, 100 kW against 120 kW, 20 kW spare. With one genset down 101.5 kW is over the 95 kW gate and holds once G4 goes from fast charge to charge, 25 kW freed.'
+  source: oracle scenario_a A5 survey
+d1_A6_sar:
+  sentence: 'Admitted: mass is the tightest line, 9.985 t against 10 t, 15 kg spare.'
+  source: oracle scenario_a A6 sar
+d1_A6_survey:
+  sentence: 'Admitted: mass is the tightest line, 9.985 t against 10 t, 15 kg spare.'
+  source: oracle scenario_a A6 survey
+d1_A7_disaster_relief:
+  sentence: 'Admitted: cooling is the tightest line, 98 kW against 120 kW, 22 kW spare. With one genset down 98 kW is over the 95 kW gate and holds once G4 goes from fast charge to charge, 25 kW freed.'
+  source: oracle scenario_a A7 disaster_relief
+d1_A7_sar:
+  sentence: 'Admitted: cooling is the tightest line, 98 kW against 120 kW, 22 kW spare. With one genset down 98 kW is over the 95 kW gate and holds once G6 goes from production to recirculate, 14 kW freed.'
+  source: oracle scenario_a A7 sar
+d1_card_rejected_G4_survey:
+  sentence: 'Card rejected: placement.parts[1].mass_t: -1 is less than the minimum of 0. The previous G4 card stays in force.'
+  source: the loader's problem for G4's hangar edited to -1 t (tests/test_loader.py, sdv admit --set)
+d1_no_A1_hangar_10t_survey:
+  sentence: 'Mass binds: 19.185 t against 10 t, 9.185 t over. No: even alone, mass is 10.14 t against 10 t.'
+  source: 'A1 with G4''s hangar edited to 10 t (engine run: no removal set fits); card alone 0.14 + 10 t'
+d1_not_now_A6_under_way_survey:
+  sentence: 'Not now: at-sea lift for the G4 hangar, 800 kg against 250 kg, 550 kg over. It can come aboard at the next port call, within 14 days.'
+  source: 'A6 under way (DEMO_SCRIPT A-prime, R-102): the 800 kg hangar against the 250 kg at-sea lift, port call within 14 days'
+d2_A3_survey:
+  sentence: 'G5 node has no position: it needs 1 half and 0 halves are free. Bay 2 is held by the G2 module and half of Bay 1 by the G3 cradle.'
+  source: 'oracle A3 survey: no bay for the G5 node (G2 in Bay 2, G3 all of Bay 1)'
+d2_A7_disaster_relief:
+  sentence: 'G6 unit to half of Bay 1: 1 of 2 halves used, 1 half spare. Bay 2 rejected: the G5 node holds it and moving it takes 4 to 8 h of crane work.'
+  source: 'oracle A7 disaster_relief placement: G6 on half of Bay 1, G5 holds Bay 2; crane 4 to 8 h per bay guest'
+d3_m08_sar:
+  sentence: 'G4 recovers first: below 20 % it must land within 12 min, by minute 18.2, and G3''s leg runs to minute 40. G3''s leg is aborted, at least 25 to 27 survey minutes lost with no resume time, and
+    G4''s 35 kW charge is reserved.'
+  source: oracle scenario_b.minute_8 sar
+d3_m08_survey:
+  sentence: 'G4 recovers first: below 20 % it must land within 12 min, by minute 18.2, and G3''s leg runs to minute 40. G3 holds depth and loses 25 to 27 survey minutes, its leg now ending at minute 65
+    to 67.'
+  source: oracle scenario_b.minute_8 survey
+d4_m12_sar:
+  sentence: 'Holds: 81 of 95 kW with one genset down and G4''s 35 kW reserved, 0 steps, no capability lost. First armed step: G5 full to low power, 45 to 8 kW, frees 37 kW.'
+  source: oracle scenario_b.minute_12_as_decided sar
+d4_m12_survey:
+  sentence: 'Holds: 48 of 95 kW with one genset down, 0 steps, no capability lost. First armed step: G5 full to low power, 45 to 8 kW, frees 37 kW.'
+  source: oracle scenario_b.minute_12_as_decided survey
+d4_m19_sar:
+  sentence: 'Cooling binds with one chilled-water pump down: 81 kW against the 75 kW limit. G5 full to low power, 45 to 8 kW, frees 37 kW and the load is 44 kW: G5 loses 70 %, G3 and G4 nothing.'
+  source: EXPECTED_OUTCOMES 'Scenario B as decided', minute 19, sar
+d4_m19_survey:
+  sentence: 'Cooling binds with one chilled-water pump down: 81 kW against the 75 kW limit. G4 fast charge to charge, 35 to 10 kW, frees 25 kW and the load is 56 kW: G4 loses 30 %, G3 and G5 nothing.'
+  source: EXPECTED_OUTCOMES 'Scenario B as decided', minute 19, survey
+d5_r3_0_automatic:
+  sentence: 'Recovery automatic at 0 aboard: platform deck state latched at the last crew sweep (78 min ago). G4 at 18 % must land by minute 18.2.'
+  source: 'variant crew0: deck latched clear at the sweep at -4200 s, recovery automatic at minute 8'
+d5_r3_0_forbidden:
+  sentence: 'Recovery forbidden at 0 aboard: deck activity since the last crew sweep voided the latch. G4 at 18 % ditches by minute 18.2 and its air rescue capability is lost.'
+  source: 'SCENARIO_C_MEMO effect at 0: deck activity after the sweep voids the latch, G4 ditches by 18.2'
+d5_r3_14_cleared:
+  sentence: 'Recovery cleared at 14 aboard: the bridge confirmed at minute 9. G4 at 18 % must land by minute 18.2.'
+  source: the bridge confirms at minute 9 (seed_pins.confirm_min 1), as the core runs it
+d5_r3_14_confirm:
+  sentence: Bridge asked to confirm G4's recovery at 14 aboard, on the landing officer's deck report. G4 at 18 % must land by minute 18.2.
+  source: 'SCENARIO_C_MEMO 14 aboard: the bridge is asked at minute 8 with the D3 decision; land by 18.2'
+d5_r3_14_held:
+  sentence: 'Recovery held at 14 aboard: the landing officer reports the zone not clear. G4 at 18 % must start its 4 min approach by minute 14.2 to land by 18.2.'
+  source: 'SCENARIO_C_MEMO effect at 14: the landing officer reports not clear; start the 4 min approach by 14.2'
+d5_r3_6_not_now:
+  sentence: 'Not now at 6 aboard: deck work (3 min) waits until G4 is secured. Deck clearing lead 15 min against 8 min, 7 min over.'
+  source: 'DEMO_SCRIPT Scenario C +08: injected 3 min deck work at minute 3 refused until G4 is secured; lead 3 + 12 min against 12 - 4 min'

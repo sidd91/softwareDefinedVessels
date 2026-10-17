@@ -1,0 +1,16 @@
+{
+  "seq": 0,
+  "tick": 0,
+  "t_s": 0,
+  "applies_at_tick": 1,
+  "kind": "D1",
+  "subject": "G4",
+  "mission": "survey",
+  "verdict": "card-rejected",
+  "ceiling_ms": 30000,
+  "field": "placement.parts[1].mass_t: -1 is less than the minimum of 0",
+  "file": "manifests/G4.yaml",
+  "kept_previous": true,
+  "inputs_hash": "bb2eb5f76527d6ad",
+  "sentence": "Card rejected: placement.parts[1].mass_t: -1 is less than the minimum of 0. The previous G4 card stays in force."
+}

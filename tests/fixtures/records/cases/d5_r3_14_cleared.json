@@ -1,0 +1,45 @@
+{
+  "seq": 3,
+  "tick": 540,
+  "t_s": 540,
+  "applies_at_tick": 541,
+  "kind": "D5",
+  "subject": "G4 recovery under rule R3",
+  "mission": "survey",
+  "verdict": "cleared",
+  "ceiling_ms": 200,
+  "hard_limit": {
+    "guest": "G4",
+    "when": {
+      "signal": "G4.battery_pct",
+      "op": "<",
+      "value": 20
+    },
+    "then": {
+      "action": "land_or_ditch",
+      "within_min": 12
+    },
+    "reading": 18
+  },
+  "deadline_t_s": 1091.9,
+  "rule": "R3",
+  "crew_aboard": 14,
+  "crew_policy": "confirm",
+  "approach_min": 4,
+  "evidence": [
+    {
+      "signal": "bridge_requests",
+      "value": [
+        {
+          "request_seq": 0,
+          "state": "confirmed",
+          "answered_t_s": 540
+        }
+      ],
+      "t_s": 540
+    }
+  ],
+  "deck_evidence": "the bridge confirmed at minute 9",
+  "inputs_hash": "8e46a43a4f30bbf2",
+  "sentence": "Recovery cleared at 14 aboard: the bridge confirmed at minute 9. G4 at 18 % must land by minute 18.2."
+}

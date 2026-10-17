@@ -94,5 +94,5 @@
   "confirmed_t_s": 1141,
   "first_shed_due_t_s": 1145,
   "inputs_hash": "53af9c98530cae8f",
-  "sentence": "Cooling binds (cooling degraded): 81 kW against a 75 kW limit. G4 fast charge to charge frees 25 kW. Load 56 of 75 kW. G4 keeps 70 %."
+  "sentence": "Cooling binds with one chilled-water pump down: 81 kW against the 75 kW limit. G4 fast charge to charge, 35 to 10 kW, frees 25 kW and the load is 56 kW: G4 loses 30 %, G3 and G5 nothing."
 }
