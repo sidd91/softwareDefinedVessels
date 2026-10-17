@@ -519,3 +519,13 @@ files give different, coherent ships. Linked from the build plan, team brief and
 Storyboard corrected: card G5 in the mast drill is yes-if, not refused. Two new open questions (#32
 survey vehicle charging at minute 12; #33 data links judged at minimum or nominal).
 Decisions: none. Conflicts: none new. Deferrals: none.
+
+### Sat 02:17 PDT · Expected outcomes as test fixtures · Claude Opus 5.5 on behalf of Logan Walker (GhostWalka)
+
+Work done by Claude on Logan's behalf: `tests/oracles/expected_outcomes.yaml` holds every Scenario A and B
+expected result from `docs/EXPECTED_OUTCOMES.md` as data, and `tests/test_expected_outcomes_data.py`
+recomputes what it can from the cards and assumptions (masses, envelope draws, minute-12 loads, the shed
+ceiling, ladder kW), so a typo or a changed card fails before any engine exists. Written by one agent and
+verified by a second in a scratch copy (the repo was untouched until I wrote the files). 251 tests pass.
+The first engine test only has to load the fixture and compare. Counts updated in README and team brief.
+Decisions: none. Conflicts: none new. Deferrals: none.

@@ -17,7 +17,7 @@ uv run pytest
 ```
 
 Today this validates the six guest cards against the manifest schema and checks the data against
-the brief's own arithmetic, and validates the four priority files and the requirements links (16 tests). The planned one-command demo, with the real decision engine
+the brief's own arithmetic, and validates the four priority files, the requirements links and the expected outcomes against the cards (251 tests). The planned one-command demo, with the real decision engine
 (the brief forbids mocking it):
 
 ```bash

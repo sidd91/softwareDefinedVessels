@@ -4,8 +4,9 @@ Status: Sat 00:52 PDT. Drafted by Claude Opus 5.5 on behalf of Logan Walker (Gho
 owners are blank on purpose (WORKLOG DEC-29) and nothing starts until the team has reviewed (DEC-24).
 It turns the plan into ordered tasks, each with the requirements it closes and a pass check taken from
 the brief's own numbers, so "done" is never a matter of opinion. The exact expected verdicts, numbers and ladders for every
-Scenario A drill and Scenario B minute 8 and 12 are in [EXPECTED_OUTCOMES.md](EXPECTED_OUTCOMES.md); write those
-as tests first.
+Scenario A drill and Scenario B minute 8 and 12 are in [EXPECTED_OUTCOMES.md](EXPECTED_OUTCOMES.md); the same results
+are in `tests/oracles/expected_outcomes.yaml`, already checked against the cards by
+`tests/test_expected_outcomes_data.py`, so the first engine test only has to load it and compare.
 
 ## Proposed re-timed milestones (replaces GAMEPLAN's slipped schedule if accepted, CON-10)
 
