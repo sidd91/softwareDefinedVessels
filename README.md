@@ -5,8 +5,8 @@ Francisco, 16-18 Oct 2026). ArgOS, after the Argo, is the operating system the s
 the hull's finite physical budget and decides, in seconds and in one plain sentence, which payloads come
 aboard, where they go, who wins when two want the same thing, and what is shed when a generator trips.
 
-> **Status (Sat 14:45 PDT): D1 to D4, the decision records and the state estimator are built and reproduce every
-> oracle case; the tick loop and the screen are next.**
+> **Status (Sat 16:10 PDT): the engine (D1 to D4, the R3 crew rule, the state estimator, the tick loop and replay)
+> and the screen run end to end with `uv run sdv demo`. The simulator is a labelled test double until Siddharth's lands.**
 > Everything marked *planned* below is design.
 
 ## Run it
@@ -29,9 +29,11 @@ Scenario B through the tick loop (simulator, estimator, decisions) and prints ea
 `sdv replay` re-runs the logs without the simulator and checks every snapshot and record byte for byte.
 `sdv kit` plans the governor's own computers and builds the Deployment Reference Kit ([deployment](docs/DEPLOYMENT.md)).
 
-The one demo command (planned; it needs the real engine, which the brief forbids mocking) starts the
-decision engine and the screen and loads Scenario B; the priority file is picked and swapped on screen.
-Entry point `sdv.cli:main` (`src/sdv/cli.py`; `demo` planned):
+`sdv demo` is the one demo command. It starts the decision engine and the screen on http://127.0.0.1:8000 and
+plays Scenario B live at x12 (a ship minute every 5 s). Views: Operations, the constraint ledger, Mission compare
+(both files on the same inputs), Admission review (Scenario A with the jury's card), the profile and rule builder,
+and Reference (every tag, acronym and decision class). The priority file is picked and swapped on screen.
+Entry point `sdv.cli:main` (`src/sdv/cli.py`):
 
 ```bash
 uv run sdv demo
@@ -119,7 +121,7 @@ alternatives come out directly, in milliseconds.
 
 ## Deliverables
 
-- **Prototype, one documented command:** `uv run sdv demo` ([Run it](#run-it)); planned.
+- **Prototype, one documented command:** `uv run sdv demo` ([Run it](#run-it)), the screen on the live engine.
 - **Manifest schema, five cards plus one of ours:** [manifests/schema.json](manifests/schema.json),
   [G1-G6](manifests/) (G6 is our desalination unit), [how to add a card](manifests/README.md); validated by tests.
 - **README (at most 3 pages), Physical Account (1 page), Scenario C memo (PDF, at most 2 pages):** this
@@ -139,8 +141,8 @@ it: [docs/REQUIREMENTS.md](docs/REQUIREMENTS.md). Decisions and who made them: [
 
 ## Limitations (today)
 
-- The tick loop and the screen are not built yet. The simulator is Siddharth's; until it lands, the estimator
-  ([docs/STATE_ESTIMATION.md](docs/STATE_ESTIMATION.md)) is tested against a labelled stub of it.
+- The simulator is Siddharth's. Until it lands on main, the loop runs on a labelled test double of it built from
+  the contract only ([docs/STATE_ESTIMATION.md](docs/STATE_ESTIMATION.md)); `SDV_SIM=module:Class` swaps in his.
 - Numbers come from the brief's annexes and our labelled assumptions, never from a real vessel.
 - By choice, both power lines survive a genset trip (A.9); a 40 % cooling loss is information only (DEC-36).
 - With nobody aboard, rule R3 trusts a deck latched clear at the last crew sweep; nothing aboard sees

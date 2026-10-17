@@ -4,6 +4,7 @@
     uv run sdv run [--mission sar] [--log-dir runs/b-sar]        Scenario B through the loop, one line per decision
     uv run sdv replay runs/b-sar [--mission sar]                 the logs replayed and compared byte for byte
     uv run sdv kit plan|build|verify|install|rollback            the governor's computers and the Reference Kit
+    uv run sdv demo [--port 8000]                                the screen on the live engine (the one demo command)
 
 prints the D1 verdict with the binding line, every ledger line, the placement, the ranked yes-if options and the
 one-genset-down check, and how long the decision took against its 30 s ceiling. A one-number edit is applied to
@@ -174,6 +175,14 @@ def cmd_kit(args) -> int:
     return 2
 
 
+def cmd_demo(args) -> int:
+    """The one demo command: the decision engine and the screen, Scenario B on the live tick loop."""
+    from sdv.ui import server
+    print(f"ArgOS screen on http://{args.host}:{args.port}/ ({args.source}); Ctrl+C stops it")
+    server.run(args.host, args.port, args.source)
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(prog="sdv", description="ArgOS resource governor")
     sub = p.add_subparsers(dest="cmd", required=True)
@@ -196,6 +205,11 @@ def main(argv: list[str] | None = None) -> int:
     p2.add_argument("--mission", default="survey")
     p2.add_argument("--variant", default="default")
     p2.set_defaults(func=cmd_replay)
+    dm = sub.add_parser("demo", help="the ArgOS screen on the live engine: Scenario B, the jury's card, the profile builder")
+    dm.add_argument("--host", default="127.0.0.1")
+    dm.add_argument("--port", type=int, default=8000)
+    dm.add_argument("--source", choices=["live", "fixtures"], default="live", help="live tick loop (default) or the recorded fixtures")
+    dm.set_defaults(func=cmd_demo)
     k = sub.add_parser("kit", help="the governor's computers and the Deployment Reference Kit")
     k.add_argument("action", choices=["plan", "build", "verify", "install", "rollback"])
     k.add_argument("path", nargs="?", help="kit directory (build: output, default dist/kit)")
