@@ -90,6 +90,7 @@ Deadline: **Sun 2026-10-18 10:00 PDT**.
 | DEC-49 | Sat 12:31 | Organizer message (docs/ORGANIZER_MESSAGE.md) sent by Logan. Answers as relayed by Logan: the questions are fine and there is some flexibility; there is no organizer simulator, so ArgOS runs its own seeded simulator (Siddharth, DEC-47) (req R-492) | Logan | Claude for Logan |
 | DEC-50 | Sat 12:31 | Memo: assume the brief's Scenario C memo and slide 14's architecture-and-constraint-handling memo are different documents, and write the one 2-page memo so it serves both (req R-004) | Logan | Claude for Logan |
 | DEC-51 | Sat 12:31 | Scenario B minute 12 (organizer question 5, freeze F4) is Siddharth's to decide as owner of the simulator and scenario timing; DEC-40 stands until he does | Logan | Claude for Logan |
+| DEC-52 | Sat 13:05 | Ship-state machine (A.6) transition times: where the brief gives a range, a scenario pin (`seed_pins`, today `deck_clear_min`) wins, otherwise one seeded draw per request; so Scenario B's 4-min deck clear and minute-17 landing hold on every seed. Faults enter the FSM only as confirmed plant events (`force`): a request for a genset trip or a cooling degradation is refused, as is cooling repair at sea (freeze delta 11). Debouncing (2 of 3 trip signals) stays in the simulator, later. One FSM only: `src/sdv/plant/fsm.py` (req R-267, R-271) | Siddharth | Claude Fable 5.1 for Siddharth |
 
 ## Conflicts and risks to watch
 
@@ -743,3 +744,44 @@ freeze merge is fine.
 Decisions: none (works under DEC-47). Conflicts: CON-21 stays open until Logan confirms the snapshot shape.
 Deferrals: none. Requirements touched: none yet. Next: Scenario B minute 12 (DEC-51) with Siddharth; then
 launch/recovery and G3 cycle commands so D3 can close the loop.
+
+### Sat 13:05 PDT · Ship-state machine hardened on `feat/ship-state-fsm` · Claude Fable 5.1 on behalf of Siddharth Chawla (sidd91)
+
+Branched off `main` at b6caf3f (the plant commits) because `main` is being merged onto; nothing committed yet.
+Context check first: every branch (`feat/governor-core`, `feat/argos-core`, `design/freeze`) is contained in `main`;
+`src/sdv` had only `__init__.py` at 79a9a76, then the plant landed at 9761d5f while this session was building a
+second A.6 state machine. Resolved by folding into the committed `plant/fsm.py` (one FSM, DEC-52) rather than keeping
+two: scenario pins over the seed (`pins_from_scenario`, wired in `plant/sim.py`); genset trip and cooling degradation
+refused as requests, accepted only through `force`; `forbidden_actions()` while silent; snapshot gains `age_s` per
+variable and `eta_s`/`pick` per pending move (additive, existing keys unchanged, so `ledger.py`, `cli.py` and
+`test_sim.py` still read it). Bug found by the new tests and fixed: an immediate request (course `free` now) left the
+earlier scheduled move (`steady` in 2.7 min) pending, which would have flipped the course back later. One `test_sim.py`
+assertion changed to match DEC-52 (trip request is refused, not immediate). `tests/test_ship_state.py`: 52 tests;
+364 pass; `sdv replay-check scenario-b` identical. Also launched a read-only assessment of the distance to the demo.
+Decisions: DEC-52. Conflicts: none new (CON-21 still open on the snapshot shape). Deferrals: none.
+Requirements touched: R-267, R-271 (text not yet edited in `docs/requirements.yaml`). Next: fold the assessment into
+the build order; minute 12 (DEC-51); launch/recovery commands.
+
+### Sat 13:40 PDT · Engine built: D1-D4, governor, `sdv demo`; every oracle green · Claude Fable 5.1 on behalf of Siddharth Chawla (sidd91)
+
+On `feat/ship-state-fsm`, uncommitted. Siddharth decided to build the engine on this track (DEC-53) after a read-only
+assessment put every absent demo item (D1-D5, record, swap, screen, `sdv demo`) on Logan's side of DEC-47 with nothing
+started. Built, in freeze-§7 order bent toward what the plant already gives: `decision.py` (record, latency vs A.8
+ceiling), `priority.py` (schema + name check, atomic swap, hostile file refused with the field, old file kept),
+`shedding.py` (D4: price list, throttle-before-shed, critical last, `shed_order`, power and heat rechecked per step,
+armed list), `right_of_way.py` (D3, DEC-54), `placement.py` (D2 enumeration, slot limits from `positions`),
+`admission.py` (D1, DEC-55), `governor.py` (hook on the plant: D3 on a newly active hard limit, D4 on a confirmed trip or
+fault, ladder re-armed every tick and recorded on change, `priority_swap` event), `cli.py` (`sdv demo`, `admit` with
+`--edit` and `--card-file`, `sim`/`replay-check` closed loop). Oracles: all 14 Scenario A drills (verdict, binding,
+placement, yes-if order and placements incl. the A4 crane move, one-genset-down fixes, tipping points), minute 8 under
+both files, minute 12 holds (48 / 81 of 95), minute 19 throttles G4 (survey, 56) or G5 (sar, 44), price lists. Closed
+loop reproduces the DEMO_SCRIPT rows; D3/D4 decide in about 0.1 ms against 2 s / 5 s; `replay-check` identical with
+decisions in the hash. 479 tests pass. Data: `arbitration` block in `assumptions.yaml` with provenance and account rows
+(also a row for the plant's `sim.*` keys, which the account tool flagged); `scenario_b.yaml` gains
+`initial.activities`; `missions/schema.json` gains `shed_order`; DEMO_SCRIPT baseline 46 -> 48 kW (1 + 2 + 45).
+Not built: graphical screen (terminal view is the demo), D5 policy table, launch/recovery commands (landing stays a
+scripted plant event), fault debouncing, restore-in-reverse after a restart. `tools/build_pdfs.py` cannot run on this
+box (no pandoc/Chromium; the LibreOffice fallback writes a PDF `pdfinfo` rejects) - Logan's laptop has both.
+Decisions: DEC-53 to DEC-56. Conflicts: CON-21 still open (snapshot names; the governor reads the plant's shape as is).
+Deferrals: none. Requirements touched: R-064 to R-067, R-069, R-086, R-100 to R-119, R-137, R-152, R-155 (rows not yet
+edited in `docs/requirements.yaml`). Next: commit; minute 12 wording (DEC-51); R3/D5 table; screen if time allows.
