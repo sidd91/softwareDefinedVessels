@@ -392,3 +392,22 @@ Conflicts: none new; the memo length is now a known overrun to fix. Deferrals: n
 Requirements touched: 355 rows across all sections (see the commit diff of `docs/requirements.yaml`).
 Next: close cheap data gaps (add-a-card guide, hull length, speed-dependent reserve, silence rules,
 priority-file schema), trim the memo to 2 pages, fill the team brief's gap list.
+
+### Sat 00:37 PDT · Cheap requirement gaps closed in data · Claude Opus 5.5 on behalf of Logan Walker (GhostWalka)
+
+All work in this entry was done by Claude on Logan's behalf while he sleeps. Data and docs only; no
+engine code (DEC-24).
+
+Work done:
+- `manifests/README.md`: the documented way to add a guest card (must-have R-060), linked from README.
+- `config/missions/schema.json` plus a test that every priority file validates and names real guests
+  (R-137, the jury's unseen file). Tests: 12 pass.
+- `config/assumptions.yaml`: hull length 60 m from the slides, inside the brief's 60-70 m (R-205,
+  R-237); guest reserve by speed band, slow 250, cruise 200, fast 150 kW, and a 200 kW envelope reserve
+  (R-270, R-323); what emission silence forbids and allows (R-483). Each assumption has its reason; the
+  Physical Account regenerated (19 assumed numbers).
+- Gaps fell from 16 to 9.
+
+Decisions: the hull length and reserve-by-speed values are assumptions for team review, not decisions.
+Conflicts: the motion model in research assumed a 65 m hull and should be re-run at 60 m. Deferrals: none.
+Requirements touched: R-060, R-137, R-205, R-237, R-270, R-323, R-483.

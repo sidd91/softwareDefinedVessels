@@ -111,3 +111,11 @@ def test_every_assumed_number_has_a_reason():
     for key, prov in A["provenance"].items():
         if prov["source"] == "assumed":
             assert prov.get("why"), key
+
+
+def test_every_priority_file_validates_against_its_schema():
+    v = Draft202012Validator(json.loads((ROOT / "config/missions/schema.json").read_text()))
+    for f in sorted(glob.glob(str(ROOT / "config/missions/*.yaml"))):
+        m = yaml.safe_load(open(f))
+        assert not list(v.iter_errors(m)), f
+        assert set(m["mission_critical"]) <= set(CARDS), f

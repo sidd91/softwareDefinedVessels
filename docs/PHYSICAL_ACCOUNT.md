@@ -5,6 +5,9 @@ software relies on that is not in Annex A or B, or that narrows a range given th
 
 | Key | Value | Why | Where used |
 |---|---|---|---|
+| `hull.loa_m` | 60 | The slides show a 60 m vessel (reference drawing and demo baseline); the brief allows 60-70 m. We use 60 m; research/sensors/navigation_environment.md assumed 65 m for its roll model and should be re-run at 60 m. | not yet used in code |
+| `power.guest_reserve_kw_by_speed` | {cruise: 200, fast: 150, slow: 250} | The brief says the reserve is a function of speed and gives 200 kW nominal at cruise within 150-250 kW. Less propulsion load at slow speed leaves more for guests, so slow takes the top of the range and fast the bottom. | not yet used in code |
+| `power.envelope_reserve_kw` | 200 | The envelope covers the slow and cruise bands, so admission uses the lower of their reserves: 200 kW. | not yet used in code |
 | `power.line_lost_on_trip` | none | The brief lets us choose. Both lines survive a trip, so the reduced total reserve, not a single line, binds. | not yet used in code |
 | `power.shed_headroom_kw` | 5 | Kept free after shedding so a normal load swing does not re-trigger the sequence. | not yet used in code |
 | `power.gensets.load_limit` | 0.9 | Common practice is to load gensets to about 90 % of rating; with it, two 450 kW sets close against the brief's 200 kW guest reserve. | tests/test_brief_arithmetic.py:95 |
@@ -22,7 +25,7 @@ software relies on that is not in Annex A or B, or that narrows a range given th
 | `admission.seawater_scan_step_c` | 0.1 | Resolution for reporting the seawater temperature at which a verdict flips. | not yet used in code |
 | `admission.seawater_scan_max_c` | 35 | Scan a little past the 30 °C design point to show the stress case off Florida (30.4 °C). | not yet used in code |
 
-Taken from the brief without change: `compute`, `crew`, `data`, `envelope`, `heat`, `installation`, `mass`, `positions.bay1`, `positions.bay2`, `positions.flight_deck`, `positions.mast_free`, `positions.stern_ramp`, `power.guest_reserve_kw`, `power.mission_line_kw`, `power.peak_extra_kw`, `power.peak_max_s`, `response_time_s`, `ship_state`.
+Taken from the brief without change: `compute`, `crew`, `data`, `envelope`, `heat`, `hull.allowed_loa_m`, `installation`, `mass`, `positions.bay1`, `positions.bay2`, `positions.flight_deck`, `positions.mast_free`, `positions.stern_ramp`, `power.guest_reserve_kw`, `power.mission_line_kw`, `power.peak_extra_kw`, `power.peak_max_s`, `response_time_s`, `ship_state`, `ship_state.emission`.
 
 Guest-card assumptions are marked `assumed: true` in `manifests/G*.yaml`; G6 is wholly ours.
 

@@ -1945,15 +1945,13 @@ requirements:
   sources:
   - brief p4, Success criteria, Must-have
   quote: plus a documented way to add a new one
-  how: 'The mechanism half exists but is undocumented: the tests glob manifests/G*.yaml, so a new file is validated
-    against manifests/schema.json automatically, and test_every_capability_has_a_weight_in_every_priority_file fails
-    until the new capability has a weight in all four config/missions files. The only written guidance is one sentence
-    in ARCHITECTURE''s data contracts: ''Adding a guest is adding one YAML file.'' README.md is now a skeleton (Run
-    it, The idea in one line, Architecture, Decision classes, Deliverables, Repository map, Limitations, With another
-    week) with no ''add a card'' section. Blocker found: test_six_cards_five_from_the_brief_plus_one_of_ours asserts
-    exactly G1 to G6, so a G7 breaks the suite. Missing: a README section (copy G6.yaml, take the next id, mark
-    guesses assumed: true, add weights, run uv run pytest) and a CLI that loads a card by path. Proof to add: a
-    test that adds a temporary G7 and passes.'
+  how: 'manifests/README.md is the documented way: ten steps from copying the closest card to validating it, covering
+    capability and relevance, cooling type, parts with allowed and preferred positions (bay1, bay1_half, bay2, flight_deck,
+    mast_free, hangar_roof), consumption as min, nominal, peak and peak_duration_s (a peak over 60 s counts as sustained),
+    the mode ladder down to a quoted "off", conditions, relations, installation work, criticality, assumed: true
+    on invented numbers, and a weight in every priority file. `uv run pytest` enforces the schema (test_every_card_validates_against_the_schema)
+    and the priority weights (test_every_capability_has_a_weight_in_every_priority_file). G6 is the worked example.
+    Missing: the planned `sdv validate` command that names the exact bad field.'
   links:
   - label: 'ARCHITECTURE: data contracts'
     path: docs/ARCHITECTURE.md#data-contracts
@@ -1965,10 +1963,12 @@ requirements:
     path: manifests/schema.json
   - label: Card tests
     path: tests/test_brief_arithmetic.py
+  - label: Add a guest card
+    path: manifests/README.md
   decisions: []
-  status: gap
-  question: Do we document adding a card as 'copy G6.yaml, take the next id, weight its capability in every mission
-    file, run pytest', and relax the exactly-six-cards test so a jury G7 passes?
+  status: drafted
+  question: Is the guide enough for a jury-invented card, or do we need `sdv validate` to point at the exact missing
+    B.0 field?
 - id: R-061
   category: must-have
   called_out: true
@@ -4437,17 +4437,22 @@ requirements:
   sources:
   - slides p12 (implied)
   quote: Jury swaps mission priority file.
-  how: Gap. No schema exists for priority files; the only check is a test over our own files. Nothing defines what
-    happens with an unknown capability, a missing weight or a malformed file at swap time.
+  how: 'config/missions/schema.json defines a priority file: id, name, weights (0 to 1 per capability name) and
+    mission_critical guest ids, nothing else allowed. tests/test_brief_arithmetic.py::test_every_priority_file_validates_against_its_schema
+    checks all four files and that mission_critical names real guests. Planned at run time: the governor validates
+    a swapped file before using it, refuses a bad one with the failing field in one sentence, keeps running the
+    previous file meanwhile, and treats a capability with no weight as weight 0 with a warning.'
   links:
   - label: Coverage test
     path: tests/test_brief_arithmetic.py
   - label: Example file
     path: config/missions/patrol.yaml
+  - label: Priority file schema
+    path: config/missions/schema.json
   decisions: []
-  status: gap
-  question: If the jury's file is missing a weight, do we refuse the swap and keep the old file, or default the
-    weight to 0 and say so in the log?
+  status: drafted
+  question: If the jury's file omits a capability or names a guest we do not carry, do we refuse it outright or
+    run it with defaults and say so on screen?
 - id: R-138
   category: judging
   called_out: true
@@ -6417,15 +6422,10 @@ requirements:
   sources:
   - slides p12, Baseline
   quote: 60m vessel
-  how: 'Not matched yet. Hull length enters no governor decision: config/assumptions.yaml has no hull key. It appears
-    only in two drafts, both at 65 m: the roll model in research/sensors/navigation_environment.md section 3 (L
-    65, B 12.5, d 3.6, GM 1.2 m, roll period 9.7 s) and the planned 3D hull in GAMEPLAN. The brief allows 60-70
-    m (p1 Area, p8 Annex A) and asks that any narrowed value be recorded in the Physical Account; the slides show
-    60 m on the p2 drawing and the p12 baseline. Computed by hand: 60 m gives 9.75 s against 9.70 s, so switching
-    is cosmetic for the physics. Decide once for R-205, R-237 and R-291: add a hull-length key whose provenance
-    is source assumed with a why saying it narrows 60-70 m (tools/physical_account.py lists only keys tagged assumed),
-    have the roll model and 3D view read it, and print ''60 m vessel'' in the baseline header at docs/DEMO_SCRIPT.md
-    00:00. Proof: the regenerated docs/PHYSICAL_ACCOUNT.md shows the key.'
+  how: 'config/assumptions.yaml now records hull.loa_m: 60 with provenance: the slides show a 60 m vessel in the
+    reference drawing and the demo baseline, and the brief allows 60-70 m (hull.allowed_loa_m). Nothing in the governor''s
+    budgets depends on length; it matters for the ship-motion model, which research/sensors/navigation_environment.md
+    built for an assumed 65 m hull and should be re-run at 60 m before it drives flight-deck limits.'
   links:
   - label: Roll model hull (65 m)
     path: research/sensors/navigation_environment.md#3-synthetic-generator-specs
@@ -6439,10 +6439,12 @@ requirements:
     path: docs/PHYSICAL_ACCOUNT.md#physical-account-draft
   - label: Demo baseline 00:00
     path: docs/DEMO_SCRIPT.md#scenario-b-90-s-deep
+  - label: Motion model
+    path: research/sensors/navigation_environment.md
   decisions:
   - CON-09
   - DEC-04
-  status: gap
+  status: drafted
   question: Do we adopt the slides' 60 m as one platform key that the roll model, the 3D hull and the baseline label
     all read, given the roll period only moves from 9.70 s to 9.75 s?
 - id: R-206
@@ -7421,14 +7423,10 @@ requirements:
   - slides p2, ship drawing
   - 'slides p12, Baseline: 60m vessel'
   quote: LOA 60m
-  how: 'Mechanism: hull length should be one key in config/assumptions.yaml that the roll model, the 3D view and
-    the Physical Account all read; no such key exists. Numbers: the slides say LOA 60 m (p2 drawing, p12 baseline,
-    R-205); the brief allows 60-70 m (R-291). Where today: research/sensors/navigation_environment.md section 3
-    assumes L 65 m, B 12.5 m, draft 3.6 m, GM 1.2 m (roll period about 9.7 s), repeated in the WORKLOG Fri 20:53
-    entry; research/sensors/platform_power_thermal.md section 3 uses 65 x 12 x 3.5 m (about 9.3 s); GAMEPLAN''s
-    3D view plans a 65 m hull. With the research roll formula, 60 m gives 9.75 s against 9.70 s at 65 m, so the
-    switch is cosmetic. Missing: the key and its Physical Account row, decided once for R-205, R-237 and R-291.
-    Proof: that row, and the docs/DEMO_SCRIPT.md Scenario B 00:00 baseline amended to say 60 m.'
+  how: 'config/assumptions.yaml now records hull.loa_m: 60 with provenance: the slides show a 60 m vessel in the
+    reference drawing and the demo baseline, and the brief allows 60-70 m (hull.allowed_loa_m). Nothing in the governor''s
+    budgets depends on length; it matters for the ship-motion model, which research/sensors/navigation_environment.md
+    built for an assumed 65 m hull and should be re-run at 60 m before it drives flight-deck limits.'
   links:
   - label: 'Navigation research: roll model hull'
     path: research/sensors/navigation_environment.md#3-synthetic-generator-specs
@@ -7444,10 +7442,12 @@ requirements:
     path: docs/PHYSICAL_ACCOUNT.md#physical-account-draft
   - label: 'Demo: Scenario B baseline'
     path: docs/DEMO_SCRIPT.md#scenario-b-90-s-deep
+  - label: Motion model
+    path: research/sensors/navigation_environment.md
   decisions:
   - CON-09
   - DEC-04
-  status: gap
+  status: drafted
   question: The roll period moves only from 9.70 s at 65 m to 9.75 s at 60 m, so do we adopt 60 m everywhere to
     match the slides and the demo baseline and record it once in the Physical Account?
 - id: R-238
@@ -8462,14 +8462,11 @@ requirements:
   sources:
   - 'brief p4, State: Platform budget'
   quote: power reserve as a function of speed
-  how: 'Mechanism (proposed here, designed nowhere yet): power.guest_reserve_kw becomes a table keyed by speed band
-    and gensets online; the ledger reads the band from ship_state.speed_band, and D1 judges the lower of the slow
-    and cruise values, as A.10 requires (R-323). Numbers: A.1 gives only cruise, 200 kW (150-250, R-292), and 100
-    kW with one genset down; A.10 says use the lower reserve of the slow and cruise bands; A.6 bands are slow 3-5
-    kn and cruise 10-14 kn. Where today: config/assumptions.yaml power.guest_reserve_kw {cruise 200, one_genset_down
-    100} and envelope.speed_bands [slow, cruise]; GAMEPLAN''s D1 envelope grid (seawater, gensets, sea state, wind)
-    has no speed axis. No slow value, no function, no test. Proof: a Physical Account row for each band value we
-    assume, and a test that D1 uses the lower one.'
+  how: 'config/assumptions.yaml power.guest_reserve_kw_by_speed gives slow 250, cruise 200, fast 150 kW: the brief''s
+    200 kW at cruise within its 150-250 kW range, with slow at the top because propulsion draws less (our assumption,
+    with its reason in provenance, listed in the Physical Account). The planned ledger reads the reserve from the
+    speed band in the conditions snapshot each tick, so a speed change moves the power capacity like any other supply
+    change.'
   links:
   - label: 'Platform profile: power and envelope'
     path: config/assumptions.yaml
@@ -8477,8 +8474,10 @@ requirements:
     path: docs/PHYSICAL_ACCOUNT.md#physical-account-draft
   - label: 'GAMEPLAN: D1 envelope grid'
     path: GAMEPLAN.md#declared-objectives-readme-table-one-line-each
+  - label: Physical Account
+    path: docs/PHYSICAL_ACCOUNT.md
   decisions: []
-  status: gap
+  status: drafted
   question: The brief gives only the cruise reserve (200 kW), so do we assume slow leaves more for guests because
     propulsion draws less (cruise binds, as today), or write a per-band table into the Physical Account?
 - id: R-271
@@ -10085,15 +10084,16 @@ requirements:
   sources:
   - brief p9, Mission envelope (A.10)
   quote: slow and cruise speed bands (use the lower reserve)
-  how: Gap. envelope.speed_bands [slow, cruise] is stored, but only a cruise reserve (200 kW) exists, so there is
-    no slow-band reserve to compare. GAMEPLAN's D1 envelope grid leaves speed band out.
+  how: 'config/assumptions.yaml power.envelope_reserve_kw: 200, the lower of the slow (250) and cruise (200) reserves,
+    because the brief''s envelope covers both bands. Planned D1 judges admission at that reserve and at 30 °C seawater,
+    and reports the one-genset-down result (100 kW) separately.'
   links:
   - label: 'assumptions.yaml: envelope, power'
     path: config/assumptions.yaml
   - label: 'GAMEPLAN: Declared objectives (D1)'
     path: GAMEPLAN.md#declared-objectives-readme-table-one-line-each
   decisions: []
-  status: gap
+  status: drafted
   question: What reserve do we assume at slow speed, and is it the number we admit against?
 - id: R-324
   category: platform-model
@@ -14297,10 +14297,11 @@ requirements:
   sources:
   - brief p9, Silence paragraph
   quote: machinery above minimum, manoeuvre and deck machinery (winches, hangar doors)
-  how: Mostly a gap. Neither the config nor any card links silence to machinery, manoeuvring, winches or hangar
-    doors. G2's winch condition (deck_machinery_allowed) is tied only to G3's and G4's activities. G4's hard limit
-    ('return home and demand a clear deck' in silence) collides with 'no hangar doors', and nothing resolves the
-    conflict.
+  how: 'config/assumptions.yaml ship_state.emission.silent_forbids lists radio and SATCOM transmission, machinery
+    above minimum, manoeuvre and deck machinery (winches, hangar doors); silent_allows lists receiving, computing
+    and passive sensing, as brief A.6 states. Planned: entering silence zeroes the SATCOM and radio data classes,
+    refuses winch and hangar-door actions with the silence named as the binding constraint, keeps G1 (passive) running,
+    and triggers G4''s return-home with a deck-clear demand.'
   links:
   - label: G2 card
     path: manifests/G2.yaml
@@ -14309,7 +14310,7 @@ requirements:
   - label: 'assumptions.yaml: ship_state'
     path: config/assumptions.yaml
   decisions: []
-  status: gap
+  status: drafted
   question: Does silence block the G2 winch and G4's hangar doors, and how does an airborne G4 get home?
 - id: R-484
   category: constraint

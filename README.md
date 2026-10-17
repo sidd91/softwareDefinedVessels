@@ -95,7 +95,7 @@ Every requirement from the brief and slides, and how we address it: [docs/REQUIR
 | Path | What |
 |---|---|
 | `config/` | Platform assumptions with provenance; mission priority files (survey, rescue, patrol, disaster relief) |
-| `manifests/` | Guest manifest schema and the six cards |
+| `manifests/` | Guest manifest schema, the six cards, and [how to add a card](manifests/README.md) |
 | `tests/` | Checks that the data reproduces the brief's numbers |
 | `tools/` | Physical Account generator |
 | `docs/` | Architecture, requirements matrix, Scenario C memo, Physical Account, software and AI log |

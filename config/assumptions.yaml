@@ -3,8 +3,14 @@
 # the challenge brief or assumed by us, with the reason. The Physical Account is generated from
 # this file, so an undocumented assumption cannot hide in code.
 
+hull:
+  loa_m: 60
+  allowed_loa_m: [60, 70]
+
 power:
   guest_reserve_kw: {cruise: 200, one_genset_down: 100}
+  guest_reserve_kw_by_speed: {slow: 250, cruise: 200, fast: 150}
+  envelope_reserve_kw: 200
   peak_extra_kw: {cruise: 250, one_genset_down: 100}
   peak_max_s: 60
   mission_line_kw: {port: 150, stbd: 150}
@@ -78,7 +84,11 @@ ship_state:
   speed_band: {values: [stopped, slow, cruise, fast], kn: {stopped: 0, slow: [3, 5], cruise: [10, 14], fast: 18}, min_per_band: [2, 5]}
   noise: {values: [quiet, normal, manoeuvring], to_quiet_min: [2, 4], leave_quiet_min: 0}
   deck: {values: [clear, occupied], clear_min: {14: [3, 5], 6: [8, 12], 0: null}}
-  emission: {values: [normal, silent], to_silent_min: 0}
+  emission:
+    values: [normal, silent]
+    to_silent_min: 0
+    silent_forbids: [radio_transmit, satcom_transmit, machinery_above_minimum, manoeuvre, deck_machinery]
+    silent_allows: [receiving, computing, passive_sensing]
   genset: {values: [2, 1], trip_s: 0, restart_min: [5, 15]}
   cooling: {values: [nominal, degraded], repair_at_sea: false}
 
@@ -101,6 +111,11 @@ admission:
   seawater_scan_max_c: 35
 
 provenance:
+  hull.loa_m: {source: assumed, why: "The slides show a 60 m vessel (reference drawing and demo baseline); the brief allows 60-70 m. We use 60 m; research/sensors/navigation_environment.md assumed 65 m for its roll model and should be re-run at 60 m."}
+  hull.allowed_loa_m: {source: brief A intro}
+  power.guest_reserve_kw_by_speed: {source: assumed, why: "The brief says the reserve is a function of speed and gives 200 kW nominal at cruise within 150-250 kW. Less propulsion load at slow speed leaves more for guests, so slow takes the top of the range and fast the bottom."}
+  power.envelope_reserve_kw: {source: assumed, why: "The envelope covers the slow and cruise bands, so admission uses the lower of their reserves: 200 kW."}
+  ship_state.emission: {source: brief A.6}
   power.guest_reserve_kw: {source: brief A.1}
   power.peak_extra_kw: {source: brief A.1, A.9}
   power.peak_max_s: {source: brief A.1}
