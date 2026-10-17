@@ -4,8 +4,8 @@ Hand-computed by three Claude Opus 5.5 agents on behalf of Logan Walker (GhostWa
 
 ## Assumptions
 
-1. **Envelope draw** = max(nominal, any peak over 60 s): G1 1.5 kW (air-cooled), G2 20, G3 25, G4 35, G5 45 (all four chilled water).
-2. **Mass:** G1 0.045 t, G2 3.5, G3 5.5, G4 0.99 (hangar 0.85), G5 3.025. The G5 antenna goes on the mast if it is free. Otherwise it goes on the hangar roof (0.03 t-eq), which we assume clears drone operations.
+1. **Envelope draw** = max(nominal, any peak over 60 s): G1 1.5 kW (air-cooled), G2 20, G3 25, G4 35, G5 45 (all four chilled water). Our G6 draws 18 (chilled water).
+2. **Mass:** G1 0.045 t, G2 3.5, G3 5.5 (cradle 3.5 plus vehicle 2.0, both in Bay 1; the split is ours), G4 0.99 (hangar 0.85), G5 3.025, our G6 2.8. The G5 antenna goes on the mast if it is free. Otherwise it goes on the hangar roof (0.03 t-eq), which we assume clears drone operations.
 3. **Cooling:** C(T) = 160 - (40/18) x (T - 12). That gives 120 kW at 30 °C and 133.3 kW at 24 °C. The loop binds at T = 12 + 0.45 x (160 - chilled kW). The scan runs in 0.1 °C steps up to 35 °C.
 4. **Limits:** a load equal to its limit holds ("<="). The 5 kW headroom applies only to the shed ceiling.
 5. **No "not-now":** the ship is alongside in Scenario A.
@@ -35,6 +35,10 @@ Hand-computed by three Claude Opus 5.5 agents on behalf of Logan Walker (GhostWa
 | A5 | sar | yes | Same | Same | None needed | No, 1.5 short. Step 1 G2 to sampling, frees 14 kW, lost 0.5 x 0.2 = 0.1; then G5 low (0.7), G4 to charge (0.3, mission-critical), G1 off (0.5) |
 | A6 | survey | yes | Mass 0.045 + 3.5 + 5.5 + 0.94 = 9.985 t, 15 kg spare (tightest). Stability 10.263/12 | As A1 | None needed | Yes, 81.5/100 |
 | A6 | sar | yes | Same | Same | None needed | Yes |
+| A7 | disaster relief | yes | Tightest: chilled 35 + 45 + 18 = 98/120 at 30 °C, 22 free. Mass 6.815, stability 7.063, power 98/200, port 18, stbd 80 | G6 on half of Bay 1 (tolerated; G5 holds Bay 2); antenna on mast; G4 on flight deck (drone 140/150 kg) | None needed | Yes, 98/100, 2 spare, but over the 95 kW gate. Step 1 G4 to charge, frees 25 kW, 73 kW, lost 1.0 x 0.3 = 0.3; then G5 low (0.7, mission-critical), G6 to recirculate (0.9, mission-critical) |
+| A7 | sar | yes | Same | Same | None needed | Same load. Step 1 G6 to recirculate, frees 14 kW, 84 kW, lost 0.2 x 0.9 = 0.18; then G5 low (0.7), G4 to charge (0.3, mission-critical) |
+
+**A7, our own card:** installed G4 and G5, card G6, our desalination unit. It is not one of the brief's jury cards. It runs under disaster relief, the file G6 was written for, and under sar. Disaster relief marks G6 mission-critical, so the drone's charge yields first and G6 is last. Under sar G6 is the first throttle, as the desalination unit on slide 10 is the first to go.
 
 **A3 with one genset down:**
 - **G2 out:** survey takes G4 to charge (frees 25 kW, load 80). Sar takes G5 to low power (frees 37 kW, load 68; G5 loses 70 %).
@@ -43,7 +47,7 @@ Hand-computed by three Claude Opus 5.5 agents on behalf of Logan Walker (GhostWa
 **Seawater tipping points:**
 - **A3 as given** is the only case that flips inside the scan. Chilled 125 kW gives T = 12 + 0.45 x 35 = 27.75 °C: it holds at 27.7 and fails at 27.8.
 - **A3 after its yes-if:** 36.75 °C (G2 out) and 39.0 °C (G3 out).
-- **Other cases:** A1, A2 and A6 48.0 °C; A4 63.75 °C (G5 out) or 52.5 °C (G2 out); A5 39.0 °C.
+- **Other cases:** A1, A2 and A6 48.0 °C; A4 63.75 °C (G5 out) or 52.5 °C (G2 out); A5 39.0 °C; A7 39.9 °C.
 
 ## Scenario B load-out checks
 
@@ -122,6 +126,8 @@ one-genset-down line now has three states, tested against a 95 kW gate. Checked 
 | A4, either option | G1, G2, G3 or G1, G3, G5 | 46.5 or 71.5, fits | nothing needed | nothing needed |
 | A5 | G1, G2, G4, G5 | 101.5, 1.5 short | G4 charge 35 to 10 kW, 76.5 kW | G2 winch to sampling, 87.5 kW |
 | Scenario B (DEC-32) | G3, G4, G5 | 105, 5 short | G4 charge 35 to 10 kW, 80 kW | G5 to low power, 68 kW |
+
+A7 (G4, G5, G6) loads 98 kW, which fits but is over the 95 gate. Disaster relief takes G4's charge 35 to 10 kW (73 kW) and keeps G6; rescue takes G6 to recirculate (84 kW). Checked by `tests/test_expected_outcomes_data.py`.
 
 G3 charging cannot be interrupted, so it never earns throttle credit. Information line only: with cooling at
 -40 % the chilled-water gate at 30 °C is 67 kW; Logan kept this as information only (DEC-36, closing CON-13).

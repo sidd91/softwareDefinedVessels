@@ -85,6 +85,8 @@ Deadline: **Sun 2026-10-18 10:00 PDT**.
 | DEC-44 | Sat 12:04 | Design freeze approved as proposed in DEC-43 (`docs/DESIGN_FREEZE.md`): F1 our branch is the base; cut cameras and computer vision, 3D view, rule compiler, LLM paraphraser, person detection, NPU inference and two-node failover; the board is an instrument. F2 typed conditions and hard limits before any engine code. F3 priority files gain optional `shed_order` and per-rule `confirm`. F4 ask the organizers about minute 12, fallback as written. F5 Scenario C rule R3 without the camera. F6 (who builds what) stays with Logan and Siddharth. Supersedes DEC-02 (camera virtual sensors), DEC-04 (3D view), DEC-06 (multi-device emphasis), DEC-23 and DEC-27 (cameras) where they conflict (req R-064 to R-067, R-069, R-146, R-458) | Logan (approved Siddharth's proposal) | Claude for Logan |
 | DEC-45 | Sat 12:04 | Project name: ArgOS, after the Argo and the brief's "operating system the ship does not have"; used on the screens, the README title and the docs | Logan | Claude for Logan |
 | DEC-46 | Sat 12:06 | Build hold (DEC-33) lifted. Order: finish the deliverable fixes, align docs and data with the freeze (DEC-44), then start typed conditions and hard limits (F2), following `docs/DESIGN_FREEZE.md` section 7 | Logan | Claude for Logan |
+| DEC-47 | Sat 12:09 | Work split (freeze F6): Siddharth builds the simulator, owns the ship-state machine with its transition times, and defines the commands the core sends to the simulator. Logan (with Claude) builds the core (ledger, D1 to D5, decision records) and the UI, and owns the 1 Hz snapshot schema, the clock and replay. The snapshot schema and the typed signal vocabulary (F2) come first, because the simulator emits them. Then merge everything into main | Logan | Claude for Logan |
+| DEC-48 | Sat 12:25 | Merge PR #2 (feat/governor-core) into main now; docs errors and the freeze alignment are fixed after the merge, on a follow-up branch | Logan | Claude for Logan |
 
 ## Conflicts and risks to watch
 
@@ -110,6 +112,7 @@ Deadline: **Sun 2026-10-18 10:00 PDT**.
 | CON-18 | Sat 11:24 | D2 placement: the test fixtures put G5's antenna on the last free mast slot although the hangar roof is allowed, which blocks G1 and contradicts our declared D2 objective and the brief's "free mast slot" story for that set | Open: the team writes the D2 rule before T2 | Claude for Logan |
 | CON-19 | Sat 11:50 | Two designs for the same core: Siddharth's handoff (protobuf, CP-SAT, policy compiler) and this branch. Building both wastes the day (CON-07) | Open: settle `docs/DESIGN_FREEZE.md` F1-F6 together, then split work | Claude Fable 5.1 for Siddharth |
 | CON-20 | Sat 12:04 | Resolution after DEC-44: CON-19 (two designs) closed, one design frozen; CON-01 (natural-language rules) and CON-02 (3D) closed, both cut; CON-04 (NPU runtime) closed, NPU cut; CON-11 (camera snapshot fields) closed, cameras cut; CON-16 (Wi-Fi heartbeat tail) off the demo path while failover is cut. CON-07 (work split) stays open until F6 | Closed except CON-07 | Claude for Logan |
+| CON-21 | Sat 12:09 | Resolution of CON-07 (work split): settled by DEC-47. Remaining interface risk: the snapshot schema (ours) and the command set (Siddharth's) must agree before either side builds on them | Open until the snapshot contract is published | Claude for Logan |
 
 ## Deferrals
 
@@ -693,3 +696,17 @@ Logan lifted the build hold. Order agreed: the deliverable fixes in flight land 
 aligned with the freeze, then typed conditions (F2) start, per the freeze's build order. F6 (who builds what) is
 still Logan and Siddharth's to settle; CON-07 stays open, so Siddharth should know F2 is starting on this branch.
 Decisions: DEC-46 (Logan). Conflicts: none new. Deferrals: none.
+
+### Sat 12:25 PDT · Deliverable fixes landed, split recorded, merge to main (DEC-47, DEC-48) · Claude Opus 5.5 on behalf of Logan Walker (GhostWalka)
+
+The plan review's deliverable findings were fixed by five agent groups, each checked by a skeptic: README,
+Scenario C memo and demo script, Physical Account, compliance and submission, guest cards. Page limits now hold on
+the pandoc and headless Chromium route (`tools/build_pdfs.py`, new): README 3 pages, memo 2, Physical Account 1
+(landscape), on Letter and A4. The Physical Account's closing answer moved to a standby chilled-water pump. A draft
+organizer message is in `docs/ORGANIZER_MESSAGE.md` (not sent). The final requirements-trace integrator was stopped
+at Logan's request to merge quickly; two broken memo links were repointed by hand; 296 tests pass.
+Logan split the work (DEC-47): Siddharth builds the simulator, the ship-state machine and the command set; Logan
+with Claude builds the core, the UI, the snapshot schema, the clock and replay. The design freeze is not yet carried
+through every doc (cameras, failover and the other cut items still appear in places); that alignment follows on a
+branch after the merge. UI critique of the ArgOS screens done, kept for later.
+Decisions: DEC-47, DEC-48 (Logan). Conflicts: CON-21 (snapshot and command contract must agree). Deferrals: none.

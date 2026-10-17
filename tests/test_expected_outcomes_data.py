@@ -195,8 +195,11 @@ def recompute_line(cards, guests, placement, line):
 # ---------------------------------------------------------------- Scenario A: shape
 
 
-def test_twelve_scenario_a_cases_six_drills_under_both_files():
-    assert sorted(CASE_IDS) == sorted(f"A{n}-{f}" for n in range(1, 7) for f in ("survey", "sar"))
+def test_scenario_a_cases_six_brief_drills_under_both_files_plus_our_g6_drill():
+    brief_drills = [cid for cid in CASE_IDS if not cid.startswith("A7-")]
+    assert sorted(brief_drills) == sorted(f"A{n}-{f}" for n in range(1, 7) for f in ("survey", "sar"))
+    # A7 runs our own card, G6, under disaster relief (the file it was written for) and sar.
+    assert sorted(cid for cid in CASE_IDS if cid.startswith("A7-")) == ["A7-disaster_relief", "A7-sar"]
     for case in CASES:
         assert case["file"] in FILES
         assert set(guests_of(case)) <= set(CARDS)
@@ -224,8 +227,8 @@ MASS_BOUND = [c for c in CASES if c["binding"]["class"] == "mass"]
 YES_CASES = [c for c in CASES if c["verdict"] == "yes"]
 
 
-def test_a5_is_the_only_drill_not_bound_by_mass():
-    assert sorted({c["case"] for c in CASES if c not in MASS_BOUND}) == ["A5"]
+def test_a5_and_a7_are_the_only_drills_not_bound_by_mass():
+    assert sorted({c["case"] for c in CASES if c not in MASS_BOUND}) == ["A5", "A7"]
 
 
 @pytest.mark.parametrize("case", MASS_BOUND, ids=lambda c: f"{c['case']}-{c['file']}")
@@ -273,7 +276,8 @@ def test_a4_placement_line_g3_needs_both_halves_and_the_node_holds_one():
         held = sum(1 for slot in case["placement"].values() if slot == "bay1_half")
         assert line["capacity"] == bay1_halves - held == 1
         assert line["demand"] == bay1_halves
-        assert CARDS["G3"]["placement"]["parts"][0]["allowed"] == [line["slot"]] == ["bay1"]
+        # Every G3 part needs the whole bay: the vehicle rides on the cradle.
+        assert all(p["allowed"] == [line["slot"]] == ["bay1"] for p in CARDS["G3"]["placement"]["parts"])
 
 
 # ---------------------------------------------------------------- Scenario A: placement
@@ -422,6 +426,23 @@ def test_removals_the_doc_calls_not_enough_leave_mass_over(case):
         kept = [g for g in guests_of(case) if g not in item["remove"]]
         assert item["mass_after_t"] == pytest.approx(mass_t(cards, kept), abs=EPS)
         assert mass_t(cards, kept) > MARGIN_T
+
+
+def test_a7_g6_is_kept_under_disaster_relief_and_throttled_first_under_sar():
+    # Our card's drill: the slide-10 desalination unit is the first to give way under sar,
+    # but disaster relief marks it mission-critical, so the drone's charge yields first.
+    a7 = {c["file"]: c for c in CASES if c["case"] == "A7"}
+    assert all(c["card"] == "G6" for c in a7.values())
+    assert "team invention" in CARDS["G6"]["source"]
+    sar_fix = a7["sar"]["one_genset_down"]["fix"]
+    assert sar_fix[0]["guest"] == "G6" and not is_critical("sar", "G6")
+    relief_fix = a7["disaster_relief"]["one_genset_down"]["fix"]
+    assert relief_fix[0]["guest"] != "G6"
+    assert relief_fix[-1]["guest"] == "G6" and is_critical("disaster_relief", "G6")
+    # G5 holds its preferred Bay 2, so G6 sits in a tolerated position.
+    unit = CARDS["G6"]["placement"]["parts"][0]
+    slot = a7["sar"]["placement"]["G6.unit"]
+    assert slot in unit["allowed"] and slot not in unit["preferred"]
 
 
 def test_a4_node_move_is_one_crane_move_in_the_port_bay_window():

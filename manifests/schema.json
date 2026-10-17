@@ -51,7 +51,7 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "part_of": {"type": "array", "items": {"type": "string"}},
+        "part_of": {"type": "array", "items": {"type": "string"}, "description": "Other guests this whole card belongs to. Parts of one assembly use the part-level part_of instead."},
         "requires": {"type": "array", "items": {"type": "string"}},
         "excludes": {"type": "array", "items": {"$ref": "#/$defs/exclusion"}}
       }
@@ -88,8 +88,11 @@
         "name": {"type": "string"},
         "mass_t": {"type": "number", "minimum": 0},
         "area_m2": {"type": "number", "minimum": 0},
+        "length_m": {"type": "number", "minimum": 0, "description": "Length of a craft that crosses the stern ramp or flight deck, checked against the ramp's craft length (A.3)."},
         "preferred": {"type": "array", "items": {"$ref": "#/$defs/position"}},
         "allowed": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/position"}},
+        "part_of": {"type": "string", "description": "Name of another part on this card that this part belongs to (B.0 part-of): the assembly is admitted and shed as one thing."},
+        "assumed": {"type": "boolean", "description": "True if this part's numbers are ours, not the brief's."},
         "note": {"type": "string"}
       }
     },
@@ -149,6 +152,7 @@
         "hours": {"type": "number", "minimum": 0},
         "minutes": {"type": "number", "minimum": 0},
         "via": {"type": "string"},
+        "parts": {"type": "array", "items": {"type": "string"}, "description": "The parts this work installs or swaps; omitted means the whole card."},
         "note": {"type": "string"}
       }
     },

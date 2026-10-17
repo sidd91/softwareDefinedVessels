@@ -15,10 +15,10 @@ The laptop clock runs on Central time; always convert with `TZ=America/Los_Angel
 
 Rules we hold ourselves to: no compute beyond the local stack at runtime; every AI model declared
 (coding assistant included); strong live demo plus runnable code; no models from China-based
-companies or derived from them (brief, Data Use Authorization §2); check the hackathon's
-authorized-AI list for any model other than Claude, which Logan confirmed is approved; **only open-source third-party code
-or our own**, every dependency and every pretrained weight declared with its licence in
-`docs/THIRD_PARTY.md`.
+companies or derived from them (brief, Data Use Authorization §2); AI services only from the
+hackathon's authorized list (Logan confirmed Claude is approved, DEC-05; where the list is published is asked in
+`docs/ORGANIZER_MESSAGE.md`); **only open-source third-party code or our own**, every dependency and
+every pretrained weight declared with its licence in `docs/SOFTWARE_LOG.md`.
 
 ## What the jury scores (from the brief)
 
@@ -38,7 +38,8 @@ Explicit traps: "Kubernetes with a ship label", a dashboard instead of a decisio
 rationale strings, hard-coded priorities, a solver that takes four minutes, an empty Physical Account.
 Note: the brief lists voice/natural-language interfaces as out of scope. Our rule compiler is
 positioned as the mechanism for Core Mechanic 4 / D5 (tacit rule → execution constraint), not as
-an NL interface; its deterministic grammar path is the product, the LLM assist is optional.
+an NL interface; its deterministic grammar path is the product. The LLM assist is considered, not
+approved (`docs/SOFTWARE_LOG.md`).
 
 ## Depth policy (Logan, Fri 23:10, WORKLOG DEC-24 and DEC-25)
 - Anything the brief or slides call out explicitly is addressed at a granular level, with evidence,
@@ -173,45 +174,49 @@ optional for D2 if we want to show a declared objective in a solver.
    predicate the engine evaluates → human-readable code view ("if G3.acoustic_active: forbid(winch)")
    → dry run against the recorded event log ("this rule would have fired twice at min 8 and min 12").
    Only approved rules are active. A structured builder (dropdowns) produces the same AST for
-   people who do not want to type. Optional offline LLM turns loose text into a CNL candidate that
-   must still parse and be approved; it never writes code.
+   people who do not want to type. An offline LLM that turns loose text into a CNL candidate, which
+   must still parse and be approved and never writes code, is considered, not approved; whether the
+   compiler, the LLM and the 3D view stay in scope is OPEN_QUESTIONS #43.
 
 ## Invented sixth card (G6)
 Containerised desalination unit: Bay 2 preferred or half Bay 1; 2.8 t; 18 kW continuous, 4 kW
 low-power (recirculate); 2 Mbit/s telemetry; two people to start; high for disaster relief, low
-elsewhere; not safety-critical. It is not in the brief's Scenario B load-out (G2 to G5, already over the mass
-margin, CON-12), so it sheds first only in runs that carry it; it mirrors the organisers' own slide. Alternative if we want a mast story instead: flat-panel SATCOM
+elsewhere; not safety-critical. It is not in Scenario B (the brief's G2 to G5 load-out is over the mass
+margin and refused at the pier; we run G3, G4, G5, DEC-32), so it sheds first only in runs that carry it; it mirrors the organisers' own slide. Alternative if we want a mast story instead: flat-panel SATCOM
 terminal (competes with G1/G5 for the one free mast slot, excluded in emission silence).
 
 ## Stack (decided unless something breaks)
 - Python 3.12 via `uv` (laptop has 3.14; detector/ML wheels will not be there yet). One command:
   `uv run sdv demo scenario-b --priority sar` and `uv run sdv serve` for the screen.
-- Core: pure Python + pydantic + jsonschema + PyYAML + Lark + pytest. No solver dependency on the
-  critical path; OR-Tools optional for D2.
-- UI: FastAPI + uvicorn + websocket, one static HTML/JS/SVG page. No Node, no React, no build step
+- Core: pure Python + jsonschema + PyYAML + pytest, all installed. pydantic, Lark and OR-Tools are
+  considered, not approved (`docs/SOFTWARE_LOG.md`). No solver dependency on the critical path.
+- UI: FastAPI + uvicorn + websockets (approved, DEC-39), one static HTML/JS/SVG page. No Node, no React, no build step
   (none installed, none needed). Every JS library vendored into the repo so the demo runs offline.
 - 3D view: three.js (MIT), vendored, as a toggleable panel beside the scored 2D schematic. See the
   3D section below.
 - CV: equipment change detection first: per-region reference-frame comparison and fiducial
-  markers on fixed equipment (OpenCV, Apache-2.0), colour and flicker cues for smoke and flame,
+  markers on fixed equipment (opencv-python-headless, Apache-2.0, DEC-39), colour and flicker cues for smoke and flame,
   temporal growth for leaks, camera self-checks (blur, frozen frame, view moved); an unsupervised
-  anomaly model only if its licence checks out. Person detectors (torchvision SSDlite, BSD-3) are
-  optional and last. RF-DETR is out: it is built on LW-DETR from Baidu, which the brief's
+  anomaly model only if its licence checks out. Any model runs with ONNX Runtime on the CPU (DEC-31).
+  Person detectors (torchvision SSDlite, BSD-3; considered, not approved) are optional and last. RF-DETR is out: it is built on LW-DETR from Baidu, which the brief's
   China-derived rule excludes.
   Ultralytics YOLO is out: AGPL-3.0 would bind the whole served app. All run on CPU at 30–80 ms/frame
   on this 16-core Ryzen; 2–5 fps is plenty for a deck-state sensor.
-- Optional local LLM for rule paraphrase: Phi-4-mini (MIT, Microsoft) or Mistral-7B-Instruct
-  (Apache-2.0) on the Qualcomm box when it lands. Llama and Gemma are excluded by the open-source-only
-  rule (community licences are not OSI). Never on the critical path.
+- LLM for rule paraphrase, Phi-4-mini (MIT, Microsoft) or Mistral-7B-Instruct (Apache-2.0): considered,
+  not approved, and not in the build plan; nothing is planned for it on node B. Llama and Gemma are
+  excluded by the open-source-only rule (community licences are not OSI). Never on the critical path.
 - Public data: Open-Meteo Marine (no key) for sea-surface temperature, wave height, wind at a real
-  cable-route position; fetched once, cached in the repo, served offline at demo.
-- Docs to PDF: markdown → pandoc or a Python PDF path; decide at M5.
+  cable-route position; fetched once, cached in the repo, served offline at demo. The brief names it
+  itself, so CON-05 can close on that line; CC BY 4.0 attribution goes in the README.
+- Docs to PDF: `uv run python tools/build_pdfs.py` (pandoc and headless Chromium; LibreOffice fallback)
+  builds the README, memo and Physical Account into `docs/pdf/` and checks each page limit.
 
-AI-use declaration (keep current in `docs/SOFTWARE_LOG.md`): Claude Fable 5.1 and Claude Opus 5.5 (Anthropic, US)
-as coding assistants and doc drafting; the detector above with weight licence and training-data origin; the
-optional LLM above. Nothing else. `docs/SOFTWARE_LOG.md` lists every package with version and licence
-(FastAPI MIT, uvicorn BSD-3, pydantic MIT, Lark MIT, PyYAML MIT, jsonschema MIT, numpy BSD-3,
-torch/torchvision BSD-3, opencv-python Apache-2.0, three.js MIT). Policy: permissive or weak copyleft
+AI-use declaration (kept current in `docs/SOFTWARE_LOG.md`): Claude Fable 5.1 and Claude Opus 5.5
+(Anthropic, US) as coding assistants and for doc drafting. A detector model is declared with its weight
+licence and training-data origin only if one is approved and used; the LLM paraphraser is considered, not
+approved. `docs/SOFTWARE_LOG.md` lists every package with version and licence, in four groups: installed;
+approved by DEC-39 (FastAPI, uvicorn, websockets, opencv-python-headless, onnxruntime); planned under DEC-02
+and DEC-04 (the rule grammar, three.js); and considered, not approved. Policy: permissive or weak copyleft
 only; no AGPL; no non-OSI model licences.
 
 ## 3D ship view (demo layer, deliberately not the scored screen)
@@ -243,9 +248,9 @@ break at sea: a node, a cable, a radio, a camera.
   clear it. The MCU is the natural home for the 200 ms safety commands (stop, hold, secure).
   Brought up over USB Sat 11:11 PDT; measured facts in [docs/NODE_B_BOARD.md](docs/NODE_B_BOARD.md).
 - **Topology.** Governor = replicated service on the ship's rack (A.7) plus edge inference nodes
-  next to sensors. Demo: laptop is node A (governor primary + screen), Qualcomm box is node B
-  (camera equipment-watch inference + governor hot standby). Until the box lands, node B is a second process on
-  the laptop on its own port, so failover is built and tested before the hardware exists.
+  next to sensors. Demo: laptop is node A (governor primary + screen), the VENTUNO Q board is node B
+  (camera equipment-watch inference + governor hot standby). Without the board, node B runs as a second
+  process on the laptop on its own port, so failover can be built and tested on the laptop alone.
 - **Determinism is the redundancy mechanism.** The standby holds the same event log. Takeover is a
   replay to the last sequence number: no state-sync protocol, no divergence. Fencing by epoch: the
   standby promotes after three missed heartbeats, the old primary demotes itself when it sees a
@@ -314,7 +319,7 @@ A proposed re-timing with tasks and pass checks is in `docs/BUILD_PLAN.md`.
 | Polish | Sat 21:30–Sun 01:00 | 3D view (time-boxed 3 h, M3 state message only). Jury drills: change one number on a card, swap priority mid-run, drop the camera feed, over-consuming guest. Docs: README, generated Physical Account, Scenario C memo PDF, AI and software declaration. Backup recording. **M5 Sun 01:00** |
 | Sleep | Sun 01:00–05:30 | Claude overnight: polish docs, regenerate Physical Account, lint, final tests |
 | Rehearse | Sun 05:30–09:15 | Rehearse the demo five times; fix only what breaks; **freeze Sun 09:15** |
-| Buffer | Sun 09:15–10:00 | No new features. Submit |
+| Buffer | Sun 09:15–10:00 | No new features. Submit by the freeze checklist in `docs/BUILD_PLAN.md` |
 
 Cut order if behind (first cut first): person detection → LLM paraphraser → 3D view (keep 2D schematic) → structured
 rule builder UI → A′ installation windows → six mission files (keep three) → CV live (keep recorded
@@ -324,28 +329,12 @@ Account, Scenario C memo.
 
 ## Demo script: 90 s of Scenario B, Scenario A with the jury's card, failsafe encore
 
-Storyboard for team review, superseding the beats below where they differ: `docs/DEMO_SCRIPT.md`
-(WORKLOG DEC-26, DEC-27; Scenario B load-out question CON-12).
-00:00 Baseline: 3 kn over a cable route, 24 °C water, G3 listening, eight gauges steady, mission = survey,
-      two nodes green, wired path active.
-00:08 Drone reports 18 % in 22 kn wind. Two incompatible condition sets appear on the ship state.
-      Governor decides in < 2 s: hard constraint named (land ≤ 12 min), survey pauses for the 15-min
-      recovery window, cost stated in minutes.
-00:20 Jury swaps the priority file to SAR. Same event replayed: survey suspended, ship released to
-      manoeuvre, 35 kW reserved ahead of everything, one sentence says why.
-00:32 A marked item is left on the landing zone (deck marker covered): "Held: flight deck not clear,
-      marker FD-2 covered since 00:31 (camera, 0.4 s old), rule R3". Removed: deck clear, recovery
-      proceeds. Breadth line on screen: leak at the cooling loop turns cooling to degraded early.
-00:45 Ethernet cable pulled: path indicator flips to Wi-Fi, equipment watch keeps reporting, nothing missed.
-00:55 Genset trips, reserve ~100 kW. First shed action within 5 s: G5 to 8 kW low-power, G2 to
-      standby; winner kept alive; every guest's loss listed (G6 is not aboard in Scenario B).
-01:10 Crew dial 14 → 0: the same shed step flips from "confirm (60 s)" to "automatic", on screen.
-01:20 Scenario A: jury's card loaded, one number changed live, verdict in < 30 s with binding
-      class, placement, displacement list and "holds with one genset down: yes/no".
-01:30 Done. Encore if the jury wants it (30 s): kill Wi-Fi too → equipment watch stale → hold
-      becomes "crew confirms"; kill the primary governor process → standby promotes by replay in < 3 s.
+The storyboard is [docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md): Scenario B with G3, G4 and G5 (DEC-32) on the
+DEC-40 timeline, the priority swap, a breadth strip, then Scenario A with the jury's card (DEC-26, DEC-27).
+The beats that stood here predated those decisions and were removed Sat 11:43 PDT.
 
 ## Open questions for Logan
 - Who owns what between Logan (GhostWalka) and Siddharth (sidd91): engine / screen / CV + rules / docs.
-- Qualcomm box arrives Sat about 10:00 PDT, just before the Sat 11:30 edge block. Still need its model
-  and OS, and the organizers' answer on Qualcomm's proprietary NPU runtime; default is CPU.
+- Closed: node B is the Arduino VENTUNO Q, board `training05`, on Ubuntu 24.04 with 8 cores and 14 GiB
+  RAM ([docs/NODE_B_BOARD.md](docs/NODE_B_BOARD.md)). The NPU runtime question is settled by DEC-31: models
+  run with ONNX Runtime on the CPU.

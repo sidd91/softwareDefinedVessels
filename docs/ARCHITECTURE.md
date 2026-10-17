@@ -72,7 +72,7 @@ stability, SATCOM, backbone, line-of-sight radio, acoustic, compute cores, respo
 
 | Engine | Objective | Ceiling | Output sentence pattern |
 |---|---|---|---|
-| D1 admission | feasible across the envelope at 30 °C; report one-genset-down and the seawater tipping point; for yes-if, least mission value lost | 30 s | "Refused: {line} has {free} {unit} free; {guest} needs {need} {unit}." |
+| D1 admission | verdict at both gensets, the 200 kW reserve and cooling at 30 °C; must survive one genset down by throttling to the 95 kW gate, otherwise yes-if; the raw one-genset-down line is always shown (DEC-35); port moves reported with crane time (DEC-37); links judged at minimum rates (DEC-38); report the seawater tipping point; for yes-if, least mission value lost | 30 s | "Refused: {line} has {free} {unit} free; {guest} needs {need} {unit}." |
 | D2 placement | maximise the smallest remaining margin; prefer preferred slots; leave the most future cards admissible | 30 s | "{part} to {slot}; rejected {slot2} because {line}." |
 | D3 right of way | hard limits first, then mission-weighted value | 2 s | "{winner} proceeds: {hard limit or weight}; {loser} loses {cost}." |
 | D4 shedding | throttle before shed, cheapest loss per kW first, recheck power and heat each step | 5 s first, 60 s all | "{guest} to {mode}: frees {kW}; loses {capability}." |

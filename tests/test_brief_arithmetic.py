@@ -19,6 +19,7 @@ CARDS = {
     for f in sorted(glob.glob(str(ROOT / "manifests/G*.yaml")))
 }
 BRIEF_FIVE = ["G1", "G2", "G3", "G4", "G5"]
+BAY_1_LENGTH_M = 6.1  # brief A.3: "Bay 1 aft, 20-ft: 6.1 × 2.4 × 2.6 m"
 
 
 def envelope_kw(card):
@@ -81,6 +82,56 @@ def test_three_of_five_sets_of_four_exceed_the_mass_margin():
 def test_g4_hangar_is_850_kg_after_the_correction():
     hangar = next(p for p in CARDS["G4"]["placement"]["parts"] if p["name"] == "hangar")
     assert hangar["mass_t"] == pytest.approx(0.85)
+
+
+def test_g3_keeps_the_brief_5_5_t_and_its_vehicle_fits_the_stern_ramp():
+    # Brief B, G3: "Bay 1 whole (cradle), via stern ramp, 5.5 t." A.3: "Stern ramp: one craft 7–9 m, ≤ 5 t."
+    parts = {p["name"]: p for p in CARDS["G3"]["placement"]["parts"]}
+    assert sorted(parts) == ["cradle", "vehicle"]
+    assert mass_t(CARDS["G3"]) == pytest.approx(5.5)
+    assert mass_t(CARDS["G3"]) <= A["positions"]["bay1"]["max_t"]
+    cradle, vehicle = parts["cradle"], parts["vehicle"]
+    assert cradle["allowed"] == vehicle["allowed"] == ["bay1"]
+    assert vehicle["part_of"] == "cradle"  # admitted and shed as one thing (B.0)
+    assert cradle["assumed"] and vehicle["assumed"]  # the split is ours, not the brief's
+    ramp = A["positions"]["stern_ramp"]
+    assert vehicle["mass_t"] <= ramp["max_t"]
+    # We read 7-9 m as the longest craft the ramp takes and judge at the low end.
+    assert vehicle["length_m"] <= min(ramp["craft_len_m"])
+    assert vehicle["length_m"] <= BAY_1_LENGTH_M  # it stows on the cradle in Bay 1
+    # At sea only the vehicle crosses the deck, over the ramp (A.11).
+    at_sea = CARDS["G3"]["installation"]["at_sea"]
+    crewed = A["installation"]["at_sea_crewed"]
+    assert at_sea["parts"] == ["vehicle"]
+    assert at_sea["via"] == "stern_ramp" and at_sea["via"] in crewed["via"]
+    assert at_sea["people"] == crewed["people"]["stern_ramp"]
+    assert at_sea["minutes"] == crewed["minutes"]["vehicle_swap"]
+
+
+def test_port_installs_fit_the_annex_a_hours():
+    # A.11 in port: "4–8 h per bay guest, 2–4 h per mast guest".
+    bay_lo, bay_hi = A["installation"]["in_port"]["hours_per_bay_guest"]
+    mast_lo, mast_hi = A["installation"]["in_port"]["hours_per_mast_guest"]
+    for gid, card in CARDS.items():
+        allowed = set(card["placement"]["parts"][0]["allowed"])
+        hours = card["installation"]["port"]["hours"]
+        if allowed <= {"bay1", "bay1_half", "bay2"}:
+            assert bay_lo <= hours <= bay_hi, gid
+        elif allowed <= {"mast_free", "hangar_roof"}:
+            assert mast_lo <= hours <= mast_hi, gid
+
+
+def test_g6_declares_ship_states_relations_limits_and_crew():
+    # Our invented card shows the B.0 fields, not only quantities.
+    g6 = CARDS["G6"]
+    production = next(c for c in g6["conditions"] if c["activity"] == "production")
+    assert production["requires"]["emission"] == "normal"
+    assert "quiet" not in production["requires"]["noise"]
+    assert g6["relations"]["excludes"] == [{"what": "G6.production", "when": "G3.surveying", "kind": "conditional"}]
+    assert any(limit["when"] == "emission == silent" for limit in g6["hard_limits"])
+    start = next(c for c in g6["conditions"] if c["activity"] == "start")
+    assert start["requires"]["people"] == 2  # two people to start it by hand
+    assert g6["installation"]["at_sea"] is None  # a bay guest is port only (A.11: at sea, "No bays")
 
 
 def test_cooling_capacity_matches_annex_a():

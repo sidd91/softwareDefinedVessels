@@ -8,6 +8,7 @@
 # Conventions:
 # - Envelope draw of a guest = max(nominal, any peak lasting over 60 s), as in the doc's assumption 1.
 # - Slots: bay1 (whole Bay 1), bay1_half, bay2, flight_deck, mast_free, hangar_roof.
+#   G3 has two parts, cradle and vehicle; the vehicle rides on the cradle, so both take Bay 1.
 #   A slot of null means the part has no position as given (the case is then yes-if).
 # - Line classes: mass (t), stability (t_eq), power (kW, guest reserve), heat (kW of chilled water at
 #   30 C), line_port and line_stbd (kW on each 150 kW mission line), placement (positions).
@@ -41,7 +42,8 @@ scenario_a:
     placement:
       G1.sensor: mast_free
       G2.module: bay2
-      G3.cradle_and_vehicle: bay1
+      G3.cradle: bay1
+      G3.vehicle: bay1
       G4.drone: flight_deck
       G4.hangar: flight_deck
     yes_if:
@@ -67,7 +69,8 @@ scenario_a:
     placement:
       G1.sensor: mast_free
       G2.module: bay2
-      G3.cradle_and_vehicle: bay1
+      G3.cradle: bay1
+      G3.vehicle: bay1
       G4.drone: flight_deck
       G4.hangar: flight_deck
     # G1 and G2 tie on value lost and size; the tie is broken by id.
@@ -93,7 +96,8 @@ scenario_a:
     placement:
       G1.sensor: mast_free
       G2.module: bay2
-      G3.cradle_and_vehicle: bay1
+      G3.cradle: bay1
+      G3.vehicle: bay1
       G4.drone: flight_deck
       G4.hangar: flight_deck
     yes_if:
@@ -117,7 +121,8 @@ scenario_a:
     placement:
       G1.sensor: mast_free
       G2.module: bay2
-      G3.cradle_and_vehicle: bay1
+      G3.cradle: bay1
+      G3.vehicle: bay1
       G4.drone: flight_deck
       G4.hangar: flight_deck
     yes_if:
@@ -145,7 +150,8 @@ scenario_a:
       - {remove: [G4], mass_after_t: 12.025}
     placement:
       G2.module: bay2
-      G3.cradle_and_vehicle: bay1
+      G3.cradle: bay1
+      G3.vehicle: bay1
       G4.drone: flight_deck
       G4.hangar: flight_deck
       G5.node: null
@@ -158,7 +164,8 @@ scenario_a:
         mass_after_t: 9.515
         stability_after_t_eq: 9.763
         placement:
-          G3.cradle_and_vehicle: bay1
+          G3.cradle: bay1
+          G3.vehicle: bay1
           G4.drone: flight_deck
           G4.hangar: flight_deck
           G5.node: bay2
@@ -209,7 +216,8 @@ scenario_a:
       - {remove: [G4], mass_after_t: 12.025}
     placement:
       G2.module: bay2
-      G3.cradle_and_vehicle: bay1
+      G3.cradle: bay1
+      G3.vehicle: bay1
       G4.drone: flight_deck
       G4.hangar: flight_deck
       G5.node: null
@@ -241,7 +249,8 @@ scenario_a:
         mass_after_t: 9.515
         stability_after_t_eq: 9.763
         placement:
-          G3.cradle_and_vehicle: bay1
+          G3.cradle: bay1
+          G3.vehicle: bay1
           G4.drone: flight_deck
           G4.hangar: flight_deck
           G5.node: bay2
@@ -276,7 +285,8 @@ scenario_a:
       G2.module: bay2
       G5.node: bay1_half
       G5.antenna: hangar_roof
-      G3.cradle_and_vehicle: null
+      G3.cradle: null
+      G3.vehicle: null
     # The doc gives the tipping point only after each yes-if (G3 cannot be placed as given).
     seawater_tip_c: null
     yes_if:
@@ -287,7 +297,8 @@ scenario_a:
         placement:
           G1.sensor: mast_free
           G2.module: bay2
-          G3.cradle_and_vehicle: bay1
+          G3.cradle: bay1
+          G3.vehicle: bay1
         one_genset_down: {holds: true, load_kw: 46.5, reserve_kw: 100}
         seawater_tip_c: 63.75
       - remove: [G2]
@@ -297,7 +308,8 @@ scenario_a:
         stability_after_t_eq: 8.665
         placement:
           G1.sensor: mast_free
-          G3.cradle_and_vehicle: bay1
+          G3.cradle: bay1
+          G3.vehicle: bay1
           G5.node: bay2
           G5.antenna: hangar_roof
         one_genset_down: {holds: true, load_kw: 71.5, reserve_kw: 100}
@@ -322,7 +334,8 @@ scenario_a:
       G2.module: bay2
       G5.node: bay1_half
       G5.antenna: hangar_roof
-      G3.cradle_and_vehicle: null
+      G3.cradle: null
+      G3.vehicle: null
     # The doc gives the tipping point only after each yes-if (G3 cannot be placed as given).
     seawater_tip_c: null
     yes_if:
@@ -333,7 +346,8 @@ scenario_a:
         stability_after_t_eq: 8.665
         placement:
           G1.sensor: mast_free
-          G3.cradle_and_vehicle: bay1
+          G3.cradle: bay1
+          G3.vehicle: bay1
           G5.node: bay2
           G5.antenna: hangar_roof
         one_genset_down: {holds: true, load_kw: 71.5, reserve_kw: 100}
@@ -345,7 +359,8 @@ scenario_a:
         placement:
           G1.sensor: mast_free
           G2.module: bay2
-          G3.cradle_and_vehicle: bay1
+          G3.cradle: bay1
+          G3.vehicle: bay1
         one_genset_down: {holds: true, load_kw: 46.5, reserve_kw: 100}
         seawater_tip_c: 63.75
     one_genset_down: null
@@ -438,7 +453,8 @@ scenario_a:
     placement:
       G1.sensor: mast_free
       G2.module: bay2
-      G3.cradle_and_vehicle: bay1
+      G3.cradle: bay1
+      G3.vehicle: bay1
       G4.drone: flight_deck
       G4.hangar: flight_deck
     yes_if: []
@@ -457,12 +473,86 @@ scenario_a:
     placement:
       G1.sensor: mast_free
       G2.module: bay2
-      G3.cradle_and_vehicle: bay1
+      G3.cradle: bay1
+      G3.vehicle: bay1
       G4.drone: flight_deck
       G4.hangar: flight_deck
     yes_if: []
     one_genset_down: {holds: true, load_kw: 81.5, reserve_kw: 100}
     seawater_tip_c: 48.0
+
+  # A7, our own card: installed G4, G5; card G6, under disaster relief (the file G6 was written for)
+  # and sar. Not one of the brief's jury cards. G5 holds its preferred Bay 2, so G6 takes half of
+  # Bay 1, a tolerated position. Heat binds. One genset down: 98 kW fits the 100 kW reserve but is
+  # over the 95 kW gate (DEC-35), so the ladder acts. All three steps are listed in ladder order;
+  # only the first is needed. Disaster relief keeps G6 (mission-critical, last); sar throttles it first.
+  - case: A7
+    file: disaster_relief
+    installed: [G4, G5]
+    card: G6
+    card_edits: {}
+    verdict: "yes"
+    binding: {class: heat, demand: 98, capacity: 120, unit: kW}
+    other_lines:
+      - {class: mass, demand: 6.815, capacity: 10, unit: t}
+      - {class: stability, demand: 7.063, capacity: 12, unit: t_eq}
+      - {class: power, demand: 98, capacity: 200, unit: kW}
+      - {class: line_port, demand: 18, capacity: 150, unit: kW}
+      - {class: line_stbd, demand: 80, capacity: 150, unit: kW}
+      - {class: flight_deck_drone, demand: 140, capacity: 150, unit: kg}
+    placement:
+      G4.drone: flight_deck
+      G4.hangar: flight_deck
+      G5.node: bay2
+      G5.antenna: mast_free
+      G6.unit: bay1_half
+    yes_if: []
+    one_genset_down:
+      holds: true
+      load_kw: 98
+      reserve_kw: 100
+      spare_kw: 2
+      against_ceiling_kw: 95
+      steps_needed: 1
+      fix:
+        - {guest: G4, from_mode: fast_charge, to_mode: charge, frees_kw: 25, load_after_kw: 73, value_lost: 0.3}
+        - {guest: G5, from_mode: full, to_mode: low_power, value_lost: 0.7, mission_critical: true}
+        - {guest: G6, from_mode: production, to_mode: recirculate, value_lost: 0.9, mission_critical: true}
+    seawater_tip_c: 39.9
+
+  - case: A7
+    file: sar
+    installed: [G4, G5]
+    card: G6
+    card_edits: {}
+    verdict: "yes"
+    binding: {class: heat, demand: 98, capacity: 120, unit: kW}
+    other_lines:
+      - {class: mass, demand: 6.815, capacity: 10, unit: t}
+      - {class: stability, demand: 7.063, capacity: 12, unit: t_eq}
+      - {class: power, demand: 98, capacity: 200, unit: kW}
+      - {class: line_port, demand: 18, capacity: 150, unit: kW}
+      - {class: line_stbd, demand: 80, capacity: 150, unit: kW}
+      - {class: flight_deck_drone, demand: 140, capacity: 150, unit: kg}
+    placement:
+      G4.drone: flight_deck
+      G4.hangar: flight_deck
+      G5.node: bay2
+      G5.antenna: mast_free
+      G6.unit: bay1_half
+    yes_if: []
+    one_genset_down:
+      holds: true
+      load_kw: 98
+      reserve_kw: 100
+      spare_kw: 2
+      against_ceiling_kw: 95
+      steps_needed: 1
+      fix:
+        - {guest: G6, from_mode: production, to_mode: recirculate, frees_kw: 14, load_after_kw: 84, value_lost: 0.18, capability_lost_pct: 90}
+        - {guest: G5, from_mode: full, to_mode: low_power, value_lost: 0.7}
+        - {guest: G4, from_mode: fast_charge, to_mode: charge, value_lost: 0.3, mission_critical: true}
+    seawater_tip_c: 39.9
 
 scenario_b:
   seawater_c: 24

@@ -1,6 +1,6 @@
 id: G6
 name: Containerised desalination unit
-version: 1
+version: 2
 source: team invention (all numbers assumed)
 capability:
   name: fresh_water
@@ -16,12 +16,24 @@ consumes:
   compute_cores: {nominal: 1, assumed: true}
 modes:
   - {name: production, power_kw: 18, capability_retained: 1.0, assumed: true}
-  - {name: recirculate, power_kw: 4, capability_retained: 0.1, assumed: true, note: "keeps membranes wet, produces nothing"}
+  - {name: recirculate, power_kw: 4, capability_retained: 0.1, assumed: true, note: "keeps membranes wet, produces nothing; can go back to production without the hand start"}
   - {name: "off", power_kw: 0, capability_retained: 0.0}
 conditions:
   - activity: production
-    requires: {}
+    requires: {noise: [normal, manoeuvring], emission: normal}
+    note: The high-pressure pump is machinery above minimum, so the ship cannot be quiet while it produces and silence stops it (A.6).
+  - activity: start
+    requires: {people: 2}
+    note: Two people prime and start the unit by hand from off. Nobody can at 0 aboard, so a unit shed to off while uncrewed stays off until crew return.
+relations:
+  excludes:
+    - {what: G6.production, when: G3.surveying, kind: conditional}
+hard_limits:
+  - {when: emission == silent, then: drop to recirculate, note: "silence forbids machinery above minimum (A.6)"}
+  - {when: crew_aboard == 0 and mode == off, then: stays off, note: "the start needs two people"}
 installation:
-  port: {people: 2, hours: 3, note: "assumed"}
+  port: {people: 2, hours: 4, note: "assumed: the low end of A.11's 4-8 h per bay guest"}
   at_sea: null
 criticality: {safety_critical: false, mission_critical: per priority file}
+notes:
+  - Mirrors the desalination unit shed on the organizers' slide 10. Mission-critical only in disaster relief; the other files weight it 0.2, so it is an early throttle when aboard.

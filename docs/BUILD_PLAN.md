@@ -17,7 +17,7 @@ are in `tests/oracles/expected_outcomes.yaml`, already checked against the cards
 | M2 Scenario B | Sat 17:30 | minute-8 decision within 2 s and minute-12 ladder (first action 5 s, sequence 60 s) under both priority files; replay identical |
 | M3 Screen | Sat 21:30 | Scenario B watchable end to end: schematic, 8 gauges, decision log, priority swap, crew dial |
 | M4 Breadth | Sun 01:30 | each breadth line works live or replayed and is labelled so |
-| Freeze | Sun 09:15 | five rehearsals done; PDFs exported; backup recording made |
+| Freeze | Sun 09:15 | five rehearsals done; backup recording made; submission checklist: (1) work merged into main (DEC-34), or the branch the jury reviews confirmed; (2) repo visibility or jury access confirmed; (3) a `submission` tag on the submitted commit; (4) memo and Physical Account PDFs committed at `docs/pdf/SCENARIO_C_MEMO.pdf` and `docs/pdf/PHYSICAL_ACCOUNT.pdf`; (5) the one documented command smoke-tested from a fresh clone with the network off; (6) `uv run python tools/build_pdfs.py` reports every page limit met |
 
 The Qualcomm box lands about Sat 10:00; until then node B is a second process on the laptop. Landed: board `training05` came up over USB at Sat 11:11 PDT ([NODE_B_BOARD.md](NODE_B_BOARD.md)).
 
@@ -38,7 +38,7 @@ The Qualcomm box lands about Sat 10:00; until then node B is a second process on
 | T11 | Rule R3 at two crew levels | R-084, R-085 | the same recovery is confirmed at 14, held from launch at 6, and refused at 0 when the deck cannot be proven clear | T5 |
 | T12 | Two nodes, wired and Wi-Fi, failover by replay | R-458 | pull the cable: no decision lost; kill the primary: the standby continues with the same sequence numbers | T4 |
 | T13 | Camera leak line (C1), replayed first | DEC-27 | the replayed leak marks cooling degraded with source camera and sheds nothing until a fault is confirmed | T6 |
-| T14 | Deliverable PDFs and README pass | R-019 to R-024, R-025, R-552 | README at most 3 pages; memo at most 2; Physical Account one page; page counts checked in the final route | anytime |
+| T14 | Deliverable PDFs and README pass | R-019 to R-024, R-025, R-552 | README at most 3 pages; memo at most 2; Physical Account one page; checked by `uv run python tools/build_pdfs.py`, which builds all three into `docs/pdf/` on US Letter and A4 (Letter only on its LibreOffice fallback), prints each page count and exits non-zero if any is over | anytime |
 
 Build order if people work in parallel: T1 first; then T2 and T3 on one track, T4 on another; T5, T6
 and T7 together; then T8 to T13 split freely. Cut order stays as in GAMEPLAN; T13, T12 and T10 are the

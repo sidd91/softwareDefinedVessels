@@ -1,7 +1,7 @@
 id: G3
 name: Seabed inspection vehicle with cradle
-version: 1
-source: brief Annex B
+version: 2
+source: brief Annex B (the split of its 5.5 t into cradle and vehicle is ours)
 capability:
   name: seabed_inspection
   description: Cable and pipeline inspection.
@@ -10,7 +10,8 @@ cooling: chilled_water
 placement:
   uses_ramp: true
   parts:
-    - {name: cradle_and_vehicle, mass_t: 5.5, preferred: [bay1], allowed: [bay1], note: "whole Bay 1, launched and recovered over the stern ramp"}
+    - {name: cradle, mass_t: 3.5, assumed: true, preferred: [bay1], allowed: [bay1], note: "whole Bay 1, port only; the brief's 5.5 t less the vehicle"}
+    - {name: vehicle, mass_t: 2.0, length_m: 5.5, assumed: true, part_of: cradle, preferred: [bay1], allowed: [bay1], note: "rides on the cradle in Bay 1 (6.1 m long, A.3); launched and recovered over the stern ramp (A.3: one craft 7-9 m, 5 t or less; we read 7-9 m as the longest craft and judge at 7 m)"}
 consumes:
   power_kw: {nominal: 1, peak: 25, peak_duration_s: 3600, note: "25 kW charging for 60 min after each 40-min leg; 1 kW standby"}
   data_backbone_mbps: {nominal: 100, note: "on the cradle"}
@@ -31,5 +32,5 @@ relations:
     - {what: G4.recovering, when: G3.surveying, kind: conditional}
 installation:
   port: {people: 4, hours: 6, note: "cradle is port only"}
-  at_sea: {people: 4, minutes: 45, via: stern_ramp, note: "vehicle swappable at sea in an installation window"}
+  at_sea: {people: 4, minutes: 45, via: stern_ramp, parts: [vehicle], note: "vehicle swappable at sea in an installation window; A.11's 250 kg at-sea limit is read as applying to portable modules, not vehicles"}
 criticality: {safety_critical: false, mission_critical: per priority file}

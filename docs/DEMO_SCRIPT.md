@@ -1,12 +1,16 @@
 # Demo storyboard (draft for team review)
 
-Status: draft, Fri 23:56 PDT. Drafted by Claude Opus 5.5 on behalf of Logan Walker (GhostWalka).
+Status: draft, updated Sat 12:05 PDT. Drafted by Claude Opus 5.5 on behalf of Logan Walker (GhostWalka).
 Built on WORKLOG DEC-26: two deep examples, Scenario B with a live priority swap and Scenario A with
-the jury's card, and everything else as one-line breadth. Nothing here is built yet.
+the jury's card, and everything else as one-line breadth. The two rule R3 breadth lines (landing zone
+not clear, crew dial) now run as one fixed segment of about 15 s after Scenario A, because the
+Scenario C memo promises them live at 14, 6 and 0 aboard (review finding demo-10). Nothing here is
+built yet.
 
 The brief's format: a live demo on our laptop, **90 s of Scenario B, then Scenario A with the jury's
 card**; the jury picks the priority set for B and a card (possibly with one number changed) for A. A
-backup recording is welcome but does not replace the live run.
+backup recording is welcome but does not replace the live run. Our order: Scenario B (90 s), Scenario
+A, then the Scenario C segment (about 15 s).
 
 ## Scenario B load-out (decided, WORKLOG DEC-32)
 
@@ -40,13 +44,11 @@ The exact shed order comes from the ledger and the active priority file, not fro
 
 ## Breadth strip (one line each, about 5 s each)
 
-Pick four on the day; each is labelled **live** or **replayed** on screen.
+Pick four on the day; each is labelled **live** or **replayed** on screen. Rule R3's two lines are
+not in this pool: they run as the fixed Scenario C segment after Scenario A.
 
 - **Camera (replayed):** a leak under chilled-water pump 1 makes the governor plan cooling as degraded
   before any pump alarm; it sheds only on a confirmed fault ([camera design, C1](../research/cv_equipment_monitoring.md)).
-- **Crew dial 14 to 0:** the same drone recovery under rule R3 moves from "bridge confirms the clear deck" (14) to a standing plan approved at launch (6) to an automatic hold or a refused launch (0), and the standing
-  plan approved ahead of time is shown ([Scenario C memo](SCENARIO_C_MEMO.md)).
-- **Landing zone not clear:** a marked item on the landing zone holds the drone's recovery (rule R3).
 - **Cable pull (live):** the link path flips to Wi-Fi and no decision is missed.
 - **Over-consuming guest:** G5 draws 15 % over its declaration and is throttled with a sentence.
 - **Emission silence:** SATCOM and radio drop to zero; G4 returns home and demands a clear deck.
@@ -78,12 +80,39 @@ Prepared drills (the jury chooses, but we rehearse these):
 - **Scenario A-prime (if time):** the same card under way gets "not now", with the next installation
   window and, at 0 crew, a logical reconfiguration instead.
 
+## Scenario C, rule R3 at 14, 6 and 0 aboard (fixed, about 15 s)
+
+Still breadth under DEC-26: two one-line examples, landing zone not clear and the crew dial, shown
+together at three crew levels. It delivers the [Scenario C memo](SCENARIO_C_MEMO.md)'s "Live demo"
+section exactly. It replays Scenario B from minute 8 with the same seed and the jury's priority file;
+the screen labels it **replayed**, and the webcam line **live**. The 90 s Scenario B table above is
+unchanged.
+
+| Clock | Aboard | What happens | What the governor shows |
+|---|---|---|---|
+| +00 | 14 | Replay from min 8 in fast-forward; it slows to real time once the zone is clear at min 13 (8 + 1 + 4, seed) | R3 window opens at min 8 with the D3 recovery decision, which is the recall and comes before the drain-trend opening at min 8.2: clear-deck call with the bridge's confirm button, confirmed (seed: 1 min); crew clear and sweep (seed: 4 min) |
+| +03 | 14 | A marked item, pre-staged beside deck marker FD-2, is slid over it (webcam, live), held while the sentence is read, then slid off | "Landing zone not clear": recovery held within 200 ms, latency shown against the ceiling, with its bridge sentence; item removed: released |
+| +08 | 6 | Crew dial to 6; same replay | No confirm button: the standing plan approved at launch is shown; the log shows a 3 min deck work request at min 3 (ADDED event, labelled) refused, "not now; when: after G4 is secured", where the 14 run allowed it because it ends before the window opens |
+| +11 | 0 | Crew dial to 0; same replay; webcam turned away | Recovery held with no confirm or override button; the record states the cost to G4 (below 20 %: land within 12 min or ditch) |
+| +15 | | End of the demo | |
+
+Numbers: in Scenario B the clear-deck call starts at min 8 with the D3 recovery decision, because that
+recall comes before the drain-trend opening. With the seed's confirm and clear times (`seed_pins` in
+`config/scenarios/scenario_b.yaml`) the zone is clear at min 13 (8 + 1 + 4) and G4 lands at min 17
+(DEC-40). Min 8.2 and the 12 s margin are the memo's, kept only as the latest the window could open
+without the recall (deadline min 18.2, 4 min approach, 6 min lead at 14). The min-3 deck work request
+exists only in this replay. The memo states no duration for this segment, so its timing lives here.
+
 ## Rehearsal and fallbacks
 
 - Fixed seeds and cached public data, so every run decides the same way; the backup recording is made
   from a rehearsal run.
 - Our own travel router or phone hotspot for the Wi-Fi path, never the venue network.
-- If the webcam misbehaves, the camera line runs from the replayed stream, labelled as such.
+- If the webcam misbehaves, the camera line and the Scenario C segment's marked item and turned-away
+  webcam run from the replayed stream, labelled as such.
+- Time the Scenario C segment in every rehearsal. The FD-2 item starts pre-staged beside the marker,
+  so the 14-aboard beat is one slide on and one slide off; if the segment still runs past about 15 s,
+  budget about 20 s rather than rush the bridge sentence.
 - Rehearse five times on Sun morning; freeze at 09:15 PDT.
 
 ## Open questions for the team
@@ -93,5 +122,5 @@ Prepared drills (the jury chooses, but we rehearse these):
 3. Who drives the laptop and who talks?
 4. Where does the breadth strip go? The brief asks for 90 s of Scenario B, then Scenario A; inside B it
    takes about 25 s from the minute-12 shedding. Options: keep it in B (as drafted), move it after
-   Scenario A as a 30 s encore, or show only the lines that happen inside Scenario B anyway (cable pull,
-   crew dial).
+   Scenario A as a 30 s encore next to the Scenario C segment, or show only the lines that happen inside
+   Scenario B anyway (cable pull). The two R3 lines are settled: the fixed segment after Scenario A.
