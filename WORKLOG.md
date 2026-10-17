@@ -80,6 +80,7 @@ Deadline: **Sun 2026-10-18 10:00 PDT**.
 | DEC-39 | Sat 10:12 | Install approval: FastAPI, uvicorn and websockets now; opencv-python-headless and onnxruntime when the camera and UNO Q steps start; all open-source, logged in docs/SOFTWARE_LOG.md when installed | Logan | Claude for Logan |
 | DEC-40 | Sat 10:25 | Scenario B setup: the brief's story at minutes 0, 8 and 12 (G3 underwater; the minute-12 trip holds and D4 runs on screen with 0 steps and both armed ladders shown); G4 lands at minute 17 (seed); ADDED, labelled event at minute 19: a chilled-water pump fails (x0.6, 80 kW loop, 75 kW ceiling), so cooling binds against 81 kW: survey slows G4's charge to 10 kW (56 kW), sar takes G5 to 8 kW (44 kW). Robot-charging start rejected because it removes the minute-8 conflict. Confirmed by four critics and a judge (req R-066, R-067) | Logan (option); critics and judge (timing) | Claude for Logan |
 | DEC-41 | Sat 11:15 | Bring up node B now, headless over ADB on USB-C; ADB installed on the laptop from Ubuntu's packages (req R-458) | Logan | Claude for Logan |
+| DEC-42 | Sat 11:16 | Keep node B's default password for now; CON-15 stays open | Logan | Claude for Logan |
 
 ## Conflicts and risks to watch
 
@@ -630,3 +631,9 @@ Nothing was installed on the board; a temporary echo server ran from /tmp and wa
 `docs/NODE_B_BOARD.md`; GAMEPLAN, OPEN_QUESTIONS and BUILD_PLAN corrected (VENTUNO Q, Ubuntu, landed).
 Decisions: DEC-41 (Logan). Conflicts: CON-15 (default login with SSH open on shared Wi-Fi), CON-16 (Wi-Fi
 heartbeat tail). Deferrals: DEF-01, wired path and power arrangement to the team (hardware).
+
+### Sat 11:16 PDT · Board password left as is (DEC-42) · Claude Opus 5.5 on behalf of Logan Walker (GhostWalka)
+
+Logan chose to keep the board's default password for now. CON-15 stays open: SSH on the shared venue Wi-Fi
+still accepts the published default login.
+Decisions: DEC-42 (Logan). Conflicts: CON-15 remains open. Deferrals: none.
