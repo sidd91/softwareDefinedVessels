@@ -1,0 +1,97 @@
+{
+  "seq": 2,
+  "tick": 721,
+  "t_s": 721,
+  "applies_at_tick": 722,
+  "kind": "D4",
+  "subject": "load against the shed limit",
+  "mission": "survey",
+  "verdict": "hold",
+  "ceiling_ms": 5000,
+  "binding": {
+    "class": "power",
+    "label": "Power",
+    "capacity": 100,
+    "demand": 48,
+    "free": 52,
+    "unit": "kW",
+    "degraded_by": [
+      "one genset down: genset_2 tripped, confirmed at 721 s"
+    ]
+  },
+  "reserved": {},
+  "load_kw": 48,
+  "limit_kw": 95,
+  "load_after_kw": 48,
+  "free_after_kw": 47,
+  "steps": [],
+  "armed": [
+    {
+      "guest": "G5",
+      "from_mode": "full",
+      "to_mode": "low_power",
+      "frees_kw": 37,
+      "from_kw": 45,
+      "to_kw": 8,
+      "cost_per_kw": 0.0038,
+      "capability_lost_pct": 70,
+      "mission_critical": false,
+      "shed": false,
+      "tier": "mission_support"
+    },
+    {
+      "guest": "G5",
+      "from_mode": "low_power",
+      "to_mode": "off",
+      "from_kw": 8,
+      "to_kw": 0,
+      "frees_kw": 8,
+      "cost_per_kw": 0.0075,
+      "capability_lost_pct": 30.0,
+      "mission_critical": false,
+      "shed": true,
+      "tier": "mission_support"
+    },
+    {
+      "guest": "G4",
+      "from_mode": "standby",
+      "to_mode": "off",
+      "from_kw": 2,
+      "to_kw": 0,
+      "frees_kw": 2,
+      "cost_per_kw": 0.03,
+      "capability_lost_pct": 30.0,
+      "mission_critical": false,
+      "shed": true,
+      "tier": "mission_support"
+    }
+  ],
+  "order_source": "computed",
+  "losses": {
+    "G3": {
+      "mode_before": "standby",
+      "mode_after": "standby",
+      "capability_before": 0.3,
+      "capability_after": 0.3
+    },
+    "G4": {
+      "mode_before": "standby",
+      "mode_after": "standby",
+      "capability_before": 0.3,
+      "capability_after": 0.3
+    },
+    "G5": {
+      "mode_before": "full",
+      "mode_after": "full",
+      "capability_before": 1.0,
+      "capability_after": 1.0
+    }
+  },
+  "trigger": "genset_trip",
+  "injected": false,
+  "raw_event_t_s": 720,
+  "confirmed_t_s": 721,
+  "first_shed_due_t_s": 725,
+  "inputs_hash": "4ff8aaca11be1511",
+  "sentence": "Holds: 48 of 95 kW, power limits (one genset down). Next step if needed: G5 full to low power, 37 kW."
+}

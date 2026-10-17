@@ -1,0 +1,71 @@
+{
+  "seq": 1,
+  "tick": 480,
+  "t_s": 480,
+  "applies_at_tick": 481,
+  "kind": "D3",
+  "subject": "G4.launch_recovery against G3.surveying",
+  "mission": "survey",
+  "verdict": "proceeds",
+  "ceiling_ms": 2000,
+  "proceeds": "G4",
+  "yields": "G3",
+  "hard_limit": {
+    "guest": "G4",
+    "when": {
+      "signal": "G4.battery_pct",
+      "op": "<",
+      "value": 20
+    },
+    "then": {
+      "action": "land_or_ditch",
+      "within_min": 12
+    },
+    "reading": 18
+  },
+  "deadline_t_s": 1091.9,
+  "leg_ends_t_s": 2400,
+  "wait_for_leg_end": "infeasible",
+  "conflicts": [
+    {
+      "signal": "speed_kn",
+      "G3": 3,
+      "G4": {
+        "min": 5,
+        "max": 12
+      }
+    },
+    {
+      "signal": "deck_machinery",
+      "G3": false,
+      "G4": true,
+      "by": "G4.launch_recovery"
+    },
+    {
+      "signal": "heading_free",
+      "G3": false,
+      "G4": true,
+      "by": "G3.surveying"
+    },
+    {
+      "exclusion": "G3.surveying excludes G4.launch_recovery"
+    }
+  ],
+  "reserved": {},
+  "cost_to_loser": {
+    "guest": "G3",
+    "minutes_lost": [
+      25,
+      27
+    ],
+    "open_ended": false,
+    "leg": "paused",
+    "holds": "depth",
+    "leg_ends_at_min": [
+      65,
+      67
+    ]
+  },
+  "inputs_hash": "45afe63c9f59920b",
+  "sentence": "G4 recovers first: below 20 % it must land within 12 min, by minute 18.2, so waiting for the leg end is not possible. G3 holds depth and the survey pauses: 25 to 27 survey minutes lost."
+}

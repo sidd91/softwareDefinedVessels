@@ -1,0 +1,98 @@
+{
+  "seq": 3,
+  "tick": 1141,
+  "t_s": 1141,
+  "applies_at_tick": 1142,
+  "kind": "D4",
+  "subject": "load against the shed limit",
+  "mission": "sar",
+  "verdict": "shed",
+  "ceiling_ms": 5000,
+  "binding": {
+    "class": "heat",
+    "label": "Cooling",
+    "capacity": 80,
+    "demand": 81,
+    "free": -1,
+    "unit": "kW",
+    "degraded_by": [
+      "cooling degraded: chilled-water pump 1 failed, one of two running (x0.6)"
+    ]
+  },
+  "load_kw": 81,
+  "limit_kw": 75,
+  "load_after_kw": 44,
+  "free_after_kw": 31,
+  "steps": [
+    {
+      "guest": "G5",
+      "from_mode": "full",
+      "to_mode": "low_power",
+      "frees_kw": 37,
+      "from_kw": 45,
+      "to_kw": 8,
+      "load_after_kw": 44,
+      "cost_per_kw": 0.0189,
+      "capability_lost_pct": 70.0,
+      "mission_critical": false,
+      "shed": false,
+      "tier": "mission_support"
+    }
+  ],
+  "armed": [
+    {
+      "guest": "G4",
+      "from_mode": "fast_charge",
+      "to_mode": "charge",
+      "frees_kw": 25,
+      "from_kw": 35,
+      "to_kw": 10,
+      "cost_per_kw": 0.012,
+      "capability_lost_pct": 30.0,
+      "mission_critical": true,
+      "shed": false,
+      "tier": "mission_critical"
+    },
+    {
+      "guest": "G4",
+      "from_mode": "charge",
+      "to_mode": "standby",
+      "frees_kw": 8,
+      "from_kw": 10,
+      "to_kw": 2,
+      "cost_per_kw": 0.05,
+      "capability_lost_pct": 40.0,
+      "mission_critical": true,
+      "shed": false,
+      "tier": "mission_critical"
+    }
+  ],
+  "order_source": "computed",
+  "losses": {
+    "G3": {
+      "mode_before": "standby",
+      "mode_after": "standby",
+      "capability_before": 0.3,
+      "capability_after": 0.3
+    },
+    "G4": {
+      "mode_before": "fast_charge",
+      "mode_after": "fast_charge",
+      "capability_before": 1.0,
+      "capability_after": 1.0
+    },
+    "G5": {
+      "mode_before": "full",
+      "mode_after": "low_power",
+      "capability_before": 1.0,
+      "capability_after": 0.3
+    }
+  },
+  "trigger": "cooling_degraded",
+  "injected": true,
+  "raw_event_t_s": 1140,
+  "confirmed_t_s": 1141,
+  "first_shed_due_t_s": 1145,
+  "inputs_hash": "33172f7a5aab8fd3",
+  "sentence": "Cooling binds (cooling degraded): 81 kW against a 75 kW limit. G5 full to low power frees 37 kW. Load 44 of 75 kW. G5 keeps 30 %."
+}

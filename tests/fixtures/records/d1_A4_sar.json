@@ -1,0 +1,105 @@
+{
+  "seq": 0,
+  "tick": 0,
+  "t_s": 0,
+  "applies_at_tick": 1,
+  "kind": "D1",
+  "subject": "G3 onto G1, G2, G5",
+  "mission": "sar",
+  "verdict": "yes-if",
+  "ceiling_ms": 30000,
+  "binding": {
+    "class": "mass",
+    "label": "Mass",
+    "capacity": 10,
+    "demand": 12.07,
+    "free": -2.07,
+    "unit": "t"
+  },
+  "also_failing": [
+    {
+      "class": "placement",
+      "label": "Bay 1",
+      "capacity": 1,
+      "demand": 2,
+      "free": -1,
+      "unit": "halves"
+    },
+    {
+      "class": "stability",
+      "label": "Stability",
+      "capacity": 12,
+      "demand": 12.165,
+      "free": -0.165,
+      "unit": "t_eq"
+    }
+  ],
+  "options": [
+    {
+      "remove": [
+        "G2"
+      ],
+      "value_lost": 0.5,
+      "mission_critical": false,
+      "mass_after_t": 8.57,
+      "stability_after_t_eq": 8.665,
+      "moves": {
+        "G5.node": "bay2"
+      },
+      "move_hours": [
+        4,
+        8
+      ],
+      "placement": {
+        "G1.sensor": "mast_free",
+        "G3.cradle": "bay1",
+        "G3.vehicle": "bay1",
+        "G5.node": "bay2",
+        "G5.antenna": "hangar_roof"
+      },
+      "genset": {
+        "load_kw": 71.5,
+        "reserve_kw": 100,
+        "gate_kw": 95,
+        "state": "fits",
+        "steps": []
+      },
+      "seawater_tip_c": 52.5
+    },
+    {
+      "remove": [
+        "G5"
+      ],
+      "value_lost": 1.0,
+      "mission_critical": false,
+      "mass_after_t": 9.045,
+      "stability_after_t_eq": 9.135,
+      "placement": {
+        "G1.sensor": "mast_free",
+        "G2.module": "bay2",
+        "G3.cradle": "bay1",
+        "G3.vehicle": "bay1"
+      },
+      "genset": {
+        "load_kw": 46.5,
+        "reserve_kw": 100,
+        "gate_kw": 95,
+        "state": "fits",
+        "steps": []
+      },
+      "seawater_tip_c": 63.75
+    }
+  ],
+  "seawater_tip_c": null,
+  "placement": {
+    "G1.sensor": "mast_free",
+    "G2.module": "bay2",
+    "G5.node": "bay1_half",
+    "G5.antenna": "hangar_roof",
+    "G3.cradle": null,
+    "G3.vehicle": null
+  },
+  "order_source": "computed",
+  "inputs_hash": "83761061500d0378",
+  "sentence": "Refused on mass: 12.07 t against 10 t, 2.07 t over. Admit if G2 disembarks and G5 moves to bay2, mission value lost 0.5."
+}

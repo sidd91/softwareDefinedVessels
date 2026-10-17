@@ -2,66 +2,246 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/sidd91/softwareDefinedVessels/config/decision_record.schema.json",
   "title": "ArgOS decision record",
-  "description": "One record per decision (ARCHITECTURE contract 6). Every screen line, the event log, the replay check and the sentence read this record. Times are ship time; wall-clock latency is in the separate timing log, never here, so a replay reproduces records byte for byte.",
+  "description": "One record per decision, one JSON object per line of the decision log (ARCHITECTURE contract 7, STATE_ESTIMATION clock rules). Every screen line, the event log, the replay check and the sentence read this record. Times are ship time in seconds (tick n is n s). Wall-clock time and latency_ms live only in the timing log, keyed by seq, so a replay reproduces every record byte for byte. Fields are optional unless the record's kind and verdict require them (allOf below).",
   "type": "object",
-  "required": ["seq", "tick", "t_s", "kind", "subject", "verdict", "sentence", "inputs_hash"],
+  "required": ["seq", "tick", "t_s", "kind", "subject", "verdict", "inputs_hash", "sentence"],
   "additionalProperties": false,
   "properties": {
-    "seq": {"type": "integer", "minimum": 0},
-    "tick": {"type": "integer", "minimum": 0},
-    "t_s": {"type": "number", "description": "Ship time of the snapshot the decision read"},
-    "applies_at_tick": {"type": "integer", "description": "Tick at which its commands are applied (the next tick)"},
-    "kind": {"enum": ["D1", "D2", "D3", "D4", "D5"]},
-    "subject": {"type": "string"},
-    "mission": {"type": "string"},
-    "verdict": {"enum": ["yes", "yes-if", "no", "not-now", "card-rejected", "proceeds", "hold", "shed", "unconfirmed", "confirm", "standing_plan", "automatic", "forbidden", "held", "cleared"]},
-    "binding": {"$ref": "#/$defs/line"},
-    "also_failing": {"type": "array", "items": {"$ref": "#/$defs/line"}},
-    "options": {"type": "array", "items": {"type": "object", "additionalProperties": false, "required": ["remove", "value_lost", "mission_critical"],
-      "properties": {"remove": {"type": "array", "items": {"type": "string"}}, "value_lost": {"type": "number"}, "mission_critical": {"type": "boolean"},
-        "mass_after_t": {"type": "number"}, "moves": {"type": "object", "additionalProperties": {"type": "string"}}}}},
-    "placement": {"type": "object", "additionalProperties": {"type": ["string", "null"]}},
-    "genset": {"type": "object", "additionalProperties": false, "required": ["load_kw", "reserve_kw", "gate_kw", "state"],
-      "properties": {"load_kw": {"type": "number"}, "reserve_kw": {"type": "number"}, "gate_kw": {"type": "number"},
-        "state": {"enum": ["fits", "holds_by_throttling", "does_not_hold"]}, "steps": {"type": "array", "items": {"$ref": "#/$defs/step"}}}},
-    "seawater_tip_c": {"type": ["number", "null"]},
-    "steps": {"type": "array", "items": {"$ref": "#/$defs/step"}},
-    "armed": {"type": "array", "items": {"$ref": "#/$defs/step"}},
-    "order_source": {"enum": ["computed", "declared"]},
-    "losses": {"type": "object", "additionalProperties": {"type": "object", "additionalProperties": false,
-      "required": ["mode_before", "mode_after", "capability_before", "capability_after"],
-      "properties": {"mode_before": {"type": "string"}, "mode_after": {"type": "string"}, "capability_before": {"type": "number"}, "capability_after": {"type": "number"}}}},
-    "load_kw": {"type": "number"},
-    "limit_kw": {"type": "number"},
-    "load_after_kw": {"type": "number"},
-    "proceeds": {"type": "string"},
-    "yields": {"type": "string"},
-    "hard_limit": {"type": "object"},
-    "deadline_t_s": {"type": ["number", "null"]},
-    "conflicts": {"type": "array", "items": {"type": "object"}},
-    "reserved": {"type": "object", "additionalProperties": {"type": "number"}},
-    "cost_to_loser": {"type": "object", "additionalProperties": false, "required": ["guest", "minutes_lost", "open_ended"],
-      "properties": {"guest": {"type": "string"}, "minutes_lost": {"type": "array", "items": {"type": "number"}, "minItems": 2, "maxItems": 2},
-        "open_ended": {"type": "boolean"}, "leg": {"type": "string"}, "holds": {"type": "string"}}},
-    "rule": {"type": "string"},
-    "crew_aboard": {"type": "integer"},
-    "deck_evidence": {"type": "string"},
-    "raw_event_t_s": {"type": ["number", "null"]},
-    "confirmed_t_s": {"type": ["number", "null"]},
-    "first_shed_due_t_s": {"type": ["number", "null"]},
-    "trigger": {"type": "string"},
-    "injected": {"type": "boolean"},
-    "field": {"type": "string", "description": "CARD REJECTED: the field that failed"},
-    "inputs_hash": {"type": "string", "pattern": "^[0-9a-f]{16}$"},
-    "sentence": {"type": "string", "minLength": 1}
+    "seq": {"type": "integer", "minimum": 0, "description": "Decision and record counter; every command a decision sends carries it"},
+    "tick": {"type": "integer", "minimum": 0, "description": "The tick of the snapshot the decision ran on"},
+    "t_s": {"type": "number", "description": "Ship time of that snapshot (t_ship_s, equal to tick)"},
+    "applies_at_tick": {"type": "integer", "minimum": 0, "description": "Tick whose frame applies this decision's commands: always tick + 1"},
+    "kind": {"enum": ["D1", "D2", "D3", "D4", "D5"], "description": "D1 admission, D2 placement, D3 right of way, D4 shedding, D5 crew policy"},
+    "subject": {"type": "string", "minLength": 1, "description": "What was decided, for example 'G4 onto G1, G2, G3' or 'G6.unit'"},
+    "mission": {"type": "string", "description": "Id of the priority file in force"},
+    "verdict": {
+      "enum": ["yes", "yes-if", "no", "not-now", "card-rejected", "placed", "unplaced", "proceeds", "hold", "shed", "unconfirmed",
+               "held", "cleared", "automatic", "forbidden", "confirm", "standing_plan"],
+      "description": "D1: yes, yes-if, no, not-now, card-rejected. D2: placed, unplaced. D3: proceeds. D4: hold, shed, unconfirmed. D5: held, cleared, not-now, automatic, forbidden, confirm, standing_plan"
+    },
+    "ceiling_ms": {"type": "integer", "minimum": 1, "description": "The A.8 compute ceiling this decision is held to (30000 D1 and D2, 2000 D3, 5000 D4, 200 safety). A fixed number, not a measurement: the measured latency_ms is in the timing log"},
+    "timed_out": {"type": "boolean", "description": "The watchdog cut the decision off at its ceiling; replay applies the logged outcome"},
+
+    "binding": {"$ref": "#/$defs/line", "description": "The line that bound: the most over, or for a yes the tightest ship-wide line. For D4, the class that sets the shed limit (capacity is that class's capacity now; limit_kw is capacity minus headroom)"},
+    "also_failing": {"type": "array", "items": {"$ref": "#/$defs/line"}, "description": "Every other line over its limit"},
+    "card_alone": {"$ref": "#/$defs/line", "description": "NO: the binding class with every installed guest removed, which still fails"},
+
+    "options": {"type": "array", "items": {"$ref": "#/$defs/option"}, "description": "YES-IF: the minimal removal sets, ranked (index 0 is the recommendation)"},
+    "genset": {"$ref": "#/$defs/genset", "description": "D1: the one-genset-down check (DEC-35) for the set as given"},
+    "seawater_tip_c": {"type": ["number", "null"], "description": "Seawater temperature at which cooling stops holding this set; null when it holds across the scan or the set cannot be placed"},
+    "next_window": {"$ref": "#/$defs/window", "description": "NOT NOW: when the decision can be yes"},
+    "field": {"type": "string", "minLength": 1, "description": "CARD REJECTED: the loader's problem, naming the field ('placement.parts[1].mass_t: -1 is less than the minimum of 0')"},
+    "file": {"type": "string", "description": "CARD REJECTED: the refused file"},
+    "kept_previous": {"type": "boolean", "description": "CARD REJECTED: true when the previously loaded card stays in force"},
+    "override": {
+      "type": "object", "additionalProperties": false, "required": ["by", "reason"],
+      "description": "DEC-32: a captain forced a refused admission; the binding line stays in the record",
+      "properties": {"by": {"type": "string"}, "reason": {"type": "string"}}
+    },
+
+    "placement": {
+      "type": "object", "additionalProperties": {"type": ["string", "null"]},
+      "description": "Every part's position, 'G3.cradle': 'bay1'; null when a part has no position as given"
+    },
+    "placement_rejected": {"type": "array", "items": {"$ref": "#/$defs/rejected_position"}, "description": "D2: the positions considered and refused for the subject's parts, with why"},
+
+    "proceeds": {"type": "string", "description": "D3: the guest that proceeds"},
+    "yields": {"type": "string", "description": "D3: the guest that gives way"},
+    "hard_limit": {"$ref": "#/$defs/hard_limit"},
+    "deadline_t_s": {"type": ["number", "null"], "description": "D3, D5: the ship time the hard limit sets (G4's land-by)"},
+    "leg_ends_t_s": {"type": ["number", "null"], "description": "D3: when the loser's current activity would end if left alone"},
+    "wait_for_leg_end": {"enum": ["feasible", "infeasible"], "description": "D3: whether the winner could wait for leg_ends_t_s and still meet deadline_t_s"},
+    "conflicts": {"type": "array", "items": {"type": "object"}, "description": "D3: each ship-state signal both sides need differently, with what each needs, and any card exclusion"},
+    "reserved": {"type": "object", "additionalProperties": {"type": "number"}, "description": "kW held for a guest ahead of its draw, keyed by guest"},
+    "cost_to_loser": {"$ref": "#/$defs/cost_to_loser"},
+
+    "load_kw": {"type": "number", "description": "D4: committed load before any step"},
+    "limit_kw": {"type": "number", "description": "D4: the shed limit, min(power, cooling) minus headroom"},
+    "load_after_kw": {"type": "number", "description": "D4: load after the steps taken"},
+    "free_after_kw": {"type": "number", "description": "D4: limit_kw minus load_after_kw"},
+    "steps": {"type": "array", "items": {"$ref": "#/$defs/step"}, "description": "D4: steps taken, in order; D5 may list none"},
+    "armed": {"type": "array", "items": {"$ref": "#/$defs/step"}, "description": "D4: the next steps of the ladder, ready, in order"},
+    "order_source": {"enum": ["computed", "declared"], "description": "Whether the priority file's shed_order (declared) or the computed price set the ladder"},
+    "losses": {
+      "type": "object", "additionalProperties": {"$ref": "#/$defs/loss"},
+      "description": "What every guest aboard keeps, keyed by guest; a guest that loses nothing has equal before and after"
+    },
+    "trigger": {"type": "string", "description": "The confirmed fault or event that started the decision, for example genset_trip or cooling_degraded"},
+    "injected": {"type": "boolean", "description": "The trigger was an injected event; the screen labels it INJECTED"},
+    "raw_event_t_s": {"type": ["number", "null"], "description": "Fault-driven decisions: the first tick one of the fault's own signals was true"},
+    "confirmed_t_s": {"type": ["number", "null"], "description": "Fault-driven decisions: the tick the fault met its confirmation rule"},
+    "first_shed_due_t_s": {"type": ["number", "null"], "description": "D4: raw_event_t_s + 5, the A.8 deadline for the first shed command to apply"},
+    "unconfirmed_because": {"type": "string", "description": "D4 unconfirmed: why nothing was shed (feed stale, fault held while its votes are stale)"},
+
+    "rule": {"type": "string", "description": "D5: the crew rule, for example R3"},
+    "crew_aboard": {"enum": [0, 6, 14], "description": "D5: crew level the decision ran at"},
+    "crew_policy": {"enum": ["confirm", "standing_plan", "automatic", "forbidden"], "description": "D5: who decides at this crew level, from the priority file's confirm or rules.r3.confirm"},
+    "approach_min": {"type": "number", "description": "D5: G4's approach time before landing (rules.r3.approach_min)"},
+    "evidence": {"type": "array", "items": {"$ref": "#/$defs/evidence"}, "description": "D5: the signals that decided hold, latch or refusal, with their values"},
+    "deck_evidence": {"type": "string", "description": "D5: the evidence in words, as the core states it ('no answer from the bridge'); the sentence prefers evidence when both are present"},
+    "request": {
+      "type": "object", "additionalProperties": false, "required": ["what"],
+      "description": "D5: a crew or guest request the rule answered",
+      "properties": {"what": {"type": "string"}, "minutes": {"type": "number"}}
+    },
+
+    "inputs_hash": {"type": "string", "pattern": "^[0-9a-f]{16}$", "description": "First 16 hex of sha256 over what the decision read (cards, priority file, snapshot), canonical JSON"},
+    "sentence": {"type": "string", "minLength": 1, "description": "The one or two sentences built from this record's fields by src/sdv/explain.py"}
   },
+
+  "allOf": [
+    {"if": {"properties": {"kind": {"const": "D1"}}},
+     "then": {"properties": {"verdict": {"enum": ["yes", "yes-if", "no", "not-now", "card-rejected"]}}}},
+    {"if": {"properties": {"kind": {"const": "D1"}, "verdict": {"enum": ["yes", "yes-if", "no", "not-now"]}}},
+     "then": {"required": ["binding", "also_failing", "options", "placement"]}},
+    {"if": {"properties": {"kind": {"const": "D1"}, "verdict": {"const": "yes"}}},
+     "then": {"required": ["genset"], "properties": {"options": {"maxItems": 0}}}},
+    {"if": {"properties": {"verdict": {"const": "yes-if"}}},
+     "then": {"properties": {"options": {"minItems": 1}}}},
+    {"if": {"properties": {"verdict": {"const": "no"}}},
+     "then": {"properties": {"options": {"maxItems": 0}}}},
+    {"if": {"properties": {"verdict": {"const": "not-now"}}},
+     "then": {"required": ["next_window"]}},
+    {"if": {"properties": {"verdict": {"const": "card-rejected"}}},
+     "then": {"required": ["field"]}},
+    {"if": {"properties": {"kind": {"const": "D2"}}},
+     "then": {"required": ["binding", "placement", "placement_rejected"], "properties": {"verdict": {"enum": ["placed", "unplaced"]}}}},
+    {"if": {"properties": {"kind": {"const": "D3"}}},
+     "then": {"required": ["proceeds", "yields", "hard_limit", "deadline_t_s", "cost_to_loser"], "properties": {"verdict": {"const": "proceeds"}}}},
+    {"if": {"properties": {"kind": {"const": "D4"}}},
+     "then": {"required": ["binding", "load_kw", "limit_kw", "load_after_kw", "steps", "armed", "losses", "order_source"],
+              "properties": {"verdict": {"enum": ["hold", "shed", "unconfirmed"]}}}},
+    {"if": {"properties": {"kind": {"const": "D4"}, "verdict": {"const": "shed"}}},
+     "then": {"properties": {"steps": {"minItems": 1}}}},
+    {"if": {"properties": {"kind": {"const": "D4"}, "verdict": {"enum": ["hold", "unconfirmed"]}}},
+     "then": {"properties": {"steps": {"maxItems": 0}}}},
+    {"if": {"required": ["trigger"]},
+     "then": {"required": ["raw_event_t_s", "confirmed_t_s"]}},
+    {"if": {"properties": {"kind": {"const": "D5"}}},
+     "then": {"required": ["rule", "crew_aboard"], "anyOf": [{"required": ["evidence"]}, {"required": ["deck_evidence"]}],
+              "properties": {"verdict": {"enum": ["held", "cleared", "not-now", "automatic", "forbidden", "confirm", "standing_plan"]}}}},
+    {"if": {"properties": {"crew_aboard": {"const": 0}}, "required": ["crew_aboard"]},
+     "then": {"properties": {"crew_policy": {"not": {"const": "confirm"}}}}}
+  ],
+
   "$defs": {
-    "line": {"type": "object", "additionalProperties": false, "required": ["class", "label", "capacity", "demand", "free", "unit"],
-      "properties": {"class": {"type": "string"}, "label": {"type": "string"}, "capacity": {"type": "number"}, "demand": {"type": "number"},
-        "free": {"type": "number"}, "unit": {"type": "string"}, "degraded_by": {"type": "array", "items": {"type": "string"}}}},
-    "step": {"type": "object", "additionalProperties": false, "required": ["guest", "from_mode", "to_mode", "frees_kw"],
-      "properties": {"guest": {"type": "string"}, "from_mode": {"type": "string"}, "to_mode": {"type": "string"}, "frees_kw": {"type": "number"},
-        "cost_per_kw": {"type": "number"}, "capability_lost_pct": {"type": "number"}, "mission_critical": {"type": "boolean"}, "shed": {"type": "boolean"},
-        "tier": {"enum": ["mission_critical", "mission_support", "discretionary"]}}}
+    "line": {
+      "type": "object", "additionalProperties": false, "required": ["class", "label", "capacity", "demand", "free", "unit"],
+      "description": "One ledger line as the decision saw it (contract 8)",
+      "properties": {
+        "class": {"type": "string", "description": "mass, stability, power, heat, line_port, line_stbd, mast_mass, mast_area, mast_air_cooling, flight_deck_drone, placement, at_sea_lift, r3_lead, ..."},
+        "label": {"type": "string", "description": "The name an operator reads"},
+        "capacity": {"type": "number"},
+        "demand": {"type": "number"},
+        "free": {"type": "number", "description": "capacity minus demand; negative when over"},
+        "unit": {"type": "string", "description": "t, t_eq, kW, kg, m2, halves, min"},
+        "degraded_by": {"type": "array", "items": {"type": "string"}, "description": "Causes that cut the capacity, 'cause: detail'"}
+      }
+    },
+    "step": {
+      "type": "object", "additionalProperties": false, "required": ["guest", "from_mode", "to_mode", "frees_kw"],
+      "description": "One ladder step: a throttle, or a shed when to_mode is off",
+      "properties": {
+        "guest": {"type": "string"},
+        "from_mode": {"type": "string"},
+        "to_mode": {"type": "string"},
+        "frees_kw": {"type": "number"},
+        "from_kw": {"type": "number", "description": "The guest's draw before the step"},
+        "to_kw": {"type": "number", "description": "The guest's draw after the step"},
+        "load_after_kw": {"type": "number", "description": "Total load once this step and those before it are taken"},
+        "cost_per_kw": {"type": "number", "description": "Mission weight x capability lost / kW freed"},
+        "capability_lost_pct": {"type": "number", "description": "Share of the guest's capability this step takes, in %"},
+        "value_lost": {"type": "number", "description": "Mission value lost: weight x capability lost"},
+        "mission_critical": {"type": "boolean"},
+        "shed": {"type": "boolean"},
+        "tier": {"enum": ["mission_critical", "mission_support", "discretionary"], "description": "The guest's criticality tier in the ladder"}
+      }
+    },
+    "genset": {
+      "type": "object", "additionalProperties": false, "required": ["load_kw", "reserve_kw", "gate_kw", "state"],
+      "properties": {
+        "load_kw": {"type": "number", "description": "Envelope load of the set"},
+        "reserve_kw": {"type": "number", "description": "Guest reserve with one genset down (the raw line)"},
+        "gate_kw": {"type": "number", "description": "min(reserve, cooling at 30 C) minus headroom"},
+        "state": {"enum": ["fits", "holds_by_throttling", "does_not_hold"]},
+        "steps": {"type": "array", "items": {"$ref": "#/$defs/step"}, "description": "The throttles that make it hold, in ladder order"}
+      }
+    },
+    "option": {
+      "type": "object", "additionalProperties": false, "required": ["remove", "value_lost", "mission_critical"],
+      "description": "One YES-IF condition: remove these guests (and make these moves)",
+      "properties": {
+        "remove": {"type": "array", "items": {"type": "string"}, "minItems": 1},
+        "value_lost": {"type": "number", "description": "Sum of the removed guests' mission weights"},
+        "mission_critical": {"type": "boolean", "description": "The set removes a mission-critical guest (ranked last)"},
+        "mass_after_t": {"type": "number"},
+        "stability_after_t_eq": {"type": "number"},
+        "moves": {"type": "object", "additionalProperties": {"type": "string"}, "description": "Installed parts that move, to their new position"},
+        "move_hours": {"type": "array", "items": {"type": "number"}, "minItems": 2, "maxItems": 2, "description": "Crane time for the moves, low and high"},
+        "placement": {"type": "object", "additionalProperties": {"type": ["string", "null"]}},
+        "genset": {"$ref": "#/$defs/genset"},
+        "seawater_tip_c": {"type": ["number", "null"]}
+      }
+    },
+    "window": {
+      "type": "object", "additionalProperties": false, "required": ["kind"],
+      "properties": {
+        "kind": {"enum": ["port_call", "at_sea_window", "resource_frees", "event"]},
+        "t_s": {"type": ["number", "null"], "description": "Earliest ship time, when known"},
+        "within_days": {"type": "number", "description": "port_call: the longest the ship stays out (A.10)"},
+        "event": {"type": "string", "description": "event: what must happen first, for example 'G4 secured'"}
+      }
+    },
+    "rejected_position": {
+      "type": "object", "additionalProperties": false, "required": ["part", "position", "reason"],
+      "properties": {
+        "part": {"type": "string", "description": "'G6.unit'"},
+        "position": {"type": "string", "description": "A position from config/assumptions.yaml"},
+        "reason": {"enum": ["held", "over_limit", "less_preferred", "not_allowed"]},
+        "held_by": {"type": "string", "description": "held: the installed part in that position"},
+        "move_hours": {"type": "array", "items": {"type": "number"}, "minItems": 2, "maxItems": 2, "description": "held: crane time to move the holder"},
+        "line": {"$ref": "#/$defs/line", "description": "The line that position would break or the space it has"}
+      }
+    },
+    "hard_limit": {
+      "type": "object", "additionalProperties": false, "required": ["guest", "when", "then"],
+      "description": "A card's hard limit that applied, contract 1 shape",
+      "properties": {
+        "guest": {"type": "string"},
+        "when": {"type": "object", "required": ["signal", "op", "value"], "properties": {"signal": {"type": "string"}, "op": {"type": "string"}, "value": {}}},
+        "then": {"type": "object", "required": ["action"], "properties": {"action": {"type": "string"}, "within_min": {"type": "number"}}},
+        "reading": {"type": "number", "description": "The signal's value the decision read, for example G4.battery_pct 18"}
+      }
+    },
+    "cost_to_loser": {
+      "type": "object", "additionalProperties": false, "required": ["guest", "minutes_lost", "open_ended"],
+      "properties": {
+        "guest": {"type": "string"},
+        "minutes_lost": {"type": "array", "items": {"type": "number"}, "minItems": 2, "maxItems": 2, "description": "Low and high, in minutes of the loser's activity"},
+        "open_ended": {"type": "boolean", "description": "No resume time: minutes_lost is a lower bound"},
+        "leg": {"enum": ["paused", "aborted"]},
+        "holds": {"type": "string", "description": "Where the loser waits: depth, at_sea"},
+        "leg_ends_at_min": {"type": "array", "items": {"type": "number"}, "minItems": 2, "maxItems": 2, "description": "When the paused leg now ends, low and high"},
+        "recovery": {"type": "object", "properties": {"via": {"type": "string"}, "after": {"type": "string"}}}
+      }
+    },
+    "loss": {
+      "type": "object", "additionalProperties": false, "required": ["mode_before", "mode_after", "capability_before", "capability_after"],
+      "properties": {
+        "mode_before": {"type": "string"},
+        "mode_after": {"type": "string"},
+        "capability_before": {"type": "number", "minimum": 0, "maximum": 1, "description": "Share of capability kept before, from the card's mode table"},
+        "capability_after": {"type": "number", "minimum": 0, "maximum": 1},
+        "capability": {"type": "string", "description": "The card's capability name, for example sar_air"}
+      }
+    },
+    "evidence": {
+      "type": "object", "additionalProperties": false, "required": ["signal", "value"],
+      "properties": {
+        "signal": {"type": "string", "description": "A name from config/signals.yaml: hlo_deck_report, deck_latched_clear, last_sweep, deck_activity_since_sweep, standing_plan"},
+        "value": {},
+        "t_s": {"type": ["number", "null"], "description": "Ship time of the reading or report"}
+      }
+    }
   }
 }

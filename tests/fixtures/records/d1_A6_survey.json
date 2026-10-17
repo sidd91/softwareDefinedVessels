@@ -1,0 +1,40 @@
+{
+  "seq": 0,
+  "tick": 0,
+  "t_s": 0,
+  "applies_at_tick": 1,
+  "kind": "D1",
+  "subject": "G4 onto G1, G2, G3",
+  "mission": "survey",
+  "verdict": "yes",
+  "ceiling_ms": 30000,
+  "binding": {
+    "class": "mass",
+    "label": "Mass",
+    "capacity": 10,
+    "demand": 9.985,
+    "free": 0.015,
+    "unit": "t"
+  },
+  "also_failing": [],
+  "options": [],
+  "genset": {
+    "load_kw": 81.5,
+    "reserve_kw": 100,
+    "gate_kw": 95,
+    "state": "fits",
+    "steps": []
+  },
+  "seawater_tip_c": 48.0,
+  "placement": {
+    "G1.sensor": "mast_free",
+    "G2.module": "bay2",
+    "G3.cradle": "bay1",
+    "G3.vehicle": "bay1",
+    "G4.drone": "flight_deck",
+    "G4.hangar": "flight_deck"
+  },
+  "order_source": "computed",
+  "inputs_hash": "74965e75f2c3a4c0",
+  "sentence": "Admitted. Mass is the tightest line: 9.985 t against 10 t, 15 kg spare."
+}

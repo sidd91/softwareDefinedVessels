@@ -1,0 +1,52 @@
+{
+  "seq": 0,
+  "tick": 0,
+  "t_s": 0,
+  "applies_at_tick": 1,
+  "kind": "D1",
+  "subject": "G4 onto G1, G2, G5",
+  "mission": "sar",
+  "verdict": "yes",
+  "ceiling_ms": 30000,
+  "binding": {
+    "class": "heat",
+    "label": "Cooling",
+    "capacity": 120,
+    "demand": 100,
+    "free": 20,
+    "unit": "kW"
+  },
+  "also_failing": [],
+  "options": [],
+  "genset": {
+    "load_kw": 101.5,
+    "reserve_kw": 100,
+    "gate_kw": 95,
+    "state": "holds_by_throttling",
+    "steps": [
+      {
+        "guest": "G2",
+        "from_mode": "winch",
+        "to_mode": "sampling",
+        "frees_kw": 14,
+        "value_lost": 0.1,
+        "capability_lost_pct": 20.0,
+        "mission_critical": false,
+        "shed": false,
+        "tier": "mission_support"
+      }
+    ]
+  },
+  "seawater_tip_c": 39.0,
+  "placement": {
+    "G1.sensor": "mast_free",
+    "G2.module": "bay2",
+    "G5.node": "bay1_half",
+    "G5.antenna": "hangar_roof",
+    "G4.drone": "flight_deck",
+    "G4.hangar": "flight_deck"
+  },
+  "order_source": "computed",
+  "inputs_hash": "6dbb43d29a094fa2",
+  "sentence": "Admitted. Cooling is the tightest line: 100 kW against 120 kW, 20 kW spare. With one genset down it holds by moving G2 from winch to sampling, 14 kW freed."
+}

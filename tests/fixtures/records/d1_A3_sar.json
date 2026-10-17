@@ -1,0 +1,132 @@
+{
+  "seq": 0,
+  "tick": 0,
+  "t_s": 0,
+  "applies_at_tick": 1,
+  "kind": "D1",
+  "subject": "G5 onto G2, G3, G4",
+  "mission": "sar",
+  "verdict": "yes-if",
+  "ceiling_ms": 30000,
+  "binding": {
+    "class": "mass",
+    "label": "Mass",
+    "capacity": 10,
+    "demand": 13.015,
+    "free": -3.015,
+    "unit": "t"
+  },
+  "also_failing": [
+    {
+      "class": "stability",
+      "label": "Stability",
+      "capacity": 12,
+      "demand": 13.263,
+      "free": -1.263,
+      "unit": "t_eq"
+    },
+    {
+      "class": "heat",
+      "label": "Cooling",
+      "capacity": 120,
+      "demand": 125,
+      "free": -5,
+      "unit": "kW"
+    },
+    {
+      "class": "placement",
+      "label": "Bay space for the G5 node",
+      "capacity": 0,
+      "demand": 1,
+      "free": -1,
+      "unit": "halves"
+    }
+  ],
+  "options": [
+    {
+      "remove": [
+        "G3"
+      ],
+      "value_lost": 0.2,
+      "mission_critical": false,
+      "mass_after_t": 7.515,
+      "stability_after_t_eq": 7.763,
+      "placement": {
+        "G2.module": "bay2",
+        "G4.drone": "flight_deck",
+        "G4.hangar": "flight_deck",
+        "G5.node": "bay1_half",
+        "G5.antenna": "mast_free"
+      },
+      "genset": {
+        "load_kw": 100,
+        "reserve_kw": 100,
+        "gate_kw": 95,
+        "state": "holds_by_throttling",
+        "steps": [
+          {
+            "guest": "G2",
+            "from_mode": "winch",
+            "to_mode": "sampling",
+            "frees_kw": 14,
+            "capability_lost_pct": 20.0,
+            "mission_critical": false,
+            "shed": false,
+            "tier": "mission_support"
+          }
+        ]
+      },
+      "seawater_tip_c": 39.0
+    },
+    {
+      "remove": [
+        "G2"
+      ],
+      "value_lost": 0.5,
+      "mission_critical": false,
+      "mass_after_t": 9.515,
+      "stability_after_t_eq": 9.763,
+      "placement": {
+        "G3.cradle": "bay1",
+        "G3.vehicle": "bay1",
+        "G4.drone": "flight_deck",
+        "G4.hangar": "flight_deck",
+        "G5.node": "bay2",
+        "G5.antenna": "mast_free"
+      },
+      "genset": {
+        "load_kw": 105,
+        "reserve_kw": 100,
+        "gate_kw": 95,
+        "state": "holds_by_throttling",
+        "steps": [
+          {
+            "guest": "G5",
+            "from_mode": "full",
+            "to_mode": "low_power",
+            "frees_kw": 37,
+            "load_after_kw": 68,
+            "capability_lost_pct": 70,
+            "mission_critical": false,
+            "shed": false,
+            "tier": "mission_support"
+          }
+        ]
+      },
+      "seawater_tip_c": 36.75
+    }
+  ],
+  "seawater_tip_c": 27.75,
+  "placement": {
+    "G2.module": "bay2",
+    "G3.cradle": "bay1",
+    "G3.vehicle": "bay1",
+    "G4.drone": "flight_deck",
+    "G4.hangar": "flight_deck",
+    "G5.node": null,
+    "G5.antenna": "mast_free"
+  },
+  "order_source": "computed",
+  "inputs_hash": "5d6f672d75dda500",
+  "sentence": "Refused on mass: 13.015 t against 10 t, 3.015 t over. Admit if G3 disembarks, mission value lost 0.2."
+}

@@ -1,0 +1,52 @@
+{
+  "seq": 0,
+  "tick": 0,
+  "t_s": 0,
+  "applies_at_tick": 1,
+  "kind": "D1",
+  "subject": "G6 onto G4, G5",
+  "mission": "disaster_relief",
+  "verdict": "yes",
+  "ceiling_ms": 30000,
+  "binding": {
+    "class": "heat",
+    "label": "Cooling",
+    "capacity": 120,
+    "demand": 98,
+    "free": 22,
+    "unit": "kW"
+  },
+  "also_failing": [],
+  "options": [],
+  "genset": {
+    "load_kw": 98,
+    "reserve_kw": 100,
+    "gate_kw": 95,
+    "state": "holds_by_throttling",
+    "steps": [
+      {
+        "guest": "G4",
+        "from_mode": "fast_charge",
+        "to_mode": "charge",
+        "frees_kw": 25,
+        "load_after_kw": 73,
+        "value_lost": 0.3,
+        "capability_lost_pct": 30.0,
+        "mission_critical": false,
+        "shed": false,
+        "tier": "mission_support"
+      }
+    ]
+  },
+  "seawater_tip_c": 39.9,
+  "placement": {
+    "G4.drone": "flight_deck",
+    "G4.hangar": "flight_deck",
+    "G5.node": "bay2",
+    "G5.antenna": "mast_free",
+    "G6.unit": "bay1_half"
+  },
+  "order_source": "computed",
+  "inputs_hash": "441233a37878678c",
+  "sentence": "Admitted. Cooling is the tightest line: 98 kW against 120 kW, 22 kW spare. With one genset down it holds by moving G4 from fast charge to charge, 25 kW freed."
+}

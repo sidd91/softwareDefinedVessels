@@ -1,0 +1,52 @@
+{
+  "seq": 0,
+  "tick": 0,
+  "t_s": 0,
+  "applies_at_tick": 1,
+  "kind": "D1",
+  "subject": "G6 onto G4, G5",
+  "mission": "sar",
+  "verdict": "yes",
+  "ceiling_ms": 30000,
+  "binding": {
+    "class": "heat",
+    "label": "Cooling",
+    "capacity": 120,
+    "demand": 98,
+    "free": 22,
+    "unit": "kW"
+  },
+  "also_failing": [],
+  "options": [],
+  "genset": {
+    "load_kw": 98,
+    "reserve_kw": 100,
+    "gate_kw": 95,
+    "state": "holds_by_throttling",
+    "steps": [
+      {
+        "guest": "G6",
+        "from_mode": "production",
+        "to_mode": "recirculate",
+        "frees_kw": 14,
+        "load_after_kw": 84,
+        "value_lost": 0.18,
+        "capability_lost_pct": 90,
+        "mission_critical": false,
+        "shed": false,
+        "tier": "mission_support"
+      }
+    ]
+  },
+  "seawater_tip_c": 39.9,
+  "placement": {
+    "G4.drone": "flight_deck",
+    "G4.hangar": "flight_deck",
+    "G5.node": "bay2",
+    "G5.antenna": "mast_free",
+    "G6.unit": "bay1_half"
+  },
+  "order_source": "computed",
+  "inputs_hash": "b6f9b8a799c1eeff",
+  "sentence": "Admitted. Cooling is the tightest line: 98 kW against 120 kW, 22 kW spare. With one genset down it holds by moving G6 from production to recirculate, 14 kW freed."
+}
