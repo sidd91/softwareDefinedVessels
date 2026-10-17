@@ -58,6 +58,7 @@ Deadline: **Sun 2026-10-18 10:00 PDT**.
 | Fri 20:47 | The plan and research are on branch `docs/game-plan-and-research`; main has none of it yet | Open: needs a pull request, Siddharth's call as repo owner | Claude for Logan |
 | Fri 20:55 | Work split between Logan and Siddharth not agreed; risk of building the core twice | Open | Claude for Logan |
 | Fri 20:55 | The brief's peak-power allowance is ambiguous right after a generator trip | Our reading will be recorded as an assumption | Claude for Logan |
+| Fri 20:57 | No real 60–70 m Fincantieri-group hull combines a flight deck with hangar, two mission bays and a stern ramp; real 88–95 m OPVs carry 1.8–2.7 MW of generation, so the brief's 2 × 450 kW is plausible but lean | Insight, not a blocker: use it in the Physical Account's closing question | Claude for Logan |
 
 ## Deferrals
 
@@ -184,3 +185,31 @@ Work done:
   the governor's yes-if list should name the smallest displacement that fixes it.
 
 Next: use 850 kg in `assumptions.yaml` and the G4 card.
+
+### Fri 20:57 PDT · Fincantieri fleet research landed · Claude Opus 5.5 on behalf of Logan Walker (GhostWalka)
+
+All work in this entry was done by Claude on Logan's behalf. Source:
+`research/vessels/fincantieri_reference_log.md` (public material only; scope and plausibility,
+never values in code).
+
+Work done:
+- All seven research agents have finished; their files are in `research/`.
+- Closest real precedents to our reference platform:
+  - PPA Thaon di Revel class: two modular bays for 5 and 8 ISO 20-ft containers, stern ramp,
+    20 t crane, double hangar, a bridge run by 2 people, and Light / Light+ / Full fits on one
+    hull. Precedent for swappable mission configurations and reduced crew.
+  - Freedom-class LCS: swappable mission packages under a hard 105 t weight limit (GAO-14-749).
+    GAO found it could not carry the Knifefish UUV and the sweep system at once, a real-world
+    case of our manifest's `excludes` relation.
+  - Musherib class, 63.8 m, crew 38: the closest real hull to our size.
+  - Dattilo class: 6 container slots, flight deck, 3 × 650 kW auxiliary generators, crew 41.
+  - VARD 7 078 design, 77.5 m: mission bay for 3 boats and 4 containers beside a stern ramp.
+- Margin policy precedent: the Navy recommends a 10 % weight and 0.30 m KG service-life
+  allowance for warships, against 1.4–1.6 % on LCS. That supports treating the brief's 10 t mass
+  margin as a budget the governor defends.
+- Excluded on purpose: Fincantieri slides marked competition-sensitive, a Navy diagram that maps
+  combat-system equipment, and the SDO-SuRS ship, which T. Mariotti built.
+- 24 freely licensed photos and diagrams are listed with licence and author, about 58 MB in
+  total. They are linked, not downloaded; a visual reference board needs Logan's OK to download.
+
+Conflicts: one plausibility row added above. Deferrals: none.
