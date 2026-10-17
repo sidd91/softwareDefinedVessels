@@ -111,6 +111,9 @@ class Loop:
     def safety(self, request: str, injected: bool = False) -> list[dict]:
         """A.8 200 ms: answered between ticks from the table built at the last completed tick n, logged with n; its
         commands join the ones decided on n and are applied in frame n + 1. A replay answers it after the decisions of n."""
+        from sdv.safety import REQUESTS
+        if request not in REQUESTS:
+            raise ValueError(f"no safety request {request!r} ({', '.join(REQUESTS)})")
         with self.lock:
             if self.tick < 0:
                 raise RuntimeError("no safety table before the first tick")
@@ -172,8 +175,7 @@ class Loop:
         if self.logs:
             self.logs["frames"].write(canonical(frame) + "\n")
             for i in stamped:
-                if i["type"] != "safety_request":
-                    self.logs["inputs"].write(canonical(i) + "\n")
+                self.logs["inputs"].write(canonical(i) + "\n")
             self.logs["snapshots"].write(canonical(snap) + "\n")
             for r in records:
                 self.logs["decisions"].write(canonical(r) + "\n")

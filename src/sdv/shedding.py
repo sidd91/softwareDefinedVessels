@@ -17,7 +17,10 @@ def _fresh(field: dict) -> bool:
     return not field.get("stale") and field.get("confidence") != "substituted"
 
 
-def shed(cards: dict, mission: dict, snap: dict, reservations: dict[str, float] | None = None) -> dict:
+def shed(cards: dict, mission: dict, snap: dict, reservations: dict[str, float] | None = None,
+         onset_t_s: float | None = None) -> dict:
+    """onset_t_s: the first tick of the current over-limit stretch (the core carries it); the A.8 due ticks count from
+    the fault when the overload came with it, else from the onset, so a deadline never moves while the load stays over."""
     reservations = reservations or {}
     guests = snap["guests"]
     modes = {g: b["mode"]["value"] for g, b in guests.items()}
@@ -45,8 +48,11 @@ def shed(cards: dict, mission: dict, snap: dict, reservations: dict[str, float] 
                       first_shed_due_t_s=newest["first_shed_due_t_s"], trigger=newest["fault"], trigger_subject=newest["subject"],
                       trigger_injected=newest.get("injected", False))
     t = record["t_s"]
-    first_due = record.get("first_shed_due_t_s", t + RT["shed_first_action"])
-    full_due = newest["full_sequence_due_t_s"] if confirmed else t + RT["shed_full_sequence"]
+    onset = onset_t_s if onset_t_s is not None else t
+    if confirmed and onset <= newest["confirmed_t_s"]:
+        first_due, full_due = newest["first_shed_due_t_s"], newest["full_sequence_due_t_s"]
+    else:
+        first_due, full_due = onset + RT["shed_first_action"], onset + RT["shed_full_sequence"]
     record["first_shed_due_t_s"], record["full_sequence_due_t_s"] = first_due, full_due
     over = load > limit + 1e-9
     acts = over and not unconfirmed and not stale_inputs
@@ -60,7 +66,10 @@ def shed(cards: dict, mission: dict, snap: dict, reservations: dict[str, float] 
     queued = needed[len(taken):]
     due = {"shed_first_action": first_due, "shed_full_sequence": full_due}
     record["verdict"] = "shed" if taken else ("hold" if not over else "unconfirmed")
-    record["steps"] = [_step(s, due) for s in taken]
+    # On the first tick of an over-limit stretch whatever goes is the first action, due by the 5 s tick; a step taken on
+    # a later tick of the same stretch is part of the full sequence, due by the 60 s tick.
+    now = {k: (first_due if onset == t else full_due) for k in due}
+    record["steps"] = [_step(s, now) for s in taken]
     record["queued"] = [_step(s, due) for s in queued]
     rest = steps[len(taken):]
     record["armed"] = [_step(s, due) for s in rest[:3]]

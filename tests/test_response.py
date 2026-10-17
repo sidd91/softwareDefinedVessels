@@ -164,16 +164,70 @@ def test_requests_with_nothing_to_do_or_no_way_to_do_it():
     assert row["state"] == "cannot" and "acoustic link is down" in row["reason"]
 
 
-def test_a_landing_hold_waits_for_the_landing_officer():
+def test_a_landing_hold_after_the_deck_is_cleared_cannot_stop_g4():
+    _, outs, extra = run("survey", until=620, hooks={600: ["r3_hold_landing", "g4_return_home"]})
+    hold, recall = extra
+    assert (hold["verdict"], hold["safety_action"]) == ("cannot", "hold") and "waves G4 off by radio" in hold["sentence"]
+    assert recall["verdict"] == "not_needed"
+
+
+def test_a_landing_hold_before_the_bridge_answers_withholds_the_deck_work_until_the_landing_officer_clears():
     inputs = scripted_inputs()
     inputs[700] = [{"t_s": 700, "type": "deck_report", "injected": False, "payload": {"deck": "clear", "wind_kn": 20}}]
-    loop, outs, extra = run("survey", until=760, inputs=inputs, hooks={600: ["r3_hold_landing", "g4_return_home"]})
-    hold, recall = extra
-    assert (hold["verdict"], hold["safety_action"]) == ("sent", "hold") and recall["verdict"] == "cannot"
-    assert outs[650].safety["r3_hold_landing"]["state"] == "not_needed"
-    released = next(r for o in outs for r in o.records if r["kind"] == "D5" and r["tick"] > 600)
-    assert (released["tick"], released["verdict"]) == (700, "cleared") and "landing officer reported the zone clear" in released["sentence"]
-    assert not any(c["kind"] == "clear_deck" for o in outs[600:] for c in o.commands)     # the deck clear was already ordered
+    loop, outs, extra = run("survey", until=1100, inputs=inputs, hooks={500: ["r3_hold_landing"]})
+    assert extra[0]["verdict"] == "sent"
+    d5 = [r for o in outs for r in o.records if r["kind"] == "D5"]
+    assert [(r["tick"], r["verdict"]) for r in d5] == [(480, "confirm"), (540, "cleared"), (700, "cleared")]
+    assert "waits for the landing hold to lift" in d5[1]["sentence"] and "landing hold lifted" in d5[2]["sentence"]
+    deck = [(o.tick, c["kind"]) for o in outs[:1000] for c in o.commands if c["kind"] in ("clear_deck", "ship_state")]
+    assert deck and all(t == 700 for t, _ in deck)
+    assert all(o.snapshot["guests"]["G4"]["activity"]["value"] == "airborne" for o in outs[541:701])
+
+
+def test_lifting_a_hold_keeps_a_denial():
+    inputs = {540: [{"t_s": 540, "type": "bridge_answer", "injected": False, "payload": {"request_seq": 1, "answer": "denied"}}],
+              600: [{"t_s": 600, "type": "deck_report", "injected": False, "payload": {"deck": "clear", "wind_kn": 20}}]}
+    _, outs, extra = run("survey", until=700, inputs=inputs, hooks={500: ["r3_hold_landing"]})
+    d5 = [(r["tick"], r["verdict"]) for o in outs for r in o.records if r["kind"] == "D5"]
+    assert d5 == [(480, "confirm"), (540, "held")]
+    assert not any(c["kind"] in ("clear_deck", "ship_state") for o in outs for c in o.commands)
+
+
+def test_a_forbidden_recovery_cannot_be_held_or_recalled_into_clearing():
+    _, outs, extra = run("survey", until=600, inputs={0: [applied(0, edited(confirm={"r3": {14: "forbidden"}}))]},
+                         hooks={500: ["r3_hold_landing", "g4_return_home"]})
+    assert [r["verdict"] for r in extra] == ["not_needed", "cannot"] and "forbids it" in extra[1]["sentence"]
+
+
+def test_an_early_recall_that_lapses_is_asked_again_at_the_hard_limit():
+    _, outs, extra = run("survey", until=500, inputs={}, hooks={100: ["g4_return_home"]})
+    assert extra[0]["verdict"] == "sent" and extra[0]["reason"] == "the bridge is asked to confirm the recovery"
+    recs = sorted(extra + [r for o in outs for r in o.records], key=lambda r: r["seq"])
+    d5 = [(r["tick"], r["verdict"]) for r in recs if r["kind"] == "D5"]
+    assert d5[:2] == [(100, "confirm"), (161, "held")] and (480, "confirm") in d5
+    at480 = [(c["kind"], c["args"].get("request_seq")) for c in outs[480].commands]
+    assert ("bridge_close", 1) in at480 and ("bridge_request", 2) in at480
+
+
+def test_an_unknown_safety_request_is_refused_before_anything_is_logged():
+    loop = Loop(load_simulator(mission="survey"), "survey", inputs={})
+    list(loop.ticks(until=3))
+    seq = loop.core.seq
+    with pytest.raises(ValueError):
+        loop.safety("open_the_bay_doors")
+    assert loop.core.seq == seq and not loop.inputs.get(3)
+
+
+def test_a_hold_on_its_way_to_g3_expires_when_the_link_drops():
+    core = Core("survey")
+    snap = copy.deepcopy(SNAP["scenario_b_survey_m00"])
+    core.decide(snap)
+    assert core.safety("g3_hold_depth")[0][0]["verdict"] == "sent"
+    later = copy.deepcopy(snap)
+    later["run"]["tick"] = later["run"]["t_ship_s"] = 5
+    later["links"]["acoustic_link_up"]["value"] = False
+    core.decide(later)
+    assert core.g3_hold_since is None and core.safety_table["g3_hold_depth"]["state"] == "cannot"
 
 
 # ------------------------------------------------------------------------------------------------ 30 S restore
