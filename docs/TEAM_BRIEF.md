@@ -9,7 +9,7 @@ Siddharth. One page; details are linked. No work split is proposed here (WORKLOG
   [PR #1](https://github.com/sidd91/softwareDefinedVessels/pull/1) to main, unreviewed.
   `feat/governor-core` sits on top of it with the data model and the drafts below.
 - **Built.** Platform assumptions with provenance, the guest manifest schema with six cards (five from
-  the brief plus our desalination unit), four mission priority files, and 258 passing checks against
+  the brief plus our desalination unit), four mission priority files, and 265 passing checks against
   the brief's own arithmetic. **No decision engine yet**, by Logan's direction (DEC-24).
 - **Drafted for your review.** [Architecture and data contracts](ARCHITECTURE.md),
   [Scenario C memo](SCENARIO_C_MEMO.md), [camera equipment monitoring](../research/cv_equipment_monitoring.md),
@@ -56,7 +56,7 @@ overnight with honest answers; the ones that still need a team decision:
 - **Page limits:** the Scenario C memo fits 2 A4 pages at 11 pt; the Physical Account is now grouped for
   one page but a rough render still gives about 2, so confirm it in whatever PDF route we pick.
 - **New guide and checks:** how to add a guest card (`manifests/README.md`); priority files now have a
-  schema and a test, for the jury's unseen file. 258 tests pass.
+  schema and a test, for the jury's unseen file. 265 tests pass.
 
 ## Build plan
 
