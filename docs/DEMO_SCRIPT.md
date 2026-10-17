@@ -94,3 +94,7 @@ Prepared drills (the jury chooses, but we rehearse these):
 1. Scenario B load-out: run as given with the flag (proposed), or one of the feasible subsets?
 2. Which four breadth lines?
 3. Who drives the laptop and who talks?
+4. Where does the breadth strip go? The brief asks for 90 s of Scenario B, then Scenario A; inside B it
+   takes about 25 s from the minute-12 shedding. Options: keep it in B (as drafted), move it after
+   Scenario A as a 30 s encore, or show only the lines that happen inside Scenario B anyway (cable pull,
+   crew dial).
