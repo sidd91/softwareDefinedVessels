@@ -501,7 +501,7 @@ Decisions: none. Conflicts: none new. Deferrals: none.
 
 ### Sat 01:28 PDT · Open questions consolidated · Claude Opus 5.5 on behalf of Logan Walker (GhostWalka)
 
-Work done by Claude on Logan's behalf (Logan, awake briefly at about 01:25: "keep going, ask questions
+Work done by Claude on Logan's behalf (Logan, awake briefly during the overnight run: "keep going, ask questions
 after"): `docs/OPEN_QUESTIONS.md` gathers all 31 open questions from the architecture, storyboard, memo,
 camera design, requirements matrix, assumptions and organizer list, grouped by when they need deciding,
 each with a proposal and its source; linked from the team brief. An expected-outcomes workflow is running.
