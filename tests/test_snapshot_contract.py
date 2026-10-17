@@ -53,6 +53,7 @@ CONTRACT_6_EVENTS = {"baseline", "card_presented", "card_edited", "priority_swap
 # Scenario B placement (DEC-32): which mission line feeds each guest's draw.
 PLACEMENT = {"G3": "bay1", "G4": "flight_deck", "G5": "bay2"}
 # The sar reservation (DEC-40), as the decision log would hold it: the oracle's minute-8 reserved_kw.
+BASE = SIGNALS_FILE["baselines"]["scenario_b"]
 SAR_RESERVATIONS = {"G4": {"mode": "fast_charge", "kw": ORACLE["scenario_b"]["minute_8"]["by_file"]["sar"]["reserved_kw"], "since_t_s": 480}}
 
 # ---------------------------------------------------------------------------------------------------------
@@ -563,7 +564,7 @@ def test_every_fixture_field_is_typed_aged_and_stale_by_its_feed(name):
         else:
             assert f["stale"] == feed["stale"], f"{sig_name}: an event-rate report is stale with its feed"
         if f["stale"]:
-            assert feed["stale"] and feed["fallback_active"], sig_name
+            assert feed["stale"], sig_name
             assert f["substituted"]["last_good_t_s"] is not None
         if "reported_t_s" in f:
             assert f["reported_t_s"] <= tick
@@ -632,6 +633,7 @@ def test_fixture_run_clock_and_rounding(name):
     tick = run["tick"]
     assert run["tick"] == run["t_ship_s"], "1 Hz in ship time: tick n is at n s"
     assert set(run["installed"]) == set(snap["guests"]) == set(TL["guests"])
+    assert run["variant"] == "default" or run["variant"] in BASE["variants"]
     assert (ROOT / f"config/missions/{run['mission']}.yaml").exists()
     assert run["constants"]["layered_water"]["value"] == TL["location"]["layered"]
     assert "wall" not in json.dumps(snap), "wall-clock time belongs in the timing log, not the snapshot"
@@ -860,7 +862,8 @@ def test_minute_0_matches_the_timeline():
     lb = s["guests"]["G4"]["land_by_t_s"]
     assert lb["value"] == s["guests"]["G4"]["launched_t_s"]["value"] + 90 * 60 == 1448 and lb["confidence"] == "assumed"
     base = next(e for e in s["events"] if e["type"] == "baseline")
-    assert base["payload"]["assumed"]["G4"]["launched_t_s"] == s["guests"]["G4"]["launched_t_s"]["value"]
+    assert base["payload"]["variant"] == s["run"]["variant"] == "default"
+    assert base["payload"]["start"]["G4.launched_t_s"] == s["guests"]["G4"]["launched_t_s"]["value"]
     assert s["ship_state"]["heading_free"]["by"] == ["G3"] and not s["ship_state"]["deck_machinery_permitted"]["value"]
 
 
@@ -899,7 +902,8 @@ def test_bridge_answers_hold_for_their_request():
         assert reqs == [{"request_seq": 1, "rule": "R3", "state": "confirmed", "asked_t_s": 480, "answered_t_s": 540}], name
         wait = SIGNALS["bridge_requests"]["wait_s"]["by_crew"][14]
         assert reqs[0]["answered_t_s"] - reqs[0]["asked_t_s"] <= wait, "answered inside the wait"
-    assert survey(19)["crew"]["bridge_requests"]["value"] == [], "the request leaves the list once G4 has landed"
+    closed = survey(19)["crew"]["bridge_requests"]
+    assert closed["value"] == [] and closed["since_t_s"] == 1021, "the core's bridge_close from snapshot 1020 (G4 landed) is applied at 1021"
 
 
 def test_minute_12_trip_timing():
@@ -943,7 +947,7 @@ def test_minute_19_one_chilled_water_pump_left():
 def test_a_stale_genset_feed_tightens_but_does_not_shed():
     s = FIXTURES["scenario_b_survey_m10_stale_genset_feed"]
     feed = s["feeds"]["pms"]
-    assert feed["stale"] and feed["fallback_active"] and feed["drop"]["injected"] and feed["drop"]["until_t_s"] is None
+    assert feed["stale"] and feed["drop"]["injected"] and feed["drop"]["until_t_s"] is None
     pms = [n for n, sig in SIGNALS.items() if sig.get("feed") == "pms"]
     assert all(field(s, n)["stale"] for n in pms)
     assert not any(n in FRAMES["scenario_b_survey_m10_stale_genset_feed"]["signals"] for n in pms), "a dropped feed is left out of the frame"
@@ -986,3 +990,312 @@ def test_the_hold_ack_is_a_feasible_round_trip():
     ack = survey(12)["guests"]["G3"]["hold_ack"]
     assert ack["value"] and 2 * lo <= ack["since_t_s"] - 480 <= 2 * hi
     assert ack["since_t_s"] < survey(12)["links"]["acoustic_link_up"]["since_t_s"], "acked before the manoeuvre breaks the link"
+
+
+# ------------------------------------------------------------------------------ the bus load behind the genset kW
+
+@pytest.mark.parametrize("name", sorted(FIXTURES))
+def test_genset_kw_follows_the_bus_load(name):
+    """fault_signatures.bus_load: half each with both online, the other capped at its rating after a trip."""
+    snap = FIXTURES[name]
+    p = A["power"]
+    pl = snap["plant"]
+    guests = sum(b["kw_actual"]["value"] for b in snap["guests"].values())
+    tripped = pl["genset_2_relay_trip"]["value"] or pl["genset_1_relay_trip"]["value"]
+    load = p["hotel_kw"]["committed"] - (p["hotel_shed_on_trip_kw"] if tripped else 0) + p["ship_aux_kw"] + guests
+    g1, g2 = pl["genset_1_kw"]["value"], pl["genset_2_kw"]["value"]
+    if tripped:
+        assert g2 == 0 and g1 == round(min(p["gensets"]["rating_kw"], load), 1)
+    else:
+        assert g1 == g2 == round(load / 2, 1)
+    assert max(g1, g2) <= SIGNALS["genset_1_kw"]["range"][1] == p["gensets"]["rating_kw"]
+    assert max(g1, g2) <= p["gensets"]["rating_kw"] * p["gensets"]["load_limit"], "inside the 405 kW load limit in Scenario B"
+
+
+def test_bus_load_numbers_are_the_fixtures():
+    kw = SIGNALS_FILE["fault_signatures"]["bus_load"]["scenario_b_kw"]
+    assert survey(0)["plant"]["genset_1_kw"]["value"] == kw["both_online"] == BASE["start"]["genset_1_kw"]
+    assert survey(12)["plant"]["genset_1_kw"]["value"] == FIXTURES["scenario_b_sar_m12"]["plant"]["genset_1_kw"]["value"] == kw["tripped_g4_airborne"]
+    assert survey(19)["plant"]["genset_1_kw"]["value"] == kw["tripped_g4_fast_charge"]
+
+
+# ------------------------------------------------------------------------------ the run baseline
+
+STEP_DEFS = FRAME_SCHEMA["$defs"]
+
+
+def _validator(name):
+    return Draft202012Validator({**STEP_DEFS[name], "$defs": STEP_DEFS})
+
+
+EVENT_V, CMD_V, INPUT_V, START_V = (_validator(n) for n in ("event", "command", "input", "start"))
+
+
+def run_start(variant="default"):
+    return {**BASE["start"], **(BASE["variants"][variant]["start"] if variant != "default" else {})}
+
+
+def test_the_baseline_start_is_the_tick_0_frame():
+    frame, snap = FRAMES["scenario_b_survey_m00"], survey(0)
+    readings = dict(frame["signals"])
+    for gid, block in frame["guests"].items():
+        readings.update({f"{gid}.{k}": r for k, r in block.items()})
+    assert set(readings) == set(BASE["start"]), "every tick-0 reading has a start value, and nothing else does"
+    raw = {n for n, s in SIGNALS.items()
+           if s["producer"] != "estimator" and (s["group"] != "guests" or n.split(".")[0] in TL["guests"])}
+    assert raw - set(BASE["start"]) == {"G4.battery_pct"}, "only G4's battery has no reading before minute 8"
+    for n, r in readings.items():
+        assert r["value"] == BASE["start"][n], n
+        assert r["source"] == ("scenario" if n in BASE["scenario_sourced"] else sources(SIGNALS[n])[0]), n
+    assert BASE["start"]["seawater_c"] == TL["location"]["seawater_c"] and BASE["seed"] == snap["run"]["seed"]
+    base = next(e for e in frame["events"] if e["type"] == "baseline")
+    assert base["payload"]["start"] == run_start() and base["payload"]["note"] == TL["events"][0]["note"]
+    for variant in ["default", *BASE["variants"]]:
+        assert START_V.is_valid(run_start(variant)), variant
+    assert not START_V.is_valid(dict(BASE["start"], crew_aboard=3)), "start values are typed"
+    for name, points in BASE["series"].items():
+        assert points[0] == [0, BASE["start"][name]], name
+
+
+def test_the_crew0_fixture_starts_from_its_variant():
+    s = FIXTURES["scenario_b_survey_m08_crew0"]
+    v = BASE["variants"]["crew0"]["start"]
+    assert s["run"]["variant"] == "crew0"
+    for name, value in v.items():
+        assert field(s, name)["value"] == value, name
+    assert v["last_sweep"]["t_s"] < 0, "a sweep from before tick 0, which no deck_sweep input could express"
+
+
+@pytest.mark.parametrize("name", sorted(FIXTURES))
+def test_wind_and_g4_range_follow_the_baseline_series(name):
+    snap = FIXTURES[name]
+    tick = snap["run"]["tick"]
+    series = {n: BUILD.series_at(p, tick) for n, p in BASE["series"].items()}
+    assert snap["environment"]["wind_kn"]["value"] == series["wind_kn"]
+    g4 = snap["guests"]["G4"]
+    if g4["activity"]["value"] == "landed":
+        assert g4["range_km"]["value"] == 0
+    elif not g4["range_km"]["stale"]:
+        assert g4["range_km"]["value"] == series["G4.range_km"]
+    else:
+        last = g4["range_km"]["substituted"]
+        assert last["last_value"] == BUILD.series_at(BASE["series"]["G4.range_km"], last["last_good_t_s"])
+
+
+# ------------------------------------------------------------------------------ the timeline, mapped to frame events
+
+MAPPING = SIGNALS_FILE["timeline_mapping"]
+
+
+def applied_tick(e):
+    if "trigger" in e:
+        after = e["trigger"]["after"]
+        landing = next(x for x in TL["events"] if x.get("guest") == after["guest"] and x.get("state") == after["state"])
+        return applied_tick(landing) + 60 * e["trigger"]["delay_min"]
+    return math.ceil(60 * e["t_min"])
+
+
+def frame_event(e, variant="default"):
+    """timeline_mapping applied to one scenario event: the frame event the simulator echoes."""
+    m = MAPPING["events"][e["type"]]
+    tick = applied_tick(e)
+    payload = {pk: e[sk] for pk, sk in m.get("copy", {}).items()}
+    if "fields" in m:
+        payload["fields"] = {k: e[k] for k in m["fields"]}
+    for sk, table in m.get("split", {}).items():
+        payload.update(table[e[sk]])
+    payload.update(m.get("add", {}))
+    context = {"variant": variant, "start": run_start(variant)}
+    payload.update({k: context[k] for k in m.get("context", [])})
+    payload.update({k: tick + d for k, d in m.get("plus_s", {}).items()})
+    injected = bool(e.get(m.get("flag", {}).get("injected"), False))
+    accounted = (set(m.get("copy", {}).values()) | set(m.get("fields", [])) | set(m.get("split", {}))
+                 | set(m.get("drop", {})) | set(m.get("flag", {}).values()))
+    assert accounted == set(e) - {"t_min", "type"}, f"{e['type']}: every scenario key is mapped or dropped"
+    return {"t_s": tick, "type": e["type"], "origin": "timeline", "injected": injected, "payload": payload}
+
+
+@pytest.mark.parametrize("e", TL["events"], ids=[e["type"] for e in TL["events"]])
+def test_every_timeline_event_maps_to_a_valid_frame_event(e):
+    assert e["type"] in MAPPING["events"]
+    ev = frame_event(e)
+    errors = list(EVENT_V.iter_errors(ev))
+    assert not errors, "; ".join(x.message for x in errors[:3])
+    literal = {"t_s": ev["t_s"], "type": e["type"], "origin": "timeline", "injected": False,
+               "payload": {k: v for k, v in e.items() if k not in ("t_min", "type")}}
+    if e["type"] != "baseline":
+        assert not EVENT_V.is_valid(literal), "copied as-is the scenario keys do not validate; the mapping is needed"
+
+
+def test_the_mapped_events_are_the_fixtures_events_and_ticks():
+    by_type = {e["type"]: frame_event(e) for e in TL["events"]}
+    assert FRAMES["scenario_b_survey_m00"]["events"] == [by_type["baseline"]]
+    assert FRAMES["scenario_b_survey_m08"]["events"] == [by_type["guest_report"]]
+    assert FRAMES["scenario_b_survey_m08"]["guests"]["G4"]["battery_pct"]["value"] == by_type["guest_report"]["payload"]["fields"]["battery_pct"]
+    trip, cool = by_type["genset_trip"], by_type["cooling_degraded"]
+    for name in ("scenario_b_survey_m19", "scenario_b_sar_m19"):
+        faults = {f["fault"]: f for f in FIXTURES[name]["faults"]}
+        assert faults["genset_trip"]["raw_event_t_s"] == trip["t_s"] and faults["genset_trip"]["subject"] == f"genset_{trip['payload']['genset']}"
+        assert faults["cooling_degraded"]["raw_event_t_s"] == cool["t_s"] == 1140
+        assert faults["cooling_degraded"]["subject"] == f"chw_pump_{cool['payload']['pump']}" and faults["cooling_degraded"]["injected"] == cool["injected"]
+        g4 = FIXTURES[name]["guests"]["G4"]
+        landed = by_type["guest_state"]
+        assert (g4["activity"]["value"], g4["mode"]["value"]) == (landed["payload"]["activity"], landed["payload"]["mode"])
+        assert g4["mode"]["since_t_s"] == landed["t_s"] == 1020
+
+
+def test_the_landing_pin_is_honoured_and_the_lag_comes_out_of_the_approach():
+    pins, drafts = TL["seed_pins"], SIGNALS_FILE["transition_drafts"]
+    landing = applied_tick(next(e for e in TL["events"] if e.get("state") == "landed_fast_charging"))
+    assert landing == 60 * pins["g4_lands_at_min"] == 1020
+    script = BASE["script"]
+    answer = next(t for t, xs in script["inputs"].items() for x in xs if x["type"] == "bridge_answer")
+    assert answer == 480 + 60 * pins["confirm_min"]
+    decided = next(t for t, xs in script["commands"].items() for c in xs if c["kind"] == "clear_deck")
+    assert decided == answer, "the deck clear is decided on the snapshot that shows the answer"
+    clear_end = decided + 1 + drafts["deck_clear"]["expected_s"]
+    assert drafts["deck_clear"]["expected_s"] == 60 * pins["deck_clear_min"]
+    tr = survey(12)["ship_state"]["deck_flight_deck"]["transition"]
+    assert (tr["started_t_s"], tr["expected_end_t_s"], tr["latest_end_t_s"]) == (decided + 1, clear_end, decided + 1 + drafts["deck_clear"]["latest_s"])
+    approach = landing - clear_end
+    assert approach == 60 * pins["approach_min"] - 1, "the one-tick actuation lag is absorbed in the final approach"
+
+
+# ------------------------------------------------------------------------------ sim.step: commands and inputs
+
+def script_commands(mission):
+    for tick, cmds in BASE["script"]["commands"].items():
+        for c in cmds:
+            if mission in c.get("missions", [mission]):
+                yield tick, {k: v for k, v in c.items() if k in ("seq", "kind", "args")}
+
+
+def test_events_are_routed_to_the_simulator_or_the_core():
+    for name, ev in SIGNALS_FILE["events"].items():
+        assert set(ev["from"]) <= {"timeline", "laptop"} and ev["from"], name
+        assert ev["to"] in ("simulator", "core"), name
+    inputs = set(STEP_DEFS["input"]["properties"]["type"]["enum"])
+    want = {n for n, ev in SIGNALS_FILE["events"].items() if "laptop" in ev["from"] and ev["to"] == "simulator"}
+    assert inputs == want
+    assert {"card_presented", "card_edited", "priority_swap", "safety_request"} == {n for n, ev in SIGNALS_FILE["events"].items() if ev["to"] == "core"}
+    assert not inputs & {"card_presented", "safety_request"}, "core-only inputs never reach sim.step"
+    assert {e["type"] for e in TL["events"]} <= {n for n, ev in SIGNALS_FILE["events"].items() if "timeline" in ev["from"]}
+
+
+@pytest.mark.parametrize("mission", ["survey", "sar"])
+def test_the_scenario_b_script_is_typed(mission):
+    assert set(STEP_DEFS["command"]["properties"]["kind"]["enum"]) == set(SIGNALS_FILE["commands"])
+    for tick, c in script_commands(mission):
+        errors = list(CMD_V.iter_errors(c))
+        assert not errors, (tick, c, [e.message for e in errors[:3]])
+    for tick, xs in BASE["script"]["inputs"].items():
+        for x in xs:
+            inp = {"t_s": tick, **{k: v for k, v in x.items() if k != "why"}}
+            assert INPUT_V.is_valid(inp), inp
+    assert not CMD_V.is_valid({"seq": 1, "kind": "set_mode", "args": {"guest": "G4"}}), "command args are typed"
+    assert not INPUT_V.is_valid({"t_s": 0, "type": "safety_request", "injected": False, "payload": {"request": "g3_hold_depth"}})
+
+
+def test_a_bridge_request_carries_the_decision_tick():
+    req = next(c for t, c in script_commands("survey") if c["kind"] == "bridge_request")
+    decided = next(t for t, c in script_commands("survey") if c["kind"] == "bridge_request")
+    assert req["args"]["asked_t_s"] == decided == 480, "asked at the core's tick, not at 481 when it is applied"
+    assert survey(8)["crew"]["bridge_requests"]["value"] == [], "the request is applied in frame 481"
+    answer = BASE["script"]["inputs"][540][0]
+    for name in ("scenario_b_survey_m12", "scenario_b_sar_m12"):
+        (r,) = FIXTURES[name]["crew"]["bridge_requests"]["value"]
+        assert (r["request_seq"], r["rule"], r["asked_t_s"]) == (req["args"]["request_seq"], req["args"]["rule"], req["args"]["asked_t_s"])
+        assert (r["state"], r["answered_t_s"]) == (answer["payload"]["answer"], 540), "answered at the input's tick"
+    close = next(t for t, c in script_commands("survey") if c["kind"] == "bridge_close")
+    assert survey(19)["crew"]["bridge_requests"]["since_t_s"] == close + 1
+
+
+def test_readings_carry_their_arrival_tick():
+    """step.readings: t_s is the arrival tick, so a report is age 0 on arrival (test_the_frame_produces_the_snapshot)."""
+    assert "arrival" in SIGNALS_FILE["step"]["readings"]
+    ack = survey(12)["guests"]["G3"]["hold_ack"]
+    assert ack["since_t_s"] == 480 + SIGNALS_FILE["transition_drafts"]["g3_round_trip"]["expected_s"]
+
+
+# ------------------------------------------------------------------------------ G3's cadence, fault subjects, the lift
+
+def g3_message_ticks():
+    """feeds.g3_acoustic.cadence: every cadence_s while the link is up, the ack restarting the count."""
+    cad = FEEDS["g3_acoustic"]["cadence_s"]
+    link_down = 541
+    ticks, t = [], 0
+    ack = 480 + SIGNALS_FILE["transition_drafts"]["g3_round_trip"]["expected_s"]
+    while t < link_down:
+        if t > ack and ack not in ticks:
+            ticks.append(ack)
+            t = ack + cad
+            continue
+        ticks.append(t)
+        t += cad
+    return sorted(ticks)
+
+
+@pytest.mark.parametrize("name", sorted(FIXTURES))
+def test_g3_reports_follow_its_cadence(name):
+    cad = FEEDS["g3_acoustic"]["cadence_s"]
+    assert FEEDS["g3_acoustic"]["stale_after_link_up_s"] == 2 * cad
+    msgs = g3_message_ticks()
+    assert msgs[-3:] == [420, 480, 510] and msgs[-1] + cad > 541, "the next message after the ack is lost: the link drops at 541"
+    snap = FIXTURES[name]
+    tick = snap["run"]["tick"]
+    last = tick - snap["guests"]["G3"]["activity"]["age_s"]
+    assert last == max(t for t in msgs if t <= tick)
+    if snap["links"]["acoustic_link_up"]["value"]:
+        assert tick - last < cad
+
+
+@pytest.mark.parametrize("name", sorted(FIXTURES))
+def test_faults_are_held_only_by_subjects_with_their_own_vote(name):
+    """confirm_rules shared votes: the loop's flow and delta-T, and the bus frequency, never make a subject alone."""
+    snap = FIXTURES[name]
+    pl = {k: f["value"] for k, f in snap["plant"].items()}
+    cr = SIGNALS_FILE["confirm_rules"]
+    assert cr["genset_trip"]["shared"] == ["frequency_dip"] and set(cr["cooling_degraded"]["shared"]) == set(cr["cooling_degraded"]["plus_any"])
+    pumps = {f"chw_pump_{p}" for p in (1, 2) if pl[f"chw_pump_{p}_alarm"] or not pl[f"chw_pump_{p}_running"]}
+    gens = {f"genset_{g}" for g in (1, 2) if pl[f"genset_{g}_relay_trip"] or pl[f"genset_{g}_kw"] < 22.5}
+    held = {f["subject"] for f in snap["faults"]}
+    assert held == pumps | gens
+    if pumps:
+        shared = pl["chw_flow_pct"] < 70 or pl["chw_return_c"] - pl["chw_supply_c"] > 8
+        assert shared and "chw_pump_2" not in held, "the healthy pump sees the shared votes but holds no fault"
+
+
+def test_a_fallback_lifts_on_the_first_fresh_frame():
+    fp = SIGNALS_FILE["fallback_policy"]
+    assert "lift_after_fresh_frames" not in fp and "first fresh frame" in fp["lift"]
+    assert "fallback_active" not in json.dumps(SCHEMA["properties"]["feeds"])
+    for name, snap in FIXTURES.items():
+        for f, state in snap["feeds"].items():
+            members = [n for n, s in SIGNALS.items() if s.get("feed") == f and s["rate"] in ("1 Hz", "hourly")]
+            if members and f != "g3_acoustic":
+                installed = [n for n in members if "." not in n or n.split(".")[0] in snap["guests"]]
+                assert state["stale"] == any(field(snap, n)["stale"] for n in installed), (name, f)
+
+
+# ------------------------------------------------------------------------------ transitions and serialization
+
+def test_fixture_transitions_use_the_drafted_durations():
+    d = SIGNALS_FILE["transition_drafts"]
+    seen = set()
+    for snap in FIXTURES.values():
+        for key, draft in (("speed_kn", "speed_in_band"), ("course", "course_settle"), ("deck_flight_deck", "deck_clear")):
+            f = snap["ship_state"][key]
+            if "transition" in f:
+                tr = f["transition"]
+                assert tr["expected_end_t_s"] - tr["started_t_s"] == d[draft]["expected_s"], (key, tr)
+                assert tr["latest_end_t_s"] - tr["started_t_s"] == d[draft]["latest_s"], (key, tr)
+                seen.add(key)
+    assert seen == {"speed_kn", "course", "deck_flight_deck"}
+
+
+def test_canonical_serialization_is_byte_stable():
+    c = BUILD.canonical
+    assert c(18) == c(18.0) == "18" and c({"b": 0.26, "a": [True, None]}) == '{"a":[true,null],"b":0.3}'
+    for rel, obj in BUILD.build(ROOT).items():
+        text = c(obj)
+        assert c(json.loads(BUILD.render(obj))) == text == c(json.loads(text)), rel

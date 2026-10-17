@@ -2,6 +2,7 @@
  "run": {
   "contract": "argos-snapshot/2",
   "scenario": "scenario_b",
+  "variant": "default",
   "mission": "survey",
   "seed": 0,
   "tick": 1141,
@@ -36,7 +37,7 @@
    "since_t_s": 720
   },
   "genset_1_kw": {
-   "value": 420.0,
+   "value": 386.0,
    "source": "plant",
    "age_s": 0,
    "confidence": "measured",
@@ -350,7 +351,8 @@
    "source": "crew_report",
    "age_s": 0,
    "confidence": "reported",
-   "stale": false
+   "stale": false,
+   "since_t_s": 1021
   },
   "hlo_deck_report": {
    "value": "none",
@@ -709,79 +711,66 @@
   "pms": {
    "stale": false,
    "last_heard_t_s": 1141,
-   "fallback_active": false,
    "drop": null
   },
   "chw": {
    "stale": false,
    "last_heard_t_s": 1141,
-   "fallback_active": false,
    "drop": null
   },
   "nav": {
    "stale": false,
    "last_heard_t_s": 1141,
-   "fallback_active": false,
    "drop": null
   },
   "deck": {
    "stale": false,
    "last_heard_t_s": 1141,
-   "fallback_active": false,
    "drop": null
   },
   "emission": {
    "stale": false,
    "last_heard_t_s": 1141,
-   "fallback_active": false,
    "drop": null
   },
   "anemometer": {
    "stale": false,
    "last_heard_t_s": 1141,
-   "fallback_active": false,
    "drop": null
   },
   "comms": {
    "stale": false,
    "last_heard_t_s": 1141,
-   "fallback_active": false,
    "drop": null
   },
   "public_data": {
    "stale": false,
    "last_heard_t_s": 0,
-   "fallback_active": false,
    "drop": null
   },
   "laptop": {
    "stale": false,
    "last_heard_t_s": 1141,
-   "fallback_active": false,
    "drop": null
   },
   "guest_meter": {
    "stale": false,
    "last_heard_t_s": 1141,
-   "fallback_active": false,
    "drop": null
   },
   "guest_backbone": {
    "stale": false,
    "last_heard_t_s": 1141,
-   "fallback_active": false,
    "drop": null
   },
   "g4_telemetry": {
    "stale": false,
    "last_heard_t_s": 1141,
-   "fallback_active": false,
    "drop": null
   },
   "g3_acoustic": {
    "stale": false,
    "last_heard_t_s": 510,
-   "fallback_active": false,
    "drop": null
   }
  },

@@ -2,6 +2,7 @@
  "run": {
   "contract": "argos-snapshot/2",
   "scenario": "scenario_b",
+  "variant": "default",
   "mission": "survey",
   "seed": 0,
   "tick": 480,
@@ -35,14 +36,14 @@
    "stale": false
   },
   "genset_1_kw": {
-   "value": 330.0,
+   "value": 251.5,
    "source": "plant",
    "age_s": 0,
    "confidence": "measured",
    "stale": false
   },
   "genset_2_kw": {
-   "value": 325.0,
+   "value": 251.5,
    "source": "plant",
    "age_s": 0,
    "confidence": "measured",
@@ -664,79 +665,66 @@
   "pms": {
    "stale": false,
    "last_heard_t_s": 480,
-   "fallback_active": false,
    "drop": null
   },
   "chw": {
    "stale": false,
    "last_heard_t_s": 480,
-   "fallback_active": false,
    "drop": null
   },
   "nav": {
    "stale": false,
    "last_heard_t_s": 480,
-   "fallback_active": false,
    "drop": null
   },
   "deck": {
    "stale": false,
    "last_heard_t_s": 480,
-   "fallback_active": false,
    "drop": null
   },
   "emission": {
    "stale": false,
    "last_heard_t_s": 480,
-   "fallback_active": false,
    "drop": null
   },
   "anemometer": {
    "stale": false,
    "last_heard_t_s": 480,
-   "fallback_active": false,
    "drop": null
   },
   "comms": {
    "stale": false,
    "last_heard_t_s": 480,
-   "fallback_active": false,
    "drop": null
   },
   "public_data": {
    "stale": false,
    "last_heard_t_s": 0,
-   "fallback_active": false,
    "drop": null
   },
   "laptop": {
    "stale": false,
    "last_heard_t_s": 480,
-   "fallback_active": false,
    "drop": null
   },
   "guest_meter": {
    "stale": false,
    "last_heard_t_s": 480,
-   "fallback_active": false,
    "drop": null
   },
   "guest_backbone": {
    "stale": false,
    "last_heard_t_s": 480,
-   "fallback_active": false,
    "drop": null
   },
   "g4_telemetry": {
    "stale": false,
    "last_heard_t_s": 480,
-   "fallback_active": false,
    "drop": null
   },
   "g3_acoustic": {
    "stale": false,
    "last_heard_t_s": 480,
-   "fallback_active": false,
    "drop": null
   }
  },
@@ -758,6 +746,6 @@
  "notes": [
   "Scenario B, survey file, minute 8: G4 reports 18 % battery. This is D3's input, before the decision: the ship is still at 3 kn, steady and quiet.",
   "G4's land-by: the 20 % crossing is dated back at 1.11 %/min to 371.9 s (minute 6.2), plus 12 min = 1091.9 s (minute 18.2), earlier than the endurance bound 1448 s (docs/EXPECTED_OUTCOMES.md minute 8).",
-  "scenario_b.yaml puts wind_kn 22 on G4's report; here it is the ship's anemometer reading, and the report carries the battery only."
+  "scenario_b.yaml puts wind_kn 22 on G4's report; timeline_mapping drops it from the report, and the ship's anemometer reads 22 kn (baselines series). G3's status message at 480 is its periodic one (every 60 s while the link is up)."
  ]
 }

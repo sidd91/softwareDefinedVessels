@@ -213,7 +213,7 @@
     "t_s": 600
    },
    "range_km": {
-    "value": 9.0,
+    "value": 8.6,
     "source": "guest_report",
     "t_s": 600
    }

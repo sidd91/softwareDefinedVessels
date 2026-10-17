@@ -25,6 +25,7 @@
    "required": [
     "contract",
     "scenario",
+    "variant",
     "mission",
     "seed",
     "tick",
@@ -38,6 +39,10 @@
     },
     "scenario": {
      "type": "string"
+    },
+    "variant": {
+     "type": "string",
+     "description": "the starting state (signals.yaml baselines.<scenario>.variants, or default)"
     },
     "mission": {
      "type": "string",
@@ -2315,22 +2320,18 @@
      "required": [
       "stale",
       "last_heard_t_s",
-      "fallback_active",
       "drop"
      ],
      "properties": {
       "stale": {
-       "type": "boolean"
+       "type": "boolean",
+       "description": "the feed's fallbacks are in force; they lift on the first fresh frame (fallback_policy.lift)"
       },
       "last_heard_t_s": {
        "type": [
         "number",
         "null"
        ]
-      },
-      "fallback_active": {
-       "type": "boolean",
-       "description": "true while stale, and until lift_after_fresh_frames fresh frames"
       },
       "drop": {
        "anyOf": [
@@ -2370,22 +2371,18 @@
      "required": [
       "stale",
       "last_heard_t_s",
-      "fallback_active",
       "drop"
      ],
      "properties": {
       "stale": {
-       "type": "boolean"
+       "type": "boolean",
+       "description": "the feed's fallbacks are in force; they lift on the first fresh frame (fallback_policy.lift)"
       },
       "last_heard_t_s": {
        "type": [
         "number",
         "null"
        ]
-      },
-      "fallback_active": {
-       "type": "boolean",
-       "description": "true while stale, and until lift_after_fresh_frames fresh frames"
       },
       "drop": {
        "anyOf": [
@@ -2425,22 +2422,18 @@
      "required": [
       "stale",
       "last_heard_t_s",
-      "fallback_active",
       "drop"
      ],
      "properties": {
       "stale": {
-       "type": "boolean"
+       "type": "boolean",
+       "description": "the feed's fallbacks are in force; they lift on the first fresh frame (fallback_policy.lift)"
       },
       "last_heard_t_s": {
        "type": [
         "number",
         "null"
        ]
-      },
-      "fallback_active": {
-       "type": "boolean",
-       "description": "true while stale, and until lift_after_fresh_frames fresh frames"
       },
       "drop": {
        "anyOf": [
@@ -2480,22 +2473,18 @@
      "required": [
       "stale",
       "last_heard_t_s",
-      "fallback_active",
       "drop"
      ],
      "properties": {
       "stale": {
-       "type": "boolean"
+       "type": "boolean",
+       "description": "the feed's fallbacks are in force; they lift on the first fresh frame (fallback_policy.lift)"
       },
       "last_heard_t_s": {
        "type": [
         "number",
         "null"
        ]
-      },
-      "fallback_active": {
-       "type": "boolean",
-       "description": "true while stale, and until lift_after_fresh_frames fresh frames"
       },
       "drop": {
        "anyOf": [
@@ -2535,22 +2524,18 @@
      "required": [
       "stale",
       "last_heard_t_s",
-      "fallback_active",
       "drop"
      ],
      "properties": {
       "stale": {
-       "type": "boolean"
+       "type": "boolean",
+       "description": "the feed's fallbacks are in force; they lift on the first fresh frame (fallback_policy.lift)"
       },
       "last_heard_t_s": {
        "type": [
         "number",
         "null"
        ]
-      },
-      "fallback_active": {
-       "type": "boolean",
-       "description": "true while stale, and until lift_after_fresh_frames fresh frames"
       },
       "drop": {
        "anyOf": [
@@ -2590,22 +2575,18 @@
      "required": [
       "stale",
       "last_heard_t_s",
-      "fallback_active",
       "drop"
      ],
      "properties": {
       "stale": {
-       "type": "boolean"
+       "type": "boolean",
+       "description": "the feed's fallbacks are in force; they lift on the first fresh frame (fallback_policy.lift)"
       },
       "last_heard_t_s": {
        "type": [
         "number",
         "null"
        ]
-      },
-      "fallback_active": {
-       "type": "boolean",
-       "description": "true while stale, and until lift_after_fresh_frames fresh frames"
       },
       "drop": {
        "anyOf": [
@@ -2645,22 +2626,18 @@
      "required": [
       "stale",
       "last_heard_t_s",
-      "fallback_active",
       "drop"
      ],
      "properties": {
       "stale": {
-       "type": "boolean"
+       "type": "boolean",
+       "description": "the feed's fallbacks are in force; they lift on the first fresh frame (fallback_policy.lift)"
       },
       "last_heard_t_s": {
        "type": [
         "number",
         "null"
        ]
-      },
-      "fallback_active": {
-       "type": "boolean",
-       "description": "true while stale, and until lift_after_fresh_frames fresh frames"
       },
       "drop": {
        "anyOf": [
@@ -2700,22 +2677,18 @@
      "required": [
       "stale",
       "last_heard_t_s",
-      "fallback_active",
       "drop"
      ],
      "properties": {
       "stale": {
-       "type": "boolean"
+       "type": "boolean",
+       "description": "the feed's fallbacks are in force; they lift on the first fresh frame (fallback_policy.lift)"
       },
       "last_heard_t_s": {
        "type": [
         "number",
         "null"
        ]
-      },
-      "fallback_active": {
-       "type": "boolean",
-       "description": "true while stale, and until lift_after_fresh_frames fresh frames"
       },
       "drop": {
        "anyOf": [
@@ -2755,22 +2728,18 @@
      "required": [
       "stale",
       "last_heard_t_s",
-      "fallback_active",
       "drop"
      ],
      "properties": {
       "stale": {
-       "type": "boolean"
+       "type": "boolean",
+       "description": "the feed's fallbacks are in force; they lift on the first fresh frame (fallback_policy.lift)"
       },
       "last_heard_t_s": {
        "type": [
         "number",
         "null"
        ]
-      },
-      "fallback_active": {
-       "type": "boolean",
-       "description": "true while stale, and until lift_after_fresh_frames fresh frames"
       },
       "drop": {
        "anyOf": [
@@ -2810,22 +2779,18 @@
      "required": [
       "stale",
       "last_heard_t_s",
-      "fallback_active",
       "drop"
      ],
      "properties": {
       "stale": {
-       "type": "boolean"
+       "type": "boolean",
+       "description": "the feed's fallbacks are in force; they lift on the first fresh frame (fallback_policy.lift)"
       },
       "last_heard_t_s": {
        "type": [
         "number",
         "null"
        ]
-      },
-      "fallback_active": {
-       "type": "boolean",
-       "description": "true while stale, and until lift_after_fresh_frames fresh frames"
       },
       "drop": {
        "anyOf": [
@@ -2865,22 +2830,18 @@
      "required": [
       "stale",
       "last_heard_t_s",
-      "fallback_active",
       "drop"
      ],
      "properties": {
       "stale": {
-       "type": "boolean"
+       "type": "boolean",
+       "description": "the feed's fallbacks are in force; they lift on the first fresh frame (fallback_policy.lift)"
       },
       "last_heard_t_s": {
        "type": [
         "number",
         "null"
        ]
-      },
-      "fallback_active": {
-       "type": "boolean",
-       "description": "true while stale, and until lift_after_fresh_frames fresh frames"
       },
       "drop": {
        "anyOf": [
@@ -2920,22 +2881,18 @@
      "required": [
       "stale",
       "last_heard_t_s",
-      "fallback_active",
       "drop"
      ],
      "properties": {
       "stale": {
-       "type": "boolean"
+       "type": "boolean",
+       "description": "the feed's fallbacks are in force; they lift on the first fresh frame (fallback_policy.lift)"
       },
       "last_heard_t_s": {
        "type": [
         "number",
         "null"
        ]
-      },
-      "fallback_active": {
-       "type": "boolean",
-       "description": "true while stale, and until lift_after_fresh_frames fresh frames"
       },
       "drop": {
        "anyOf": [
@@ -2975,22 +2932,18 @@
      "required": [
       "stale",
       "last_heard_t_s",
-      "fallback_active",
       "drop"
      ],
      "properties": {
       "stale": {
-       "type": "boolean"
+       "type": "boolean",
+       "description": "the feed's fallbacks are in force; they lift on the first fresh frame (fallback_policy.lift)"
       },
       "last_heard_t_s": {
        "type": [
         "number",
         "null"
        ]
-      },
-      "fallback_active": {
-       "type": "boolean",
-       "description": "true while stale, and until lift_after_fresh_frames fresh frames"
       },
       "drop": {
        "anyOf": [
@@ -3199,6 +3152,380 @@
     }
    }
   },
+  "start": {
+   "type": "object",
+   "additionalProperties": false,
+   "description": "a run's starting state (signals.yaml baselines): raw signal name (Gx.key for guests) to its value at tick 0",
+   "properties": {
+    "genset_1_relay_trip": {
+     "type": "boolean"
+    },
+    "genset_2_relay_trip": {
+     "type": "boolean"
+    },
+    "genset_1_kw": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 450
+    },
+    "genset_2_kw": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 450
+    },
+    "bus_frequency_hz": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 70
+    },
+    "chw_pump_1_running": {
+     "type": "boolean"
+    },
+    "chw_pump_2_running": {
+     "type": "boolean"
+    },
+    "chw_pump_1_alarm": {
+     "type": "boolean"
+    },
+    "chw_pump_2_alarm": {
+     "type": "boolean"
+    },
+    "chw_flow_pct": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 150
+    },
+    "chw_supply_c": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 40
+    },
+    "chw_return_c": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 40
+    },
+    "course": {
+     "enum": [
+      "free",
+      "steady"
+     ]
+    },
+    "speed_kn": {
+     "type": [
+      "number",
+      "null"
+     ],
+     "minimum": 0,
+     "maximum": 25
+    },
+    "noise": {
+     "enum": [
+      "quiet",
+      "normal",
+      "manoeuvring"
+     ]
+    },
+    "situation": {
+     "enum": [
+      "alongside",
+      "at_sea"
+     ]
+    },
+    "deck_flight_deck": {
+     "enum": [
+      "clear",
+      "occupied"
+     ]
+    },
+    "deck_bays": {
+     "enum": [
+      "clear",
+      "occupied"
+     ]
+    },
+    "ramp": {
+     "enum": [
+      "free",
+      "in_use"
+     ]
+    },
+    "deck_machinery": {
+     "type": "boolean"
+    },
+    "deck_activity_since_sweep": {
+     "type": "boolean"
+    },
+    "emission": {
+     "enum": [
+      "normal",
+      "silent"
+     ]
+    },
+    "radar_transmitting": {
+     "type": "boolean"
+    },
+    "seawater_c": {
+     "type": "number",
+     "minimum": -2,
+     "maximum": 40
+    },
+    "sea_state": {
+     "type": "integer",
+     "minimum": 0,
+     "maximum": 9
+    },
+    "wind_kn": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 80
+    },
+    "wind_from_deg": {
+     "type": [
+      "number",
+      "null"
+     ],
+     "minimum": 0,
+     "maximum": 360
+    },
+    "satcom_mbps": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 8
+    },
+    "los_radio_mbps": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 20
+    },
+    "crew_aboard": {
+     "enum": [
+      14,
+      6,
+      0
+     ]
+    },
+    "people_available": {
+     "type": "integer",
+     "minimum": 0,
+     "maximum": 14
+    },
+    "bridge_requests": {
+     "$ref": "#/$defs/requests_value"
+    },
+    "hlo_deck_report": {
+     "enum": [
+      "none",
+      "clear",
+      "not_clear"
+     ]
+    },
+    "hlo_wind_kn": {
+     "type": [
+      "number",
+      "null"
+     ],
+     "minimum": 0,
+     "maximum": 80
+    },
+    "standing_plan": {
+     "enum": [
+      "none",
+      "approved"
+     ]
+    },
+    "last_sweep": {
+     "anyOf": [
+      {
+       "$ref": "#/$defs/sweep_value"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "G1.mode": {
+     "enum": [
+      "full",
+      "off"
+     ]
+    },
+    "G1.activity": {
+     "enum": [
+      "none",
+      "listening"
+     ]
+    },
+    "G1.kw_actual": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 3
+    },
+    "G1.data_demand": {
+     "$ref": "#/$defs/rates_value"
+    },
+    "G2.mode": {
+     "enum": [
+      "winch",
+      "sampling",
+      "standby",
+      "off"
+     ]
+    },
+    "G2.activity": {
+     "enum": [
+      "none",
+      "probe",
+      "winch"
+     ]
+    },
+    "G2.kw_actual": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 40
+    },
+    "G2.data_demand": {
+     "$ref": "#/$defs/rates_value"
+    },
+    "G3.mode": {
+     "enum": [
+      "charging",
+      "standby",
+      "off"
+     ]
+    },
+    "G3.activity": {
+     "enum": [
+      "none",
+      "surveying",
+      "launch_recovery",
+      "holding_depth",
+      "holding_at_sea",
+      "on_cradle"
+     ]
+    },
+    "G3.kw_actual": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 50
+    },
+    "G3.data_demand": {
+     "$ref": "#/$defs/rates_value"
+    },
+    "G3.leg_state": {
+     "enum": [
+      "none",
+      "running",
+      "paused",
+      "aborted",
+      "done"
+     ]
+    },
+    "G3.leg_started_t_s": {
+     "type": [
+      "number",
+      "null"
+     ]
+    },
+    "G3.leg_flown_s": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 2400
+    },
+    "G3.hold_ack": {
+     "type": "boolean"
+    },
+    "G4.mode": {
+     "enum": [
+      "fast_charge",
+      "charge",
+      "standby",
+      "off"
+     ]
+    },
+    "G4.activity": {
+     "enum": [
+      "none",
+      "launch_recovery",
+      "airborne",
+      "landed"
+     ]
+    },
+    "G4.kw_actual": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 70
+    },
+    "G4.data_demand": {
+     "$ref": "#/$defs/rates_value"
+    },
+    "G4.battery_pct": {
+     "type": [
+      "number",
+      "null"
+     ],
+     "minimum": 0,
+     "maximum": 100
+    },
+    "G4.range_km": {
+     "type": [
+      "number",
+      "null"
+     ],
+     "minimum": 0,
+     "maximum": 60
+    },
+    "G4.launched_t_s": {
+     "type": [
+      "number",
+      "null"
+     ]
+    },
+    "G5.mode": {
+     "enum": [
+      "full",
+      "low_power",
+      "off"
+     ]
+    },
+    "G5.activity": {
+     "enum": [
+      "none",
+      "transmitting"
+     ]
+    },
+    "G5.kw_actual": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 90
+    },
+    "G5.data_demand": {
+     "$ref": "#/$defs/rates_value"
+    },
+    "G6.mode": {
+     "enum": [
+      "production",
+      "recirculate",
+      "off"
+     ]
+    },
+    "G6.activity": {
+     "enum": [
+      "none",
+      "production",
+      "start"
+     ]
+    },
+    "G6.kw_actual": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 36
+    },
+    "G6.data_demand": {
+     "$ref": "#/$defs/rates_value"
+    }
+   }
+  },
   "event": {
    "type": "object",
    "additionalProperties": false,
@@ -3265,14 +3592,19 @@
         "type": "object",
         "additionalProperties": false,
         "required": [
-         "note"
+         "note",
+         "variant",
+         "start"
         ],
         "properties": {
          "note": {
           "type": "string"
          },
-         "assumed": {
-          "type": "object"
+         "variant": {
+          "type": "string"
+         },
+         "start": {
+          "$ref": "#/$defs/start"
          }
         }
        }
@@ -3659,6 +3991,9 @@
            6,
            0
           ]
+         },
+         "people_available": {
+          "type": "integer"
          }
         }
        }

@@ -2,6 +2,7 @@
  "run": {
   "contract": "argos-snapshot/2",
   "scenario": "scenario_b",
+  "variant": "default",
   "mission": "survey",
   "seed": 0,
   "tick": 0,
@@ -35,14 +36,14 @@
    "stale": false
   },
   "genset_1_kw": {
-   "value": 330.0,
+   "value": 251.5,
    "source": "plant",
    "age_s": 0,
    "confidence": "measured",
    "stale": false
   },
   "genset_2_kw": {
-   "value": 325.0,
+   "value": 251.5,
    "source": "plant",
    "age_s": 0,
    "confidence": "measured",
@@ -661,79 +662,66 @@
   "pms": {
    "stale": false,
    "last_heard_t_s": 0,
-   "fallback_active": false,
    "drop": null
   },
   "chw": {
    "stale": false,
    "last_heard_t_s": 0,
-   "fallback_active": false,
    "drop": null
   },
   "nav": {
    "stale": false,
    "last_heard_t_s": 0,
-   "fallback_active": false,
    "drop": null
   },
   "deck": {
    "stale": false,
    "last_heard_t_s": 0,
-   "fallback_active": false,
    "drop": null
   },
   "emission": {
    "stale": false,
    "last_heard_t_s": 0,
-   "fallback_active": false,
    "drop": null
   },
   "anemometer": {
    "stale": false,
    "last_heard_t_s": 0,
-   "fallback_active": false,
    "drop": null
   },
   "comms": {
    "stale": false,
    "last_heard_t_s": 0,
-   "fallback_active": false,
    "drop": null
   },
   "public_data": {
    "stale": false,
    "last_heard_t_s": 0,
-   "fallback_active": false,
    "drop": null
   },
   "laptop": {
    "stale": false,
    "last_heard_t_s": 0,
-   "fallback_active": false,
    "drop": null
   },
   "guest_meter": {
    "stale": false,
    "last_heard_t_s": 0,
-   "fallback_active": false,
    "drop": null
   },
   "guest_backbone": {
    "stale": false,
    "last_heard_t_s": 0,
-   "fallback_active": false,
    "drop": null
   },
   "g4_telemetry": {
    "stale": false,
    "last_heard_t_s": 0,
-   "fallback_active": false,
    "drop": null
   },
   "g3_acoustic": {
    "stale": false,
    "last_heard_t_s": 0,
-   "fallback_active": false,
    "drop": null
   }
  },
@@ -746,13 +734,68 @@
    "injected": false,
    "payload": {
     "note": "3 kn over the cable route, G3 on its 40-min leg on the acoustic link, G4 airborne, G5 full",
-    "assumed": {
-     "seed": 0,
+    "variant": "default",
+    "start": {
+     "genset_1_relay_trip": false,
+     "genset_2_relay_trip": false,
+     "genset_1_kw": 251.5,
+     "genset_2_kw": 251.5,
+     "bus_frequency_hz": 60.0,
+     "chw_pump_1_running": true,
+     "chw_pump_2_running": true,
+     "chw_pump_1_alarm": false,
+     "chw_pump_2_alarm": false,
+     "chw_flow_pct": 100.0,
+     "chw_supply_c": 7.0,
+     "chw_return_c": 12.0,
+     "course": "steady",
+     "speed_kn": 3.0,
+     "noise": "quiet",
+     "situation": "at_sea",
+     "deck_flight_deck": "occupied",
+     "deck_bays": "clear",
+     "ramp": "free",
+     "deck_machinery": false,
+     "deck_activity_since_sweep": true,
+     "emission": "normal",
+     "radar_transmitting": true,
+     "seawater_c": 24.0,
      "sea_state": 4,
-     "wind_kn": 18,
-     "satcom_mbps": 6,
-     "G4": {
-      "launched_t_s": -3952
+     "wind_kn": 18.0,
+     "wind_from_deg": 300.0,
+     "satcom_mbps": 6.0,
+     "los_radio_mbps": 20.0,
+     "crew_aboard": 14,
+     "people_available": 4,
+     "bridge_requests": [],
+     "hlo_deck_report": "none",
+     "hlo_wind_kn": null,
+     "standing_plan": "none",
+     "last_sweep": null,
+     "G3.mode": "standby",
+     "G3.activity": "surveying",
+     "G3.kw_actual": 1.0,
+     "G3.data_demand": {
+      "acoustic_kbps": 3
+     },
+     "G3.leg_state": "running",
+     "G3.leg_started_t_s": 0,
+     "G3.leg_flown_s": 0,
+     "G3.hold_ack": false,
+     "G4.mode": "standby",
+     "G4.activity": "airborne",
+     "G4.kw_actual": 2.0,
+     "G4.data_demand": {
+      "los_radio_mbps": 20
+     },
+     "G4.range_km": 12.0,
+     "G4.launched_t_s": -3952,
+     "G5.mode": "full",
+     "G5.activity": "transmitting",
+     "G5.kw_actual": 45.0,
+     "G5.data_demand": {
+      "satcom_mbps": 6,
+      "backbone_mbps": 1000
      }
     }
    }
@@ -761,7 +804,7 @@
  "notes": [
   "Scenario B, survey file, minute 0: 3 kn over the cable route, G3 on its 40-min leg on the acoustic link, G4 airborne at 2 kW, G5 full.",
   "G4 has sent no battery report yet (one report, at minute 8, as in the brief), so battery_pct is null and its land-by is the endurance bound: launched -3952 s + 90 min = 1448 s, confidence assumed.",
-  "Assumed for this fixture (the baseline payload lists them): seed 0; sea state 4; wind 18 kn rising to 22 kn by minute 8 (the ship's anemometer); SATCOM 6 Mbit/s of 2-8; G4 launched at -3952 s, dated back from 18 % at minute 8 at rules.r3.drain_pct_min; genset kW and chilled-water temperatures are plausible, not from the brief.",
+  "Every reading is the baseline's start (signals.yaml baselines.scenario_b), echoed in the baseline event: seed 0, sea state 4, wind 18 kn from 300 deg rising to 22 kn by minute 8, SATCOM 6 Mbit/s, G4 launched at -3952 s, each genset at (400 + 55 + 48) / 2 = 251.5 kW (fault_signatures.bus_load).",
   "The flight deck starts occupied; the seed clears it in 4 min after the minute-8 confirmation (seed_pins.deck_clear_min)."
  ]
 }

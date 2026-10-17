@@ -52,6 +52,10 @@ def describe(sig: dict) -> str:
     return "; ".join(p for p in parts if p)
 
 
+def raw_signals(S: dict) -> list:
+    return [s for s in S["signals"] if s["producer"] in ("simulator", "laptop")]
+
+
 def shared_defs(S: dict) -> dict:
     feeds = list(S["feeds"])
     return {
@@ -84,6 +88,11 @@ def shared_defs(S: dict) -> dict:
                            "degraded_by": {"type": "array", "items": {"type": "string"}},
                            "zero_by_rule": {"type": "boolean", "description": "0 by rule (acoustic down, silence): demand is buffered"}},
         },
+        "start": {
+            "type": "object", "additionalProperties": False,
+            "description": "a run's starting state (signals.yaml baselines): raw signal name (Gx.key for guests) to its value at tick 0",
+            "properties": {sig["name"]: value_schema(sig) for sig in raw_signals(S)},
+        },
         "event": event_schema(S, feeds),
     }
 
@@ -93,18 +102,25 @@ def payload_type(t, feeds: list) -> dict:
         return {"enum": t}
     simple = {"string": {"type": "string"}, "guest": {"enum": GUESTS}, "feed": {"enum": feeds},
               "number": {"type": "number"}, "number?": {"type": ["number", "null"]}, "integer": {"type": "integer"},
-              "boolean": {"type": "boolean"}, "object": {"type": "object"}, "any": True}
+              "boolean": {"type": "boolean"}, "object": {"type": "object"}, "any": True, "start": {"$ref": "#/$defs/start"}}
     return simple[t]
+
+
+def typed_object(spec: dict, optional: list, feeds: list) -> dict:
+    return {"type": "object", "additionalProperties": False,
+            "required": [k for k in spec if k not in optional],
+            "properties": {k: payload_type(t, feeds) for k, t in spec.items()}}
+
+
+def event_cases(S: dict, feeds: list, names: list) -> list:
+    return [{"if": {"properties": {"type": {"const": n}}},
+             "then": {"properties": {"payload": typed_object(S["events"][n]["payload"], S["events"][n].get("optional", []), feeds)}}}
+            for n in names]
 
 
 def event_schema(S: dict, feeds: list) -> dict:
     types = list(S["events"])
-    cases = []
-    for name, ev in S["events"].items():
-        payload = {"type": "object", "additionalProperties": False,
-                   "required": [k for k in ev["payload"] if k not in ev.get("optional", [])],
-                   "properties": {k: payload_type(t, feeds) for k, t in ev["payload"].items()}}
-        cases.append({"if": {"properties": {"type": {"const": name}}}, "then": {"properties": {"payload": payload}}})
+    cases = event_cases(S, feeds, types)
     return {
         "type": "object", "additionalProperties": False, "required": ["t_s", "type", "origin", "injected", "payload"],
         "description": "an event the simulator applied at this tick (timeline or laptop); signals.yaml events",
@@ -136,9 +152,9 @@ def build_snapshot_schema(S: dict) -> dict:
             guests[gid][key] = snapshot_field(sig)
         else:
             groups[sig["group"]][sig["name"]] = snapshot_field(sig)
-    feed_state = {"type": "object", "additionalProperties": False, "required": ["stale", "last_heard_t_s", "fallback_active", "drop"],
-                  "properties": {"stale": {"type": "boolean"}, "last_heard_t_s": {"type": ["number", "null"]},
-                                 "fallback_active": {"type": "boolean", "description": "true while stale, and until lift_after_fresh_frames fresh frames"},
+    feed_state = {"type": "object", "additionalProperties": False, "required": ["stale", "last_heard_t_s", "drop"],
+                  "properties": {"stale": {"type": "boolean", "description": "the feed's fallbacks are in force; they lift on the first fresh frame (fallback_policy.lift)"},
+                                 "last_heard_t_s": {"type": ["number", "null"]},
                                  "drop": {"anyOf": [{"type": "null"}, {"type": "object", "additionalProperties": False,
                                                                          "required": ["event_t_s", "until_t_s", "injected"],
                                                                          "properties": {"event_t_s": {"type": "number"},
@@ -205,10 +221,11 @@ def build_snapshot_schema(S: dict) -> dict:
         "properties": {
             "run": {
                 "type": "object", "additionalProperties": False,
-                "required": ["contract", "scenario", "mission", "seed", "tick", "t_ship_s", "installed", "constants"],
+                "required": ["contract", "scenario", "variant", "mission", "seed", "tick", "t_ship_s", "installed", "constants"],
                 "properties": {
                     "contract": {"const": "argos-snapshot/2"},
                     "scenario": {"type": "string"},
+                    "variant": {"type": "string", "description": "the starting state (signals.yaml baselines.<scenario>.variants, or default)"},
                     "mission": {"type": "string", "description": "the priority file in force (config/missions/<id>.yaml)"},
                     "seed": {"type": "integer"},
                     "tick": {"type": "integer", "minimum": 0, "description": "snapshot counter; tick n is at t_ship_s = n"},
@@ -229,17 +246,44 @@ def build_snapshot_schema(S: dict) -> dict:
     }
 
 
+def input_schema(S: dict) -> dict:
+    """A laptop input as the core passes it to sim.step (signals.yaml step.inputs)."""
+    feeds = list(S["feeds"])
+    names = [n for n, ev in S["events"].items() if "laptop" in ev["from"] and ev["to"] == "simulator"]
+    return {
+        "type": "object", "additionalProperties": False, "required": ["t_s", "type", "injected", "payload"],
+        "description": "a laptop input stamped with tick t_s, passed to sim.step(t_s, commands, inputs); events with to: core never reach the simulator",
+        "properties": {"t_s": {"type": "integer", "minimum": 0}, "type": {"enum": names}, "injected": {"type": "boolean"},
+                       "payload": {"type": "object"}},
+        "allOf": event_cases(S, feeds, names),
+    }
+
+
+def command_schema(S: dict) -> dict:
+    """A core command (signals.yaml commands; Siddharth defines the set, contract 5)."""
+    feeds = list(S["feeds"])
+    cases = [{"if": {"properties": {"kind": {"const": k}}},
+              "then": {"properties": {"args": typed_object(c["args"], c.get("optional", []), feeds)}}}
+             for k, c in S["commands"].items()]
+    return {
+        "type": "object", "additionalProperties": False, "required": ["seq", "kind", "args"],
+        "description": "a command decided on snapshot n - 1 and applied by sim.step in frame n; seq is the decision record that sent it",
+        "properties": {"seq": {"type": "integer", "minimum": 0}, "kind": {"enum": list(S["commands"])}, "args": {"type": "object"}},
+        "allOf": cases,
+    }
+
+
 def frame_reading(sig: dict) -> dict:
     return {"type": "object", "additionalProperties": False, "required": ["value", "source", "t_s"],
             "description": describe(sig),
             "properties": {"value": value_schema(sig), "source": {"enum": sources(sig)},
-                           "t_s": {"type": "number", "description": "reading time, ship seconds"},
+                           "t_s": {"type": "number", "description": "the tick the reading arrived (= the frame tick), ship seconds"},
                            "transition": {"$ref": "#/$defs/transition"},
                            "reported_t_s": {"type": "number", "description": "crew answers: when the answer was given"}}}
 
 
 def build_frame_schema(S: dict) -> dict:
-    raw = [s for s in S["signals"] if s["producer"] in ("simulator", "laptop")]
+    raw = raw_signals(S)
     flat = {s["name"]: frame_reading(s) for s in raw if s["group"] != "guests"}
     guests = {g: {} for g in GUESTS}
     for s in raw:
@@ -252,8 +296,9 @@ def build_frame_schema(S: dict) -> dict:
         "title": "ArgOS simulator frame",
         "description": ("GENERATED by tools/gen_snapshot_schema.py from config/signals.yaml; do not edit. What "
                         "Simulator.step(tick, commands, inputs) returns for one tick: the readings that arrived this tick, "
-                        "the events it applied. A 1 Hz signal is present every tick with t_s = tick; an event-rate signal "
-                        "only on the tick its report arrives; a dropped feed's signals are left out, never null. "
+                        "the events it applied. Every reading's t_s is this tick (arrival time). A 1 Hz signal is present "
+                        "every tick; an event-rate signal only on the tick its report arrives; a dropped feed's signals are "
+                        "left out, never null. $defs.command and $defs.input type the two argument lists. "
                         "Contract: docs/STATE_ESTIMATION.md."),
         "type": "object",
         "additionalProperties": False,
@@ -267,7 +312,7 @@ def build_frame_schema(S: dict) -> dict:
                        "properties": {g: group(guests[g], g, required=False) for g in GUESTS}},
             "events": {"type": "array", "items": {"$ref": "#/$defs/event"}},
         },
-        "$defs": {k: v for k, v in shared_defs(S).items()},
+        "$defs": {**shared_defs(S), "command": command_schema(S), "input": input_schema(S)},
     }
 
 

@@ -26,6 +26,11 @@
 #   inputs      derived only: the snapshot fields it is computed from. Its confidence follows from them.
 #   read_by     ledger, D1, D2, D3, D4, D5, safety, link (the acoustic rule), window (A.11), record (sentence).
 #   provenance  a brief section, a repo key, or "assumed: reason". Assumed values are listed in pending_moves.
+#
+# Besides the signals this file holds the interface around them: the frame rules (frame), the arguments of
+# sim.step (step: commands and inputs), the drafted fault signatures and transition times Siddharth owns
+# (fault_signatures, transition_drafts), the Scenario B starting state and script (baselines) and how each
+# scenario timeline event becomes a frame event (timeline_mapping).
 
 version: 2
 clock: ship time                  # every rate, age, limit, debounce and deadline below is in ship seconds
@@ -60,34 +65,40 @@ feeds:
   guest_backbone: {stale_after_s: 3, what: "activity reports of the guests on the backbone (G1, G2, G5, G6)"}
   g4_telemetry: {stale_after_s: 10, heartbeat: G4.activity, what: "G4 over line-of-sight radio, or the hangar link once landed: activity and range at 1 Hz (the heartbeat), battery and launch time on report",
                  provenance: "config/assumptions.yaml rules.r3.stale_s.g4_telemetry (10 s)"}
-  g3_acoustic: {stale_after_link_up_s: 120, what: "G3's acoustic messages: activity, leg, hold acknowledgement",
+  g3_acoustic: {stale_after_link_up_s: 120, cadence_s: 60, what: "G3's acoustic messages: activity, leg, hold acknowledgement",
+                cadence: "while the link is up G3 sends one status message (all five g3_acoustic signals) cadence_s after its previous message, or cadence_s after the link comes up if that is later; a reply to a command (the hold acknowledgement) is sent when it is ready and restarts the count. While the link is down nothing arrives. Scenario B: 0, 60, ..., 480, the acknowledgement at 510, the next due at 570 is lost because the link drops at 541. Two missed messages make the feed stale (stale_after_link_up_s = 2 x cadence_s).",
                 rule: "stale only while acoustic_link_up is true: stale once the link has been up for more than stale_after_link_up_s with no G3 message (time since the later of the last message and the link coming up). While the link is down by design G3 is out of contact, not stale.",
-                provenance: "assumed: 2 x data.acoustic_link.judged_latency_s (60 s); a vehicle on a working link answers inside one round trip"}
+                provenance: "assumed: 2 x data.acoustic_link.judged_latency_s (60 s); a vehicle on a working link answers inside one round trip; the 60 s cadence is one judged round trip"}
 
 fallback_policy:
-  lift_after_fresh_frames: 3      # a fallback lifts only after 3 consecutive fresh frames of its feed, so a flapping feed does not flip D1 limits each tick
+  lift: "a fallback lifts on the first fresh frame of its feed: a field's stale and substituted end on the same tick, and feeds.<f>.stale with them. One rule everywhere, with no lift window. A flapping feed can flip D1's limits tick by tick, but D4 never acts on a substituted value, so it sheds nothing."
   grace_s: 30                     # the hold stage of the two-stage fallback (signals with grace_s)
   stages: "hold: the last value, substituted, for grace_s; bound: the fallback value; crew_report: a fresh report from the landing officer replaces a stale wind or deck value"
   hard_limit: "Unknown never means safe: a closure from a fallback stands, even against a hard limit. While a G4 hard limit is active (battery below 20 %) and someone is aboard, D5 asks the landing officer for wind and deck; a fresh hlo_wind_kn or hlo_deck_report replaces the stale value (source crew_report, stage crew_report) and the record names the substitution. At 0 aboard there is no report, the closure stands and the record states the cost to G4."
   d4: "D4 never acts on a substituted value. It acts on confirmed faults and on over-commitment the ledger computes only from fresh, non-substituted inputs. A fallback may tighten admission (D1) and arm the D4 ladder."
   by_use: "a by_use fallback keeps the last good value as the field value; each consumer applies its own entry from substituted.rule"
-  provenance: "config/assumptions.yaml stale_feed; research/SENSOR_CATALOG.md rule 4; assumed: the 3-frame lift and the 30 s grace"
+  provenance: "config/assumptions.yaml stale_feed; research/SENSOR_CATALOG.md rule 4; assumed: the 30 s grace"
 
 # ------------------------------------------------------------------------------------------------ faults
-# The estimator confirms faults from raw votes. raw_event_t_s is the first tick on which any vote for that
-# subject is true. confirmed_t_s is the first tick t on which the vote count meets the rule on every tick of
-# [t - hold_s, t]. A vote that drops sooner cancels the pending fault (logged). A pending fault whose votes go
-# stale is held (state held_stale), not cancelled; it confirms if the feed returns showing it still true.
-# Meanwhile the ladder stays armed and the record says the fault is unconfirmed because the feed is stale.
+# The estimator confirms faults from raw votes, per subject (genset_1, genset_2, chw_pump_1, chw_pump_2). A vote
+# listed in `shared` reads a plant-wide signal (bus frequency, loop flow, loop delta-T): it counts for a subject
+# only while that subject has one of its own votes, so a healthy genset or pump never holds a pending fault.
+# raw_event_t_s is the first tick on which one of the subject's own votes is true. confirmed_t_s is the first
+# tick t on which the vote count meets the rule on every tick of [t - hold_s, t]. A vote that drops sooner
+# cancels the pending fault (logged). A pending fault whose votes go stale is held (state held_stale), not
+# cancelled; it confirms if the feed returns showing it still true. Meanwhile the ladder stays armed and the
+# record says the fault is unconfirmed because the feed is stale.
 confirm_rules:
   genset_trip:
     votes: {relay_trip: "genset_N_relay_trip is true", kw_near_zero: "genset_N_kw below 22.5 kW", frequency_dip: "bus_frequency_hz below 58.8 Hz"}
     needed: 2                     # power.trip_confirm.needed
+    shared: [frequency_dip]
     hold_s: 1                     # fault_entry.debounce_s
     provenance: "assumed: kW near zero is below 5 % of the 450 kW rating; a dip is more than 2 % below a 60 Hz bus. The brief gives neither threshold, nor the bus frequency."
   cooling_degraded:
     needs_any: {pump_alarm: "chw_pump_N_alarm is true", pump_stopped: "chw_pump_N_running is false (both pumps run in normal service)"}
     plus_any: {flow_low: "chw_flow_pct below 70", delta_t_high: "chw_return_c minus chw_supply_c above 8 C"}
+    shared: [flow_low, delta_t_high]
     hold_s: 1
     provenance: "config/assumptions.yaml heat.degraded_confirm (alarm plus flow or delta-T); assumed: a pump stopped with no alarm also counts (A.2 'pump or exchanger down'); the exchanger is not modelled; one of two pumps lost leaves about half the flow; a nominal delta-T is about 5 C (7 C supply, 12 C return)"
   restore:
@@ -100,21 +111,35 @@ confirm_rules:
 # What the simulator emits so that the estimator confirms a timeline fault at the oracle's tick. Siddharth
 # owns the signatures; these are the drafts both sides build against until a DEC row settles them.
 fault_signatures:
+  bus_load:
+    rule: "bus_load_kw = hotel_kw + ship_aux_kw + the sum of every installed guest's kw_actual, where hotel_kw is power.hotel_kw.committed (400) less power.hotel_shed_on_trip_kw (150) while a genset is tripped. Both gensets online: each reads bus_load_kw / 2. One tripped: the other reads min(power.gensets.rating_kw, bus_load_kw), so a reading never exceeds 450 kW (the schema maximum); Scenario B peaks at 386 kW, inside the 405 kW load limit. Propulsion is out of model scope (assumptions power.guest_reserve_kw_by_speed)."
+    scenario_b_kw: {both_online: 251.5, tripped_g4_airborne: 353.0, tripped_g4_fast_charge: 386.0}
+    provenance: "config/assumptions.yaml power.hotel_kw.committed, power.ship_aux_kw, power.hotel_shed_on_trip_kw, power.gensets (the plant check that gives the brief's 100 kW with one genset)"
   genset_trip:
     from_tick: "the event tick t (ceil(60 x t_min))"
-    signals: {genset_N_relay_trip: true, genset_N_kw: 0, bus_frequency_hz: 59.6, other_genset_kw: "its share of the whole load"}
+    signals: {genset_N_relay_trip: true, genset_N_kw: 0, bus_frequency_hz: 59.6, genset_M_kw: "min(450, bus_load_kw) with the hotel shed applied (bus_load)"}
     held: until genset_restart
     confirms_at: "t + 1 on relay_trip and kw_near_zero (59.6 Hz casts no frequency vote)"
   genset_restart:
-    signals: {genset_N_relay_trip: false, genset_N_kw: "back to its share of the load", bus_frequency_hz: 60.0}
+    signals: {genset_N_relay_trip: false, genset_N_kw: "bus_load_kw / 2 once the restart transition ends, the other genset likewise", bus_frequency_hz: 60.0}
     transition: "gensets_online carries {to: 2, started_t_s, expected_end_t_s} from the restart event (power.gensets.restart_min, 5 to 15 min); healthy for restore.healthy_hold_s before any guest is restored"
   cooling_degraded:
     from_tick: "the event tick t (Scenario B: 2 min after G4 lands, triggered)"
-    signals: {chw_pump_P_alarm: true, chw_pump_P_running: false, chw_flow_pct: 50, chw_return_c: "chw_supply_c + 9"}
+    signals: {chw_pump_P_alarm: true, chw_pump_P_running: false, chw_flow_pct: 50, chw_supply_c: 8.5, chw_return_c: "chw_supply_c + 9"}
     held: for the rest of the run (no repair at sea, A.6)
     confirms_at: "t + 1 on pump_alarm, pump_stopped, flow_low and delta_t_high"
   false_alarm:
     rule: "an event with confirmed: false emits one vote (relay flag or pump alarm) for one tick only; the estimator cancels it and logs the cancellation"
+
+# How long the simulator's changes take. Siddharth owns these (DEC-47); they are the drafts the fixtures are
+# built on. expected_s is the seed run's value, latest_s the slow end the transition carries (latest_end_t_s).
+transition_drafts:
+  speed_in_band: {expected_s: 120, latest_s: 180, why: "assumed: A.6 gives 2-5 min per band change (ship_state.speed_band.min_per_band) and nothing for a change inside one band; Scenario B's 3 to 5 kn stays in the slow band, so we take 2 min expected and 3 min latest"}
+  course_settle: {expected_s: 120, latest_s: 180, why: "A.6 1-3 min to settle (ship_state.course.settle_min); 2 min expected is assumed"}
+  deck_clear: {expected_s: 240, latest_s: 300, why: "scenario_b seed_pins.deck_clear_min 4; A.6 3-5 min with 14 aboard (ship_state.deck.clear_min)"}
+  noise: {why: "A.6: leaving quiet is instant. Assumed: noise reads manoeuvring from the tick a ship_state command sets course free, normal from the tick a command sets course steady, and quiet 2-4 min (ship_state.noise.to_quiet_min) after the course is steady"}
+  genset_restart: {expected_s: 600, latest_s: 900, why: "power.gensets.restart_min 5-15; 10 min expected is assumed"}
+  g3_round_trip: {expected_s: 30, why: "assumed: a command reaches G3 and its reply arrives inside data.acoustic_latency_s 10-60 s each way. Counted from the snapshot the command was decided on, like asked_t_s: Scenario B's hold decided at 480 (applied at 481) is acknowledged at 510"}
 
 # ------------------------------------------------------------------------------------------------ derivations
 derivations:
@@ -212,28 +237,193 @@ activities:
 # Every event the simulator applies and echoes in the frame, and the estimator copies into the snapshot of the
 # tick it is applied at (ARCHITECTURE contract 6, plus the inputs this contract adds). An event at t_min m is
 # applied at tick ceil(60 x m); a triggered event fires on the first tick its trigger plus delay is met.
+# from: where it may come from (timeline: the scenario file; laptop: a demo input stamped with a tick).
+# to: simulator (the core passes it to sim.step, the simulator applies it and echoes it in frame.events) or
+# core (the core handles it at its tick and logs it in the input log; it never reaches the simulator and is
+# not in frame.events or the snapshot).
 # Payload types: string, guest (G1 to G6), feed (a feeds key), number, number? (or null), integer, boolean,
-# object, any, or a list of allowed values. Keys in optional may be left out.
+# object, any, start (a starting state: raw signal name to value), or a list of allowed values. Keys in
+# optional may be left out.
 events:
-  baseline: {payload: {note: string, assumed: object}, optional: [assumed], provenance: "contract 6; the starting state the scenario does not state"}
-  card_presented: {payload: {guest: guest, card: string}, provenance: contract 6}
-  card_edited: {payload: {guest: guest, field: string, from: any, to: any}, provenance: contract 6}
-  priority_swap: {payload: {mission: string}, provenance: contract 6}
-  genset_trip: {payload: {genset: [1, 2], confirmed: boolean}, provenance: "contract 6; fault_signatures.genset_trip"}
-  genset_restart: {payload: {genset: [1, 2], expected_end_t_s: number}, provenance: "contract 6; fault_signatures.genset_restart"}
-  cooling_degraded: {payload: {pump: [1, 2], factor: number, confirmed: boolean}, provenance: "contract 6; fault_signatures.cooling_degraded"}
-  guest_report: {payload: {guest: guest, fields: object}, provenance: "contract 6 (the drone's battery)"}
-  guest_state: {payload: {guest: guest, activity: string, mode: string}, provenance: contract 6}
-  guest_overconsumption: {payload: {guest: guest, overdraw_pct: number}, provenance: "contract 6; derivations.overdraw"}
-  guest_request: {payload: {guest: guest, mode: string, kw: number, interruptible: boolean}, provenance: "new: a guest asks for a mode (scenario_b g3_charge_requests)"}
-  crew_change: {payload: {crew_aboard: [14, 6, 0]}, provenance: contract 6}
-  deck_report: {payload: {deck: [clear, not_clear], wind_kn: "number?"}, optional: [wind_kn], provenance: "contract 6; the landing officer's report (hlo_deck_report, hlo_wind_kn)"}
-  deck_sweep: {payload: {result: [clear, not_clear]}, provenance: "new: a crew sweep (last_sweep)"}
-  bridge_answer: {payload: {request_seq: integer, answer: [confirmed, denied]}, provenance: "new: the bridge answers one request (bridge_requests)"}
-  standing_plan: {payload: {state: [approved, withdrawn]}, provenance: "new: the bridge approves or withdraws a standing plan"}
-  emission_change: {payload: {emission: [normal, silent]}, provenance: contract 6}
-  feed_drop: {payload: {feed: feed, until_t_s: "number?"}, provenance: "contract 6; the simulator omits that feed's signals from the frames until until_t_s (null: until further notice)"}
-  safety_request: {payload: {request: [r3_hold_landing, g3_hold_depth, g2_stop_winch, g4_return_home]}, provenance: "assumptions safety_commands.requests; answered from the table built at the last tick"}
+  baseline: {from: [timeline], to: simulator, payload: {note: string, variant: string, start: start}, provenance: "contract 6; the starting state the scenario does not state (baselines)"}
+  card_presented: {from: [laptop], to: core, payload: {guest: guest, card: string}, provenance: contract 6}
+  card_edited: {from: [laptop], to: core, payload: {guest: guest, field: string, from: any, to: any}, provenance: contract 6}
+  priority_swap: {from: [laptop], to: core, payload: {mission: string}, provenance: contract 6}
+  genset_trip: {from: [timeline, laptop], to: simulator, payload: {genset: [1, 2], confirmed: boolean}, provenance: "contract 6; fault_signatures.genset_trip"}
+  genset_restart: {from: [timeline, laptop], to: simulator, payload: {genset: [1, 2], expected_end_t_s: number}, provenance: "contract 6; fault_signatures.genset_restart"}
+  cooling_degraded: {from: [timeline, laptop], to: simulator, payload: {pump: [1, 2], factor: number, confirmed: boolean}, provenance: "contract 6; fault_signatures.cooling_degraded"}
+  guest_report: {from: [timeline], to: simulator, payload: {guest: guest, fields: object}, provenance: "contract 6 (the drone's battery); the simulator emits each field as that guest's event-rate reading on this tick"}
+  guest_state: {from: [timeline], to: simulator, payload: {guest: guest, activity: string, mode: string}, provenance: contract 6}
+  guest_overconsumption: {from: [timeline, laptop], to: simulator, payload: {guest: guest, overdraw_pct: number}, provenance: "contract 6; the simulator raises that guest's kw_actual by overdraw_pct and the estimator detects it (derivations.overdraw)"}
+  guest_request: {from: [timeline, laptop], to: simulator, payload: {guest: guest, mode: string, kw: number, interruptible: boolean}, provenance: "new: a guest asks for a mode (scenario_b g3_charge_requests); it reaches the core only through frame.events"}
+  crew_change: {from: [timeline, laptop], to: simulator, payload: {crew_aboard: [14, 6, 0], people_available: integer}, optional: [people_available], provenance: "contract 6; people_available left out keeps its value, capped at crew_aboard"}
+  deck_report: {from: [laptop], to: simulator, payload: {deck: [clear, not_clear], wind_kn: "number?"}, optional: [wind_kn], provenance: "contract 6; the landing officer's report (hlo_deck_report, hlo_wind_kn, reported_t_s = the input's t_s)"}
+  deck_sweep: {from: [laptop], to: simulator, payload: {result: [clear, not_clear]}, provenance: "new: a crew sweep (last_sweep {t_s: the input's t_s, result})"}
+  bridge_answer: {from: [laptop], to: simulator, payload: {request_seq: integer, answer: [confirmed, denied]}, provenance: "new: the bridge answers one request (bridge_requests); in a scripted run the input script sends it at asked_t_s + seed_pins.confirm_min"}
+  standing_plan: {from: [laptop], to: simulator, payload: {state: [approved, withdrawn]}, provenance: "new: the bridge approves or withdraws a standing plan"}
+  emission_change: {from: [timeline, laptop], to: simulator, payload: {emission: [normal, silent]}, provenance: contract 6}
+  feed_drop: {from: [timeline, laptop], to: simulator, payload: {feed: feed, until_t_s: "number?"}, provenance: "contract 6; the simulator omits that feed's signals from the frames until until_t_s (null: until further notice)"}
+  safety_request: {from: [laptop], to: core, payload: {request: [r3_hold_landing, g3_hold_depth, g2_stop_winch, g4_return_home]}, provenance: "assumptions safety_commands.requests; answered from the table built at the last tick; the answer is a command applied at n + 1"}
+
+# ------------------------------------------------------------------------------------------------ sim.step
+# frame_n = sim.step(n, commands, inputs). Both lists are in the order the core logged them.
+step:
+  commands:
+    what: "every command from every decision run on snapshot n - 1, in record order (commands from snapshot n - 1 are applied in frame n). Empty at tick 0."
+    shape: {seq: "integer: the decision record that sent it (contract 5)", kind: "a commands key", args: "the kind's typed args"}
+  inputs:
+    what: "every laptop input stamped n whose event has to: simulator, in input-log order. An input is {t_s: n, type, injected, payload}, typed as events. Inputs with to: core are never passed."
+    echo: "the simulator echoes each input it applied in frame n's events as {t_s: n, type, origin: laptop, injected, payload}, the payload unchanged"
+  order: "within tick n the simulator applies the commands, then the timeline events due at n, then the inputs, and then emits the readings of n"
+  readings: "a reading's t_s is the tick it arrives in the frame (arrival time), so its age is 0 on arrival. A message's latency (G3's acoustic 10-60 s) is inside the simulator, which decides on which tick it arrives; the estimator never back-dates a reading. A crew answer also carries reported_t_s, the t_s of the input that gave it, kept while the simulator re-emits it each tick."
+
+# The commands the core sends. Siddharth defines the command set (DEC-47, contract 5); these are the drafts the
+# core and the fixtures use until he settles them. Arg types as for event payloads.
+commands:
+  set_mode: {args: {guest: guest, mode: string}, effect: "the guest's mode, kw_actual and data_demand change at once (A.6 gives no time for a mode change)"}
+  ship_state: {args: {course: [free, steady], speed_kn: number, noise: [quiet, normal]}, optional: [course, speed_kn, noise], effect: "the simulator carries each requested value out with its transition_drafts time and reports the change under way"}
+  clear_deck: {args: {zone: [flight_deck, bays]}, effect: "the zone goes occupied to clear over transition_drafts.deck_clear"}
+  guest_command: {args: {guest: guest, action: [hold_depth, abort_leg, resume_leg]}, effect: "relayed to the guest (G3 over the acoustic link, arriving after transition_drafts.g3_round_trip); the guest reports the result: hold_depth gives holding_depth and leg paused, abort_leg gives holding_at_sea and leg aborted"}
+  bridge_request: {args: {request_seq: integer, rule: string, asked_t_s: number}, effect: "adds {request_seq, rule, state: pending, asked_t_s, answered_t_s: null} to bridge_requests from this frame on. asked_t_s is the tick of the snapshot the decision ran on (480 in Scenario B), not the tick the command is applied (481)"}
+  bridge_close: {args: {request_seq: integer}, effect: "removes the request from bridge_requests; the core sends it once the decision that asked has closed (R3: G4 landed)"}
+
+# ------------------------------------------------------------------------------------------------ baselines
+# The starting state of a run. The simulator is built as Simulator(scenario, mission, seed, variant); `start`
+# gives the value at tick 0 of every raw signal the tick-0 frame carries (state from before tick 0 included:
+# G4.launched_t_s, last_sweep), the scenario's own values taken from config/scenarios/*.yaml. The simulator
+# echoes it in the tick-0 baseline event and its tick-0 readings equal it. A variant replaces some start values.
+# Readings in `scenario_sourced` carry source scenario. `series` are waypoints a value moves along linearly
+# between, held after the last; the 1 Hz value is rounded to 0.1. Not in Scenario B's file, so all assumed
+# (pending_moves) except what the scenario states (seawater_c 24, situation at_sea, 3 kn, G3 surveying,
+# G4 airborne, G5 full).
+baselines:
+  scenario_b:
+    seed: 0
+    scenario_sourced: [situation, seawater_c, sea_state]
+    start:
+      genset_1_relay_trip: false
+      genset_2_relay_trip: false
+      genset_1_kw: 251.5
+      genset_2_kw: 251.5
+      bus_frequency_hz: 60.0
+      chw_pump_1_running: true
+      chw_pump_2_running: true
+      chw_pump_1_alarm: false
+      chw_pump_2_alarm: false
+      chw_flow_pct: 100.0
+      chw_supply_c: 7.0
+      chw_return_c: 12.0
+      course: steady
+      speed_kn: 3.0
+      noise: quiet
+      situation: at_sea
+      deck_flight_deck: occupied
+      deck_bays: clear
+      ramp: free
+      deck_machinery: false
+      deck_activity_since_sweep: true
+      emission: normal
+      radar_transmitting: true
+      seawater_c: 24.0
+      sea_state: 4
+      wind_kn: 18.0
+      wind_from_deg: 300.0
+      satcom_mbps: 6.0
+      los_radio_mbps: 20.0
+      crew_aboard: 14
+      people_available: 4
+      bridge_requests: []
+      hlo_deck_report: none
+      hlo_wind_kn: null
+      standing_plan: none
+      last_sweep: null
+      G3.mode: standby
+      G3.activity: surveying
+      G3.kw_actual: 1.0
+      G3.data_demand: {acoustic_kbps: 3}
+      G3.leg_state: running
+      G3.leg_started_t_s: 0
+      G3.leg_flown_s: 0
+      G3.hold_ack: false
+      G4.mode: standby
+      G4.activity: airborne
+      G4.kw_actual: 2.0
+      G4.data_demand: {los_radio_mbps: 20}
+      G4.range_km: 12.0
+      G4.launched_t_s: -3952
+      G5.mode: full
+      G5.activity: transmitting
+      G5.kw_actual: 45.0
+      G5.data_demand: {satcom_mbps: 6, backbone_mbps: 1000}
+    series:
+      wind_kn: [[0, 18.0], [480, 22.0]]
+      G4.range_km: [[0, 12.0], [480, 11.0], [1020, 0.0]]
+    variants:
+      crew0: {why: "DEMO_SCRIPT Scenario C segment: nobody aboard; the departing crew swept the deck clear at -4200 s, before G4's launch at -3952 s, and no deck activity since",
+              start: {crew_aboard: 0, people_available: 0, last_sweep: {t_s: -4200, result: clear}, deck_activity_since_sweep: false, deck_flight_deck: clear}}
+    why:
+      genset_kw: "fault_signatures.bus_load: (400 + 55 + 48) / 2"
+      chw: "assumed: a nominal 7 C supply and 12 C return (confirm_rules.cooling_degraded provenance)"
+      sea_state_wind_satcom: "assumed: Scenario B gives no sea state, wind or SATCOM rate; sea state 4, wind 18 kn from 300 deg rising to 22 kn by minute 8, SATCOM 6 of 2-8 Mbit/s"
+      G4.launched_t_s: "dated back from 18 % at minute 8 at rules.r3.drain_pct_min: 480 - 82 / 1.11 x 60 = -3952 s"
+      G4.range_km: "assumed: loitering 11-12 km out until minute 8, then closing to the ship by the landing; inside the 20 km radio range throughout"
+      people_available: "assumed: 4 of 14 free for deck work"
+    # The steps after minute 8 that the fixtures assume. The decisions are the core's (D3 at 480, D4 at 1141);
+    # the times are pins, assumed or transition_drafts. commands are keyed by the snapshot tick they are
+    # decided on, so they are applied one tick later. `missions` limits a command to those priority files.
+    script:
+      inputs:
+        540: [{type: bridge_answer, injected: false, payload: {request_seq: 1, answer: confirmed}, why: "seed_pins.confirm_min 1 after asked_t_s 480"}]
+      commands:
+        480:
+          - {seq: 1, kind: guest_command, args: {guest: G3, action: hold_depth}, missions: [survey]}
+          - {seq: 1, kind: guest_command, args: {guest: G3, action: abort_leg}, missions: [sar]}
+          - {seq: 1, kind: bridge_request, args: {request_seq: 1, rule: R3, asked_t_s: 480}}
+        540:
+          - {seq: 1, kind: ship_state, args: {course: free, speed_kn: 5.0}, why: "turn into the wind for G4 (R3), inside the slow band"}
+          - {seq: 1, kind: clear_deck, args: {zone: flight_deck}}
+        1020:
+          - {seq: 1, kind: bridge_close, args: {request_seq: 1}, why: "G4 landed: the R3 decision closes"}
+        1080:
+          - {seq: 2, kind: ship_state, args: {course: steady, speed_kn: 3.0}, missions: [survey], why: "assumed: G4 secured 60 s after landing, then the survey resumes"}
+        1141:
+          - {seq: 3, kind: set_mode, args: {guest: G4, mode: charge}, missions: [survey], why: "D4 on the confirmed pump fault (DEC-40)"}
+          - {seq: 3, kind: set_mode, args: {guest: G5, mode: low_power}, missions: [sar], why: "D4 on the confirmed pump fault (DEC-40)"}
+      outcomes:
+        - "481: G3 receives the hold (survey) or the abort (sar); its reply arrives at 510 (transition_drafts.g3_round_trip): activity holding_depth or holding_at_sea, leg paused or aborted, leg_flown_s 480, hold_ack true, data demand down to 1 kbit/s"
+        - "481: bridge_requests holds request 1, pending; 540: confirmed (the input)"
+        - "541: course free, noise manoeuvring, speed 3 to 5 kn by 661 (latest 721), the flight deck clear by 781 (latest 841); the acoustic link is down from 541"
+        - "781 to 1019: G4 in launch_recovery (turn into the wind, hangar doors: deck_machinery true)"
+        - "1020: G4 lands, the timeline pin (timeline_mapping.pins); the approach takes the 239 s left after the deck clears"
+        - "1081 (survey): noise normal, course settling to steady by 1201 (latest 1261), speed 5 to 3 kn by 1201"
+        - "1140: the pump fault (triggered 2 min after the landing); 1142: the D4 mode change lands"
+
+# ------------------------------------------------------------------------------------------------ timeline
+# How each config/scenarios/*.yaml event becomes the frame event the simulator echoes, so its payload validates
+# against the event registry above. copy: payload key from scenario key. fields: scenario keys moved into
+# payload.fields. split: a scenario value that becomes several payload keys. add: the simulator's choices,
+# which the scenario does not state. context: payload keys filled from the run (variant, start). plus_s:
+# payload key set to the applied tick plus that many seconds. flag: event flags from scenario keys. drop:
+# scenario keys that are not in the payload, with where they go instead. produces: what else the simulator
+# does on that tick.
+timeline_mapping:
+  pins: "scenario events and seed pins are absolute ship times the simulator honours: an event at t_min m is applied at tick ceil(60 x m), whatever the chain of one-tick actuation lags before it. DEC-40's 8 + 1 + 4 + 4 = 17 counts from the decision at 480, so the lag of the minute-8 commands (applied at 481 and 541) comes out of G4's final approach (239 s, not 240), and G4 lands at 1020. If the run's decisions have not cleared the recovery by a pinned landing (no confirmed request, no latched deck at 0 aboard), the simulator skips the event and logs it."
+  events:
+    baseline: {copy: {note: note}, context: [variant, start], produces: "the tick-0 readings, equal to start"}
+    guest_report: {copy: {guest: guest}, fields: [battery_pct],
+                   drop: {wind_kn: "the ship's anemometer carries wind (wind_kn, baselines series reaching 22 kn at 480); a guest report never sets a ship signal"},
+                   produces: "Gx.<field> readings at this tick (event rate)"}
+    genset_trip: {add: {genset: 2, confirmed: true},
+                  drop: {gensets_online: "the estimator's output, checked against the snapshot (test_minute_12_trip_timing)", cooling: "unchanged by the trip; the estimator's cooling_state, checked against the snapshot"},
+                  produces: "fault_signatures.genset_trip on genset 2 from this tick"}
+    guest_state: {copy: {guest: guest}, split: {state: {landed_fast_charging: {activity: landed, mode: fast_charge}}},
+                  produces: "G4.activity landed, G4.mode fast_charge, kw_actual 35, range 0, data demand none, deck_flight_deck occupied"}
+    cooling_degraded: {copy: {factor: factor, confirmed: confirmed}, add: {pump: 1}, flag: {injected: injected},
+                       drop: {trigger: "when it fires: the landing's tick + delay_min x 60 (1140)", load_modes: "the modes the oracle expects at the fault, checked against the snapshot (test_ledger_minute_19_cooling_binds)", injected: "the event's injected flag"},
+                       produces: "fault_signatures.cooling_degraded on chw_pump_1 from this tick"}
+    genset_restart: {add: {genset: 2}, plus_s: {expected_end_t_s: 600},
+                     drop: {gensets_online: "the estimator's output once the restart transition ends", optional: "applied only when the run enables it; Scenario B's fixtures end before minute 24"},
+                     produces: "fault_signatures.genset_restart, with transition_drafts.genset_restart"}
 
 # ------------------------------------------------------------------------------------------------ signals
 signals:
@@ -341,7 +531,7 @@ signals:
   - {name: bridge_requests, group: crew, kind: crew, type: requests, producer: laptop, source: crew_report, feed: laptop, rate: 1 Hz,
      wait_s: {by_crew: {14: 60, 6: 180, 0: 0}},
      fallback: {value: [], rule: "a lost feed leaves every open request unanswered, which counts as no"}, read_by: [D3, D5],
-     provenance: "brief A.6 (15-60 s, 1-3 min, impossible uncrewed); assumptions crew.confirm_s. One entry per open request: {request_seq, rule, state, asked_t_s, answered_t_s}. A pending request waits wait_s and then counts as no; a given answer holds for its request_seq until that decision closes, and the entry then leaves the list."}
+     provenance: "brief A.6 (15-60 s, 1-3 min, impossible uncrewed); assumptions crew.confirm_s. One entry per open request: {request_seq, rule, state, asked_t_s, answered_t_s}, added by the core's bridge_request command, answered by the bridge_answer input (state and answered_t_s from the input's tick) and removed by the core's bridge_close command. A pending request waits wait_s and then counts as no; a given answer holds for its request_seq until bridge_close."}
   - {name: hlo_deck_report, group: crew, kind: crew, type: enum, values: [none, clear, not_clear], producer: laptop, source: crew_report, feed: laptop, rate: 1 Hz, expires_after_s: 300,
      fallback: {value: not_clear, rule: "a lost feed, or a clear report older than expires_after_s (counted from reported_t_s), counts as not clear"}, read_by: [D5, safety],
      provenance: "assumptions rules.r3.deck_evidence; assumed: a clear report is good for 5 min, the slow end of A.6's clearing time"}
@@ -442,7 +632,9 @@ pending_moves:
   - confirm_rules.cooling_degraded thresholds (70 % flow, 8 C delta-T) and the pump_stopped vote (extends heat.degraded_confirm)
   - derivations.speed_band bounds (stopped below 0.5 kn), derivations.guest_reserve_kw gap rule and stopped_kw 200, speed_tolerance_kn 0.5
   - feeds stale limits other than 3 s (public_data 10800 s, g3_acoustic 120 s of link-up silence) and every fallback not in stale_feed.falls_to
-  - fallback_policy.lift_after_fresh_frames 3 and grace_s 30; hlo_wind_kn and its 120 s expiry; hlo_deck_report 300 s; standing_plan 5400 s
+  - fallback_policy.grace_s 30; hlo_wind_kn and its 120 s expiry; hlo_deck_report 300 s; standing_plan 5400 s
+  - feeds.g3_acoustic.cadence_s 60; transition_drafts (Siddharth's, DEC-47)
+  - baselines.scenario_b (start, series, the crew0 variant, the script after minute 8) into config/scenarios/scenario_b.yaml with Physical Account rows; timeline_mapping's choices genset 2, pump 1 and the 600 s restart
   - derivations.g4_land_by.drain_pct_max 1.5 %/min (as rules.r3.drain_pct_max)
   - derivations.overdraw threshold_pct 5 and hold_s 10 (the R-082 tolerance)
   - derivations.g3_leg leg_length_s 2400 and recovery_window_s 900

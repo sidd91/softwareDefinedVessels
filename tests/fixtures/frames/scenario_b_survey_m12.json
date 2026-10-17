@@ -14,7 +14,7 @@
    "t_s": 721
   },
   "genset_1_kw": {
-   "value": 385.0,
+   "value": 353.0,
    "source": "plant",
    "t_s": 721
   },
@@ -125,7 +125,7 @@
    "t_s": 721
   },
   "wind_kn": {
-   "value": 23.0,
+   "value": 22.0,
    "source": "plant",
    "t_s": 721
   },
@@ -232,7 +232,7 @@
     "t_s": 721
    },
    "range_km": {
-    "value": 6.0,
+    "value": 6.1,
     "source": "guest_report",
     "t_s": 721
    }

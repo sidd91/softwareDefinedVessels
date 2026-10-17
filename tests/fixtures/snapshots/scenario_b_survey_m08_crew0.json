@@ -2,6 +2,7 @@
  "run": {
   "contract": "argos-snapshot/2",
   "scenario": "scenario_b",
+  "variant": "crew0",
   "mission": "survey",
   "seed": 0,
   "tick": 480,
@@ -35,14 +36,14 @@
    "stale": false
   },
   "genset_1_kw": {
-   "value": 330.0,
+   "value": 251.5,
    "source": "plant",
    "age_s": 0,
    "confidence": "measured",
    "stale": false
   },
   "genset_2_kw": {
-   "value": 325.0,
+   "value": 251.5,
    "source": "plant",
    "age_s": 0,
    "confidence": "measured",
@@ -667,79 +668,66 @@
   "pms": {
    "stale": false,
    "last_heard_t_s": 480,
-   "fallback_active": false,
    "drop": null
   },
   "chw": {
    "stale": false,
    "last_heard_t_s": 480,
-   "fallback_active": false,
    "drop": null
   },
   "nav": {
    "stale": false,
    "last_heard_t_s": 480,
-   "fallback_active": false,
    "drop": null
   },
   "deck": {
    "stale": false,
    "last_heard_t_s": 480,
-   "fallback_active": false,
    "drop": null
   },
   "emission": {
    "stale": false,
    "last_heard_t_s": 480,
-   "fallback_active": false,
    "drop": null
   },
   "anemometer": {
    "stale": false,
    "last_heard_t_s": 480,
-   "fallback_active": false,
    "drop": null
   },
   "comms": {
    "stale": false,
    "last_heard_t_s": 480,
-   "fallback_active": false,
    "drop": null
   },
   "public_data": {
    "stale": false,
    "last_heard_t_s": 0,
-   "fallback_active": false,
    "drop": null
   },
   "laptop": {
    "stale": false,
    "last_heard_t_s": 480,
-   "fallback_active": false,
    "drop": null
   },
   "guest_meter": {
    "stale": false,
    "last_heard_t_s": 480,
-   "fallback_active": false,
    "drop": null
   },
   "guest_backbone": {
    "stale": false,
    "last_heard_t_s": 480,
-   "fallback_active": false,
    "drop": null
   },
   "g4_telemetry": {
    "stale": false,
    "last_heard_t_s": 480,
-   "fallback_active": false,
    "drop": null
   },
   "g3_acoustic": {
    "stale": false,
    "last_heard_t_s": 480,
-   "fallback_active": false,
    "drop": null
   }
  },
@@ -760,6 +748,6 @@
  ],
  "notes": [
   "Scenario B at minute 8 with 0 aboard (DEMO_SCRIPT Scenario C segment, +11): rule R3 reads the deck latched at the last crew sweep.",
-  "The crew swept the deck clear at -4200 s and left; G4's launch at -3952 s is its own and does not count (rules.r3.latched_deck), so deck_activity_since_sweep is false and deck_latched_clear is true: recovery is automatic, with no confirm button."
+  "The run starts from the crew0 variant (baselines.scenario_b.variants.crew0): the crew swept the deck clear at -4200 s and left; G4's launch at -3952 s is its own and does not count (rules.r3.latched_deck), so deck_activity_since_sweep is false and deck_latched_clear is true: recovery is automatic, with no confirm button."
  ]
 }

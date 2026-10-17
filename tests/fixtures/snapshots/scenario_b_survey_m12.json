@@ -2,6 +2,7 @@
  "run": {
   "contract": "argos-snapshot/2",
   "scenario": "scenario_b",
+  "variant": "default",
   "mission": "survey",
   "seed": 0,
   "tick": 721,
@@ -36,7 +37,7 @@
    "since_t_s": 720
   },
   "genset_1_kw": {
-   "value": 385.0,
+   "value": 353.0,
    "source": "plant",
    "age_s": 0,
    "confidence": "measured",
@@ -270,7 +271,7 @@
    "stale": false
   },
   "wind_kn": {
-   "value": 23.0,
+   "value": 22.0,
    "source": "plant",
    "age_s": 0,
    "confidence": "measured",
@@ -514,7 +515,7 @@
     "since_t_s": 480
    },
    "range_km": {
-    "value": 6.0,
+    "value": 6.1,
     "source": "guest_report",
     "age_s": 0,
     "confidence": "reported",
@@ -696,79 +697,66 @@
   "pms": {
    "stale": false,
    "last_heard_t_s": 721,
-   "fallback_active": false,
    "drop": null
   },
   "chw": {
    "stale": false,
    "last_heard_t_s": 721,
-   "fallback_active": false,
    "drop": null
   },
   "nav": {
    "stale": false,
    "last_heard_t_s": 721,
-   "fallback_active": false,
    "drop": null
   },
   "deck": {
    "stale": false,
    "last_heard_t_s": 721,
-   "fallback_active": false,
    "drop": null
   },
   "emission": {
    "stale": false,
    "last_heard_t_s": 721,
-   "fallback_active": false,
    "drop": null
   },
   "anemometer": {
    "stale": false,
    "last_heard_t_s": 721,
-   "fallback_active": false,
    "drop": null
   },
   "comms": {
    "stale": false,
    "last_heard_t_s": 721,
-   "fallback_active": false,
    "drop": null
   },
   "public_data": {
    "stale": false,
    "last_heard_t_s": 0,
-   "fallback_active": false,
    "drop": null
   },
   "laptop": {
    "stale": false,
    "last_heard_t_s": 721,
-   "fallback_active": false,
    "drop": null
   },
   "guest_meter": {
    "stale": false,
    "last_heard_t_s": 721,
-   "fallback_active": false,
    "drop": null
   },
   "guest_backbone": {
    "stale": false,
    "last_heard_t_s": 721,
-   "fallback_active": false,
    "drop": null
   },
   "g4_telemetry": {
    "stale": false,
    "last_heard_t_s": 721,
-   "fallback_active": false,
    "drop": null
   },
   "g3_acoustic": {
    "stale": false,
    "last_heard_t_s": 510,
-   "fallback_active": false,
    "drop": null
   }
  },
@@ -791,7 +779,7 @@
  ],
  "events": [],
  "notes": [
-  "Scenario B, survey file, minute 12: genset 2 trips at 720 s (relay flag, kW to zero, the bus held at 59.6 Hz: fault_signatures.genset_trip). Relay and kW hold for 1 s, so the trip is confirmed at 721 s, this tick; D4's first shed would be applied at 722 s, inside the 725 s due time.",
+  "Scenario B, survey file, minute 12: genset 2 trips at 720 s (relay flag, kW to zero, the bus held at 59.6 Hz: fault_signatures.genset_trip). Relay and kW hold for 1 s, so the trip is confirmed at 721 s, this tick; D4's first shed would be applied at 722 s, inside the 725 s due time. Genset 1 carries 400 - 150 + 55 + 48 = 353 kW (fault_signatures.bus_load).",
   "G4 is airborne at 2 kW with no reservation (DEC-40): the ledger's load is 48 kW against a 95 kW ceiling, so the trip holds with 0 steps (tests/oracles minute_12_as_decided).",
   "The ship reached 5 kn at 661 s (one setting inside the slow band, no band change) and the deck is being cleared (541 s to 781 s, seed 4 min); G3 has held depth since its ack at 510 s and is out of acoustic contact."
  ]

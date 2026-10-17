@@ -14,12 +14,12 @@
    "t_s": 0
   },
   "genset_1_kw": {
-   "value": 330.0,
+   "value": 251.5,
    "source": "plant",
    "t_s": 0
   },
   "genset_2_kw": {
-   "value": 325.0,
+   "value": 251.5,
    "source": "plant",
    "t_s": 0
   },
@@ -297,13 +297,68 @@
    "injected": false,
    "payload": {
     "note": "3 kn over the cable route, G3 on its 40-min leg on the acoustic link, G4 airborne, G5 full",
-    "assumed": {
-     "seed": 0,
+    "variant": "default",
+    "start": {
+     "genset_1_relay_trip": false,
+     "genset_2_relay_trip": false,
+     "genset_1_kw": 251.5,
+     "genset_2_kw": 251.5,
+     "bus_frequency_hz": 60.0,
+     "chw_pump_1_running": true,
+     "chw_pump_2_running": true,
+     "chw_pump_1_alarm": false,
+     "chw_pump_2_alarm": false,
+     "chw_flow_pct": 100.0,
+     "chw_supply_c": 7.0,
+     "chw_return_c": 12.0,
+     "course": "steady",
+     "speed_kn": 3.0,
+     "noise": "quiet",
+     "situation": "at_sea",
+     "deck_flight_deck": "occupied",
+     "deck_bays": "clear",
+     "ramp": "free",
+     "deck_machinery": false,
+     "deck_activity_since_sweep": true,
+     "emission": "normal",
+     "radar_transmitting": true,
+     "seawater_c": 24.0,
      "sea_state": 4,
-     "wind_kn": 18,
-     "satcom_mbps": 6,
-     "G4": {
-      "launched_t_s": -3952
+     "wind_kn": 18.0,
+     "wind_from_deg": 300.0,
+     "satcom_mbps": 6.0,
+     "los_radio_mbps": 20.0,
+     "crew_aboard": 14,
+     "people_available": 4,
+     "bridge_requests": [],
+     "hlo_deck_report": "none",
+     "hlo_wind_kn": null,
+     "standing_plan": "none",
+     "last_sweep": null,
+     "G3.mode": "standby",
+     "G3.activity": "surveying",
+     "G3.kw_actual": 1.0,
+     "G3.data_demand": {
+      "acoustic_kbps": 3
+     },
+     "G3.leg_state": "running",
+     "G3.leg_started_t_s": 0,
+     "G3.leg_flown_s": 0,
+     "G3.hold_ack": false,
+     "G4.mode": "standby",
+     "G4.activity": "airborne",
+     "G4.kw_actual": 2.0,
+     "G4.data_demand": {
+      "los_radio_mbps": 20
+     },
+     "G4.range_km": 12.0,
+     "G4.launched_t_s": -3952,
+     "G5.mode": "full",
+     "G5.activity": "transmitting",
+     "G5.kw_actual": 45.0,
+     "G5.data_demand": {
+      "satcom_mbps": 6,
+      "backbone_mbps": 1000
      }
     }
    }

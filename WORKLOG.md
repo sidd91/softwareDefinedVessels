@@ -744,3 +744,21 @@ has an Owner column from DEC-47 and new tasks T15 to T26; OPEN_QUESTIONS gained 
 Logan also asked for a glossary page in the demo UI (status-tag criteria, acronyms, units, decision classes); it is
 on the design canvas as a sixth artboard.
 Decisions: DEC-52 (Logan's freeze, details by Claude). Conflicts: none new. Deferrals: none.
+
+### Sat 14:05 PDT · Checkpoints 3, 3b and 5 on main; hybrid build started · Claude Opus 5.5 on behalf of Logan Walker (GhostWalka)
+
+State-estimation contract: two skeptics (6 blocking, 23 should_fix), a repair, a re-check (25 fixed, 4 partly, none
+blocking) and a builder playing Siddharth, who built a throwaway simulator stub from the contract alone: every frame
+validates, the genset trip confirms at 721 s and the pump fault at 1141 s. Integration fixes followed (bus-load
+formula, timeline-to-frame mapping, G3 60 s acoustic cadence, bridge_request and bridge_close commands, the
+sim.step input and command shapes, absolute seed pins with G4 landing at 1020, a scenario baseline with a crew-0
+variant, fallback lifts on the first fresh frame). Verdict: ready with notes; Siddharth can build now. His sign-off
+list is the "Agree with Siddharth" checklist at the top of docs/STATE_ESTIMATION.md open items. Builder notes still
+open: reported_t_s on crew answers, per-mode data demand, when G4 starts launch_recovery, a course-leaving
+transition, the crew-0 script after 480 s, required lists in the frame schema.
+Memo (checkpoint 5, DEC-50): one 2-page memo now serves the Scenario C rule and slide 14's architecture memo.
+Nice-to-have ideas and next-steps slide in docs/NICE_TO_HAVE.md. Design mockups and the UI critique are in docs/design/.
+Logan chose the hybrid build: Claude builds the core spine in this session (loader with typed conditions, ledger,
+D1); two parallel sessions build the UI shell (argos-ui) and the decision-record schema and sentence templates
+(argos-explain), each merging to main when its tests pass.
+Decisions: none new (DEC-50 applied). Conflicts: CON-22 still open (Siddharth to agree). Deferrals: none.

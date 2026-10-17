@@ -15,7 +15,7 @@ Every number we rely on beyond Annex A and B, every Annex value we changed, and 
 <tr><td>Mass / stability</td><td>G4 hangar</td><td>850 kg, not Annex B's 900 kg</td><td>organizer fix (DEC-22)</td><td>card, test</td></tr>
 <tr><td></td><td>Scenario B set</td><td>G3, G4, G5, 9.515 t; brief's G2-G5 (13.015 t of 10) refused</td><td>override logged (DEC-32)</td><td>test</td></tr>
 <tr><td>Data links</td><td>rates judged</td><td>guests' minimum rates, nominal gap shown as degraded; SATCOM at its 2 Mbit/s floor; floors G3 acoustic 1 kbit/s, G5 SATCOM 1 Mbit/s</td><td>admission rule (DEC-38)</td><td>card, test</td></tr>
-<tr><td></td><td>LOS radio</td><td>top rate 20 Mbit/s, G4 kept within 20 km (A.5 reach 20-40 km)</td><td>unverified; range is ours</td><td>not yet</td></tr>
+<tr><td></td><td>LOS radio</td><td>top rate 20 Mbit/s, G4 kept within 20 km (A.5 reach 20-40 km)</td><td>unverified; range is ours</td><td>test</td></tr>
 <tr><td></td><td>acoustic link</td><td>up only while course steady, noise quiet, no deck machinery; lost at once; 60 s per message; Scenario B water not layered</td><td>A.5's rule, safe end</td><td>test</td></tr>
 <tr><td>State transitions</td><td>R3 lead time</td><td>confirm 1 min at 14, 3 at 6; clear deck 5 at 14, 12 at 6</td><td>A.6 slow end, worst case</td><td>test</td></tr>
 <tr><td></td><td>Scenario B seed</td><td>confirm 1, clear 4, approach 4 min: G4 lands at minute 17</td><td>replayable, inside A.6</td><td>test</td></tr>

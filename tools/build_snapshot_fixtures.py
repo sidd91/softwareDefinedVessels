@@ -5,7 +5,11 @@ simulator would hand it on that tick (tests/fixtures/frames/). The specs below h
 reading time) and the derived values; this script fills in what the contract makes mechanical: age_s, stale,
 confidence, feed health, the effect fields' `by`, and the frame (every reading whose t_s is this tick).
 tests/test_snapshot_contract.py fails if the committed fixtures differ from this script's output, and checks the
-derived values independently against config and the oracles.
+derived values independently against config and the oracles. The starting state, the series and the script after
+minute 8 come from config/signals.yaml baselines.scenario_b; the genset kW from fault_signatures.bus_load.
+
+The fixture files are pretty-printed for review (render). The logs a run writes use canonical(), the one
+serializer the byte-for-byte replay check compares; the tests compare parsed objects.
 
     uv run python tools/build_snapshot_fixtures.py
 """
@@ -39,6 +43,40 @@ def r1(x):
     return x
 
 
+def canonical(obj) -> str:
+    """The serializer of every frame, snapshot, input and decision log (docs/STATE_ESTIMATION.md, Replay): every
+    number rounded to 0.1 and a whole number written as an integer, so 18 and 18.0 give the same bytes; sorted
+    keys; no whitespace."""
+    def norm(x):
+        if isinstance(x, bool) or x is None or isinstance(x, str):
+            return x
+        if isinstance(x, (int, float)):
+            r = round(float(x), 1)
+            return int(r) if r == int(r) else r
+        if isinstance(x, dict):
+            return {k: norm(v) for k, v in x.items()}
+        return [norm(v) for v in x]
+    return json.dumps(norm(obj), sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+
+
+def series_at(points, t):
+    """baselines series: linear between waypoints, held after the last, rounded to 0.1."""
+    if t <= points[0][0]:
+        return float(points[0][1])
+    for (t0, v0), (t1, v1) in zip(points, points[1:]):
+        if t <= t1:
+            return round(v0 + (v1 - v0) * (t - t0) / (t1 - t0), 1)
+    return float(points[-1][1])
+
+
+def bus_kw(guest_kw: float, tripped: bool, A: dict) -> float:
+    """fault_signatures.bus_load: what each online genset reads."""
+    p = A["power"]
+    hotel = p["hotel_kw"]["committed"] - (p["hotel_shed_on_trip_kw"] if tripped else 0)
+    load = hotel + p["ship_aux_kw"] + guest_kw
+    return round(min(p["gensets"]["rating_kw"], load) if tripped else load / 2, 1)
+
+
 # ------------------------------------------------------------------------------------------------ helpers
 
 def R(value, t=NOW, src=None, since=None, tr=None, rep=None, sub=None):
@@ -70,6 +108,7 @@ FAULT_RULE_STATES = {"confirmed", "restoring"}
 class Spec:
     def __init__(self, name, tick, mission="survey"):
         self.name, self.tick, self.mission = name, tick, mission
+        self.variant = "default"
         self.raw, self.derived = {}, {}
         self.faults, self.events, self.notes = [], [], []
         self.drops = {}
@@ -109,7 +148,7 @@ def assemble(spec: Spec, S: dict, SIG: dict) -> tuple[dict, dict]:
             stale = bool(link["v"]) and last is not None and tick - max(last, up_since) > cfg["stale_after_link_up_s"]
         else:
             stale = last is not None and tick - last > cfg["stale_after_s"]
-        feed_state[f] = {"stale": stale, "last_heard_t_s": last, "fallback_active": stale, "drop": spec.drops.get(f)}
+        feed_state[f] = {"stale": stale, "last_heard_t_s": last, "drop": spec.drops.get(f)}
 
     fields = {}
     for name, r in raw.items():
@@ -193,7 +232,7 @@ def assemble(spec: Spec, S: dict, SIG: dict) -> tuple[dict, dict]:
         fields[k]["by"] = gs
 
     # ---- the snapshot
-    snap = {"run": {"contract": "argos-snapshot/2", "scenario": "scenario_b", "mission": spec.mission, "seed": 0,
+    snap = {"run": {"contract": "argos-snapshot/2", "scenario": "scenario_b", "variant": spec.variant, "mission": spec.mission, "seed": 0,
                     "tick": tick, "t_ship_s": tick, "installed": spec.installed,
                     "constants": {k: {"value": v, "source": "scenario", "confidence": "assumed"} for k, v in spec.constants.items()}}}
     for g in ["plant", "ship_state", "environment", "links", "crew"]:
@@ -237,30 +276,18 @@ def speed_line(t, t0, v0, v1, t_end, t_latest):
              tr={"to": v1, "started_t_s": t0, "expected_end_t_s": t_end, "latest_end_t_s": t_latest})
 
 
-def base(A) -> Spec:
+def base(A, S, SIG) -> Spec:
+    """Minute 0: every raw reading is baselines.scenario_b.start."""
+    B = S["baselines"]["scenario_b"]
     s = Spec("scenario_b_survey_m00", 0)
     heat = round(160 - (40 / 18) * (24 - 12), 1)
-    s.raw = {
-        "genset_1_relay_trip": R(False), "genset_2_relay_trip": R(False), "genset_1_kw": R(330.0), "genset_2_kw": R(325.0),
-        "bus_frequency_hz": R(60.0),
-        "chw_pump_1_running": R(True), "chw_pump_2_running": R(True), "chw_pump_1_alarm": R(False), "chw_pump_2_alarm": R(False),
-        "chw_flow_pct": R(100.0), "chw_supply_c": R(7.0), "chw_return_c": R(12.0),
-        "course": R("steady"), "speed_kn": R(3.0), "noise": R("quiet"), "situation": R("at_sea", src="scenario"),
-        "deck_flight_deck": R("occupied"), "deck_bays": R("clear"), "ramp": R("free"), "deck_machinery": R(False),
-        "deck_activity_since_sweep": R(True), "emission": R("normal"), "radar_transmitting": R(True),
-        "seawater_c": R(24.0, t=0, src="scenario"), "sea_state": R(4, t=0, src="scenario"),
-        "wind_kn": R(18.0), "wind_from_deg": R(300.0),
-        "satcom_mbps": R(6.0), "los_radio_mbps": R(20.0),
-        "crew_aboard": R(14), "people_available": R(4), "bridge_requests": R([]), "hlo_deck_report": R("none"),
-        "hlo_wind_kn": R(None), "standing_plan": R("none"), "last_sweep": R(None),
-        "G3.mode": R("standby"), "G3.activity": R("surveying", t=0, since=0), "G3.kw_actual": R(1.0),
-        "G3.data_demand": R({"acoustic_kbps": 3}), "G3.leg_state": R("running", t=0, since=0), "G3.leg_started_t_s": R(0, t=0),
-        "G3.leg_flown_s": R(0, t=0), "G3.hold_ack": R(False, t=0),
-        "G4.mode": R("standby"), "G4.activity": R("airborne"), "G4.kw_actual": R(2.0), "G4.data_demand": R({"los_radio_mbps": 20}),
-        "G4.battery_pct": R(None, t=None), "G4.range_km": R(12.0), "G4.launched_t_s": R(-3952, t=0),
-        "G5.mode": R("full"), "G5.activity": R("transmitting"), "G5.kw_actual": R(45.0),
-        "G5.data_demand": R({"satcom_mbps": 6, "backbone_mbps": 1000}),
-    }
+    for name, v in B["start"].items():
+        rate = SIG[name]["rate"]
+        src = "scenario" if name in B["scenario_sourced"] else None
+        since = 0 if name in ("G3.activity", "G3.leg_state") else None
+        s.raw[name] = R(v, t=NOW if rate == "1 Hz" else 0, src=src, since=since)
+    s.raw["G4.battery_pct"] = R(None, t=None)       # no report before minute 8
+    assert s.raw["genset_1_kw"]["v"] == s.raw["genset_2_kw"]["v"] == bus_kw(guest_kw(s), False, A)
     s.derived = {
         "gensets_online": D(2), "tripped_genset": D("none"), "cooling_state": D("nominal"),
         "speed_band": D("slow"), "heading_free": D(False), "deck_machinery_permitted": D(False), "flight_deck_ops": D("free"),
@@ -274,6 +301,16 @@ def base(A) -> Spec:
         "acoustic": D(cap(3.0, "kbit/s")), "shed_ceiling_kw": D(round(min(250, heat) - 5, 1)),
     }
     return s
+
+
+def guest_kw(s: Spec) -> float:
+    return sum(r["v"] for n, r in s.raw.items() if n.endswith(".kw_actual"))
+
+
+def drift(s: Spec, S):
+    """The baselines series at the spec's tick (the ship's wind, G4's range while it flies)."""
+    for name, points in S["baselines"]["scenario_b"]["series"].items():
+        s.raw[name] = R(series_at(points, s.tick))
 
 
 ACOUSTIC_DOWN = "acoustic link down: course free, noise manoeuvring"
@@ -310,14 +347,15 @@ def after_minute_8(m8: Spec, name: str, tick: int, mission: str) -> Spec:
     return s
 
 
-def landed(s: Spec):
-    """G4 landed at 1020 (seed g4_lands_at_min 17) and fast-charges until 2220; the R3 request closed at landing."""
+def landed(s: Spec, A):
+    """G4 landed at 1020 (the timeline pin, g4_lands_at_min 17) and fast-charges until 2220; the core's bridge_close
+    from snapshot 1020 removed the R3 request at 1021. Called after tripped()."""
     s.raw.update({
         "G4.mode": R("fast_charge", since=1020), "G4.activity": R("landed", since=1020), "G4.kw_actual": R(35.0, since=1020),
         "G4.data_demand": R({}), "G4.range_km": R(0.0, since=1020),
-        "deck_flight_deck": R("occupied", since=1020), "bridge_requests": R([]),
-        "genset_1_kw": R(420.0, since=1020),
+        "deck_flight_deck": R("occupied", since=1020), "bridge_requests": R([], since=1021),
     })
+    s.raw["genset_1_kw"] = R(bus_kw(guest_kw(s), True, A), since=1020)
     s.derived.update({
         "G4.mode_ends_t_s": D(2220, since=1020), "G4.airborne_since_t_s": D(None, since=1020),
         "G4.battery_crossing_t_s": D(None, since=1020), "G4.land_by_t_s": D(None, since=1020),
@@ -325,9 +363,9 @@ def landed(s: Spec):
     })
 
 
-def tripped(s: Spec):
+def tripped(s: Spec, A):
     s.raw.update({"genset_2_relay_trip": R(True, since=720), "genset_2_kw": R(0.0, since=720),
-                  "genset_1_kw": R(385.0, since=720), "bus_frequency_hz": R(59.6, since=720)})
+                  "genset_1_kw": R(bus_kw(guest_kw(s), True, A), since=720), "bus_frequency_hz": R(59.6, since=720)})
     s.derived.update({"gensets_online": D(1, since=721), "tripped_genset": D("genset_2", since=721),
                       "power": D(cap(100, "kW", ["one genset down: genset_2 tripped, confirmed at 721 s"]), since=721),
                       "shed_ceiling_kw": D(95.0, since=721)})
@@ -345,25 +383,28 @@ def cooling(s: Spec):
 
 def specs(root: Path = ROOT) -> list[Spec]:
     A = yaml.safe_load((root / "config/assumptions.yaml").read_text())
+    S, SIG = load(root)
+    TL = yaml.safe_load((root / "config/scenarios/scenario_b.yaml").read_text())
+    B = S["baselines"]["scenario_b"]
     drain = A["rules"]["r3"]["drain_pct_min"]
     out = []
 
-    m0 = base(A)
+    m0 = base(A, S, SIG)
     m0.events = [{"t_s": 0, "type": "baseline", "origin": "timeline", "injected": False, "payload": {
-        "note": "3 kn over the cable route, G3 on its 40-min leg on the acoustic link, G4 airborne, G5 full",
-        "assumed": {"seed": 0, "sea_state": 4, "wind_kn": 18, "satcom_mbps": 6, "G4": {"launched_t_s": -3952}}}}]
+        "note": TL["events"][0]["note"], "variant": "default", "start": copy.deepcopy(B["start"])}}]
     m0.notes = [
         "Scenario B, survey file, minute 0: 3 kn over the cable route, G3 on its 40-min leg on the acoustic link, G4 airborne at 2 kW, G5 full.",
         "G4 has sent no battery report yet (one report, at minute 8, as in the brief), so battery_pct is null and its land-by is the endurance bound: launched -3952 s + 90 min = 1448 s, confidence assumed.",
-        "Assumed for this fixture (the baseline payload lists them): seed 0; sea state 4; wind 18 kn rising to 22 kn by minute 8 (the ship's anemometer); SATCOM 6 Mbit/s of 2-8; G4 launched at -3952 s, dated back from 18 % at minute 8 at rules.r3.drain_pct_min; genset kW and chilled-water temperatures are plausible, not from the brief.",
+        "Every reading is the baseline's start (signals.yaml baselines.scenario_b), echoed in the baseline event: seed 0, sea state 4, wind 18 kn from 300 deg rising to 22 kn by minute 8, SATCOM 6 Mbit/s, G4 launched at -3952 s, each genset at (400 + 55 + 48) / 2 = 251.5 kW (fault_signatures.bus_load).",
         "The flight deck starts occupied; the seed clears it in 4 min after the minute-8 confirmation (seed_pins.deck_clear_min).",
     ]
     out.append(m0)
 
     m8 = m0.copy("scenario_b_survey_m08", 480)
+    drift(m8, S)
     cross = round(480 - (20 - 18) / drain * 60, 1)
     m8.raw.update({
-        "G4.battery_pct": R(18.0, t=480, since=480), "G4.range_km": R(11.0), "wind_kn": R(22.0),
+        "G4.battery_pct": R(18.0, t=480, since=480),
         "G3.activity": R("surveying", t=480, since=0), "G3.leg_state": R("running", t=480, since=0),
         "G3.leg_started_t_s": R(0, t=480), "G3.leg_flown_s": R(480, t=480), "G3.hold_ack": R(False, t=480),
     })
@@ -373,18 +414,18 @@ def specs(root: Path = ROOT) -> list[Spec]:
     m8.notes = [
         "Scenario B, survey file, minute 8: G4 reports 18 % battery. This is D3's input, before the decision: the ship is still at 3 kn, steady and quiet.",
         f"G4's land-by: the 20 % crossing is dated back at {drain} %/min to {cross} s (minute 6.2), plus 12 min = {round(cross + 720, 1)} s (minute 18.2), earlier than the endurance bound 1448 s (docs/EXPECTED_OUTCOMES.md minute 8).",
-        "scenario_b.yaml puts wind_kn 22 on G4's report; here it is the ship's anemometer reading, and the report carries the battery only.",
+        "scenario_b.yaml puts wind_kn 22 on G4's report; timeline_mapping drops it from the report, and the ship's anemometer reads 22 kn (baselines series). G3's status message at 480 is its periodic one (every 60 s while the link is up).",
     ]
     out.append(m8)
 
     c0 = m8.copy("scenario_b_survey_m08_crew0")
-    c0.raw.update({"crew_aboard": R(0), "people_available": R(0), "last_sweep": R({"t_s": -4200, "result": "clear"}),
-                   "deck_activity_since_sweep": R(False), "deck_flight_deck": R("clear")})
+    c0.variant = "crew0"
+    c0.raw.update({k: R(copy.deepcopy(v)) for k, v in B["variants"]["crew0"]["start"].items()})
     c0.derived.update({"deck_latched_clear": D(True)})
     c0.events = copy.deepcopy(m8.events)
     c0.notes = [
         "Scenario B at minute 8 with 0 aboard (DEMO_SCRIPT Scenario C segment, +11): rule R3 reads the deck latched at the last crew sweep.",
-        "The crew swept the deck clear at -4200 s and left; G4's launch at -3952 s is its own and does not count (rules.r3.latched_deck), so deck_activity_since_sweep is false and deck_latched_clear is true: recovery is automatic, with no confirm button.",
+        "The run starts from the crew0 variant (baselines.scenario_b.variants.crew0): the crew swept the deck clear at -4200 s and left; G4's launch at -3952 s is its own and does not count (rules.r3.latched_deck), so deck_activity_since_sweep is false and deck_latched_clear is true: recovery is automatic, with no confirm button.",
     ]
     out.append(c0)
 
@@ -392,7 +433,7 @@ def specs(root: Path = ROOT) -> list[Spec]:
     m9_rule = "the earliest 20 % crossing the last report allows (derivations.g4_land_by.stale_rule): 18 % is below 20 %, so the crossing stays dated back to 371.9 s and land-by stays 1091.9 s"
     m9.raw.update({
         "G4.activity": R("airborne", t=545, sub=sub("airborne", 545, "the last value; airborne because the last value was airborne")),
-        "G4.range_km": R(None, t=545, sub=sub(10.0, 545, "unknown: taken beyond 20 km, so the radio is at its 1 Mbit/s floor")),
+        "G4.range_km": R(None, t=545, sub=sub(series_at(B["series"]["G4.range_km"], 545), 545, "unknown: taken beyond 20 km, so the radio is at its 1 Mbit/s floor")),
         "G4.battery_pct": R(18.0, t=480, since=480, sub=sub(18.0, 480, m9_rule)),
         "G4.launched_t_s": R(-3952, t=0, sub=sub(-3952, 0, "keeps the last value")),
     })
@@ -408,11 +449,12 @@ def specs(root: Path = ROOT) -> list[Spec]:
     out.append(m9)
 
     m10 = after_minute_8(m8, "scenario_b_survey_m10_stale_genset_feed", 600, "survey")
+    drift(m10, S)
     pms_rule = "casts no vote; a pending trip is held; gensets_online falls back instead"
-    for k, v in [("genset_1_relay_trip", False), ("genset_2_relay_trip", False), ("genset_1_kw", 330.0), ("genset_2_kw", 325.0), ("bus_frequency_hz", 60.0)]:
+    for k in ["genset_1_relay_trip", "genset_2_relay_trip", "genset_1_kw", "genset_2_kw", "bus_frequency_hz"]:
+        v = B["start"][k]
         m10.raw[k] = R(v, t=596, sub=sub(v, 596, pms_rule))
     scope = "admission and arming the D4 ladder only; D4 never acts on a substituted value"
-    m10.raw["G4.range_km"] = R(9.0)
     m10.derived.update({
         "gensets_online": D(1, sub=sub(2, 596, "one genset down", "derived", scope)),
         "tripped_genset": D("none", sub=sub("none", 596, "keeps the last confirmed value", "derived")),
@@ -423,30 +465,33 @@ def specs(root: Path = ROOT) -> list[Spec]:
     m10.drops = {"pms": {"event_t_s": 597, "until_t_s": None, "injected": True}}
     m10.notes = [
         "Scenario B, survey file, minute 10, INJECTED feed drop: the power management feed (relay flags, genset kW, bus frequency) last arrived at 596 s; at 600 s it is 4 s old, over the 3 s limit.",
-        "gensets_online falls to 1 for admission and the armed ladder only. No fault is confirmed and no input is fresh, so D4 does not shed. The decision sentence names the stale feed. The fallback lifts after 3 fresh frames.",
+        "gensets_online falls to 1 for admission and the armed ladder only. No fault is confirmed and no input is fresh, so D4 does not shed. The decision sentence names the stale feed. The fallback lifts on the first fresh frame (fallback_policy.lift).",
         "G4's battery report is 120 s old on a healthy telemetry feed: not stale, confidence reported, and the minute-18.2 deadline stands.",
         "G3 last spoke at 510 s (hold acknowledged); the acoustic link has been down by design since 541 s, so G3's reports are old but not stale.",
     ]
     out.append(m10)
 
     m12 = after_minute_8(m8, "scenario_b_survey_m12", 721, "survey")
-    tripped(m12)
-    m12.raw.update({"G4.range_km": R(6.0), "wind_kn": R(23.0)})
+    drift(m12, S)
+    tripped(m12, A)
     m12.notes = [
-        "Scenario B, survey file, minute 12: genset 2 trips at 720 s (relay flag, kW to zero, the bus held at 59.6 Hz: fault_signatures.genset_trip). Relay and kW hold for 1 s, so the trip is confirmed at 721 s, this tick; D4's first shed would be applied at 722 s, inside the 725 s due time.",
+        "Scenario B, survey file, minute 12: genset 2 trips at 720 s (relay flag, kW to zero, the bus held at 59.6 Hz: fault_signatures.genset_trip). Relay and kW hold for 1 s, so the trip is confirmed at 721 s, this tick; D4's first shed would be applied at 722 s, inside the 725 s due time. Genset 1 carries 400 - 150 + 55 + 48 = 353 kW (fault_signatures.bus_load).",
         "G4 is airborne at 2 kW with no reservation (DEC-40): the ledger's load is 48 kW against a 95 kW ceiling, so the trip holds with 0 steps (tests/oracles minute_12_as_decided).",
         "The ship reached 5 kn at 661 s (one setting inside the slow band, no band change) and the deck is being cleared (541 s to 781 s, seed 4 min); G3 has held depth since its ack at 510 s and is out of acoustic contact.",
     ]
     out.append(m12)
 
     m19 = after_minute_8(m8, "scenario_b_survey_m19", 1141, "survey")
-    tripped(m19)
-    landed(m19)
+    drift(m19, S)
+    tripped(m19, A)
+    landed(m19, A)
     cooling(m19)
+    settle, band = S["transition_drafts"]["course_settle"], S["transition_drafts"]["speed_in_band"]
     m19.raw.update({
-        "course": R("free", since=541, tr={"to": "steady", "started_t_s": 1081, "expected_end_t_s": 1201, "latest_end_t_s": 1261}),
-        "speed_kn": speed_line(1141, 1081, 5.0, 3.0, 1201, 1261),
-        "noise": R("normal", since=1081), "wind_kn": R(22.0),
+        "course": R("free", since=541, tr={"to": "steady", "started_t_s": 1081, "expected_end_t_s": 1081 + settle["expected_s"],
+                                           "latest_end_t_s": 1081 + settle["latest_s"]}),
+        "speed_kn": speed_line(1141, 1081, 5.0, 3.0, 1081 + band["expected_s"], 1081 + band["latest_s"]),
+        "noise": R("normal", since=1081),
     })
     m19.derived["acoustic"] = D(cap(0.0, "kbit/s", ["acoustic link down: course free (settling to steady), noise normal"], zero=True), since=541)
     m19.notes = [
@@ -457,8 +502,8 @@ def specs(root: Path = ROOT) -> list[Spec]:
     out.append(m19)
 
     sar12 = after_minute_8(m8, "scenario_b_sar_m12", 721, "sar")
-    tripped(sar12)
-    sar12.raw.update({"G4.range_km": R(6.0), "wind_kn": R(23.0)})
+    drift(sar12, S)
+    tripped(sar12, A)
     sar12.notes = [
         "Scenario B, sar file, minute 12: the ship state is the survey run's; G3's leg was aborted at minute 8 and it holds at sea (acked at 510 s).",
         "G4 is airborne at 2 kW. Its 35 kW fast charge is reserved from minute 8 (DEC-40); the reservation is in the decision log, not the snapshot, and the ledger counts max(2, 35) = 35: 1 + 35 + 45 = 81 kW against 95, 14 spare, 0 steps (tests/oracles minute_12_as_decided.sar).",
@@ -466,10 +511,10 @@ def specs(root: Path = ROOT) -> list[Spec]:
     out.append(sar12)
 
     sar19 = after_minute_8(m8, "scenario_b_sar_m19", 1141, "sar")
-    tripped(sar19)
-    landed(sar19)
+    drift(sar19, S)
+    tripped(sar19, A)
+    landed(sar19, A)
     cooling(sar19)
-    sar19.raw.update({"wind_kn": R(22.0)})
     sar19.notes = [
         "Scenario B, sar file, minute 19: the injected pump fault as in the survey run. G3 still holds at sea, to be recovered over the ramp once the flight deck is done; the ship stays at 5 kn with its course free.",
         "Ledger 81 kW against a 75 kW ceiling; D4's commands from this snapshot are applied at 1142 s: sar takes G5 to 8 kW (44 kW), per scenario_b provenance.",

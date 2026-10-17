@@ -2,6 +2,7 @@
  "run": {
   "contract": "argos-snapshot/2",
   "scenario": "scenario_b",
+  "variant": "default",
   "mission": "survey",
   "seed": 0,
   "tick": 600,
@@ -47,26 +48,26 @@
    }
   },
   "genset_1_kw": {
-   "value": 330.0,
+   "value": 251.5,
    "source": "plant",
    "age_s": 4,
    "confidence": "substituted",
    "stale": true,
    "substituted": {
-    "last_value": 330.0,
+    "last_value": 251.5,
     "last_good_t_s": 596,
     "rule": "casts no vote; a pending trip is held; gensets_online falls back instead",
     "stage": "bound"
    }
   },
   "genset_2_kw": {
-   "value": 325.0,
+   "value": 251.5,
    "source": "plant",
    "age_s": 4,
    "confidence": "substituted",
    "stale": true,
    "substituted": {
-    "last_value": 325.0,
+    "last_value": 251.5,
     "last_good_t_s": 596,
     "rule": "casts no vote; a pending trip is held; gensets_online falls back instead",
     "stage": "bound"
@@ -557,7 +558,7 @@
     "since_t_s": 480
    },
    "range_km": {
-    "value": 9.0,
+    "value": 8.6,
     "source": "guest_report",
     "age_s": 0,
     "confidence": "reported",
@@ -756,7 +757,6 @@
   "pms": {
    "stale": true,
    "last_heard_t_s": 596,
-   "fallback_active": true,
    "drop": {
     "event_t_s": 597,
     "until_t_s": null,
@@ -766,73 +766,61 @@
   "chw": {
    "stale": false,
    "last_heard_t_s": 600,
-   "fallback_active": false,
    "drop": null
   },
   "nav": {
    "stale": false,
    "last_heard_t_s": 600,
-   "fallback_active": false,
    "drop": null
   },
   "deck": {
    "stale": false,
    "last_heard_t_s": 600,
-   "fallback_active": false,
    "drop": null
   },
   "emission": {
    "stale": false,
    "last_heard_t_s": 600,
-   "fallback_active": false,
    "drop": null
   },
   "anemometer": {
    "stale": false,
    "last_heard_t_s": 600,
-   "fallback_active": false,
    "drop": null
   },
   "comms": {
    "stale": false,
    "last_heard_t_s": 600,
-   "fallback_active": false,
    "drop": null
   },
   "public_data": {
    "stale": false,
    "last_heard_t_s": 0,
-   "fallback_active": false,
    "drop": null
   },
   "laptop": {
    "stale": false,
    "last_heard_t_s": 600,
-   "fallback_active": false,
    "drop": null
   },
   "guest_meter": {
    "stale": false,
    "last_heard_t_s": 600,
-   "fallback_active": false,
    "drop": null
   },
   "guest_backbone": {
    "stale": false,
    "last_heard_t_s": 600,
-   "fallback_active": false,
    "drop": null
   },
   "g4_telemetry": {
    "stale": false,
    "last_heard_t_s": 600,
-   "fallback_active": false,
    "drop": null
   },
   "g3_acoustic": {
    "stale": false,
    "last_heard_t_s": 510,
-   "fallback_active": false,
    "drop": null
   }
  },
@@ -840,7 +828,7 @@
  "events": [],
  "notes": [
   "Scenario B, survey file, minute 10, INJECTED feed drop: the power management feed (relay flags, genset kW, bus frequency) last arrived at 596 s; at 600 s it is 4 s old, over the 3 s limit.",
-  "gensets_online falls to 1 for admission and the armed ladder only. No fault is confirmed and no input is fresh, so D4 does not shed. The decision sentence names the stale feed. The fallback lifts after 3 fresh frames.",
+  "gensets_online falls to 1 for admission and the armed ladder only. No fault is confirmed and no input is fresh, so D4 does not shed. The decision sentence names the stale feed. The fallback lifts on the first fresh frame (fallback_policy.lift).",
   "G4's battery report is 120 s old on a healthy telemetry feed: not stale, confidence reported, and the minute-18.2 deadline stands.",
   "G3 last spoke at 510 s (hold acknowledged); the acoustic link has been down by design since 541 s, so G3's reports are old but not stale."
  ]

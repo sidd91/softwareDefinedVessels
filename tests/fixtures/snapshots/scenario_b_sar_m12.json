@@ -2,6 +2,7 @@
  "run": {
   "contract": "argos-snapshot/2",
   "scenario": "scenario_b",
+  "variant": "default",
   "mission": "sar",
   "seed": 0,
   "tick": 721,
@@ -36,7 +37,7 @@
    "since_t_s": 720
   },
   "genset_1_kw": {
-   "value": 385.0,
+   "value": 353.0,
    "source": "plant",
    "age_s": 0,
    "confidence": "measured",
@@ -270,7 +271,7 @@
    "stale": false
   },
   "wind_kn": {
-   "value": 23.0,
+   "value": 22.0,
    "source": "plant",
    "age_s": 0,
    "confidence": "measured",
@@ -514,7 +515,7 @@
     "since_t_s": 480
    },
    "range_km": {
-    "value": 6.0,
+    "value": 6.1,
     "source": "guest_report",
     "age_s": 0,
     "confidence": "reported",
@@ -696,79 +697,66 @@
   "pms": {
    "stale": false,
    "last_heard_t_s": 721,
-   "fallback_active": false,
    "drop": null
   },
   "chw": {
    "stale": false,
    "last_heard_t_s": 721,
-   "fallback_active": false,
    "drop": null
   },
   "nav": {
    "stale": false,
    "last_heard_t_s": 721,
-   "fallback_active": false,
    "drop": null
   },
   "deck": {
    "stale": false,
    "last_heard_t_s": 721,
-   "fallback_active": false,
    "drop": null
   },
   "emission": {
    "stale": false,
    "last_heard_t_s": 721,
-   "fallback_active": false,
    "drop": null
   },
   "anemometer": {
    "stale": false,
    "last_heard_t_s": 721,
-   "fallback_active": false,
    "drop": null
   },
   "comms": {
    "stale": false,
    "last_heard_t_s": 721,
-   "fallback_active": false,
    "drop": null
   },
   "public_data": {
    "stale": false,
    "last_heard_t_s": 0,
-   "fallback_active": false,
    "drop": null
   },
   "laptop": {
    "stale": false,
    "last_heard_t_s": 721,
-   "fallback_active": false,
    "drop": null
   },
   "guest_meter": {
    "stale": false,
    "last_heard_t_s": 721,
-   "fallback_active": false,
    "drop": null
   },
   "guest_backbone": {
    "stale": false,
    "last_heard_t_s": 721,
-   "fallback_active": false,
    "drop": null
   },
   "g4_telemetry": {
    "stale": false,
    "last_heard_t_s": 721,
-   "fallback_active": false,
    "drop": null
   },
   "g3_acoustic": {
    "stale": false,
    "last_heard_t_s": 510,
-   "fallback_active": false,
    "drop": null
   }
  },

@@ -2,6 +2,7 @@
  "run": {
   "contract": "argos-snapshot/2",
   "scenario": "scenario_b",
+  "variant": "default",
   "mission": "survey",
   "seed": 0,
   "tick": 560,
@@ -35,14 +36,14 @@
    "stale": false
   },
   "genset_1_kw": {
-   "value": 330.0,
+   "value": 251.5,
    "source": "plant",
    "age_s": 0,
    "confidence": "measured",
    "stale": false
   },
   "genset_2_kw": {
-   "value": 325.0,
+   "value": 251.5,
    "source": "plant",
    "age_s": 0,
    "confidence": "measured",
@@ -550,7 +551,7 @@
     "confidence": "substituted",
     "stale": true,
     "substituted": {
-     "last_value": 10.0,
+     "last_value": 9.7,
      "last_good_t_s": 545,
      "rule": "unknown: taken beyond 20 km, so the radio is at its 1 Mbit/s floor",
      "stage": "bound"
@@ -765,73 +766,61 @@
   "pms": {
    "stale": false,
    "last_heard_t_s": 560,
-   "fallback_active": false,
    "drop": null
   },
   "chw": {
    "stale": false,
    "last_heard_t_s": 560,
-   "fallback_active": false,
    "drop": null
   },
   "nav": {
    "stale": false,
    "last_heard_t_s": 560,
-   "fallback_active": false,
    "drop": null
   },
   "deck": {
    "stale": false,
    "last_heard_t_s": 560,
-   "fallback_active": false,
    "drop": null
   },
   "emission": {
    "stale": false,
    "last_heard_t_s": 560,
-   "fallback_active": false,
    "drop": null
   },
   "anemometer": {
    "stale": false,
    "last_heard_t_s": 560,
-   "fallback_active": false,
    "drop": null
   },
   "comms": {
    "stale": false,
    "last_heard_t_s": 560,
-   "fallback_active": false,
    "drop": null
   },
   "public_data": {
    "stale": false,
    "last_heard_t_s": 0,
-   "fallback_active": false,
    "drop": null
   },
   "laptop": {
    "stale": false,
    "last_heard_t_s": 560,
-   "fallback_active": false,
    "drop": null
   },
   "guest_meter": {
    "stale": false,
    "last_heard_t_s": 560,
-   "fallback_active": false,
    "drop": null
   },
   "guest_backbone": {
    "stale": false,
    "last_heard_t_s": 560,
-   "fallback_active": false,
    "drop": null
   },
   "g4_telemetry": {
    "stale": true,
    "last_heard_t_s": 545,
-   "fallback_active": true,
    "drop": {
     "event_t_s": 546,
     "until_t_s": null,
@@ -841,7 +830,6 @@
   "g3_acoustic": {
    "stale": false,
    "last_heard_t_s": 510,
-   "fallback_active": false,
    "drop": null
   }
  },
