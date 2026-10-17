@@ -17,7 +17,12 @@ Scenario B timeline against the cards, and every requirement link:
 ```bash
 uv sync
 uv run pytest
+uv run sdv admit G4 --installed G1,G2,G3 --mission survey
+uv run sdv admit G4 --installed G1,G2,G3 --set G4.hangar.mass_t=0.8
 ```
+
+`sdv admit` runs D1 and D2 on the real engine: verdict, binding line, every ledger line, placement, ranked
+yes-if options and the one-genset-down check, with the time taken against the 30 s ceiling.
 
 The one demo command (planned; it needs the real engine, which the brief forbids mocking) starts the
 decision engine and the screen and loads Scenario B; the priority file is picked and swapped on screen.
@@ -87,13 +92,13 @@ the line that bound it.
 
 ## Decision classes
 
-D1 to D4 read one ledger (`src/sdv/ledger.py`, planned) and write the same
+D1 to D4 read one ledger (`src/sdv/ledger.py`) and write the same
 [decision record](docs/ARCHITECTURE.md#data-contracts); ceilings are the brief's (A.8).
 
 | Class (ceiling) | Component | What it optimises |
 |---|---|---|
-| D1 Admission (30 s) | `src/sdv/admission.py` (planned) | A verdict that holds at both gensets, 200 kW and 30 °C, and survives one genset down by throttling (rule below); for yes-if, the least mission value lost |
-| D2 Placement (30 s) | `src/sdv/placement.py` (planned) | Largest smallest remaining margin; preferred slots first; most future cards left admissible; rejected alternatives named |
+| D1 Admission (30 s) | `src/sdv/admission.py` | A verdict that holds at both gensets, 200 kW and 30 °C, and survives one genset down by throttling (rule below); for yes-if, the least mission value lost |
+| D2 Placement (30 s) | `src/sdv/placement.py` | No installed part left without a position; most parts placed; fewest port moves; preferred positions first |
 | D3 Right of way (2 s) | `src/sdv/right_of_way.py` (planned) | Hard limits first (the drone's 12-minute landing rule), then mission-weighted value from the priority file; cost to the loser stated |
 | D4 Degradation (5 s, 60 s) | `src/sdv/shedding.py` (planned) | Safety-critical never shed, hard limits first; throttle before shed; then the priority file's `shed_order` if it declares one, else least mission loss per kW freed on the binding line, power or cooling, rechecked each step; ladder precomputed every tick |
 | D5 Crew as a setting | `src/sdv/crew_policy.py` (planned) | Per rule and crew level (14, 6, 0): confirm, standing plan, automatic or forbidden; a priority file may override a level, never to confirm at 0 (A.6); rule R3 in the [Scenario C memo](docs/SCENARIO_C_MEMO.md) |
