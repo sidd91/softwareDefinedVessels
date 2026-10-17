@@ -1,6 +1,6 @@
 # Team brief: where we are and what needs you
 
-Status: Fri 23:56 PDT. Written by Claude Opus 5.5 on behalf of Logan Walker (GhostWalka) for Logan and
+Status: Sat 00:42 PDT. Written by Claude Opus 5.5 on behalf of Logan Walker (GhostWalka) for Logan and
 Siddharth. One page; details are linked. No work split is proposed here (WORKLOG DEC-29).
 
 ## Where things stand
@@ -35,7 +35,27 @@ Siddharth. One page; details are linked. No work split is proposed here (WORKLOG
 
 ## Requirement gaps
 
-Filled in when [the requirements matrix](REQUIREMENTS.md) lands.
+[The requirements matrix](REQUIREMENTS.md) traces 554 requirements from every page of the slides and
+brief (509 called out): 11 done, 332 drafted, 193 planned, 9 gaps, 9 not applicable. Most planned rows
+wait on the same thing, the ledger and the D1 to D4 engines. The nine gaps:
+
+- **Brief call-outs to decide:** shorter installation windows at 6 aboard (R-088); the exact rationale
+  fields, verdict, bound resource, condition, free amount and need with units (R-148); G1's 30 % loss when
+  our own radar transmits unless "quiet radio" is declared (R-362); propulsion pods as a power consumer
+  (R-239); the slide's ambiguous 6 m "LOB" dimension (R-238).
+- **Light items:** the slide chart's spike times versus its callouts (R-207); designing from what a
+  Kubernetes request cannot express (R-500); registering for Copernicus Marine early, which needs a
+  person to create the account (R-514); starting the synthetic generators in hour 1 (R-522).
+
+## Tonight, for your review
+
+- **Assumptions added**, each with its reason in `config/assumptions.yaml`: hull 60 m from the slides;
+  guest reserve by speed (slow 250, cruise 200, fast 150 kW); what emission silence forbids; the Scenario
+  C rule's nine parameters. Change any of them freely; the Physical Account regenerates.
+- **Page limits:** the Scenario C memo fits 2 A4 pages at 11 pt; the Physical Account is now grouped for
+  one page but a rough render still gives about 2, so confirm it in whatever PDF route we pick.
+- **New guide and checks:** how to add a guest card (`manifests/README.md`); priority files now have a
+  schema and a test, for the jury's unseen file. 12 tests pass.
 
 ## A possible first hour together
 
