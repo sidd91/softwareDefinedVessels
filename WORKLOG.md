@@ -468,3 +468,10 @@ Work done:
 Decisions: none. Conflicts: none new. Deferrals: none.
 Requirements touched: R-088, R-123, R-148, R-159, R-205, R-207, R-237, R-238, R-239, R-305, R-362,
 R-432, R-500, R-514, R-522, R-553.
+
+### Sat 00:51 PDT · Requirements links guarded by a test · Claude Opus 5.5 on behalf of Logan Walker (GhostWalka)
+
+Work done: 75 requirement links pointed at headings renamed tonight (memo assumptions, Physical Account
+title, old section anchors); all repointed. New `tests/test_requirements_trace.py` fails if any link,
+heading anchor or WORKLOG ID in `docs/requirements.yaml` stops resolving, so a renamed heading now names
+the rows to fix. Tests: 16 pass. Done by Claude on Logan's behalf.
