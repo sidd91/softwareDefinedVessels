@@ -49,6 +49,9 @@ works. Nothing here is on the build path: an item starts only once the core demo
 | Shore operations view | Crew-0 rendering: automatic and forbidden rows only, read over SATCOM | the screen | hours | UI critique |
 | Day, dusk and night palettes | Bridge-display palettes for each light level | the screen | hours | UI critique |
 | 3D ship view | A toggle beside the scored 2D screen, bound to the same 1 Hz state | the state stream | a day | cut by DEC-44; "3D earns nothing" |
+| **Deployment planning** | | | | |
+| Deployment globe (Cesium-like) | The planned route or operations area on a 3D globe: the ship's track, the guests' working areas, and each decision pinned where and when it was made | the screen, the run logs | a day | Logan, Sat 15:43. CesiumJS (Apache-2.0) or MapLibre GL (BSD-3) with offline tiles; no Cesium ion or other hosted tiles (local-only rule) |
+| Weather-sampled deployment envelope | Picks points at random along the route or inside the area, samples the predicted weather at each (wind, sea state, seawater temperature) and turns the spread into expected deployment parameters, for example the worst-decile seawater for cooling and the wind and sea state behind the flight-deck and ramp windows. Every mission profile build is then run against them before sailing, with the verdicts and the binding lines it would give | the globe, the profile builder, D1's seawater tipping point, the weather API Siddharth is bringing into the simulator | a day | Logan, Sat 15:43 |
 | **Platform and physics** | | | | |
 | Standby chilled-water pump | The Physical Account's closing change, modelled: the minute-19 fault then sheds nothing | the ledger | hours | Physical Account |
 | Second hull class | A new ship profile and signal list, no code change, run through Scenario A | the loader | a day | brief: re-configurable vessel |
