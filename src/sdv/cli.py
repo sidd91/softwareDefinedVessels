@@ -15,6 +15,7 @@ import time
 
 from sdv import admission as Ad
 from sdv import loader as Ld
+from sdv import records as Rec
 
 UNITS = {"t": "t", "t_eq": "t-eq", "kW": "kW", "kg": "kg", "m2": "m²"}
 
@@ -71,6 +72,8 @@ def cmd_admit(args) -> int:
     r = Ad.admit(A, cards, installed, args.card, missions[args.mission])
     ms = (time.perf_counter() - t0) * 1000
     b = r.binding
+    rec = Rec.from_admission(r, seq=0, tick=0, card_id=args.card, installed=installed, mission=missions[args.mission], cards=cards)
+    print(rec["sentence"])
     print(f"VERDICT {r.verdict.upper()} · {args.card} onto {', '.join(installed) or 'an empty ship'} · mission {args.mission}")
     print(f"BINDING {b.cls} {_num(b.demand)} / {_num(b.capacity)} {UNITS.get(b.unit, b.unit)}")
     print("LINES")

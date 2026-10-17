@@ -810,3 +810,14 @@ under survey and sar matches the oracle (survey pauses, 25 to 27 min lost, leg e
 armed first, minute 19 sheds G4 to 10 kW (56 kW) or G5 to 8 kW (44 kW) against the 75 kW cooling limit, nothing
 shed on a stale feed. 814 tests pass.
 Decisions: DEC-54. Conflicts: none new. Deferrals: none.
+
+### Sat 14:29 PDT · Decision records and sentences on main · Claude Opus 5.5 on behalf of Logan Walker (GhostWalka)
+
+The two parallel sessions (UI shell, decision records) never started: their repository was not yet trusted in
+Claude Desktop (a Trust repository button shows in each). Logan chose to build the UI, the records and the estimator
+here instead. config/decision_record.schema.json (ARCHITECTURE contract 6; ship time only, latency in the timing
+log), src/sdv/records.py (records from D1, D3 and D4 outputs with an inputs hash), src/sdv/explain.py (one sentence
+from the record's fields: verdict, binding line with numbers, the top yes-if condition, D3 hard limit and cost to the
+loser, D4 hold or step with kW freed and capability kept, R3 by crew level). tests/test_explain.py: every Scenario A
+case and every Scenario B decision validates; key sentences pinned.  prints the sentence first. 861 pass.
+Decisions: none new. Conflicts: none new. Deferrals: none.
