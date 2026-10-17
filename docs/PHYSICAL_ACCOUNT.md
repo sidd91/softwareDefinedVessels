@@ -25,7 +25,7 @@ Every number our software relies on that is not in Annex A or B, every Annex val
 <tr><td></td><td>D3 right of way</td><td>hard limits never wait; a recovery costs the paused activity 15 min plus re-settling</td><td>minute-8 cost to the loser</td><td>not yet</td></tr>
 <tr><td></td><td>mission weights</td><td>high 1.0, medium 0.5, low 0.2, ours if unstated; 1-2 critical each</td><td>Annex B: high, medium, low</td><td>code, missions, test</td></tr>
 <tr><td>Anything else</td><td>guest modes</td><td>kW/kept: G2 sampling 6/0.8, standby 1/0; G3 standby 1/0.3; G4 charge 10/0.7, standby 2/0.3; G3 cradle 3.5 t, vehicle 2 t 5.5 m</td><td>Annex B gives only kW</td><td>card</td></tr>
-<tr><td></td><td>simulator</td><td>12 ship-minutes per wall minute; G4 charges 3 %/min fast, 1 slow</td><td>gauge only, never a decision</td><td>not yet</td></tr>
+<tr><td></td><td>simulator</td><td>minutes 0-20 in 90 s; G4 charges 3 %/min fast, 1 slow</td><td>gauge only, never a decision</td><td>not yet</td></tr>
 <tr><td></td><td>invented</td><td>G6 card; pump fault at minute 19: loop 80 kW, ceiling 75, load 81</td><td>cooling binds (DEC-40)</td><td>card, code, test</td></tr>
 </tbody>
 </table>

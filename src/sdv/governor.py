@@ -90,6 +90,7 @@ class Governor:
                 self.reserved_kw.pop(e["guest"], None)
                 self.activities.pop(e["guest"], None)
         self._check_hard_limits(snap, sim)
+        self._check_overload(snap, sim)
         self._arm(snap)
         snap["governor"] = {"mission": self.mission, "reserved_kw": dict(self.reserved_kw), "armed": self.armed,
                             "decisions_so_far": len(self.decisions)}
@@ -158,6 +159,17 @@ class Governor:
         for s in d.extras["ladder"]["steps"]:
             sim.set_mode(s["guest"], s["to_mode"], source=f"governor:D4:{trigger}")
         return d
+
+    def _check_overload(self, snap: dict, sim) -> None:
+        """Supply can also be outgrown without a trip: a guest drawing over its card, warmer seawater,
+        a reservation. If the current supply no longer carries the load and a step exists, run D4 now."""
+        if any(d["kind"] == "D4" for d in snap.get("decisions", [])):
+            return
+        reserve, cooling = self._supply(snap)
+        pc, hc = shedding.ceilings(self.a, reserve, cooling)
+        lad = shedding.walk(self.cards, self._modes(snap), self.priorities.active, pc, hc, self._draw(snap))
+        if lad.steps:
+            self._run_ladder(snap, sim, trigger="overload")
 
     def _arm(self, snap: dict) -> None:
         """Every tick: the ladder for 'one genset down now' (or the current supply if already down)."""

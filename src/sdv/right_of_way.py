@@ -143,12 +143,19 @@ def decide(a: dict, cards: dict, mission: dict, ship: dict, p1: Party, p2: Party
                "feasible": ends is not None and ends + need["total_min"] <= dl["deadline_min"] if need["total_min"] else False}
         binding = Binding("time", f"{winner.guest} {lim.then.split(' or ')[0]}", dl["remaining_min"],
                           need["total_min"] if need["total_min"] is not None else dl["remaining_min"] + 1, "min")
+        met = need["total_min"] is not None and need["total_min"] <= dl["remaining_min"] + 1e-9
+        fallback = lim.then.split(" or ", 1)[1] if " or " in lim.then else "no fallback on the card"
         why = (f"{lim.signal.replace('_', ' ')} {fmt(float(parties[winner.guest].state[lim.signal]))} {lim.op} {fmt(lim.threshold)}, "
                f"must {lim.then.split(' or ')[0]} (by minute {fmt(dl['deadline_min'])}, {fmt(dl['remaining_min'])} min left"
                + (f" against {fmt(need['total_min'])} to confirm, clear the deck and approach" if need["total_min"] else ", nobody aboard to clear the deck")
                + (f"; waiting for the {loser.activity} to end at minute {fmt(float(ends))} is infeasible)" if ends is not None and not alt["feasible"] else ")"))
-        extras.update({"hard_limit": {"guest": winner.guest, "when": lim.when, "then": lim.then}, "timing": {**dl, **need}, "alternative": alt})
-        verdict = f"{winner.guest} proceeds"
+        if not met:
+            short = (need["total_min"] - dl["remaining_min"]) if need["total_min"] is not None else None
+            why += (f". The deadline cannot be met with {int(ship.get('crew', 14))} aboard"
+                    + (f" ({fmt(short)} min short)" if short is not None else "") + f": the card's fallback is to {fallback}")
+        extras.update({"hard_limit": {"guest": winner.guest, "when": lim.when, "then": lim.then}, "timing": {**dl, **need},
+                       "alternative": alt, "deadline_met": met, "fallback": None if met else fallback})
+        verdict = f"{winner.guest} proceeds" if met else f"{winner.guest} proceeds, deadline not met"
     else:
         binding = Binding("mission_value", f"{winner.guest} vs {loser.guest} weighted capability", value(winner), value(loser), "")
         why = f"mission value {fmt(value(winner))} against {fmt(value(loser))} under {mission['id']}"

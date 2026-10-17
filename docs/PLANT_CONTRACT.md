@@ -12,6 +12,8 @@ The governor never changes the ship directly; it asks, and the plant answers wit
 |:--|:--|:--|
 | `sim.request_state(var, value, source)` | Ask for a ship state: `course`, `speed_band`, `noise`, `deck`, `emission`, `genset`, `cooling`; values from `assumptions.yaml: ship_state.<var>.values` | `{result: immediate \| scheduled \| refused, ready_at_s?, why?}` |
 | `sim.set_mode(guest, mode, source)` | Put a guest in a mode of its card (throttle, shed, restore) | raises on unknown mode |
+| `sim.inject(event, source)` | An event from outside the scenario file (a jury keypress in `sdv demo`, a board button): fires on the next tick, recorded with `injected: true` so a replay reproduces it | the recorded event |
+| `sim.paused` | While true the paced clock stands still (the demo's `p` key) | — |
 | `sim.on_tick = fn(snapshot, sim)` | Hook called once per tick after the plant has updated; the governor decides inside it. `src/sdv/governor.py` is that governor today: it appends `decisions` (records), `governor` (active file, reserved kW, armed ladder) and `governor_log` (priority swaps) to the snapshot | — |
 
 Rules the plant enforces, from A.6: deck clearing takes 3–5 min at 14 aboard, 8–12 at 6, is refused at 0

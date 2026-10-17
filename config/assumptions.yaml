@@ -148,7 +148,8 @@ admission:
 # Plant (simulator) behaviour beyond the cards. Used by src/sdv/plant/.
 sim:
   tick_s: 1
-  demo_speed: 12
+  demo_seconds: 90
+  demo_until_min: 20
   g4_charge_pct_min: {fast_charge: 3.0, charge: 1.0, standby: 0.0, "off": 0.0}
 
 # Where each key comes from. `source: assumed` keys are ours and each carries its reason (`why`); an
@@ -180,7 +181,8 @@ provenance:
   admission.seawater_scan_step_c: {source: assumed, why: "Resolution for reporting the seawater temperature at which a verdict flips."}
   admission.seawater_scan_max_c: {source: assumed, why: "Scan a little past the 30 C design point (A.10) to show the stress case off Florida (30.4 C)."}
   sim.tick_s: {source: brief p4, short: "platform budget at 1 Hz", why: "The brief states the platform budget per class at 1 Hz; the plant ticks at the same rate."}
-  sim.demo_speed: {source: assumed, short: "12 ship-minutes per wall minute", why: "The brief's 90 s demo covers Scenario B minutes 0 to 12 and beyond; 12x fits minutes 0-19 in about 95 s. Decision latency is still measured in wall time."}
+  sim.demo_seconds: {source: brief, live demo, short: "90 s of Scenario B", why: "The brief gives Scenario B 90 s of the live demo; the pace is derived from it (ship-minutes shown / 90 s), not fixed."}
+  sim.demo_until_min: {source: assumed, short: "Scenario B shown to minute 20", why: "Minutes 0-20 hold every scored event: the drone report at 8, the trip at 12, the landing at 17 and the pump fault at 19 (DEC-40); 20 minutes in 90 s is 13.3 ship-minutes per wall minute. Decision latency is still measured in wall time."}
   sim.g4_charge_pct_min: {source: assumed, short: "card gives kW and minutes, not a charge curve", why: "G4's card gives 35 kW for 20 min then 10 kW; no state-of-charge curve. 3 %/min in fast charge (60 % in 20 min) and 1 %/min after is enough for the battery gauge; it never enters a decision."}
   envelope: {source: brief A.10}
   # Positions
@@ -340,8 +342,8 @@ account:
       trace: ['\{name: \w+, power_kw: [\d.]+, capability_retained: [\d.]+, assumed: true', 'mass_t: [\d.]+,( length_m: [\d.]+,)? assumed: true']
     - row: Anything else
       what: simulator
-      keys: [sim.demo_speed, sim.g4_charge_pct_min]
-      value: "{{sim.demo_speed}} ship-minutes per wall minute; G4 charges {{sim.g4_charge_pct_min.fast_charge}} %/min fast, {{sim.g4_charge_pct_min.charge}} slow"
+      keys: [sim.demo_until_min, sim.g4_charge_pct_min]
+      value: "minutes 0-{{sim.demo_until_min}} in {{sim.demo_seconds}} s; G4 charges {{sim.g4_charge_pct_min.fast_charge}} %/min fast, {{sim.g4_charge_pct_min.charge}} slow"
       why: "gauge only, never a decision"
     - row: Anything else
       what: invented

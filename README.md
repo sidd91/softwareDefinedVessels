@@ -20,7 +20,7 @@ uv sync
 uv run pytest
 ```
 
-The one demo command runs Scenario B at demo pace with the real governor under the survey file, replays the
+The one demo command runs 90 s of Scenario B (minutes 0-20) with the real governor under the survey file, replays the
 same events under the rescue file and prints both records side by side, then takes the jury's card for
 Scenario A (an id, or a YAML file validated against the schema, with live edits such as
 `G4.hangar.mass_t=0.8`):

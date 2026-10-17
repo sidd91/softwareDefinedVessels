@@ -43,6 +43,7 @@ class Simulator:
     events: list[dict] = field(default_factory=list)
     applied: list[dict] = field(default_factory=list)
     snapshots: list[dict] = field(default_factory=list)
+    paused: bool = False
 
     def __post_init__(self) -> None:
         a, sc = self.inputs.assumptions, self.inputs.scenario
@@ -73,6 +74,13 @@ class Simulator:
         self.guests[gid].set_mode(mode)
         self.applied.append({"t_s": self.t_s, "type": "guest_mode", "guest": gid, "mode": mode, "source": source})
 
+    def inject(self, event: dict, source: str = "jury") -> dict:
+        """An event from outside the scenario file (a keypress, a board button): it fires on the next tick,
+        is recorded like a scripted one and marked `injected`, so a replay of the run reproduces it."""
+        e = dict(event, t_s=self.t_s, t_min=round(self.t_s / 60, 3), injected=True, source=source)
+        self.events.append(e)
+        return e
+
     # -- events -----------------------------------------------------------------------------------
     def _apply(self, e: dict) -> None:
         t = e["type"]
@@ -102,8 +110,8 @@ class Simulator:
             g.set_mode(e["mode"])
         elif t == "genset_trip":
             self.fsm.force("genset", int(e.get("gensets_online", 1)), self.t_s, "genset trip")
-            if e.get("cooling"):
-                self.fsm.force("cooling", e["cooling"], self.t_s, "genset trip")
+            if e.get("cooling") == "degraded":  # a trip may take cooling with it; it never repairs it (A.6)
+                self.fsm.force("cooling", "degraded", self.t_s, "genset trip")
         elif t == "genset_restart":
             self.fsm.force("genset", int(e.get("gensets_online", 2)), self.t_s, "genset restart")
         elif t == "cooling_degraded":
@@ -159,6 +167,11 @@ class Simulator:
             if sink:
                 sink(snap)
             if realtime_factor > 0:
+                while self.paused:  # the clock stands still; the sink keeps reading keys
+                    time.sleep(0.05)
+                    t0 += 0.05
+                    if sink:
+                        sink(None)
                 due = t0 + self.t_s / realtime_factor
                 delay = due - time.monotonic()
                 if delay > 0:

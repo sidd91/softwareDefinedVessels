@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+import time
 from pathlib import Path
 
 import jsonschema
@@ -155,27 +156,138 @@ def cmd_replay_check(args: argparse.Namespace) -> int:
     return 0 if ok else 1
 
 
+KEYS = """keys while Scenario B plays (the jury's failures, each lands on the next tick and is recorded):
+  g genset trips      r genset restarts     c cooling pump fails     w seawater +3 °C
+  b drone reports its battery now           o G5 draws 20 % over its card
+  s swap the priority file                  k crew 14 -> 6 -> 0 -> 14
+  p pause / resume    h this list"""
+
+
+class KeyInjector:
+    """Turns keypresses into plant events during the paced run. Only active on a terminal; the key map is
+    the keyboard stand-in for the board's button and knob (DESIGN_FREEZE delta 10)."""
+
+    def __init__(self, sim, gov, files: list[str], color: bool):
+        self.sim, self.gov, self.files, self.color = sim, gov, files, color
+        self.fd = None
+        self.saved = None
+        self.injected: list[dict] = []
+        if sys.stdin.isatty():
+            import termios
+            import tty
+            self.fd = sys.stdin.fileno()
+            self.saved = termios.tcgetattr(self.fd)
+            tty.setcbreak(self.fd)
+
+    def close(self) -> None:
+        if self.saved is not None:
+            import termios
+            termios.tcflush(self.fd, termios.TCIFLUSH)
+            termios.tcsetattr(self.fd, termios.TCSADRAIN, self.saved)
+
+    def _keys(self) -> str:
+        if self.fd is None:
+            return ""
+        import select
+        out = ""
+        while select.select([sys.stdin], [], [], 0)[0]:
+            ch = sys.stdin.read(1)
+            if not ch:
+                break
+            out += ch
+        return out
+
+    def event_for(self, key: str) -> dict | None:
+        sim = self.sim
+        crew_levels = sim.inputs.assumptions["crew"]["levels"]
+        if key == "g":
+            return {"type": "genset_trip", "gensets_online": 1}
+        if key == "r":
+            return {"type": "genset_restart", "gensets_online": 2}
+        if key == "c":
+            return {"type": "cooling_degraded", "factor": sim.inputs.assumptions["heat"]["degraded_factor"], "confirmed": True, "confirmed_by": "plant alarm"}
+        if key == "w":
+            return {"type": "environment", "seawater_c": round(sim.env["seawater_c"] + 3, 1)}
+        if key == "b":
+            g = sim.guests.get("G4")
+            return {"type": "guest_report", "guest": "G4", "battery_pct": round(g.battery_pct, 1)} if g and g.battery_pct is not None else None
+        if key == "o":
+            return {"type": "guest_overconsumption", "guest": "G5", "factor": 1.2}
+        if key == "s":
+            current = self.gov.mission
+            return {"type": "priority_swap", "mission": next((f for f in self.files if f != current), self.files[0])}
+        if key == "k":
+            nxt = crew_levels[(crew_levels.index(sim.fsm.crew) + 1) % len(crew_levels)]
+            return {"type": "crew_change", "crew": nxt}
+        return None
+
+    def poll(self) -> None:
+        for key in self._keys():
+            if key == "p":
+                self.sim.paused = not self.sim.paused
+                print(_c(f"  >> {'paused' if self.sim.paused else 'resumed'} at {self.sim.t_s / 60:.2f} min", BOLD, self.color))
+            elif key in ("h", "?"):
+                print(_c(KEYS, DIM, self.color))
+            elif (e := self.event_for(key)) is not None:
+                rec = self.sim.inject(e)
+                self.injected.append(rec)
+                detail = ", ".join(f"{k}={v}" for k, v in e.items() if k != "type")
+                print(_c(f"  >> jury: {e['type']} ({detail}) injected at {self.sim.t_s / 60:.2f} min", BOLD, self.color))
+
+
 def cmd_demo(args: argparse.Namespace) -> int:
     """Scenario B at demo pace under the first file, the other file's records beside it, then Scenario A."""
     color = not args.no_color
     inputs = load_inputs("scenario-b")
     files = [args.mission, args.swap_to]
+    # The brief gives Scenario B 90 s: the pace follows from the minutes shown, unless --speed is forced.
+    if args.speed is None:
+        args.speed = args.until_min * 60 / args.seconds if args.seconds > 0 else 0.0
+    pace = f"minutes 0-{args.until_min:g} in {args.seconds:g} s ({args.speed:.1f} ship-minutes per wall minute)" if args.speed else "flat out"
     print(_c(f"ArgOS demo: Scenario B ({inputs.scenario['location']['name']}, {inputs.scenario['location']['seawater_c']} °C), "
-             f"guests {', '.join(inputs.scenario['guests'])}, priority file {files[0]} (then {files[1]}), "
-             f"{args.speed:g} ship-minutes per wall minute", BOLD, color))
+             f"guests {', '.join(inputs.scenario['guests'])}, priority file {files[0]} (then {files[1]}), {pace}", BOLD, color))
+    if args.speed and sys.stdin.isatty():
+        print(_c(KEYS, DIM, color))
 
-    def sink(s: dict) -> None:
-        if s["events"] and s["t_s"] % 60 == 0:
+    gov1 = Governor(inputs, files[0])
+    sim1 = Simulator(inputs, seed=args.seed, mission=files[0], on_tick=gov1.on_tick)
+    keys = KeyInjector(sim1, gov1, files, color) if args.speed else None
+
+    def sink(s: dict | None) -> None:
+        if keys:
+            keys.poll()
+        if s is None:
+            return
+        if s["t_s"] % 60 == 0 or any(e.get("injected") for e in s["events"]):
             print(fmt_tick(s))
         for d in s.get("decisions", []):
             if d["verdict"] != "armed":
                 print(fmt_decision(d, color))
+        for r in s.get("governor_log", []):
+            print(_c(f"        priority file {r['result']}: " + (f"{r['from']} -> {r['to']}" if r["result"] == "swapped" else f"{r['field']}: {r['why']}; kept {r['kept']}"), BOLD, color))
 
-    gov1, sim1, h1 = run_sim(inputs, args, files[0], sink)
-    print(_c(f"\nSame events under the {files[1]} file (replayed flat out):", BOLD, color))
-    gov2, sim2, h2 = run_sim(inputs, argparse.Namespace(seed=args.seed, until_min=args.until_min, speed=0.0), files[1])
-    for d1, d2 in zip([d for d in gov1.decisions if d.verdict != "armed"], [d for d in gov2.decisions if d.verdict != "armed"]):
-        print(f"{d1.t_s / 60:6.2f} min  {d1.kind}  {files[0]}: {d1.sentence}\n             {files[1]}: {d2.sentence}")
+    t0 = time.monotonic()
+    try:
+        h1 = sim1.run(args.until_min, realtime_factor=args.speed, sink=sink)
+    finally:
+        if keys:
+            keys.close()
+    print(_c(f"Scenario B shown in {time.monotonic() - t0:.0f} s wall time"
+             + (f"; {len(keys.injected)} event(s) injected by the jury" if keys and keys.injected else "") + ".", DIM, color))
+    print(_c(f"\nSame events under the {files[1]} file (replayed flat out, the jury's injections included):", BOLD, color))
+    gov2 = Governor(inputs, files[1])
+    sim2 = Simulator(inputs, seed=args.seed, mission=files[1], on_tick=gov2.on_tick)
+    for e in (keys.injected if keys else []):
+        if e["type"] != "priority_swap":
+            sim2.events.append(dict(e))
+    h2 = sim2.run(args.until_min)
+    for key, d1, d2 in pair_decisions(gov1.decisions, gov2.decisions):
+        line = f"{key[0] / 60:6.2f} min  {key[1]}"
+        if d1:
+            line += f"  {gov_file(d1)}: {d1.sentence}"
+        if d2:
+            line += f"\n             {gov_file(d2)}: {d2.sentence}"
+        print(line)
     print(_c(f"\nrun hashes {h1} / {h2}; every decision inside its ceiling: "
              f"{all(d.within_ceiling for d in gov1.decisions + gov2.decisions)}", DIM, color))
     for sim, f in ((sim1, files[0]), (sim2, files[1])):
@@ -186,10 +298,13 @@ def cmd_demo(args: argparse.Namespace) -> int:
         d = admit("G4", ["G1", "G2", "G3"], files[0])
         print_admission(d, color)
         return 0
+    _flush_stdin()  # anything typed while Scenario B was playing must not become the first answer
+    print(_c("Type: <card> <installed> <mission> [edits]. Example: G4 G1,G2,G3 sar   or   G4 G1,G2,G3 survey G4.hangar.mass_t=0.8", DIM, color))
     while True:
         try:
             line = input("card id or YAML path (blank = G4), installed (blank = G1,G2,G3), mission (blank = survey); q to quit\n> ").strip()
-        except EOFError:
+        except (EOFError, KeyboardInterrupt):
+            print()
             return 0
         if line.lower() in ("q", "quit", "exit"):
             return 0
@@ -202,6 +317,27 @@ def cmd_demo(args: argparse.Namespace) -> int:
             print_admission(d, color)
         except Exception as e:  # a bad card or a typo must not end the demo
             print(f"refused: {e.__class__.__name__}: {str(e).splitlines()[0]}")
+
+
+def gov_file(d: Decision) -> str:
+    return d.mission or "?"
+
+
+def pair_decisions(a: list[Decision], b: list[Decision]) -> list[tuple]:
+    """Match two runs' decisions by (time, kind) so the side-by-side stays aligned when one run has more."""
+    def key(d):
+        return (d.t_s, d.kind)
+    da = {key(d): d for d in a if d.verdict != "armed"}
+    db = {key(d): d for d in b if d.verdict != "armed"}
+    return [(k, da.get(k), db.get(k)) for k in sorted(set(da) | set(db))]
+
+
+def _flush_stdin() -> None:
+    try:
+        import termios
+        termios.tcflush(sys.stdin.fileno(), termios.TCIFLUSH)
+    except Exception:  # not a terminal (tests, pipes): nothing to flush
+        pass
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -237,12 +373,14 @@ def main(argv: list[str] | None = None) -> int:
     ad.add_argument("--json", action="store_true", help="also print the decision record")
     ad.set_defaults(fn=cmd_admit)
 
-    d = sub.add_parser("demo", help="the live demo: Scenario B under two files, then Scenario A")
+    sim_a = load_assumptions()["sim"]
+    d = sub.add_parser("demo", help="the live demo: 90 s of Scenario B under two files, then Scenario A")
     d.add_argument("--mission", default="survey")
     d.add_argument("--swap-to", default="sar")
     d.add_argument("--seed", type=int, default=1)
-    d.add_argument("--until-min", type=float, default=20.0)
-    d.add_argument("--speed", type=float, default=load_assumptions()["sim"]["demo_speed"])
+    d.add_argument("--until-min", type=float, default=sim_a["demo_until_min"], help="ship-minutes of Scenario B to show")
+    d.add_argument("--seconds", type=float, default=sim_a["demo_seconds"], help="wall seconds for Scenario B (brief: 90)")
+    d.add_argument("--speed", type=float, default=None, help="force a pace in ship-seconds per wall-second; 0 = flat out")
     d.add_argument("--no-prompt", action="store_true", help="run drill A1 instead of asking for a card")
     d.set_defaults(fn=cmd_demo)
 
