@@ -783,3 +783,16 @@ shed_order per F3). tests/test_ledger.py: every Scenario A oracle line, the brie
 and 75 kW, loads 48 and 81 kW, minute-19 first steps (survey G4 to 10 kW, 56 kW; sar G5 to 8 kW, 44 kW), the
 minute-12 armed G5 step, the DEC-35 gate cases. 734 tests pass.
 Decisions: none new. Conflicts: none new. Deferrals: none.
+
+### Sat 14:16 PDT · D1 admission and D2 placement on main · Claude Opus 5.5 on behalf of Logan Walker (GhostWalka)
+
+src/sdv/placement.py enumerates layouts (bay halves and tonnage, one guest on the flight deck, one part each on the
+free mast slot and the hangar roof, parts riding with their parent, needs_bay_clear) and picks: no installed part
+left without a position, most parts placed, fewest installed parts moved (DEC-37), most preferred positions, fixed
+order. src/sdv/admission.py judges at the envelope, applies DEC-35's one-genset-down gate (fits, holds by
+throttling, does not hold), ranks minimal removal sets (value lost, size, id, mission-critical last) and reports the
+binding line (most over, or the tightest ship-wide line for YES) and the seawater tipping point.
+tests/test_admission.py reproduces all 14 Scenario A oracle cases: verdicts, binding lines, placements, yes-if
+options with mass, stability, placement, port moves and one-genset-down blocks, and the 35 kg case flipping to YES
+on the 0.8 t hangar edit. 799 tests pass. CON-18 (a fuller D2 objective for the mast slot) stays open.
+Decisions: none new. Conflicts: none new. Deferrals: none.
