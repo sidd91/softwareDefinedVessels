@@ -270,4 +270,5 @@ Account, Scenario C memo.
 
 ## Open questions for Logan
 - Who owns what between Logan (GhostWalka) and Siddharth (sidd91): engine / screen / CV + rules / docs.
-- Qualcomm box: model and OS when it arrives (decides ONNX/QNN path for CV and the local LLM).
+- Qualcomm box arrives Sat about 10:00 PDT, just before the Sat 11:30 edge block. Still need its model
+  and OS, and the organizers' answer on Qualcomm's proprietary NPU runtime; default is CPU.
