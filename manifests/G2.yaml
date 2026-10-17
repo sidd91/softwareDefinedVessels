@@ -1,0 +1,37 @@
+id: G2
+name: Ocean and weather module
+version: 1
+source: brief Annex B
+capability:
+  name: ocean_data
+  description: Water column, sound speed and sea state.
+  relevance: {survey: high, patrol: medium, sar: medium, disaster_relief: medium}
+cooling: chilled_water
+placement:
+  needs_bay_clear: true
+  parts:
+    - {name: module, mass_t: 3.5, preferred: [bay2], allowed: [bay2, bay1_half], note: "winch and probe count as parts of the module"}
+consumes:
+  power_kw: {nominal: 6, peak: 20, peak_duration_s: 300, note: "20 kW sustained for 5 min during winch operation"}
+  data_backbone_mbps: {nominal: 5}
+  data_satcom_mbps: {min: 0, nominal: 0.5, note: "buffers when the link is down"}
+  compute_cores: {nominal: 2, assumed: true}
+modes:
+  - {name: winch, power_kw: 20, capability_retained: 1.0, duration_s: 300}
+  - {name: sampling, power_kw: 6, capability_retained: 0.8, assumed: true, note: "logging without the winch"}
+  - {name: standby, power_kw: 1, capability_retained: 0.0, assumed: true}
+  - {name: "off", power_kw: 0, capability_retained: 0.0}
+conditions:
+  - activity: probe
+    requires: {speed_kn_max: 5, sea_state_max: 4, course: steady, deck_around_bay: clear}
+  - activity: winch
+    requires: {deck_machinery_allowed: true}
+    note: The winch is deck machinery, excluded while G3 listens or G4 recovers.
+relations:
+  excludes:
+    - {what: G2.winch, when: G3.surveying, kind: conditional}
+    - {what: G2.winch, when: G4.recovering, kind: conditional}
+installation:
+  port: {people: 4, hours: 6}
+  at_sea: null
+criticality: {safety_critical: false, mission_critical: per priority file}

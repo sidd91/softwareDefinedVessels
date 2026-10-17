@@ -1,0 +1,35 @@
+id: G3
+name: Seabed inspection vehicle with cradle
+version: 1
+source: brief Annex B
+capability:
+  name: seabed_inspection
+  description: Cable and pipeline inspection.
+  relevance: {survey: high, sar: low}
+cooling: chilled_water
+placement:
+  uses_ramp: true
+  parts:
+    - {name: cradle_and_vehicle, mass_t: 5.5, preferred: [bay1], allowed: [bay1], note: "whole Bay 1, launched and recovered over the stern ramp"}
+consumes:
+  power_kw: {nominal: 1, peak: 25, peak_duration_s: 3600, note: "25 kW charging for 60 min after each 40-min leg; 1 kW standby"}
+  data_backbone_mbps: {nominal: 100, note: "on the cradle"}
+  data_acoustic_kbps: {min: 1, nominal: 3, assumed: true, note: "acoustic link while submerged"}
+  compute_cores: {nominal: 4, assumed: true}
+modes:
+  - {name: charging, power_kw: 25, capability_retained: 1.0, duration_s: 3600, interruptible: false}
+  - {name: standby, power_kw: 1, capability_retained: 0.3, assumed: true, note: "vehicle holds or waits on its own battery"}
+  - {name: "off", power_kw: 0, capability_retained: 0.0}
+conditions:
+  - activity: surveying
+    requires: {speed_kn: 3, course: steady, noise: quiet, deck_machinery_allowed: false}
+  - activity: launch_recovery
+    requires: {ramp: free, sea_state_max: 4, speed_kn: [4, 8]}
+relations:
+  requires: [stern_ramp]
+  excludes:
+    - {what: G4.recovering, when: G3.surveying, kind: conditional}
+installation:
+  port: {people: 4, hours: 6, note: "cradle is port only"}
+  at_sea: {people: 4, minutes: 45, via: stern_ramp, note: "vehicle swappable at sea in an installation window"}
+criticality: {safety_critical: false, mission_critical: per priority file}

@@ -1,0 +1,36 @@
+id: G5
+name: Emergency comms and edge compute node
+version: 1
+source: brief Annex B
+capability:
+  name: coastal_connectivity
+  description: Restores coastal connectivity.
+  relevance: {sar: high, disaster_relief: high, survey: low, patrol: low}
+cooling: chilled_water
+placement:
+  parts:
+    - {name: node, mass_t: 3.0, preferred: [bay2], allowed: [bay2, bay1_half]}
+    - {name: antenna, mass_t: 0.025, area_m2: 0.3, preferred: [mast_free], allowed: [mast_free, hangar_roof], note: "part-of; hangar roof counts x1.2 and needs a drone clearance check"}
+consumes:
+  power_kw: {min: 8, nominal: 45}
+  data_backbone_mbps: {nominal: 1000}
+  data_satcom_mbps: {min: 1, nominal: 6, assumed: true, note: "up to 6 of 8 Mbit/s; 1 Mbit/s minimum is our assumption"}
+  compute_cores: {nominal: 0, note: "brings its own compute"}
+modes:
+  - {name: full, power_kw: 45, capability_retained: 1.0}
+  - {name: low_power, power_kw: 8, capability_retained: 0.3}
+  - {name: "off", power_kw: 0, capability_retained: 0.0}
+conditions:
+  - activity: transmitting
+    requires: {emission: normal}
+relations:
+  part_of: []
+  excludes:
+    - {what: emission_silence, when: always, kind: conditional}
+installation:
+  port: {people: 4, hours: 6, note: "antenna 2 people, 2 h"}
+  at_sea: null
+  at_sea_logical: new analytics workload only
+criticality: {safety_critical: false, mission_critical: per priority file}
+notes:
+  - First to shed under degradation, or last in disaster relief; the priority files encode this.

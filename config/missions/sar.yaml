@@ -1,0 +1,5 @@
+id: sar
+name: Search and rescue
+weights: {sar_air: 1.0, coastal_connectivity: 1.0, ocean_data: 0.5, passive_rf_detection: 0.5, seabed_inspection: 0.2, fresh_water: 0.2}
+mission_critical: [G4]
+notes: Rescue primary. Survey yields; the drone's charge is reserved ahead of everything.

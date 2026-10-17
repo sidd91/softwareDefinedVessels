@@ -15,10 +15,14 @@ Policy: open-source third-party code only (OSI licence, no AGPL), or our own; ev
 | Claude Fable 5.1 (Claude Code desktop) | claude-fable-5-1 | service | Anthropic, US | coding assistant, docs drafting, research | no (declared) | in use, approved by Logan for hackathon |
 | Claude Opus 5.5 (Claude Code desktop) | claude-opus-5-5 | service | Anthropic, US | coding assistant, brainstorming, docs drafting; switched in by Logan 2026-10-16 ~22:40 CDT | no (declared) | in use, approved |
 | uv | present | MIT / Apache-2.0 | Astral, US | Python version + dependency manager | no (dev) | present |
-| Python | 3.14.4 system; 3.12 via uv planned | PSF | PSF | runtime | yes | 3.12 install pending (uv does it, no sudo) |
+| Python | 3.12.15 via uv for the project; 3.14.4 system unused | PSF | PSF | runtime | yes | in use since Fri 21:40 PDT, pinned in `.python-version` |
 | git | present | GPL-2.0 | — | version control | no | present |
 | GitHub CLI (gh) | present | MIT | GitHub | repo access | no | present, signed in as GhostWalka |
 | Docker | present | Apache-2.0 | Docker Inc. | not planned | no | unused |
+| PyYAML | 6.0.3 | MIT | PyYAML team | read assumptions, cards, priority files | yes | installed Fri 21:40 PDT into the project `.venv` |
+| jsonschema (+ attrs, referencing, rpds-py, jsonschema-specifications, typing-extensions) | 4.26.0 | MIT (deps MIT / Apache-2.0) | Julian Berman et al. | validate guest manifests | yes | installed Fri 21:40 PDT |
+| pytest (+ iniconfig, packaging, pluggy, pygments) | 9.1.1 | MIT (deps MIT / Apache-2.0 / BSD-2) | pytest devs | tests | no (dev) | installed Fri 21:40 PDT |
+| hatchling | build backend, fetched by uv into an isolated build env | MIT | PyPA | builds the `sdv-governor` package | no (build) | used by `uv sync` |
 | Superpowers plugin for Claude Code (obra/superpowers) | 6.4.2 | MIT | Jesse Vincent, Anthropic plugin directory (partner tier) | development workflow skills: TDD, plans, debugging, verification, subagent-driven development | no (dev) | install card shown to Logan Fri 21:36 PDT |
 
 ## Planned (added to the table above when actually installed)
@@ -28,11 +32,8 @@ Policy: open-source third-party code only (OSI licence, no AGPL), or our own; ev
 | uvicorn | BSD-3 | Encode | ASGI server | yes |
 | websockets | BSD-3 | Aymeric Augustin | inter-node bus + browser push | yes |
 | pydantic | MIT | Pydantic Services | manifest and rule models | yes |
-| jsonschema | MIT | Julian Berman | manifest schema validation | yes |
-| PyYAML | MIT | — | assumptions, mission files, rules | yes |
 | Lark | MIT | Erez Shinan | controlled-natural-language rule grammar | yes |
 | numpy | BSD-3 | NumPy devs | ledger math | yes |
-| pytest | MIT | pytest devs | tests, replay assertions | no (dev) |
 | httpx | BSD-3 | Encode | one-time Open-Meteo Marine fetch, cached | no (dev) |
 | torch + torchvision | BSD-3 | Meta | SSDlite320-MobileNetV3 detector, COCO weights | yes |
 | opencv-python | Apache-2.0 | OpenCV | webcam capture, frame handling | yes |

@@ -1,0 +1,31 @@
+id: G1
+name: Passive radio sensor
+version: 1
+source: brief Annex B
+capability:
+  name: passive_rf_detection
+  description: Detects non-identifying transmitting vessels.
+  relevance: {patrol: high, survey: low}
+cooling: air
+placement:
+  parts:
+    - {name: sensor, mass_t: 0.045, area_m2: 0.5, preferred: [mast_free], allowed: [mast_free]}
+consumes:
+  power_kw: {nominal: 1.5}
+  data_backbone_mbps: {nominal: 50}
+  data_satcom_mbps: {min: 0.2, nominal: 0.2}
+  compute_cores: {nominal: 2, assumed: true}
+modes:
+  - {name: full, power_kw: 1.5, capability_retained: 1.0}
+  - {name: "off", power_kw: 0, capability_retained: 0.0}
+conditions:
+  - activity: listening
+    requires: {}
+    note: No course or speed conditions; compatible with emission silence. Loses 30 % capability if the ship's own radar transmits nearby, unless the ship declares quiet radio.
+relations:
+  excludes:
+    - {what: G5.antenna, when: "both need the one free mast slot", kind: conditional}
+installation:
+  port: {people: 2, hours: 3}
+  at_sea: null
+criticality: {safety_critical: false, mission_critical: per priority file}

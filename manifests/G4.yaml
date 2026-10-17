@@ -1,0 +1,36 @@
+id: G4
+name: VTOL rescue drone with hangar
+version: 1
+source: brief Annex B (hangar corrected to 850 kg by the organizers)
+capability:
+  name: sar_air
+  description: Search and rescue from the air.
+  relevance: {sar: high, patrol: medium, survey: low}
+cooling: chilled_water
+placement:
+  parts:
+    - {name: drone, mass_t: 0.14, preferred: [flight_deck], allowed: [flight_deck]}
+    - {name: hangar, mass_t: 0.85, preferred: [flight_deck], allowed: [flight_deck]}
+consumes:
+  power_kw: {min: 2, nominal: 10, peak: 35, peak_duration_s: 1200, note: "35 kW for 20 min charging, then 10 kW; 2 kW standby"}
+  data_los_radio_mbps: {min: 5, nominal: 20, note: "video; zero in emission silence"}
+  compute_cores: {nominal: 4, assumed: true}
+modes:
+  - {name: fast_charge, power_kw: 35, capability_retained: 1.0, duration_s: 1200}
+  - {name: charge, power_kw: 10, capability_retained: 0.7, assumed: true, note: "slower recharge delays the next launch"}
+  - {name: standby, power_kw: 2, capability_retained: 0.3, assumed: true}
+  - {name: "off", power_kw: 0, capability_retained: 0.0}
+conditions:
+  - activity: launch_recovery
+    requires: {deck: clear, wind_kn_max: 25, sea_state_max: 4, speed_kn: [5, 12], turn_into_wind: free, ramp: not_in_use}
+hard_limits:
+  - {when: battery_pct < 20, then: land within 12 min or ditch, note: "waiting for the end of a survey leg is not an option"}
+  - {when: emission == silent, then: return home and demand a clear deck}
+  - {when: airborne, then: endurance 90 min}
+relations:
+  excludes:
+    - {what: stern_ramp_ops, when: G4.launch_recovery, kind: conditional}
+installation:
+  port: {people: 4, hours: 4, note: "hangar is port only"}
+  at_sea: {people: 3, minutes: 30, via: flight_deck, note: "drone swappable at sea"}
+criticality: {safety_critical: false, mission_critical: per priority file}

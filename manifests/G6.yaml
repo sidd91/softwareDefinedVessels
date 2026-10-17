@@ -1,0 +1,27 @@
+id: G6
+name: Containerised desalination unit
+version: 1
+source: team invention (all numbers assumed)
+capability:
+  name: fresh_water
+  description: Produces fresh water for people ashore or aboard.
+  relevance: {disaster_relief: high, sar: low, survey: low, patrol: low}
+cooling: chilled_water
+placement:
+  parts:
+    - {name: unit, mass_t: 2.8, preferred: [bay2], allowed: [bay2, bay1_half]}
+consumes:
+  power_kw: {min: 4, nominal: 18, assumed: true}
+  data_backbone_mbps: {nominal: 2, assumed: true}
+  compute_cores: {nominal: 1, assumed: true}
+modes:
+  - {name: production, power_kw: 18, capability_retained: 1.0, assumed: true}
+  - {name: recirculate, power_kw: 4, capability_retained: 0.1, assumed: true, note: "keeps membranes wet, produces nothing"}
+  - {name: "off", power_kw: 0, capability_retained: 0.0}
+conditions:
+  - activity: production
+    requires: {}
+installation:
+  port: {people: 2, hours: 3, note: "assumed"}
+  at_sea: null
+criticality: {safety_critical: false, mission_critical: per priority file}
