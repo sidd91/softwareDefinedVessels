@@ -2108,6 +2108,8 @@ requirements:
     path: pyproject.toml
   - label: Expected outcomes (test oracles)
     path: docs/EXPECTED_OUTCOMES.md
+  - label: Oracle fixture, checked against the cards
+    path: tests/oracles/expected_outcomes.yaml
   decisions:
   - DEC-26
   - CON-10
@@ -2142,6 +2144,8 @@ requirements:
     path: docs/DEMO_SCRIPT.md#scenario-a-jurys-card-deep
   - label: Expected outcomes (test oracles)
     path: docs/EXPECTED_OUTCOMES.md
+  - label: Oracle fixture, checked against the cards
+    path: tests/oracles/expected_outcomes.yaml
   decisions:
   - DEC-15
   - DEC-26
@@ -2185,6 +2189,8 @@ requirements:
     path: GAMEPLAN.md#declared-objectives-readme-table-one-line-each
   - label: Expected outcomes (test oracles)
     path: docs/EXPECTED_OUTCOMES.md
+  - label: Oracle fixture, checked against the cards
+    path: tests/oracles/expected_outcomes.yaml
   decisions:
   - DEC-26
   - CON-12
@@ -2224,6 +2230,8 @@ requirements:
     path: docs/DEMO_SCRIPT.md#scenario-b-90-s-deep
   - label: Expected outcomes (test oracles)
     path: docs/EXPECTED_OUTCOMES.md
+  - label: Oracle fixture, checked against the cards
+    path: tests/oracles/expected_outcomes.yaml
   decisions:
   - DEC-16
   - CON-12
