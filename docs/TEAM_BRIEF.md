@@ -56,6 +56,10 @@ overnight with honest answers; the ones that still need a team decision:
 - **New guide and checks:** how to add a guest card (`manifests/README.md`); priority files now have a
   schema and a test, for the jury's unseen file. 16 tests pass.
 
+## Build plan
+
+A proposal with tasks, pass checks and re-timed milestones: [docs/BUILD_PLAN.md](BUILD_PLAN.md).
+
 ## A possible first hour together
 
 Review and merge PR #1; settle CON-12 and the envelope corner; agree owners; then start the ledger

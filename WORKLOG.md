@@ -475,3 +475,12 @@ Work done: 75 requirement links pointed at headings renamed tonight (memo assump
 title, old section anchors); all repointed. New `tests/test_requirements_trace.py` fails if any link,
 heading anchor or WORKLOG ID in `docs/requirements.yaml` stops resolving, so a renamed heading now names
 the rows to fix. Tests: 16 pass. Done by Claude on Logan's behalf.
+
+### Sat 00:52 PDT · Build plan proposal · Claude Opus 5.5 on behalf of Logan Walker (GhostWalka)
+
+Work done: `docs/BUILD_PLAN.md`, a proposal for the team's morning review: re-timed milestones (review
+Sat 08:30, Scenario A Sat 12:30, Scenario B Sat 17:30, screen Sat 21:30, breadth Sun 01:30, freeze Sun
+09:15) and 14 tasks, each with the requirement IDs it closes and a pass check from the brief's numbers.
+Owners left blank (DEC-29); nothing starts before review (DEC-24). Linked from the team brief. Done by
+Claude on Logan's behalf.
+Conflicts: offers a resolution for CON-10 (milestone slip) if the team accepts it.
