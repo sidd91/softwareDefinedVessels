@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Constraint ledger</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&amp;family=Titillium+Web:wght@400;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#D9DFE5}
+a{color:#1565A8}a:hover{color:#0D4677}
+</style>
+</helmet>
+<div style="min-height: 100vh; background: #D9DFE5; color: #0D1B2A; font-family: 'Titillium Web', sans-serif; font-size: 15px; line-height: 1.35">
+
+<header style="background: #0F2A44; color: #FFFFFF; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 20px; padding: 8px 16px">
+<div style="display: flex; align-items: baseline; gap: 12px">
+<span style="font-weight: 700; font-size: 20px; letter-spacing: 0.03em">ArgOS</span>
+<span style="font-size: 13px; letter-spacing: 0.08em; color: #AFC3D6">CONSTRAINT LEDGER · MRV-60</span>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 6px; flex: 1 1 auto">
+<span style="border: 1px solid #3D5A78; border-radius: 3px; padding: 2px 8px; font-size: 13px; letter-spacing: 0.04em; font-weight: 600">MISSION SURVEY</span>
+<span style="border: 1px solid #3D5A78; border-radius: 3px; padding: 2px 8px; font-size: 13px; letter-spacing: 0.04em">CREW 14</span>
+<span style="border: 1px solid #3D5A78; border-radius: 3px; padding: 2px 8px; font-size: 13px; letter-spacing: 0.04em">SEA 24 °C</span>
+<span style="border: 1px solid #3D5A78; border-radius: 3px; padding: 2px 8px; font-size: 13px; letter-spacing: 0.04em">GEN 1 OF 2</span>
+</div>
+<span style="background: #B3261E; border-radius: 3px; padding: 2px 10px; font-size: 13px; font-weight: 700; letter-spacing: 0.04em">ALARMS 2</span>
+<span style="font: 600 18px 'IBM Plex Mono', monospace">T+00:19:04</span>
+</header>
+
+<div style="max-width: 1440px; margin: 0 auto; padding: 12px; box-sizing: border-box; display: flex; flex-direction: column; gap: 12px">
+
+<div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: stretch">
+<section aria-label="Active constraint" style="flex: 999 1 620px; min-width: 0; background: #F5F7F9; border: 1px solid #B4BFCA; display: flex; flex-direction: column">
+<div style="background: #D98E04; color: #0D1B2A; padding: 8px 12px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; align-items: baseline">
+<span style="font-weight: 700; letter-spacing: 0.08em">ACTIVE CONSTRAINT · CHILLED WATER</span>
+<span style="font: 600 22px 'IBM Plex Mono', monospace">81.0 / 75.0 kW</span>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 12px; padding: 12px">
+<table style="flex: 1 1 320px; border-collapse: collapse; font-size: 14px">
+<tbody>
+<sc-for list="{{ calc }}" as="c" hint-placeholder-count="9">
+<tr style="{{ c.style }}"><th scope="row" style="padding: 6px 8px; text-align: left; font-weight: 600; color: #4B5B6B">{{ c.k }}</th><td style="padding: 6px 8px; text-align: right; font-family: 'IBM Plex Mono', monospace">{{ c.v }}</td></tr>
+</sc-for>
+</tbody>
+</table>
+<div style="flex: 1 1 280px; display: flex; flex-direction: column; gap: 8px">
+<div style="background: #FFFFFF; border: 1px solid #B4BFCA; border-left: 4px solid #1565A8; padding: 10px 12px; display: flex; flex-direction: column; gap: 4px">
+<span style="font-size: 12px; font-weight: 700; letter-spacing: 0.08em; color: #4B5B6B">ACTION 00:19:00</span>
+<span style="font-weight: 700; font-size: 18px">G4 CHARGE 35 → 10 kW</span>
+<span style="font-family: 'IBM Plex Mono', monospace">-25.0 kW · CHW 56.0 / 75.0 kW</span>
+<span style="font-size: 13px; color: #4B5B6B">G4 CAPABILITY 100 → 70 % · RESPONSE -- / 5.0 s</span>
+</div>
+<table style="width: 100%; border-collapse: collapse; font-size: 13px; background: #FFFFFF; border: 1px solid #B4BFCA">
+<caption style="text-align: left; padding: 6px 8px; font-size: 12px; font-weight: 700; letter-spacing: 0.08em; color: #0F2A44; background: #DCE3EA">SHED ORDER · SURVEY</caption>
+<tbody>
+<sc-for list="{{ ladder }}" as="s" hint-placeholder-count="3">
+<tr style="{{ s.style }}"><td style="padding: 6px 8px; font-weight: 700">{{ s.g }}</td><td style="padding: 6px 8px">{{ s.step }}</td><td style="padding: 6px 8px; font-family: 'IBM Plex Mono', monospace">{{ s.idx }}</td><td style="padding: 6px 8px; font-weight: 700">{{ s.state }}</td></tr>
+</sc-for>
+</tbody>
+</table>
+</div>
+</div>
+</section>
+
+<aside aria-label="Controls and alarms" style="flex: 1 1 320px; min-width: 0; display: flex; flex-direction: column; gap: 12px">
+<section style="background: #F5F7F9; border: 1px solid #B4BFCA">
+<div style="background: #DCE3EA; border-bottom: 1px solid #B4BFCA; padding: 6px 10px; font-weight: 700; font-size: 13px; letter-spacing: 0.08em; color: #0F2A44">MODE</div>
+<div style="padding: 10px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
+<label for="mission" style="font-size: 13px; font-weight: 600; color: #4B5B6B; align-self: center">MISSION</label>
+<select id="mission" style="min-height: 44px; font: 600 15px 'Titillium Web', sans-serif; border: 1px solid #8494A3; background: #FFFFFF; padding: 0 8px"><option>SURVEY</option><option>RESCUE</option><option>PATROL</option><option>DISASTER RELIEF</option></select>
+<label for="crew" style="font-size: 13px; font-weight: 600; color: #4B5B6B; align-self: center">CREW</label>
+<select id="crew" style="min-height: 44px; font: 600 15px 'Titillium Web', sans-serif; border: 1px solid #8494A3; background: #FFFFFF; padding: 0 8px"><option>14</option><option>6</option><option>0</option></select>
+</div>
+</section>
+<section style="background: #F5F7F9; border: 1px solid #B4BFCA">
+<div style="background: #DCE3EA; border-bottom: 1px solid #B4BFCA; padding: 6px 10px; font-weight: 700; font-size: 13px; letter-spacing: 0.08em; color: #0F2A44">ALARMS</div>
+<div style="padding: 6px 10px 10px">
+<sc-for list="{{ alarms }}" as="a" hint-placeholder-count="2">
+<div style="display: flex; gap: 8px; padding: 6px 0; border-bottom: 1px solid #DCE3EA; font-size: 13px; flex-wrap: wrap">
+<span style="font-family: 'IBM Plex Mono', monospace">{{ a.t }}</span><span style="font-weight: 700; color: #B3261E">{{ a.tag }}</span><span>{{ a.msg }}</span>
+</div>
+</sc-for>
+</div>
+</section>
+<section style="background: #F5F7F9; border: 1px solid #B4BFCA">
+<div style="background: #DCE3EA; border-bottom: 1px solid #B4BFCA; padding: 6px 10px; font-weight: 700; font-size: 13px; letter-spacing: 0.08em; color: #0F2A44">POSITIONS</div>
+<div style="padding: 10px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; font-size: 13px">
+<div style="background: #FFFFFF; border: 2px solid #D98E04; padding: 6px 8px"><strong>FD</strong> · G4 · 10 kW</div>
+<div style="background: #FFFFFF; border: 1px solid #B4BFCA; padding: 6px 8px"><strong>BAY 1</strong> · G3 · 1 kW</div>
+<div style="background: #FFFFFF; border: 1px solid #B4BFCA; padding: 6px 8px"><strong>BAY 2</strong> · G5 · 45 kW</div>
+<div style="background: #FFFFFF; border: 1px solid #B4BFCA; padding: 6px 8px"><strong>MAST</strong> · 3 / 3</div>
+</div>
+</section>
+</aside>
+</div>
+
+<section aria-label="Resource ledger" style="background: #F5F7F9; border: 1px solid #B4BFCA">
+<div style="background: #DCE3EA; border-bottom: 1px solid #B4BFCA; padding: 6px 10px; font-weight: 700; font-size: 13px; letter-spacing: 0.08em; color: #0F2A44">RESOURCE LEDGER</div>
+<div style="overflow-x: auto">
+<table style="width: 100%; min-width: 820px; border-collapse: collapse; font-size: 14px">
+<thead><tr style="text-align: left; color: #4B5B6B"><th scope="col" style="padding: 7px 10px">CLASS</th><th scope="col" style="padding: 7px 10px">CAPACITY</th><th scope="col" style="padding: 7px 10px">LIMIT</th><th scope="col" style="padding: 7px 10px">COMMITTED</th><th scope="col" style="padding: 7px 10px">FREE</th><th scope="col" style="padding: 7px 10px">STATUS</th></tr></thead>
+<tbody>
+<sc-for list="{{ rows }}" as="r" hint-placeholder-count="9">
+<tr style="{{ r.style }}">
+<th scope="row" style="padding: 7px 10px; text-align: left; font-weight: 700">{{ r.name }}</th>
+<td style="padding: 7px 10px; font-family: 'IBM Plex Mono', monospace">{{ r.cap }}</td>
+<td style="padding: 7px 10px; font-family: 'IBM Plex Mono', monospace">{{ r.lim }}</td>
+<td style="padding: 7px 10px; font-family: 'IBM Plex Mono', monospace">{{ r.used }}</td>
+<td style="padding: 7px 10px; font-family: 'IBM Plex Mono', monospace">{{ r.free }}</td>
+<td style="padding: 7px 10px"><span style="{{ r.stateStyle }}">{{ r.state }}</span></td>
+</tr>
+</sc-for>
+</tbody>
+</table>
+</div>
+</section>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1080}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const calc = [
+      ['CHW CAPACITY AT 24 °C', '133.3 kW'], ['P1 TRIP · 1 OF 2 PUMPS', '× 0.60'], ['AVAILABLE', '80.0 kW'], ['MARGIN', '-5.0 kW'],
+      ['LIMIT', '75.0 kW', 1], ['DEMAND G3 1 + G4 35 + G5 45', '81.0 kW'], ['SHORTFALL', '6.0 kW', 2], ['G4 CHARGE 35 → 10', '-25.0 kW'], ['DEMAND AFTER', '56.0 kW', 1],
+    ].map(c => ({ k: c[0], v: c[1], style: 'border-bottom: 1px solid #DCE3EA' + (c[2] === 1 ? '; font-weight: 700; background: #FFFFFF' : c[2] === 2 ? '; font-weight: 700; color: #8A5A00; background: #FBEBCB' : '') }));
+    const ladder = [
+      { g: 'G4', step: 'FAST CHARGE → CHARGE · -25 kW', idx: '0.0024', state: 'EXECUTED' },
+      { g: 'G5', step: 'FULL → LOW POWER · -37 kW', idx: '0.0038', state: 'ARMED' },
+      { g: 'G3', step: 'MISSION CRITICAL', idx: '--', state: 'LAST' },
+    ].map(s => ({ ...s, style: 'border-top: 1px solid #DCE3EA; background: ' + (s.state === 'EXECUTED' ? '#FBEBCB' : '#FFFFFF') }));
+    const ST = { LIMITING: ['#D98E04', '#0D1B2A'], DEGRADED: ['#F2D27C', '#0D1B2A'], FULL: ['#DCE3EA', '#0D1B2A'], NORMAL: ['#E4ECF3', '#0F2A44'], REDUCED: ['#F2D27C', '#0D1B2A'], '--': ['transparent', '#4B5B6B'] };
+    const rows = [
+      ['COOLING CHW', '80.0 kW', '75.0 kW', '56.0 kW', '19.0 kW', 'LIMITING'],
+      ['POWER', '100.0 kW', '95.0 kW', '56.0 kW', '39.0 kW', 'DEGRADED'],
+      ['DECK', '4 POS', '4 POS', 'BAY 1 · BAY 2 · FD', 'RAMP', 'NORMAL'],
+      ['MAST', '3 POS', '3 POS', '2 HOST · G5 ANT', '0', 'FULL'],
+      ['MASS', '10.000 t', '10.000 t', '9.515 t', '0.485 t', 'NORMAL'],
+      ['STABILITY', '12.000 t-eq', '12.000 t-eq', '9.763 t-eq', '2.237 t-eq', 'NORMAL'],
+      ['DATA SATCOM', '2.0 Mbit/s', '2.0 Mbit/s', '1.0 Mbit/s', '1.0 Mbit/s', 'REDUCED'],
+      ['COMPUTE', '102 cores', '102 cores', '8 cores', '94 cores', 'NORMAL'],
+      ['RESPONSE D4', '5.0 s', '5.0 s', '--', '--', '--'],
+    ].map(r => ({ name: r[0], cap: r[1], lim: r[2], used: r[3], free: r[4], state: r[5],
+      style: 'border-top: 1px solid #DCE3EA; background: ' + (r[5] === 'LIMITING' ? '#FBEBCB' : 'transparent'),
+      stateStyle: 'padding: 1px 8px; font-size: 12px; font-weight: 700; letter-spacing: 0.06em; background: ' + ST[r[5]][0] + '; color: ' + ST[r[5]][1] }));
+    return {
+      calc, ladder, rows,
+      alarms: [
+        { t: '00:19:00', tag: 'CHW P1', msg: 'PUMP TRIP' },
+        { t: '00:12:00', tag: 'GEN 2', msg: 'TRIP · 2 OF 3 CONFIRMED' },
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>

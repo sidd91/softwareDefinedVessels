@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Resource governor console</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&amp;family=Titillium+Web:wght@400;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#D9DFE5}
+a{color:#1565A8}a:hover{color:#0D4677}
+</style>
+</helmet>
+<div style="min-height: 100vh; background: #D9DFE5; color: #0D1B2A; font-family: 'Titillium Web', sans-serif; font-size: 15px; line-height: 1.35">
+
+<header style="background: #0F2A44; color: #FFFFFF; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 20px; padding: 8px 16px">
+<div style="display: flex; align-items: baseline; gap: 12px">
+<span style="font-weight: 700; font-size: 20px; letter-spacing: 0.03em">ArgOS</span>
+<span style="font-size: 13px; letter-spacing: 0.08em; color: #AFC3D6">RESOURCE GOVERNOR · MRV-60</span>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 6px; flex: 1 1 auto">
+<span style="border: 1px solid #3D5A78; border-radius: 3px; padding: 2px 8px; font-size: 13px; letter-spacing: 0.04em; font-weight: 600">MISSION {{ missionUpper }}</span>
+<span style="border: 1px solid #3D5A78; border-radius: 3px; padding: 2px 8px; font-size: 13px; letter-spacing: 0.04em">CREW 14</span>
+<span style="border: 1px solid #3D5A78; border-radius: 3px; padding: 2px 8px; font-size: 13px; letter-spacing: 0.04em">SEA 24 °C</span>
+<span style="border: 1px solid #3D5A78; border-radius: 3px; padding: 2px 8px; font-size: 13px; letter-spacing: 0.04em">SPEED 3.0 kn</span>
+<span style="border: 1px solid #3D5A78; border-radius: 3px; padding: 2px 8px; font-size: 13px; letter-spacing: 0.04em">SIM ×12</span>
+</div>
+<span style="background: #B3261E; border-radius: 3px; padding: 2px 10px; font-size: 13px; font-weight: 700; letter-spacing: 0.04em">ALARMS 2</span>
+<span style="font: 600 18px 'IBM Plex Mono', monospace">T+00:19:04</span>
+</header>
+
+<div style="max-width: 1440px; margin: 0 auto; padding: 12px; box-sizing: border-box; display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-start">
+
+<div style="flex: 999 1 640px; min-width: 0; display: flex; flex-direction: column; gap: 12px">
+<section aria-label="Ship mimic" style="background: #F5F7F9; border: 1px solid #B4BFCA">
+<div style="background: #DCE3EA; border-bottom: 1px solid #B4BFCA; padding: 6px 10px; font-weight: 700; font-size: 13px; letter-spacing: 0.08em; color: #0F2A44">SHIP MIMIC · PLAN</div>
+<div style="padding: 12px; display: flex; flex-direction: column; gap: 10px">
+<div style="overflow-x: auto">
+<div style="min-width: 660px; height: 150px; display: flex; gap: 6px; padding: 8px 0 8px 8px; box-sizing: border-box; background: #C9D2DB; clip-path: polygon(0 0, 90% 0, 100% 50%, 90% 100%, 0 100%)">
+<div style="flex: 0 0 62px; background: #EEF2F5; border: 1px dashed #8494A3; padding: 6px; font-size: 12px; font-weight: 600; color: #4B5B6B">RAMP<br>FREE</div>
+<sc-for list="{{ zones }}" as="z" hint-placeholder-count="4">
+<div style="{{ z.style }}">
+<span style="font-size: 12px; font-weight: 700; letter-spacing: 0.06em; color: #4B5B6B">{{ z.zone }}</span>
+<span style="font-weight: 700">{{ z.guest }}</span>
+<span style="font: 500 13px 'IBM Plex Mono', monospace">{{ z.mode }}</span>
+</div>
+</sc-for>
+<div style="flex: 1 1 0; padding: 6px; font-size: 12px; font-weight: 600; color: #4B5B6B; display: flex; align-items: center">BRIDGE</div>
+</div>
+</div>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 6px">
+<sc-for list="{{ plant }}" as="p" hint-placeholder-count="6">
+<div style="{{ p.style }}"><span style="font-weight: 700">{{ p.tag }}</span><span style="font: 500 13px 'IBM Plex Mono', monospace">{{ p.state }}</span></div>
+</sc-for>
+</div>
+</div>
+</section>
+
+<section aria-label="Resource classes" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px">
+<sc-for list="{{ tiles }}" as="t" hint-placeholder-count="8">
+<div style="background: #F5F7F9; border: 1px solid #B4BFCA; display: flex; flex-direction: column">
+<div style="background: #DCE3EA; padding: 4px 8px; font-size: 12px; font-weight: 700; letter-spacing: 0.08em; color: #0F2A44">{{ t.name }}</div>
+<div style="padding: 8px; display: flex; flex-direction: column; gap: 6px">
+<span style="font: 600 17px 'IBM Plex Mono', monospace">{{ t.value }}</span>
+<div style="height: 8px; background: #D3DAE1; position: relative"><div style="{{ t.bar }}"></div><div style="{{ t.mark }}"></div></div>
+<div style="display: flex; justify-content: space-between; gap: 6px; font-size: 12px"><span style="color: #4B5B6B">{{ t.sub }}</span><span style="{{ t.stateStyle }}">{{ t.state }}</span></div>
+</div>
+</div>
+</sc-for>
+</section>
+</div>
+
+<div style="flex: 1 1 400px; min-width: 0; display: flex; flex-direction: column; gap: 12px">
+<section aria-label="Load management" style="background: #F5F7F9; border: 1px solid #B4BFCA">
+<div style="background: #0F2A44; color: #FFFFFF; padding: 6px 10px; display: flex; justify-content: space-between; gap: 8px; font-weight: 700; font-size: 13px; letter-spacing: 0.08em">
+<span>LOAD MANAGEMENT · CHW LIMIT</span><span style="background: #D98E04; color: #0D1B2A; padding: 0 8px; border-radius: 2px">EXECUTED</span>
+</div>
+<div style="padding: 4px 10px 8px">
+<sc-for list="{{ record }}" as="r" hint-placeholder-count="8">
+<div style="display: flex; gap: 10px; padding: 6px 0; border-bottom: 1px solid #DCE3EA">
+<span style="width: 108px; flex: 0 0 108px; font-size: 13px; font-weight: 600; color: #4B5B6B">{{ r.k }}</span>
+<span style="font: 500 14px 'IBM Plex Mono', monospace">{{ r.v }}</span>
+</div>
+</sc-for>
+</div>
+</section>
+
+<section aria-label="Shed order" style="background: #F5F7F9; border: 1px solid #B4BFCA">
+<div style="background: #DCE3EA; border-bottom: 1px solid #B4BFCA; padding: 6px 10px; font-weight: 700; font-size: 13px; letter-spacing: 0.08em; color: #0F2A44">SHED ORDER · {{ missionUpper }}</div>
+<div style="overflow-x: auto">
+<table style="width: 100%; border-collapse: collapse; font-size: 13px">
+<thead><tr style="text-align: left; color: #4B5B6B"><th scope="col" style="padding: 6px 8px">#</th><th scope="col" style="padding: 6px 8px">GUEST</th><th scope="col" style="padding: 6px 8px">STEP</th><th scope="col" style="padding: 6px 8px">kW</th><th scope="col" style="padding: 6px 8px">INDEX</th><th scope="col" style="padding: 6px 8px">STATE</th></tr></thead>
+<tbody>
+<sc-for list="{{ ladder }}" as="s" hint-placeholder-count="3">
+<tr style="{{ s.rowStyle }}"><td style="padding: 6px 8px">{{ s.n }}</td><td style="padding: 6px 8px; font-weight: 700">{{ s.g }}</td><td style="padding: 6px 8px">{{ s.step }}</td><td style="padding: 6px 8px; font-family: 'IBM Plex Mono', monospace">{{ s.kw }}</td><td style="padding: 6px 8px; font-family: 'IBM Plex Mono', monospace">{{ s.idx }}</td><td style="padding: 6px 8px; font-weight: 700">{{ s.state }}</td></tr>
+</sc-for>
+</tbody>
+</table>
+</div>
+</section>
+
+<section aria-label="Guests" style="background: #F5F7F9; border: 1px solid #B4BFCA">
+<div style="background: #DCE3EA; border-bottom: 1px solid #B4BFCA; padding: 6px 10px; font-weight: 700; font-size: 13px; letter-spacing: 0.08em; color: #0F2A44">GUESTS</div>
+<table style="width: 100%; border-collapse: collapse; font-size: 13px">
+<thead><tr style="text-align: left; color: #4B5B6B"><th scope="col" style="padding: 6px 8px">ID</th><th scope="col" style="padding: 6px 8px">POS</th><th scope="col" style="padding: 6px 8px">MODE</th><th scope="col" style="padding: 6px 8px">kW</th><th scope="col" style="padding: 6px 8px">CAP</th></tr></thead>
+<tbody>
+<sc-for list="{{ guests }}" as="g" hint-placeholder-count="3">
+<tr style="border-top: 1px solid #DCE3EA"><td style="padding: 6px 8px; font-weight: 700">{{ g.id }}</td><td style="padding: 6px 8px">{{ g.pos }}</td><td style="padding: 6px 8px">{{ g.mode }}</td><td style="padding: 6px 8px; font-family: 'IBM Plex Mono', monospace">{{ g.kw }}</td><td style="padding: 6px 8px; font-family: 'IBM Plex Mono', monospace">{{ g.cap }}</td></tr>
+</sc-for>
+</tbody>
+</table>
+</section>
+</div>
+</div>
+
+<section aria-label="Event log" style="background: #F5F7F9; border: 1px solid #B4BFCA">
+<div style="background: #DCE3EA; border-bottom: 1px solid #B4BFCA; padding: 6px 10px; font-weight: 700; font-size: 13px; letter-spacing: 0.08em; color: #0F2A44">EVENT LOG</div>
+<div style="overflow-x: auto">
+<table style="width: 100%; min-width: 760px; border-collapse: collapse; font-size: 13px">
+<thead><tr style="text-align: left; color: #4B5B6B"><th scope="col" style="padding: 6px 10px; width: 96px">TIME</th><th scope="col" style="padding: 6px 10px; width: 110px">TYPE</th><th scope="col" style="padding: 6px 10px; width: 90px">TAG</th><th scope="col" style="padding: 6px 10px">MESSAGE</th></tr></thead>
+<tbody>
+<sc-for list="{{ log }}" as="e" hint-placeholder-count="6">
+<tr style="border-top: 1px solid #DCE3EA"><td style="padding: 6px 10px; font-family: 'IBM Plex Mono', monospace">{{ e.t }}</td><td style="padding: 6px 10px"><span style="{{ e.typeStyle }}">{{ e.type }}</span></td><td style="padding: 6px 10px; font-weight: 700">{{ e.tag }}</td><td style="padding: 6px 10px">{{ e.msg }} <sc-if value="{{ e.injected }}" hint-placeholder-val="{{ false }}"><span style="border: 1px solid #8494A3; color: #4B5B6B; padding: 0 5px; font-size: 11px; font-weight: 700; letter-spacing: 0.06em">INJECTED</span></sc-if></td></tr>
+</sc-for>
+</tbody>
+</table>
+</div>
+</section>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"mission":{"editor":"enum","options":["survey","rescue"],"default":"survey"},"$preview":{"width":1440,"height":1080}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const rescue = (this.props.mission ?? 'survey') === 'rescue';
+    const AMBER = '#D98E04', RED = '#B3261E', BLUE = '#3B76AE';
+    const zone = (hot) => 'flex: 2 1 0; background: #F5F7F9; padding: 6px 8px; display: flex; flex-direction: column; gap: 2px; border: ' + (hot ? '2px solid ' + AMBER : '1px solid #8494A3');
+    const plantStyle = (s) => 'display: flex; justify-content: space-between; gap: 6px; padding: 5px 8px; font-size: 13px; border: 1px solid #B4BFCA; background: ' + (s === 'trip' ? '#F6D9D6' : '#FFFFFF') + (s === 'trip' ? '; border-left: 4px solid ' + RED : '');
+    const pct = (v, max) => Math.max(0, Math.min(100, Math.round(v / max * 100)));
+    const tile = (name, value, sub, state, used, max, limit) => {
+      const c = state === 'LIMITING' ? AMBER : BLUE;
+      return {
+        name, value, sub, state,
+        bar: 'position: absolute; left: 0; top: 0; bottom: 0; width: ' + pct(used, max) + '%; background: ' + c,
+        mark: limit == null ? 'display: none' : 'position: absolute; top: -3px; bottom: -3px; width: 2px; background: #0D1B2A; left: ' + pct(limit, max) + '%',
+        stateStyle: 'font-weight: 700; letter-spacing: 0.04em; color: ' + (state === 'LIMITING' ? '#8A5A00' : state === 'DEGRADED' ? '#8A5A00' : '#0F2A44'),
+      };
+    };
+    const load = rescue ? 44 : 56;
+    const tiles = [
+      tile('COOLING CHW', load.toFixed(1) + ' / 75.0 kW', 'P1 TRIP · 1 OF 2 PUMPS', 'LIMITING', load, 80, 75),
+      tile('POWER', load.toFixed(1) + ' / 95.0 kW', 'GEN 2 TRIP · 100 kW', 'DEGRADED', load, 100, 95),
+      tile('DECK', '3 / 4', 'BAY 1 · BAY 2 · FD', 'NORMAL', 3, 4, null),
+      tile('MAST', '3 / 3', '2 HOST · G5 ANT', 'FULL', 3, 3, null),
+      tile('MASS / STAB', '9.515 / 10.000 t', 'STAB 9.763 / 12.000', 'NORMAL', 9.515, 10, null),
+      tile('DATA LINKS', '1.0 / 2.0 Mbit/s', 'SATCOM · LOS 5 / 20', 'NORMAL', 1, 2, null),
+      tile('COMPUTE', '8 / 102 cores', 'G3 4 · G4 4', 'NORMAL', 8, 102, null),
+      tile('RESPONSE', '-- / 5.0 s', 'SHED 1ST ACTION', 'NORMAL', 0, 5, null),
+    ];
+    const T = { SHED: [AMBER, '#0D1B2A'], ALARM: [RED, '#FFFFFF'], ARBITRATION: ['#1565A8', '#FFFFFF'], STATE: ['#DCE3EA', '#0D1B2A'], START: ['#DCE3EA', '#0D1B2A'] };
+    const typeStyle = (t) => 'padding: 1px 6px; font-size: 11px; font-weight: 700; letter-spacing: 0.06em; background: ' + T[t][0] + '; color: ' + T[t][1];
+    const log = (rescue ? [
+      { t: '00:19:00', type: 'SHED', tag: 'G5', msg: 'Low power 45 → 8 kW. CHW demand 44.0 / 75.0 kW.' },
+      { t: '00:19:00', type: 'ALARM', tag: 'CHW P1', msg: 'Pump trip. CHW capacity 133.3 → 80.0 kW.', injected: true },
+      { t: '00:17:00', type: 'STATE', tag: 'G4', msg: 'Landed. Fast charge 35 kW, reserved.' },
+      { t: '00:12:00', type: 'ALARM', tag: 'GEN 2', msg: 'Trip confirmed 2 of 3. Guest reserve 100 kW. Demand 81.0 / 95.0 kW. No action.' },
+      { t: '00:08:02', type: 'ARBITRATION', tag: 'G4 / G3', msg: 'UAV battery 18 %, wind 22 kn. Land by 00:18:12. Survey suspended. Course released. G4 charge 35 kW reserved. G3 leg aborted.' },
+      { t: '00:00:00', type: 'START', tag: '--', msg: 'Cable route survey. 3.0 kn. CHW 133.3 kW at 24 °C. Demand 46.0 kW.' },
+    ] : [
+      { t: '00:19:00', type: 'SHED', tag: 'G4', msg: 'Charge 35 → 10 kW. CHW demand 56.0 / 75.0 kW.' },
+      { t: '00:19:00', type: 'ALARM', tag: 'CHW P1', msg: 'Pump trip. CHW capacity 133.3 → 80.0 kW.', injected: true },
+      { t: '00:17:00', type: 'STATE', tag: 'G4', msg: 'Landed. Fast charge 35 kW.' },
+      { t: '00:12:00', type: 'ALARM', tag: 'GEN 2', msg: 'Trip confirmed 2 of 3. Guest reserve 100 kW. Demand 48.0 / 95.0 kW. No action.' },
+      { t: '00:08:02', type: 'ARBITRATION', tag: 'G4 / G3', msg: 'UAV battery 18 %, wind 22 kn. Land by 00:18:12. G3 hold depth. Survey paused to 00:23:00. Survey loss 25 to 27 min.' },
+      { t: '00:00:00', type: 'START', tag: '--', msg: 'Cable route survey. 3.0 kn. CHW 133.3 kW at 24 °C. Demand 46.0 kW.' },
+    ]).map(e => ({ ...e, injected: Boolean(e.injected), typeStyle: typeStyle(e.type) }));
+    const row = (s) => 'border-top: 1px solid #DCE3EA; background: ' + (s === 'EXECUTED' ? '#FBEBCB' : 'transparent');
+    const ladder = (rescue ? [
+      { n: '1', g: 'G5', step: 'FULL → LOW POWER', kw: '-37', idx: '0.0189', state: 'EXECUTED' },
+      { n: '2', g: 'G3', step: 'STANDBY → OFF', kw: '-1', idx: 'SHED', state: 'ARMED' },
+      { n: '3', g: 'G4', step: 'MISSION CRITICAL', kw: '--', idx: '--', state: 'LAST' },
+    ] : [
+      { n: '1', g: 'G4', step: 'FAST CHARGE → CHARGE', kw: '-25', idx: '0.0024', state: 'EXECUTED' },
+      { n: '2', g: 'G5', step: 'FULL → LOW POWER', kw: '-37', idx: '0.0038', state: 'ARMED' },
+      { n: '3', g: 'G3', step: 'MISSION CRITICAL', kw: '--', idx: '--', state: 'LAST' },
+    ]).map(s => ({ ...s, rowStyle: row(s.state) }));
+    return {
+      missionUpper: rescue ? 'RESCUE' : 'SURVEY',
+      zones: [
+        { zone: 'FD · HANGAR', guest: 'G4 UAV', mode: rescue ? 'FAST CHARGE 35 kW' : 'CHARGE 10 kW', hot: !rescue },
+        { zone: 'BAY 1', guest: 'G3 SEABED VEH', mode: rescue ? 'STANDBY 1 kW' : 'HOLD DEPTH 1 kW' },
+        { zone: 'BAY 2', guest: 'G5 COMMS NODE', mode: rescue ? 'LOW POWER 8 kW' : 'FULL 45 kW', hot: rescue },
+        { zone: 'MAST', guest: 'G5 ANT', mode: '2 HOST + 1' },
+      ].map(z => ({ ...z, style: zone(z.hot) })),
+      plant: [
+        { tag: 'GEN 1', state: 'RUN' }, { tag: 'GEN 2', state: 'TRIP', s: 'trip' },
+        { tag: 'CHW P1', state: 'TRIP', s: 'trip' }, { tag: 'CHW P2', state: 'RUN' },
+        { tag: 'CHW CAP', state: '80.0 kW' }, { tag: 'SHORE', state: 'OFF' },
+      ].map(p => ({ ...p, style: plantStyle(p.s) })),
+      tiles,
+      record: rescue ? [
+        { k: 'TRIGGER', v: 'CHW P1 TRIP · 00:19:00' }, { k: 'LIMIT', v: '80.0 - 5.0 = 75.0 kW' }, { k: 'DEMAND', v: '81.0 kW' },
+        { k: 'ACTION', v: 'G5 FULL → LOW POWER' }, { k: 'FREED', v: '37.0 kW' }, { k: 'RESULT', v: '44.0 / 75.0 kW' },
+        { k: 'IMPACT', v: 'G5 CAPABILITY 100 → 30 %' }, { k: 'TIME', v: '-- / 5.0 s' },
+      ] : [
+        { k: 'TRIGGER', v: 'CHW P1 TRIP · 00:19:00' }, { k: 'LIMIT', v: '80.0 - 5.0 = 75.0 kW' }, { k: 'DEMAND', v: '81.0 kW' },
+        { k: 'ACTION', v: 'G4 CHARGE 35 → 10 kW' }, { k: 'FREED', v: '25.0 kW' }, { k: 'RESULT', v: '56.0 / 75.0 kW' },
+        { k: 'IMPACT', v: 'G4 CAPABILITY 100 → 70 %' }, { k: 'TIME', v: '-- / 5.0 s' },
+      ],
+      ladder,
+      guests: rescue ? [
+        { id: 'G3', pos: 'BAY 1', mode: 'STANDBY', kw: '1', cap: '30 %' },
+        { id: 'G4', pos: 'FD', mode: 'FAST CHARGE', kw: '35', cap: '100 %' },
+        { id: 'G5', pos: 'BAY 2', mode: 'LOW POWER', kw: '8', cap: '30 %' },
+      ] : [
+        { id: 'G3', pos: 'BAY 1', mode: 'HOLD DEPTH', kw: '1', cap: '30 %' },
+        { id: 'G4', pos: 'FD', mode: 'CHARGE', kw: '10', cap: '70 %' },
+        { id: 'G5', pos: 'BAY 2', mode: 'FULL', kw: '45', cap: '100 %' },
+      ],
+      log,
+    };
+  }
+}
+</script>
+</body>
+</html>

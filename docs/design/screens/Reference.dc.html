@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Reference and glossary</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&amp;family=Titillium+Web:wght@400;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#D9DFE5}
+a{color:#1565A8}a:hover{color:#0D4677}
+</style>
+</helmet>
+<div style="min-height: 100vh; background: #D9DFE5; color: #0D1B2A; font-family: 'Titillium Web', sans-serif; font-size: 15px; line-height: 1.35">
+
+<header style="background: #0F2A44; color: #FFFFFF; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 20px; padding: 8px 16px">
+<div style="display: flex; align-items: baseline; gap: 12px">
+<span style="font-weight: 700; font-size: 20px; letter-spacing: 0.03em">ArgOS</span>
+<span style="font-size: 13px; letter-spacing: 0.08em; color: #AFC3D6">REFERENCE · MRV-60</span>
+</div>
+<nav aria-label="Reference sections" style="display: flex; flex-wrap: wrap; gap: 6px; flex: 1 1 auto">
+<a href="#tags" style="border: 1px solid #3D5A78; border-radius: 3px; padding: 2px 8px; font-size: 13px; letter-spacing: 0.04em; color: #FFFFFF; text-decoration: none">STATUS TAGS</a>
+<a href="#terms" style="border: 1px solid #3D5A78; border-radius: 3px; padding: 2px 8px; font-size: 13px; letter-spacing: 0.04em; color: #FFFFFF; text-decoration: none">TERMS</a>
+<a href="#units" style="border: 1px solid #3D5A78; border-radius: 3px; padding: 2px 8px; font-size: 13px; letter-spacing: 0.04em; color: #FFFFFF; text-decoration: none">UNITS AND LIMITS</a>
+<a href="#classes" style="border: 1px solid #3D5A78; border-radius: 3px; padding: 2px 8px; font-size: 13px; letter-spacing: 0.04em; color: #FFFFFF; text-decoration: none">DECISIONS</a>
+<a href="#crew" style="border: 1px solid #3D5A78; border-radius: 3px; padding: 2px 8px; font-size: 13px; letter-spacing: 0.04em; color: #FFFFFF; text-decoration: none">CREW</a>
+<a href="#guests" style="border: 1px solid #3D5A78; border-radius: 3px; padding: 2px 8px; font-size: 13px; letter-spacing: 0.04em; color: #FFFFFF; text-decoration: none">GUESTS</a>
+</nav>
+</header>
+
+<div style="max-width: 1440px; margin: 0 auto; padding: 12px; box-sizing: border-box; display: flex; flex-direction: column; gap: 12px">
+
+<section id="tags" aria-label="Status tags" style="background: #F5F7F9; border: 1px solid #B4BFCA">
+<div style="background: #DCE3EA; border-bottom: 1px solid #B4BFCA; padding: 6px 10px; font-weight: 700; font-size: 13px; letter-spacing: 0.08em; color: #0F2A44">STATUS TAGS · CRITERIA</div>
+<div style="overflow-x: auto">
+<table style="width: 100%; min-width: 760px; border-collapse: collapse; font-size: 14px">
+<thead><tr style="text-align: left; color: #4B5B6B"><th scope="col" style="padding: 6px 10px; width: 210px">TAG</th><th scope="col" style="padding: 6px 10px; width: 170px">APPLIES TO</th><th scope="col" style="padding: 6px 10px">SET WHEN</th></tr></thead>
+<tbody>
+<sc-for list="{{ tags }}" as="t" hint-placeholder-count="12">
+<tr style="border-top: 1px solid #DCE3EA"><td style="padding: 7px 10px"><span style="{{ t.chip }}">{{ t.tag }}</span></td><td style="padding: 7px 10px; color: #4B5B6B">{{ t.group }}</td><td style="padding: 7px 10px">{{ t.when }}</td></tr>
+</sc-for>
+</tbody>
+</table>
+</div>
+</section>
+
+<div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-start">
+
+<section id="terms" aria-label="Terms and acronyms" style="flex: 1 1 560px; min-width: 0; background: #F5F7F9; border: 1px solid #B4BFCA">
+<div style="background: #DCE3EA; border-bottom: 1px solid #B4BFCA; padding: 6px 10px; font-weight: 700; font-size: 13px; letter-spacing: 0.08em; color: #0F2A44">TERMS AND ACRONYMS</div>
+<table style="width: 100%; border-collapse: collapse; font-size: 14px">
+<tbody>
+<sc-for list="{{ terms }}" as="d" hint-placeholder-count="20">
+<tr style="border-top: 1px solid #DCE3EA"><th scope="row" style="padding: 6px 10px; text-align: left; font-weight: 700; white-space: nowrap; width: 130px">{{ d.k }}</th><td style="padding: 6px 10px">{{ d.v }}</td></tr>
+</sc-for>
+</tbody>
+</table>
+</section>
+
+<div style="flex: 1 1 560px; min-width: 0; display: flex; flex-direction: column; gap: 12px">
+<section id="units" aria-label="Units and limits" style="background: #F5F7F9; border: 1px solid #B4BFCA">
+<div style="background: #DCE3EA; border-bottom: 1px solid #B4BFCA; padding: 6px 10px; font-weight: 700; font-size: 13px; letter-spacing: 0.08em; color: #0F2A44">UNITS AND LIMITS</div>
+<table style="width: 100%; border-collapse: collapse; font-size: 14px">
+<thead><tr style="text-align: left; color: #4B5B6B"><th scope="col" style="padding: 6px 10px">QUANTITY</th><th scope="col" style="padding: 6px 10px">UNIT</th><th scope="col" style="padding: 6px 10px">LIMIT OR RULE</th></tr></thead>
+<tbody>
+<sc-for list="{{ units }}" as="u" hint-placeholder-count="12">
+<tr style="border-top: 1px solid #DCE3EA"><th scope="row" style="padding: 6px 10px; text-align: left; font-weight: 700">{{ u.q }}</th><td style="padding: 6px 10px; font-family: 'IBM Plex Mono', monospace">{{ u.u }}</td><td style="padding: 6px 10px">{{ u.r }}</td></tr>
+</sc-for>
+</tbody>
+</table>
+</section>
+
+<section id="classes" aria-label="Decision classes" style="background: #F5F7F9; border: 1px solid #B4BFCA">
+<div style="background: #DCE3EA; border-bottom: 1px solid #B4BFCA; padding: 6px 10px; font-weight: 700; font-size: 13px; letter-spacing: 0.08em; color: #0F2A44">DECISION CLASSES</div>
+<table style="width: 100%; border-collapse: collapse; font-size: 14px">
+<thead><tr style="text-align: left; color: #4B5B6B"><th scope="col" style="padding: 6px 10px">CLASS</th><th scope="col" style="padding: 6px 10px">DECIDES</th><th scope="col" style="padding: 6px 10px">CEILING</th></tr></thead>
+<tbody>
+<sc-for list="{{ classes }}" as="c" hint-placeholder-count="6">
+<tr style="border-top: 1px solid #DCE3EA"><th scope="row" style="padding: 6px 10px; text-align: left; font-weight: 700">{{ c.k }}</th><td style="padding: 6px 10px">{{ c.v }}</td><td style="padding: 6px 10px; font-family: 'IBM Plex Mono', monospace">{{ c.t }}</td></tr>
+</sc-for>
+</tbody>
+</table>
+</section>
+
+<section id="crew" aria-label="Crew levels" style="background: #F5F7F9; border: 1px solid #B4BFCA">
+<div style="background: #DCE3EA; border-bottom: 1px solid #B4BFCA; padding: 6px 10px; font-weight: 700; font-size: 13px; letter-spacing: 0.08em; color: #0F2A44">CREW LEVELS</div>
+<table style="width: 100%; border-collapse: collapse; font-size: 14px">
+<thead><tr style="text-align: left; color: #4B5B6B"><th scope="col" style="padding: 6px 10px">CREW</th><th scope="col" style="padding: 6px 10px">RULE ACTION</th><th scope="col" style="padding: 6px 10px">DECK CLEAR, RECOVERY</th></tr></thead>
+<tbody>
+<sc-for list="{{ crew }}" as="c" hint-placeholder-count="3">
+<tr style="border-top: 1px solid #DCE3EA"><th scope="row" style="padding: 6px 10px; text-align: left; font: 600 15px 'IBM Plex Mono', monospace">{{ c.n }}</th><td style="padding: 6px 10px; font-weight: 700">{{ c.a }}</td><td style="padding: 6px 10px">{{ c.d }}</td></tr>
+</sc-for>
+</tbody>
+</table>
+</section>
+</div>
+</div>
+
+<section id="guests" aria-label="Guests" style="background: #F5F7F9; border: 1px solid #B4BFCA">
+<div style="background: #DCE3EA; border-bottom: 1px solid #B4BFCA; padding: 6px 10px; font-weight: 700; font-size: 13px; letter-spacing: 0.08em; color: #0F2A44">GUESTS</div>
+<div style="overflow-x: auto">
+<table style="width: 100%; min-width: 700px; border-collapse: collapse; font-size: 14px">
+<thead><tr style="text-align: left; color: #4B5B6B"><th scope="col" style="padding: 6px 10px">ID</th><th scope="col" style="padding: 6px 10px">GUEST</th><th scope="col" style="padding: 6px 10px">POSITION</th><th scope="col" style="padding: 6px 10px">MODES, kW</th></tr></thead>
+<tbody>
+<sc-for list="{{ guests }}" as="g" hint-placeholder-count="6">
+<tr style="border-top: 1px solid #DCE3EA"><th scope="row" style="padding: 6px 10px; text-align: left; font-weight: 700">{{ g.id }}</th><td style="padding: 6px 10px">{{ g.name }}</td><td style="padding: 6px 10px">{{ g.pos }}</td><td style="padding: 6px 10px; font-family: 'IBM Plex Mono', monospace">{{ g.modes }}</td></tr>
+</sc-for>
+</tbody>
+</table>
+</div>
+</section>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1400}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const chip = (bg, fg, border) => 'display: inline-block; padding: 1px 8px; font-size: 12px; font-weight: 700; letter-spacing: 0.06em; background: ' + bg + '; color: ' + fg + (border ? '; border: 1px solid ' + border : '');
+    const tags = [
+      ['NORMAL', 'Resource class', 'Free capacity above the 5 kW margin. No confirmed fault on the class.', chip('#E4ECF3', '#0F2A44')],
+      ['DEGRADED', 'Resource class', 'Capacity below nominal after a confirmed fault. GEN 2 trip halves the guest reserve. One CHW pump down leaves 60 % of cooling.', chip('#F2D27C', '#0D1B2A')],
+      ['LIMITING', 'Resource class', 'This class sets the active limit. Limit = min(power reserve, CHW capacity) - 5 kW margin.', chip('#D98E04', '#0D1B2A')],
+      ['FULL', 'Resource class', 'Every discrete position of the class is assigned. Applies to deck and mast positions.', chip('#DCE3EA', '#0D1B2A')],
+      ['REDUCED', 'Data link', 'Guests carried at their minimum rate, below nominal demand.', chip('#F2D27C', '#0D1B2A')],
+      ['EXECUTED', 'Shed step', 'Step applied. Demand is back within the limit.', chip('#FBEBCB', '#0D1B2A', '#D98E04')],
+      ['ARMED', 'Shed step', 'Next step, recomputed every tick. Applies automatically when demand exceeds the limit.', chip('#FFFFFF', '#0D1B2A', '#8494A3')],
+      ['LAST', 'Shed step', 'Mission-critical guest under the active mission file. Shed only after every other step. Safety-critical guests are never on the ladder.', chip('#FFFFFF', '#0D1B2A', '#8494A3')],
+      ['ALARM', 'Event log', 'Plant fault confirmed. Genset trip: 2 of 3 signals. CHW pump trip: plant alarm plus low flow or high delta-T.', chip('#B3261E', '#FFFFFF')],
+      ['SHED', 'Event log', 'Load management step executed by D4.', chip('#D98E04', '#0D1B2A')],
+      ['ARBITRATION', 'Event log', 'Right-of-way decision by D3 between incompatible guest conditions.', chip('#1565A8', '#FFFFFF')],
+      ['STATE', 'Event log', 'Guest or ship state change completed or reported.', chip('#DCE3EA', '#0D1B2A')],
+      ['INJECTED', 'Event log marker', 'Fault entered by the scenario timeline, not by plant behaviour.', chip('transparent', '#4B5B6B', '#8494A3')],
+      ['YES', 'Admission verdict', 'Fits every line at the envelope: both gensets, 200 kW reserve, seawater 30 °C. Holds with one genset down.', chip('#1565A8', '#FFFFFF')],
+      ['YES-IF', 'Admission verdict', 'Fits only after the listed conditions, ranked by mission value lost. Also set when one genset down does not hold.', chip('#D98E04', '#0D1B2A')],
+      ['NO', 'Admission verdict', 'No removal or throttle set makes the card fit.', chip('#B3261E', '#FFFFFF')],
+      ['NOT NOW', 'Admission verdict', 'Fits, but not in the current ship state or installation window. Next window shown.', chip('#4B5B6B', '#FFFFFF')],
+      ['CARD REJECTED', 'Admission verdict', 'Card fails the manifest schema. Field named. Previous card retained.', chip('#4B5B6B', '#FFFFFF')],
+      ['HOLDS', 'One genset down', 'Demand within the 95 kW gate with no action.', chip('#E4ECF3', '#0F2A44')],
+      ['HOLDS BY THROTTLING', 'One genset down', 'Within 95 kW after interruptible throttle steps, each named with kW freed and capability lost.', chip('#F2D27C', '#0D1B2A')],
+      ['DOES NOT HOLD', 'One genset down', 'No throttle set fits. The verdict becomes YES-IF.', chip('#B3261E', '#FFFFFF')],
+      ['OK / OVER', 'Resource line', 'Demand at or under capacity, or over capacity.', chip('#E4ECF3', '#0F2A44')],
+      ['RUN / TRIP / OFF', 'Plant equipment', 'Running, tripped on a confirmed fault, or stopped.', chip('#DCE3EA', '#0D1B2A')],
+    ].map(t => ({ tag: t[0], group: t[1], when: t[2], chip: t[3] }));
+    const terms = [
+      ['ArgOS', 'Resource governor for the ship’s physical budget across eight classes.'],
+      ['D1 ADMISSION', 'Whether a guest card can come aboard: YES, YES-IF, NO or NOT NOW, with the binding line named. Within 30 s.'],
+      ['D2 PLACEMENT', 'Where an admitted guest goes: bay, flight deck or mast position, with rejected alternatives. Within 30 s.'],
+      ['D3 RIGHT OF WAY', 'Who wins when two guests need ship states that cannot both hold. Hard limits first, then mission weights. Within 2 s.'],
+      ['D4 SHEDDING', 'Degradation in a declared order when demand exceeds the limit. Throttle before switch-off, mission-critical last. First step within 5 s, all within 60 s.'],
+      ['D5 CREW POLICY', 'How each rule acts at 14, 6 or 0 aboard: crew confirms, standing plan, automatic or forbidden.'],
+      ['D6 PHYSICAL ACCOUNT', 'Every number assumed, narrowed or invented beyond the ship and guest data, with its reason.'],
+      ['MRV-60', 'Multi-role vessel, 60 m reference hull.'],
+      ['GEN 1, GEN 2', 'Generator sets, 450 kW each, 90 % load limit.'],
+      ['CHW', 'Chilled-water loop. Rejects guest and electronics heat to seawater.'],
+      ['CHW P1, P2', 'Chilled-water pumps. One pump down leaves 60 % of capacity.'],
+      ['FD', 'Flight deck, 12 × 8 m, with hangar.'],
+      ['BAY 1, BAY 2', 'Mission bays. BAY 1 is on the stern ramp.'],
+      ['RAMP', 'Stern ramp. One craft of 7 to 9 m and up to 5 t.'],
+      ['MAST', 'Three positions, up to 60 kg each, air cooling only. Two hold host terminals.'],
+      ['ANT', 'Antenna.'],
+      ['UAV', 'Uncrewed aerial vehicle. G4.'],
+      ['LOS', 'Line-of-sight radio. 1 to 20 Mbit/s, 20 to 40 km.'],
+      ['SATCOM', 'Satellite link. 2 to 8 Mbit/s shared, 70 to 95 % availability.'],
+      ['ACOUSTIC', 'Underwater link to G3. 1 to 5 kbit/s. Up only with steady course, quiet ship and no deck machinery.'],
+      ['HLO', 'Helicopter landing officer. Reports the deck clear or not clear.'],
+      ['MC', 'Mission critical under the active mission file.'],
+      ['RSV', 'Reserved. Capacity held for a guest before it draws.'],
+      ['CAP', 'Capability kept by the current mode, % of full.'],
+      ['INDEX', 'Shed cost per kW freed: mission weight × capability lost ÷ kW freed. Lowest goes first.'],
+      ['STAB', 'Stability load in tonne-equivalent.'],
+      ['SIM ×12', 'Simulation pacing. One ship minute every 5 s.'],
+      ['T+', 'Scenario ship time, hh:mm:ss.'],
+      ['SW', 'Seawater temperature.'],
+      ['ENV', 'Mission envelope: seawater 12 to 30 °C, slow and cruise bands, sea state up to 5, wind up to 30 kn.'],
+    ].map(d => ({ k: d[0], v: d[1] }));
+    const units = [
+      ['Power', 'kW', 'Guest reserve 200 kW with two gensets at cruise, 100 kW with one.'],
+      ['Limit', 'kW', 'min(power reserve, CHW capacity) - 5 kW margin.'],
+      ['Heat', 'kW', '1 kW electric = 1 kW heat. CHW 160 kW at 12 °C to 120 kW at 30 °C, linear.'],
+      ['Energy', 'kWh', 'Battery and charge budgets.'],
+      ['Mission lines', 'kW', 'PORT and STBD, 150 kW each.'],
+      ['Mass', 't', 'Margin 10.000 t above the base ship.'],
+      ['Stability', 't-eq', 'Mass × position factor: BAY 1.0, FD 1.2, hangar roof 1.2, MAST 3.0. Budget 12.000 t-eq.'],
+      ['Data', 'Mbit/s, kbit/s', 'Judged at each guest’s minimum rate.'],
+      ['Seawater', '°C', 'Admission judged at 30 °C.'],
+      ['Speed', 'kn', 'Bands: slow 3 to 5, cruise 10 to 14, fast 18.'],
+      ['Battery', '%', 'G4 below 20 %: land within 12 min or ditch.'],
+      ['Response', 's', 'Measured from the confirmed fault to the first action.'],
+    ].map(u => ({ q: u[0], u: u[1], r: u[2] }));
+    const classes = [
+      ['D1 ADMISSION', 'Guest card verdict: YES, YES-IF, NO or NOT NOW.', '30 s'],
+      ['D2 PLACEMENT', 'Bay, deck or mast position, rejected alternatives listed.', '30 s'],
+      ['D3 RIGHT OF WAY', 'Incompatible guest conditions resolved. Hard limits first.', '2 s'],
+      ['D4 SHEDDING', 'Degradation and shedding in the declared order.', '5 s first · 60 s all'],
+      ['D5 CREW POLICY', 'Rule action per crew level.', 'with D3, D4'],
+      ['D6 PHYSICAL ACCOUNT', 'Every assumed or narrowed number.', 'per run'],
+      ['SAFETY', 'Stop, hold, secure. Answered from a precomputed table.', '0.2 s'],
+    ].map(c => ({ k: c[0], v: c[1], t: c[2] }));
+    const crew = [
+      ['14', 'CONFIRM', 'HLO reports the deck. Bridge confirms before recovery.'],
+      ['6', 'STANDING PLAN', 'Plan approved at launch. Recovery proceeds on the HLO report.'],
+      ['0', 'AUTO / FORBIDDEN', 'Recovery only if the deck was latched clear at the last crew sweep with no deck activity since. Otherwise forbidden.'],
+    ].map(c => ({ n: c[0], a: c[1], d: c[2] }));
+    const guests = [
+      ['G1', 'Passive radio sensor', 'MAST', 'listening 1.5'],
+      ['G2', 'Ocean and weather module', 'BAY 2', 'winch 20 · sampling · standby'],
+      ['G3', 'Seabed inspection vehicle with cradle', 'BAY 1 · RAMP', 'charging 25 · standby 1 · off'],
+      ['G4', 'VTOL rescue drone with hangar', 'FD', 'fast charge 35 · charge 10 · standby 2 · off'],
+      ['G5', 'Emergency comms and edge compute node', 'BAY 2 · MAST or hangar roof', 'full 45 · low power 8 · off'],
+      ['G6', 'Containerised desalination unit', 'BAY', 'production · recirculate · off'],
+    ].map(g => ({ id: g[0], name: g[1], pos: g[2], modes: g[3] }));
+    return { tags, terms, units, classes, crew, guests };
+  }
+}
+</script>
+</body>
+</html>

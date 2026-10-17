@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Mission comparison</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&amp;family=Titillium+Web:wght@400;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#D9DFE5}
+a{color:#1565A8}a:hover{color:#0D4677}
+</style>
+</helmet>
+<div style="min-height: 100vh; background: #D9DFE5; color: #0D1B2A; font-family: 'Titillium Web', sans-serif; font-size: 15px; line-height: 1.35">
+
+<header style="background: #0F2A44; color: #FFFFFF; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 20px; padding: 8px 16px">
+<div style="display: flex; align-items: baseline; gap: 12px">
+<span style="font-weight: 700; font-size: 20px; letter-spacing: 0.03em">ArgOS</span>
+<span style="font-size: 13px; letter-spacing: 0.08em; color: #AFC3D6">MISSION COMPARE · MRV-60</span>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 6px; flex: 1 1 auto">
+<span style="border: 1px solid #3D5A78; border-radius: 3px; padding: 2px 8px; font-size: 13px; letter-spacing: 0.04em">CREW 14</span>
+<span style="border: 1px solid #3D5A78; border-radius: 3px; padding: 2px 8px; font-size: 13px; letter-spacing: 0.04em">SEA 24 °C</span>
+<span style="border: 1px solid #3D5A78; border-radius: 3px; padding: 2px 8px; font-size: 13px; letter-spacing: 0.04em">SPEED 3.0 kn</span>
+<span style="border: 1px solid #3D5A78; border-radius: 3px; padding: 2px 8px; font-size: 13px; letter-spacing: 0.04em">SIM ×12</span>
+</div>
+<span style="font: 600 18px 'IBM Plex Mono', monospace">T+00:{{ clock }}</span>
+</header>
+
+<div style="max-width: 1440px; margin: 0 auto; padding: 12px; box-sizing: border-box; display: flex; flex-direction: column; gap: 12px">
+
+<nav aria-label="Timeline" style="background: #F5F7F9; border: 1px solid #B4BFCA">
+<div style="background: #DCE3EA; border-bottom: 1px solid #B4BFCA; padding: 6px 10px; font-weight: 700; font-size: 13px; letter-spacing: 0.08em; color: #0F2A44">TIMELINE</div>
+<div style="padding: 8px; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 6px">
+<sc-for list="{{ marks }}" as="m" hint-placeholder-count="6">
+<button type="button" onClick="{{ m.pick }}" style="{{ m.style }}">
+<span style="display: block; font: 600 14px 'IBM Plex Mono', monospace">{{ m.t }}</span>
+<span style="display: block; font-size: 13px; font-weight: 700; letter-spacing: 0.04em">{{ m.label }}</span>
+</button>
+</sc-for>
+</div>
+</nav>
+
+<div style="display: flex; flex-wrap: wrap; gap: 12px">
+<sc-for list="{{ ships }}" as="s" hint-placeholder-count="2">
+<section aria-label="{{ s.name }}" style="flex: 1 1 560px; min-width: 0; background: #F5F7F9; border: 1px solid #B4BFCA">
+<div style="{{ s.headStyle }}"><span>{{ s.name }}</span><span style="font: 500 12px 'IBM Plex Mono', monospace">{{ s.weights }}</span></div>
+<div style="padding: 10px; display: flex; flex-direction: column; gap: 10px">
+<div>
+<sc-for list="{{ s.record }}" as="r" hint-placeholder-count="5">
+<div style="display: flex; gap: 10px; padding: 5px 0; border-bottom: 1px solid #DCE3EA">
+<span style="width: 100px; flex: 0 0 100px; font-size: 13px; font-weight: 600; color: #4B5B6B">{{ r.k }}</span>
+<span style="font: 500 14px 'IBM Plex Mono', monospace">{{ r.v }}</span>
+</div>
+</sc-for>
+</div>
+<sc-for list="{{ s.bars }}" as="b" hint-placeholder-count="2">
+<div style="display: flex; flex-direction: column; gap: 4px">
+<div style="display: flex; justify-content: space-between; font-size: 13px"><span style="font-weight: 700; letter-spacing: 0.06em">{{ b.name }}</span><span style="font-family: 'IBM Plex Mono', monospace">{{ b.value }}</span></div>
+<div style="height: 10px; background: #D3DAE1; position: relative"><div style="{{ b.bar }}"></div><div style="{{ b.mark }}"></div></div>
+</div>
+</sc-for>
+<table style="width: 100%; border-collapse: collapse; font-size: 13px">
+<thead><tr style="text-align: left; color: #4B5B6B"><th scope="col" style="padding: 5px 6px">ID</th><th scope="col" style="padding: 5px 6px">POS</th><th scope="col" style="padding: 5px 6px">MODE</th><th scope="col" style="padding: 5px 6px">kW</th></tr></thead>
+<tbody>
+<sc-for list="{{ s.guests }}" as="g" hint-placeholder-count="3">
+<tr style="{{ g.style }}"><td style="padding: 5px 6px; font-weight: 700">{{ g.id }}</td><td style="padding: 5px 6px">{{ g.pos }}</td><td style="padding: 5px 6px">{{ g.mode }}</td><td style="padding: 5px 6px; font-family: 'IBM Plex Mono', monospace">{{ g.kw }}</td></tr>
+</sc-for>
+</tbody>
+</table>
+</div>
+</section>
+</sc-for>
+</div>
+
+<section aria-label="Difference" style="background: #F5F7F9; border: 1px solid #B4BFCA">
+<div style="background: #0F2A44; color: #FFFFFF; padding: 6px 10px; font-weight: 700; font-size: 13px; letter-spacing: 0.08em">DIFFERENCE · {{ clockLabel }}</div>
+<div style="overflow-x: auto">
+<table style="width: 100%; min-width: 640px; border-collapse: collapse; font-size: 14px">
+<thead><tr style="text-align: left; color: #4B5B6B"><th scope="col" style="padding: 6px 10px; width: 160px"></th><th scope="col" style="padding: 6px 10px; color: #1F4E79">SURVEY</th><th scope="col" style="padding: 6px 10px; color: #A0461A">RESCUE</th></tr></thead>
+<tbody>
+<sc-for list="{{ diff }}" as="d" hint-placeholder-count="3">
+<tr style="border-top: 1px solid #DCE3EA"><th scope="row" style="padding: 6px 10px; text-align: left; font-size: 13px; color: #4B5B6B">{{ d.k }}</th><td style="padding: 6px 10px; font-family: 'IBM Plex Mono', monospace">{{ d.a }}</td><td style="padding: 6px 10px; font-family: 'IBM Plex Mono', monospace">{{ d.b }}</td></tr>
+</sc-for>
+</tbody>
+</table>
+</div>
+</section>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1080}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { moment: 19 }; }
+  renderVals() {
+    const m = this.state.moment;
+    const BLUE = '#1F4E79', ORANGE = '#A0461A';
+    const marks = [
+      { at: 0, t: '00:00', label: 'START' }, { at: 8, t: '00:08', label: 'UAV LOW BATT', live: true },
+      { at: 12, t: '00:12', label: 'GEN 2 TRIP', live: true }, { at: 17, t: '00:17', label: 'UAV LANDED' },
+      { at: 19, t: '00:19', label: 'CHW P1 TRIP', live: true }, { at: 24, t: '00:24', label: 'GEN 2 RESTART' },
+    ].map(x => ({
+      ...x,
+      pick: () => { if (x.live) this.setState({ moment: x.at }); },
+      style: 'min-height: 52px; text-align: left; padding: 6px 10px; font-family: "Titillium Web", sans-serif; cursor: pointer; border-radius: 2px; '
+        + (x.at === m ? 'background: #0F2A44; color: #FFFFFF; border: 1px solid #0F2A44' : x.at < m ? 'background: #FFFFFF; color: #0D1B2A; border: 1px solid #8494A3' : 'background: #EEF2F5; color: #4B5B6B; border: 1px solid #B4BFCA'),
+    }));
+    const pct = (v, max) => Math.max(0, Math.min(100, Math.round(v / max * 100)));
+    const bar = (v, max, c) => 'position: absolute; left: 0; top: 0; bottom: 0; width: ' + pct(v, max) + '%; background: ' + c;
+    const mark = (v, max) => 'position: absolute; top: -3px; bottom: -3px; width: 2px; background: #0D1B2A; left: ' + pct(v, max) + '%';
+    const D = {
+      survey: {
+        8: { rec: [['TRIGGER', 'UAV BATT 18 % · WIND 22 kn'], ['CONSTRAINT', 'G4 LAND BY 00:18:12'], ['ACTION', 'G3 HOLD DEPTH · RECOVER G4'], ['RESULT', 'SURVEY PAUSED 00:08 → 00:23'], ['IMPACT', 'SURVEY LOSS 25 TO 27 min']],
+             load: 48, pwr: 195, pmax: 200, chw: 128.3, cmax: 133.3, g: [['G3', 'BAY 1', 'HOLD DEPTH', '1', 1], ['G4', 'AIR', 'RECOVERING', '2'], ['G5', 'BAY 2', 'FULL', '45']] },
+        12: { rec: [['TRIGGER', 'GEN 2 TRIP · 2 OF 3'], ['CONSTRAINT', 'POWER LIMIT 95.0 kW'], ['ACTION', 'NONE'], ['RESULT', 'DEMAND 48.0 / 95.0 kW'], ['NEXT STEP', 'G5 → LOW POWER 8 kW']],
+             load: 48, pwr: 95, pmax: 100, chw: 128.3, cmax: 133.3, g: [['G3', 'BAY 1', 'HOLD DEPTH', '1'], ['G4', 'AIR', 'APPROACH', '2'], ['G5', 'BAY 2', 'FULL', '45']] },
+        19: { rec: [['TRIGGER', 'CHW P1 TRIP'], ['CONSTRAINT', 'CHW 81.0 / 75.0 kW'], ['ACTION', 'G4 CHARGE 35 → 10 kW'], ['RESULT', 'DEMAND 56.0 / 75.0 kW'], ['IMPACT', 'G4 CAPABILITY 70 %']],
+             load: 56, pwr: 95, pmax: 100, chw: 75, cmax: 80, g: [['G3', 'BAY 1', 'HOLD DEPTH', '1'], ['G4', 'FD', 'CHARGE', '10', 1], ['G5', 'BAY 2', 'FULL', '45']] },
+      },
+      rescue: {
+        8: { rec: [['TRIGGER', 'UAV BATT 18 % · WIND 22 kn'], ['CONSTRAINT', 'G4 LAND BY 00:18:12'], ['ACTION', 'SURVEY SUSPENDED · COURSE RELEASED'], ['RESULT', 'G4 CHARGE 35 kW RESERVED'], ['IMPACT', 'G3 LEG ABORTED']],
+             load: 81, pwr: 195, pmax: 200, chw: 128.3, cmax: 133.3, g: [['G3', 'BAY 1', 'RECOVERING', '1', 1], ['G4', 'AIR', 'RECOVERING · RSV 35', '2'], ['G5', 'BAY 2', 'FULL', '45']] },
+        12: { rec: [['TRIGGER', 'GEN 2 TRIP · 2 OF 3'], ['CONSTRAINT', 'POWER LIMIT 95.0 kW'], ['ACTION', 'NONE'], ['RESULT', 'DEMAND 81.0 / 95.0 kW'], ['NEXT STEP', 'G5 → LOW POWER 8 kW']],
+             load: 81, pwr: 95, pmax: 100, chw: 128.3, cmax: 133.3, g: [['G3', 'BAY 1', 'STANDBY', '1'], ['G4', 'AIR', 'APPROACH · RSV 35', '2'], ['G5', 'BAY 2', 'FULL', '45']] },
+        19: { rec: [['TRIGGER', 'CHW P1 TRIP'], ['CONSTRAINT', 'CHW 81.0 / 75.0 kW'], ['ACTION', 'G5 FULL → LOW POWER'], ['RESULT', 'DEMAND 44.0 / 75.0 kW'], ['IMPACT', 'G5 CAPABILITY 30 %']],
+             load: 44, pwr: 95, pmax: 100, chw: 75, cmax: 80, g: [['G3', 'BAY 1', 'STANDBY', '1'], ['G4', 'FD', 'FAST CHARGE', '35'], ['G5', 'BAY 2', 'LOW POWER', '8', 1]] },
+      },
+    };
+    const ship = (key, name, weights, c) => {
+      const d = D[key][m];
+      return {
+        name, weights,
+        headStyle: 'background: ' + c + '; color: #FFFFFF; padding: 6px 10px; display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; font-weight: 700; font-size: 13px; letter-spacing: 0.08em',
+        record: d.rec.map(r => ({ k: r[0], v: r[1] })),
+        bars: [
+          { name: 'POWER', value: d.load.toFixed(1) + ' / ' + d.pwr.toFixed(1) + ' kW', bar: bar(d.load, d.pmax, c), mark: mark(d.pwr, d.pmax) },
+          { name: 'COOLING CHW', value: d.load.toFixed(1) + ' / ' + d.chw.toFixed(1) + ' kW', bar: bar(d.load, d.cmax, d.chw === 75 ? '#D98E04' : c), mark: mark(d.chw, d.cmax) },
+        ],
+        guests: d.g.map(g => ({ id: g[0], pos: g[1], mode: g[2], kw: g[3], style: 'border-top: 1px solid #DCE3EA; background: ' + (g[4] ? '#FBEBCB' : 'transparent') })),
+      };
+    };
+    const diffs = {
+      8: [['ACTION', 'G3 HOLD DEPTH', 'SURVEY SUSPENDED'], ['G4 CHARGE', 'NOT RESERVED', '35 kW RESERVED'], ['SURVEY', 'LOSS 25 TO 27 min', 'LEG ABORTED']],
+      12: [['ACTION', 'NONE', 'NONE'], ['DEMAND', '48.0 / 95.0 kW', '81.0 / 95.0 kW'], ['NEXT STEP', 'G5 → LOW POWER', 'G5 → LOW POWER · G4 35 kW RSV']],
+      19: [['ACTION', 'G4 CHARGE 35 → 10 kW', 'G5 FULL → LOW POWER'], ['DEMAND', '56.0 / 75.0 kW', '44.0 / 75.0 kW'], ['CAPABILITY', 'G4 70 %', 'G5 30 %']],
+    };
+    const clocks = { 8: '08:02', 12: '12:00', 19: '19:00' };
+    return {
+      marks,
+      clock: clocks[m],
+      clockLabel: 'T+00:' + clocks[m],
+      ships: [ship('survey', 'MISSION SURVEY', 'SEABED 1.0 · UAV 0.2 · COMMS 0.2', BLUE), ship('rescue', 'MISSION RESCUE', 'UAV 1.0 · COMMS 1.0 · SEABED 0.2', ORANGE)],
+      diff: diffs[m].map(d => ({ k: d[0], a: d[1], b: d[2] })),
+    };
+  }
+}
+</script>
+</body>
+</html>
