@@ -4001,8 +4001,8 @@ requirements:
     is picked by --priority on the one command (README ''Run it'': uv run sdv demo scenario-b --priority sar) and
     swapped mid-run by a priority_swap event (ARCHITECTURE contract 5) that re-arbitrates every standing decision.
     Missing: a loader, a schema for priority files, shed-order and crew-confirmation policy (''To add'' in ARCHITECTURE
-    contract 3), and the two extra files GAMEPLAN lists (environmental monitoring, night transit). Proof: DEMO_SCRIPT
-    00:25, the jury swaps to the rescue file and the same event is re-decided.'
+    contract 3). Proof: DEMO_SCRIPT 00:25, we swap to the other priority file (the jury picks the first) and the
+    same event is re-decided.'
   links:
   - label: Survey file
     path: config/missions/survey.yaml
@@ -5069,8 +5069,8 @@ requirements:
     an installed guest leaves, ranked by the priority file. Card G5 has no bay for its node and makes 13.015 t;
     yes-if G2 leaves gives 9.515 t, but then G5 + G4 + G3 charging is the brief''s 105 kW against 100 with one genset
     down. G1 against G5''s antenna for the mast is a conditional exclude in G1.yaml. DEMO_SCRIPT''s ''free mast
-    slot'' drill says ''G1 takes the mast'' without the 35 kg refusal, and uses the same four guests as its 35 kg
-    drill. Proof: a planned pytest per drill, then rehearsal.'
+    slot'' drill now states the 35 kg refusal and the G5 mass refusal (corrected after the overnight review). Proof:
+    a planned pytest per drill, then rehearsal.'
   links:
   - label: 'Demo: prepared drills'
     path: docs/DEMO_SCRIPT.md#scenario-a-jurys-card-deep
@@ -9543,10 +9543,10 @@ requirements:
     config/assumptions.yaml positions.mast_occupied and positions.mast_free; G1''s excludes and G5''s antenna allowed
     list in manifests/; Physical Account row positions.hangar_roof. Missing: D2 code. Finding: the brief''s mast
     drill (installed G2, G3, G4; card G1 or G5) is refused on mass first: card G1 gives 10.035 t, card G5 13.015
-    t with no free bay, so DEMO_SCRIPT''s "G1 takes the mast" needs correcting. The mast does bind in the brief''s
-    other set (installed G1, G2, G5): G1 holds it, G5''s antenna sits on the roof, and card G4 (7.56 t) is admitted
-    only under our assumption that the antenna clears the drone. Proof: the Scenario A drill in docs/DEMO_SCRIPT.md;
-    GAMEPLAN''s 3D view pulses the slot when it binds.'
+    t with no free bay, and DEMO_SCRIPT''s drill now says so. The mast does bind in the brief''s other set (installed
+    G1, G2, G5): G1 holds it, G5''s antenna sits on the roof, and card G4 (7.56 t) is admitted only under our assumption
+    that the antenna clears the drone. Proof: the Scenario A drill in docs/DEMO_SCRIPT.md; GAMEPLAN''s 3D view pulses
+    the slot when it binds.'
   links:
   - label: 'assumptions.yaml: positions'
     path: config/assumptions.yaml
@@ -12785,12 +12785,12 @@ requirements:
   quote: 90 s of Scenario B, then Scenario A with the jury's card
   how: 'Mechanism: docs/DEMO_SCRIPT.md ''Scenario B, 90 s (deep)'' runs about 12 min of ship time in about 60 s,
     with decisions in real time and latency shown. Beats: 00:00 baseline; 00:10 G4 at 18 % in 22 kn wind (min 8);
-    00:12 D3 within 2 s; 00:25 jury swaps to the rescue file and the same event is re-decided; 00:40 genset trip
-    (min 12); 00:42 D4, first shed within 5 s, sequence within 60 s; ''00:60'' (meaning 01:00) four of seven breadth
-    lines at about 5 s each; 01:25 close. Scenario A follows with its own 30 s verdict ceiling, replacing GAMEPLAN''s
-    older 01:20 slot. Slide p12 differs: conflict at 00:08, failure at 00:12, swap at 01:30. The CON-12 flag (13.015
-    t, Bay 2 needed twice) also costs seconds. Nothing is built. Proof: five timed rehearsals Sun 05:30-09:15; a
-    replay of the Scenario B timeline can check that each beat lands at its offset.'
+    00:12 D3 within 2 s; 00:25 we swap to the other priority file (the jury chose the first) and the same event
+    is re-decided; 00:40 genset trip (min 12); 00:42 D4, first shed within 5 s, sequence within 60 s; 01:00 four
+    of seven breadth lines at about 5 s each; 01:25 close. Scenario A follows with its own 30 s verdict ceiling,
+    replacing GAMEPLAN''s older 01:20 slot. Slide p12 differs: conflict at 00:08, failure at 00:12, swap at 01:30.
+    The CON-12 flag (13.015 t, Bay 2 needed twice) also costs seconds. Nothing is built. Proof: five timed rehearsals
+    Sun 05:30-09:15; a replay of the Scenario B timeline can check that each beat lands at its offset.'
   links:
   - label: 'Demo: Scenario B, 90 s'
     path: docs/DEMO_SCRIPT.md#scenario-b-90-s-deep
