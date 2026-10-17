@@ -5,7 +5,8 @@ Francisco, 16-18 Oct 2026). ArgOS, after the Argo, is the operating system the s
 the hull's finite physical budget and decides, in seconds and in one plain sentence, which payloads come
 aboard, where they go, who wins when two want the same thing, and what is shed when a generator trips.
 
-> **Status (Sat 12:43 PDT): data model and test oracles done; the decision engine is not built yet.**
+> **Status (Sat 14:45 PDT): D1 to D4, the decision records and the state estimator are built and reproduce every
+> oracle case; the tick loop and the screen are next.**
 > Everything marked *planned* below is design.
 
 ## Run it
@@ -99,8 +100,8 @@ D1 to D4 read one ledger (`src/sdv/ledger.py`) and write the same
 |---|---|---|
 | D1 Admission (30 s) | `src/sdv/admission.py` | A verdict that holds at both gensets, 200 kW and 30 °C, and survives one genset down by throttling (rule below); for yes-if, the least mission value lost |
 | D2 Placement (30 s) | `src/sdv/placement.py` | No installed part left without a position; most parts placed; fewest port moves; preferred positions first |
-| D3 Right of way (2 s) | `src/sdv/right_of_way.py` (planned) | Hard limits first (the drone's 12-minute landing rule), then mission-weighted value from the priority file; cost to the loser stated |
-| D4 Degradation (5 s, 60 s) | `src/sdv/shedding.py` (planned) | Safety-critical never shed, hard limits first; throttle before shed; then the priority file's `shed_order` if it declares one, else least mission loss per kW freed on the binding line, power or cooling, rechecked each step; ladder precomputed every tick |
+| D3 Right of way (2 s) | `src/sdv/arbitration.py` | Hard limits first (the drone's 12-minute landing rule), then mission-weighted value from the priority file; cost to the loser stated |
+| D4 Degradation (5 s, 60 s) | `src/sdv/shedding.py` | Safety-critical never shed, hard limits first; throttle before shed; then the priority file's `shed_order` if it declares one, else least mission loss per kW freed on the binding line, power or cooling, rechecked each step; ladder precomputed every tick |
 | D5 Crew as a setting | `src/sdv/crew_policy.py` (planned) | Per rule and crew level (14, 6, 0): confirm, standing plan, automatic or forbidden; a priority file may override a level, never to confirm at 0 (A.6); rule R3 in the [Scenario C memo](docs/SCENARIO_C_MEMO.md) |
 | D6 Physical Account | `tools/physical_account.py` (built) | Every assumed number, with its reason and where code uses it: [docs/PHYSICAL_ACCOUNT.md](docs/PHYSICAL_ACCOUNT.md) |
 
@@ -134,7 +135,8 @@ it: [docs/REQUIREMENTS.md](docs/REQUIREMENTS.md). Decisions and who made them: [
 
 ## Limitations (today)
 
-- No decision engine, simulator or screen exists yet; all of it is designed, not built.
+- The tick loop and the screen are not built yet. The simulator is Siddharth's; until it lands, the estimator
+  ([docs/STATE_ESTIMATION.md](docs/STATE_ESTIMATION.md)) is tested against a labelled stub of it.
 - Numbers come from the brief's annexes and our labelled assumptions, never from a real vessel.
 - By choice, both power lines survive a genset trip (A.9); a 40 % cooling loss is information only (DEC-36).
 - With nobody aboard, rule R3 trusts a deck latched clear at the last crew sweep; nothing aboard sees

@@ -26,7 +26,7 @@ Every number we rely on beyond Annex A and B, every Annex value we changed, and 
 <tr><td></td><td>R3 timing</td><td>approach 4 min; drain 1.11 %/min; drone data stale after 10 s</td><td>drain unverified</td><td>test</td></tr>
 <tr><td></td><td>mission weights</td><td>high 1.0, medium 0.5, low 0.2, ours if unstated; 1-2 critical each</td><td>Annex B: high/medium/low</td><td>code, missions, test</td></tr>
 <tr><td>Anything else</td><td>guest modes</td><td>kW/kept: G2 sampling 6/0.8, standby 1/0; G3 standby 1/0.3; G4 charge 10/0.7, standby 2/0.3; G3 cradle 3.5 t, vehicle 2 t 5.5 m</td><td>Annex B gives only kW</td><td>card</td></tr>
-<tr><td></td><td>invented</td><td>G6 card; pump fault at minute 19: loop 80 kW, ceiling 75, load 81</td><td>cooling binds (DEC-40)</td><td>card, test</td></tr>
+<tr><td></td><td>invented</td><td>G6 card; pump fault at minute 19: loop 80 kW, ceiling 75, load 81</td><td>cooling binds (DEC-40)</td><td>card, code, test</td></tr>
 </tbody>
 </table>
 

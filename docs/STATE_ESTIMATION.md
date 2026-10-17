@@ -5,6 +5,13 @@ owns the inputs: everything that goes into state estimation. Nothing here is dec
 row says so. It fills ARCHITECTURE data contract 4 (the snapshot) for CON-21 and follows the design freeze:
 inputs are confirmed, debounced plant signals, and unknown never means safe.
 
+**Built** (Sat 14:45): `src/sdv/estimator.py`, `Estimator(scenario, mission, variant).step(frame)`, the nine
+steps below. `tests/test_estimator.py` steps a labelled test double of the simulator (`tests/support/sim_stub.py`,
+built from this contract only) through Scenario B with the scripted core and reproduces every snapshot fixture;
+D3 and D4 give the same records on its snapshots as on the fixtures. `since_t_s` is the tick the value last
+changed (a number in transition changes every tick and settles on the end tick); the fixtures' hand annotations
+miss a few changes, listed in the test.
+
 **`config/signals.yaml` is the only authority** for signal names, types, feeds, fallbacks, derivations,
 activities, event payloads, the `sim.step` arguments, the drafted fault signatures and transition times, the
 Scenario B starting state and script, and the timeline mapping. This document explains the rules; it does not

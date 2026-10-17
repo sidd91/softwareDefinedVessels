@@ -821,3 +821,22 @@ from the record's fields: verdict, binding line with numbers, the top yes-if con
 loser, D4 hold or step with kW freed and capability kept, R3 by crew level). tests/test_explain.py: every Scenario A
 case and every Scenario B decision validates; key sentences pinned. The sdv admit command prints the sentence first. 861 pass.
 Decisions: none new. Conflicts: none new. Deferrals: none.
+
+### Sat 14:43 PDT · State estimator on main · Claude Opus 5.5 on behalf of Logan Walker (GhostWalka)
+
+src/sdv/estimator.py: Estimator(scenario, mission, variant).step(frame) returns the argos-snapshot/2 for that tick,
+in the nine steps of docs/STATE_ESTIMATION.md: refuses unknown or out-of-range readings, ages and feed health (G3
+stale only while its link is up), fallbacks from signals.yaml with the two-stage grace, per-subject fault
+confirmation with shared votes and held_stale, the effect fields with their holders (the worse of the simulator and
+the activities), the acoustic link, the deck latch, G4's land-by (never later), over-draw, mode ends, and the
+capacity of each live class with its causes. tests/support/sim_stub.py is a labelled test double of Siddharth's
+simulator, built from the contract only, so the estimator, loop and screen can run before his lands.
+tests/test_estimator.py: stepping it 0 to 1200 s under survey and sar, plus both injected drops and crew0,
+reproduces all nine snapshot fixtures field by field; every snapshot validates; a replay of the frames gives the
+same bytes; D3 at 480 s and D4 at 721 s and 1141 s give the same records on the estimator's snapshots as on the
+fixtures. since_t_s is the tick of the last change; the fixtures' hand annotations miss a few (series, G4's
+recovery window, the drops' fallbacks), listed in the test. The stub's bridge answer no longer adds reported_t_s,
+matching the fixture frames. The Physical Account table prints at 8.3 pt so it stays on one Letter page.
+895 tests pass. CON-22 (Siddharth's yes on the estimator boundary) stays open.
+Decisions: none new. Conflicts: none new. Deferrals: since_t_s rule and the stub's choices are granular code calls
+for Siddharth to confirm when his simulator lands.
