@@ -50,6 +50,7 @@ Deadline: **Sun 2026-10-18 10:00 PDT**.
 | Fri 21:00 | Open a pull request from `docs/game-plan-and-research` to main; Siddharth merges as repo owner | Logan | Claude for Logan |
 | Fri 21:00 | Download the 24 freely licensed fleet images for a visual reference board in Claude Design; images stay out of the repo | Logan | Claude for Logan |
 | Fri 21:50 | Stay mostly in planning and improve outputs; the team does its own analysis before anyone builds deep. Initial versions are fine; be ready to pivot | Logan | Claude for Logan |
+| Fri 23:06 | Scenario C rule proposed: "Nobody on the flight deck during recovery" (R3), chosen unanimously by three independent judges over "no winch while the survey vehicle is listening" and "confirm before shedding" | Proposed by Claude; awaiting team review | Claude for Logan |
 | Fri 20:56 | Brief corrected by the organizers: G4 hangar is 850 kg, not 900 kg; three of the five possible sets of four guests exceed the 10 t mass margin. The PDFs on Logan's laptop predate this; the updated Hack Pack is the source of truth | Organizers | Claude for Logan |
 
 ## Conflicts and risks to watch
@@ -262,3 +263,29 @@ Work done:
 
 Decisions: Logan paused deep implementation (row above). Conflicts: milestone timing (row above).
 Deferrals: none yet. Every proposal in `docs/ARCHITECTURE.md` yields to the team's analysis.
+
+### Fri 23:06 PDT · Scenario C memo draft · Claude Opus 5.5 on behalf of Logan Walker (GhostWalka)
+
+All work in this entry was done by Claude on Logan's behalf, at Logan's request, on branch
+`feat/governor-core`.
+
+Work done:
+- Ran a 9-agent workflow (Claude subagents only): three independent drafts, one per candidate rule
+  from the brief; three judges scoring through different lenses (jury fit, operational realism,
+  demo and architecture fit); one synthesis; two adversarial checks (facts, brief requirements).
+- All three judges picked "Nobody on the flight deck during recovery". The checks raised 28 issues
+  (2 high: an ambiguous trigger and an undefined recall); every one was fixed by hand in
+  `docs/SCENARIO_C_MEMO.md`, which is a draft for team review.
+- Sharpest finding: at 14 aboard, Scenario B leaves about 12 s of margin between the drone's
+  12-minute landing limit and the time to confirm and clear the deck, so the governor must start
+  clearing on the battery trend, not at 20 %. At 6 aboard the deck must stay clear from launch; at
+  0 the camera must prove the deck unchanged since the last crew sweep.
+- Length is 895 words of prose, 1,173 with the table and trigger block; page count to be confirmed
+  when rendered to PDF.
+
+Decisions: R3 proposed, not adopted (row above). Conflicts: the memo adds nine `r3.*` assumptions
+and implies new conditions-snapshot fields (people in zone, field of view, lens health) not yet in
+`docs/ARCHITECTURE.md`. Deferrals: none.
+
+Correction: the entries stamped Fri 21:50, 21:55 and 21:56 were written about 21:38 to 21:42 by the
+laptop clock. Commit times are authoritative.
