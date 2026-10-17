@@ -13,7 +13,7 @@ is decided, add a WORKLOG Decisions row and update the source document.
 | 3 | Accept the re-timed milestones? | Review 08:30, Scenario A 12:30, Scenario B 17:30, screen 21:30 | [build plan](BUILD_PLAN.md), CON-10 |
 | 4 | Scenario B load-out (13.0 t against 10 t, Bay 2 twice)? | **Decided (DEC-32):** run G3, G4, G5; refuse the full load-out at the pier, recommend this subset, logged override available | [storyboard](DEMO_SCRIPT.md), CON-12 |
 | 5 | Which envelope corner decides admission? | **Decided (DEC-35):** both gensets at 30 °C, and the set must survive one genset down by throttling alone against a 95 kW gate, or it becomes yes-if | [architecture](ARCHITECTURE.md) Q3 |
-| 6 | In port, may installed guests move between bays to admit a card? | Yes, and report the moves | architecture Q4 |
+| 6 | In port, may installed guests move between bays to admit a card? | **Decided (DEC-37):** yes, and report the moves | architecture Q4 |
 | 7 | Is the decision record the single source for screen and demo? | Yes | architecture Q2 |
 
 ## Technology and hardware
@@ -67,7 +67,7 @@ is decided, add a WORKLOG Decisions row and update the source document.
 | # | Question | Proposal | Source |
 |---|---|---|---|
 | 32 | At minute 12 of Scenario B, is the survey vehicle charging (the brief's 105 kW) or on its own battery? Only with it charging does the trip force any shedding | Charging, so the ladder is visible; say why on screen | [expected outcomes](EXPECTED_OUTCOMES.md) |
-| 33 | Judge data links at guests' minimum rates or nominal? At nominal, G5 alone exceeds the 2 Mbit/s SATCOM envelope | Minimum for admission, nominal reported as degraded quality | expected outcomes, assumption 8 |
+| 33 | Judge data links at guests' minimum rates or nominal? At nominal, G5 alone exceeds the 2 Mbit/s SATCOM envelope | **Decided (DEC-38):** minimum for admission, nominal reported as degraded quality | expected outcomes, assumption 8 |
 
 ## For the organizers
 

@@ -773,7 +773,7 @@ requirements:
   - label: PDF route (open)
     path: GAMEPLAN.md#stack-decided-unless-something-breaks
   - label: Planned PDF tools
-    path: docs/SOFTWARE_LOG.md#planned-added-to-the-table-above-when-actually-installed
+    path: docs/SOFTWARE_LOG.md#planned-approved-by-logan-dec-39-added-to-the-table-above-when-actually-installed
   - label: Polish block
     path: GAMEPLAN.md#schedule-pacific-pdt
   decisions:
@@ -12987,7 +12987,7 @@ requirements:
   - label: 'GAMEPLAN: PDF route'
     path: GAMEPLAN.md#stack-decided-unless-something-breaks
   - label: 'Software log: PDF tools planned'
-    path: docs/SOFTWARE_LOG.md#planned-added-to-the-table-above-when-actually-installed
+    path: docs/SOFTWARE_LOG.md#planned-approved-by-logan-dec-39-added-to-the-table-above-when-actually-installed
   - label: WORKLOG 23:06 (stale word count)
     path: WORKLOG.md#fri-2306-pdt--scenario-c-memo-draft--claude-opus-55-on-behalf-of-logan-walker-ghostwalka
   decisions:
@@ -15872,7 +15872,7 @@ requirements:
   - label: 'Software log: installed'
     path: docs/SOFTWARE_LOG.md#installed-or-already-present-on-the-laptop
   - label: 'Software log: planned'
-    path: docs/SOFTWARE_LOG.md#planned-added-to-the-table-above-when-actually-installed
+    path: docs/SOFTWARE_LOG.md#planned-approved-by-logan-dec-39-added-to-the-table-above-when-actually-installed
   decisions:
   - DEC-01
   - DEC-05
@@ -15978,7 +15978,7 @@ requirements:
   - label: 'Software log: installed'
     path: docs/SOFTWARE_LOG.md#installed-or-already-present-on-the-laptop
   - label: 'Software log: planned'
-    path: docs/SOFTWARE_LOG.md#planned-added-to-the-table-above-when-actually-installed
+    path: docs/SOFTWARE_LOG.md#planned-approved-by-logan-dec-39-added-to-the-table-above-when-actually-installed
   - label: 'README: declarations and licence'
     path: README.md#declarations-and-licence
   - label: 'GAMEPLAN: Stack'

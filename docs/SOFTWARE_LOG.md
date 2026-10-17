@@ -27,7 +27,7 @@ Policy: open-source third-party code only (OSI licence, no AGPL), or our own; ev
 | LibreOffice | 26.2.6.3 (system package) | MPL-2.0 | The Document Foundation | page-count renders of the Scenario C memo and README by a requirements agent, Sat about 00:20 PDT | no | nothing installed: already on the system; renders went to /tmp, nothing added to the repo |
 | Superpowers plugin for Claude Code (obra/superpowers) | 6.4.2 | MIT | Jesse Vincent, Anthropic plugin directory (partner tier) | development workflow skills: TDD, plans, debugging, verification, subagent-driven development | no (dev) | install card shown to Logan Fri 21:36 PDT |
 
-## Planned (added to the table above when actually installed)
+## Planned (approved by Logan, DEC-39; added to the table above when actually installed)
 | Software | Licence | Origin | Purpose | Ships |
 |---|---|---|---|---|
 | FastAPI | MIT | Sebastián Ramírez | HTTP + websocket server for the screen | yes |

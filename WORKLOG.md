@@ -75,6 +75,9 @@ Deadline: **Sun 2026-10-18 10:00 PDT**.
 | DEC-34 | Sat 09:56 | Open a pull request for `feat/governor-core` into main (sidd91/softwareDefinedVessels#2); it includes PR #1's commits, so merging it alone is enough. Siddharth merges as repo owner | Logan | Claude for Logan |
 | DEC-35 | Sat 10:06 | Admission envelope rule, option 3 "survivable by throttling", confirmed by four critics and a judge with refinements: Judge the verdict at both gensets, the lower speed-band reserve (200 kW) and cooling at 30 °C. For each admitted set (each removal option for yes-if), report the raw one-genset-down line first: stacked envelope draws against 100 kW. Gate = min(100, cooling at 30 °C) minus 5 kW headroom = 95 kW. If the load is over 95 kW, walk the D4 ladder's throttle-only prefix: a step counts only if its mode is interruptible and keeps capability above 0; non-critical steps first, mission-critical last and named. Reaching 95 kW or less keeps the verdict, worded "holds by throttling". Otherwise the verdict becomes yes-if, adding the cheapest removal sets that pass the same check; no set passes means no. The 60 s peak allowance is never credited; cooling at -40 % is an information line, not part of the verdict. (req R-069, R-103) | Logan (option); critics and judge (refinements) | Claude for Logan |
 | DEC-36 | Sat 10:08 | Cooling loss (-40 %) stays an information line in admission verdicts, as the judge ruled under DEC-35; closes CON-13 | Logan | Claude for Logan |
+| DEC-37 | Sat 10:12 | In port, installed guests may move between bays so a new card fits; the verdict reports each move with its crane time (architecture Q4) | Logan | Claude for Logan |
+| DEC-38 | Sat 10:12 | Admission judges data links at guests' minimum rates and reports the nominal shortfall as degraded quality | Logan | Claude for Logan |
+| DEC-39 | Sat 10:12 | Install approval: FastAPI, uvicorn and websockets now; opencv-python-headless and onnxruntime when the camera and UNO Q steps start; all open-source, logged in docs/SOFTWARE_LOG.md when installed | Logan | Claude for Logan |
 
 ## Conflicts and risks to watch
 
@@ -585,3 +588,9 @@ Decisions: DEC-35. Conflicts: CON-13 (cooling-loss dissent). Deferrals: none.
 Logan decided DEC-36: cooling at -40 % stays an information line in admission verdicts, as the judge ruled.
 CON-13 is closed (resolution row CON-14). Docs and requirement rows R-069 and R-103 updated.
 Decisions: DEC-36. Conflicts: CON-13 closed. Deferrals: none.
+
+### Sat 10:12 PDT · DEC-37 to DEC-39 · Claude Opus 5.5 on behalf of Logan Walker (GhostWalka)
+
+Logan decided port moves allowed (DEC-37), data links judged at minimum rates (DEC-38) and the install list
+(DEC-39). Minute-12 robot charging question explained to Logan; decision pending.
+Decisions: DEC-37 to DEC-39. Conflicts: none new. Deferrals: none.
