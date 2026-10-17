@@ -16,6 +16,12 @@
       "additionalProperties": {"type": "number", "minimum": 0, "maximum": 1}
     },
     "mission_critical": {"type": "array", "items": {"type": "string", "pattern": "^G[0-9]+$"}, "uniqueItems": true},
+    "shed_order": {
+      "type": "array",
+      "description": "Optional (freeze F3): guests shed in this declared order before the computed one; names must be known guests.",
+      "items": {"type": "string", "pattern": "^G[0-9]+$"},
+      "uniqueItems": true
+    },
     "notes": {"type": "string"}
   }
 }

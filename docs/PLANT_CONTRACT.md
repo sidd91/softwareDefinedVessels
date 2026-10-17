@@ -12,12 +12,16 @@ The governor never changes the ship directly; it asks, and the plant answers wit
 |:--|:--|:--|
 | `sim.request_state(var, value, source)` | Ask for a ship state: `course`, `speed_band`, `noise`, `deck`, `emission`, `genset`, `cooling`; values from `assumptions.yaml: ship_state.<var>.values` | `{result: immediate \| scheduled \| refused, ready_at_s?, why?}` |
 | `sim.set_mode(guest, mode, source)` | Put a guest in a mode of its card (throttle, shed, restore) | raises on unknown mode |
-| `sim.on_tick = fn(snapshot, sim)` | Hook called once per tick after the plant has updated; the governor decides inside it | — |
+| `sim.on_tick = fn(snapshot, sim)` | Hook called once per tick after the plant has updated; the governor decides inside it. `src/sdv/governor.py` is that governor today: it appends `decisions` (records), `governor` (active file, reserved kW, armed ladder) and `governor_log` (priority swaps) to the snapshot | — |
 
 Rules the plant enforces, from A.6: deck clearing takes 3–5 min at 14 aboard, 8–12 at 6, is refused at 0
 unless already clear; going quiet 2–4 min, leaving instant; speed 2–5 min per band crossed; silence instant;
-genset restart 5–15 min; a degraded loop is never repaired at sea. Transition times are drawn once per
-request from the run's seed, so a replay repeats them exactly.
+genset restart 5–15 min; a degraded loop is never repaired at sea. Transition times come from the scenario's
+pin when one exists (`seed_pins.deck_clear_min`, so Scenario B's 4-min clear and minute-17 landing hold on
+every seed), otherwise one draw per request from the run's seed, so a replay repeats them exactly (DEC-52).
+Faults are never requested: `request_state("genset", 1)` and `request_state("cooling", "degraded")` come back
+`refused`; they enter only as confirmed scenario events (`genset_trip`, `cooling_degraded`). While silent, the
+ship block carries `forbidden_actions` (A.6's list) for the core to honour.
 
 Planned, not yet built: `sim.request_launch(guest)` / `request_recovery(guest)` (flight deck or ramp, with
 the A.3 conditions checked and the deck set occupied/clear), `sim.start_cycle(guest, phase)` for G3's
@@ -27,7 +31,9 @@ layering).
 ## 2. Scenario events (data → plant)
 
 `config/scenarios/*.yaml`, each with `t_min`. The plant applies these; anything else is passed to the
-governor hook untouched.
+governor hook untouched. The governor answers `priority_swap {mission: <id> | <path> | <mapping>}` (validated,
+refused files keep the old one) and reads `guest_report` as telemetry: hard limits are judged on what a guest
+reported, never on the plant's internal battery model (DEC-56).
 
 `baseline`, `guest_report {guest, battery_pct?, wind_kn?}`, `guest_state {guest, state}` (scripted while no
 governor closes the loop: `landed_fast_charging`, `airborne`, `on_cradle`), `guest_mode {guest, mode}`,
@@ -44,7 +50,9 @@ The scenario's `initial` block sets minute 0: crew, ship state, guest modes, pla
   "t_s": 720, "t_min": 12.0, "mission": "survey",
   "ship":   {"course": "steady", "speed_band": "slow", "noise": "quiet", "deck": "clear",
              "emission": "normal", "genset": 1, "cooling": "nominal",
-             "pending": [{"var": "deck", "value": "clear", "ready_at_s": 960}], "crew": 14},
+             "age_s": {"course": 720, "speed_band": 720, "noise": 720, "deck": 0, "emission": 720, "genset": 0, "cooling": 720},
+             "pending": [{"var": "deck", "value": "clear", "ready_at_s": 960, "eta_s": 240, "pick": "pinned"}],
+             "forbidden_actions": [], "crew": 14},
   "env":    {"seawater_c": 24, "sea_state": 2, "wind_kn": 22},
   "guests": {"G4": {"mode": "standby", "declared_kw": 2, "actual_kw": 2, "capability_retained": 0.3,
                     "placement": {"drone": "flight_deck", "hangar": "flight_deck"},

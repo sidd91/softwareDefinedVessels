@@ -29,7 +29,7 @@ Decided as WORKLOG DEC-40; event timeline in `config/scenarios/scenario_b.yaml`.
 
 | Clock | Ship time | What happens | Survey file | Rescue file |
 |---|---|---|---|---|
-| 00:00 | min 0 | Baseline as in the brief: 3 kn over the cable route, 24 °C water, G3 on its 40-min leg, G4 airborne, G5 full | 46 kW | 46 kW |
+| 00:00 | min 0 | Baseline as in the brief: 3 kn over the cable route, 24 °C water, G3 on its 40-min leg, G4 airborne, G5 full | 48 kW (1 + 2 + 45) | 48 kW |
 | 00:10 | min 8 | G4 reports 18 % in 22 kn; G3's and G4's condition sets collide on screen | | |
 | 00:12 | min 8 | D3 decides within 2 s; hard limit first (land by min 18.2) | G4 recovers; G3 holds depth, survey paused to min 23, leg re-run: 25-27 survey minutes lost | survey suspended, ship free to manoeuvre, G4's 35 kW reserved first; leg aborted |
 | 00:25 | min 8 | Swap to the other priority file; same event, both records side by side | | |

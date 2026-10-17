@@ -133,6 +133,11 @@ rules:
     uncrewed_launch: needs automatic landing and securing, fixed deck firefighting and a lit or low-light deck view for the 90 min sortie
     unchanged: all deck markers visible and the frame matches the last crew sweep
 
+# D3 right of way: what an interrupted activity costs its guest. Used by src/sdv/right_of_way.py.
+arbitration:
+  recovery_window_min: 15
+  wait_for_hard_limit: never
+
 admission:
   seawater_scan_step_c: 0.1
   seawater_scan_max_c: 35
@@ -219,6 +224,8 @@ provenance:
   rules.r3.uncrewed_launch: {source: assumed, why: "R3 at 0 aboard: nobody can clear the deck (brief A.6), so a launch is refused unless recovery stays possible for the whole sortie. Fixed deck firefighting availability is unconfirmed."}
   rules.r3.unchanged: {source: assumed, why: "R3 at 0 aboard: the evidence that the deck is still clear since the last crew sweep."}
   installation: {source: brief A.11}
+  arbitration.recovery_window_min: {source: assumed, why: "D3 cost to the loser: a drone recovery keeps the ship off survey conditions for at least 15 min (confirm, clear the deck, approach, land, secure and return to course; 9 min of it on the Scenario B pins), so a paused survey resumes no earlier than that, then re-settles (A.6 course and quiet times). EXPECTED_OUTCOMES minute 8: 8 flown + 15 paused + 2 to 4 to settle = 25 to 27 survey minutes."}
+  arbitration.wait_for_hard_limit: {source: assumed, why: "D3 judges hard limits first: an activity forced by a guest's hard limit (G4 below 20 % must land within 12 min) is never asked to wait for the other guest's activity to end, whatever the priority file says; the file only decides what the loser keeps."}
 
 # The one-page Physical Account (brief Annex C), rendered by tools/physical_account.py. Each row names
 # its Annex C row and the provenance keys it covers; the generator stops if an assumed key is in no row.
@@ -317,6 +324,11 @@ account:
       value: "approach {{rules.r3.approach_min}} min; drain {{rules.r3.drain_pct_min}} %/min; stale {{rules.r3.stale_s.camera}} s camera, {{rules.r3.stale_s.g4_telemetry}} s drone"
       why: "drain unverified"
     - row: Mission priorities / crew
+      what: D3 right of way
+      keys: [arbitration.recovery_window_min, arbitration.wait_for_hard_limit]
+      value: "hard limits never wait; a recovery costs the paused activity {{arbitration.recovery_window_min}} min plus re-settling"
+      why: "minute-8 cost to the loser"
+    - row: Mission priorities / crew
       what: mission weights
       value: "high 1.0, medium 0.5, low 0.2, ours if unstated; 1-2 critical each"
       why: "Annex B: high, medium, low"
@@ -326,6 +338,11 @@ account:
       value: "kW/kept: {{cards.modes}}; {{cards.parts}}"
       why: "Annex B gives only kW"
       trace: ['\{name: \w+, power_kw: [\d.]+, capability_retained: [\d.]+, assumed: true', 'mass_t: [\d.]+,( length_m: [\d.]+,)? assumed: true']
+    - row: Anything else
+      what: simulator
+      keys: [sim.demo_speed, sim.g4_charge_pct_min]
+      value: "{{sim.demo_speed}} ship-minutes per wall minute; G4 charges {{sim.g4_charge_pct_min.fast_charge}} %/min fast, {{sim.g4_charge_pct_min.charge}} slow"
+      why: "gauge only, never a decision"
     - row: Anything else
       what: invented
       keys: [scenario_b.events.cooling_degraded]

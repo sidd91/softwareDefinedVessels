@@ -141,9 +141,11 @@ def test_silence_is_instant_and_cooling_is_not_repaired_at_sea(inputs):
     assert f.request("cooling", "nominal", 0)["result"] == "refused"
 
 
-def test_genset_trip_is_instant_restart_takes_5_to_15_minutes(inputs):
+def test_genset_trip_is_a_plant_event_restart_takes_5_to_15_minutes(inputs):
     f = fsm(inputs)
-    assert f.request("genset", 1, 0)["result"] == "immediate"
+    assert f.request("genset", 1, 0)["result"] == "refused"  # a trip is confirmed by the plant, never asked for
+    f.force("genset", 1, 0, "genset trip")
+    assert f.state["genset"] == 1
     rec = f.request("genset", 2, 0)
     assert 300 <= rec["ready_at_s"] <= 900
 

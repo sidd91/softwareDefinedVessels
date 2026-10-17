@@ -52,6 +52,20 @@ def cooling_capacity_kw(a: dict, seawater_c: float, degraded: bool) -> float:
     return cap * (a["heat"]["degraded_factor"] if degraded else 1.0)
 
 
+def envelope_kw(a: dict, card: dict) -> float:
+    """Sustained worst-case draw at admission: max(nominal, any peak lasting over the 60 s peak window).
+    The 60 s allowance itself is never credited (DEC-35, admission.peak_credit_kw)."""
+    p = card["consumes"]["power_kw"]
+    peak = p.get("peak", 0) if p.get("peak_duration_s", 0) > a["power"]["peak_max_s"] else 0
+    return float(max(p["nominal"], peak))
+
+
+def envelope_mode(a: dict, card: dict) -> str:
+    """The card mode whose draw is the envelope draw (the mode the guest is judged in)."""
+    kw = envelope_kw(a, card)
+    return next(m["name"] for m in card["modes"] if abs(m["power_kw"] - kw) < 1e-9)
+
+
 def power_reserve_kw(a: dict, speed_band: str, gensets_online: int) -> float:
     """A.1 / A.9: guest reserve by speed band with both gensets; ~100 kW with one down."""
     if gensets_online < 2:

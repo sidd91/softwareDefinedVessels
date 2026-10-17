@@ -20,7 +20,7 @@ from typing import Callable
 
 from ..data import Inputs
 from ..ledger import build_lines, gauges
-from .fsm import ShipFSM
+from .fsm import ShipFSM, pins_from_scenario
 from .guests import GuestRuntime, default_placement
 
 # Event types the plant understands. Anything else is passed to the governor hook untouched.
@@ -49,7 +49,8 @@ class Simulator:
         self.rng = random.Random(self.seed)
         init = sc.get("initial", {})
         crew = init.get("crew", a["crew"]["levels"][0])
-        self.fsm = ShipFSM(a["ship_state"], crew, self.rng, state=dict(init.get("ship_state", {})))
+        self.fsm = ShipFSM(a["ship_state"], crew, self.rng, state=dict(init.get("ship_state", {})),
+                           pins=pins_from_scenario(sc))
         self.env = {"seawater_c": sc["location"]["seawater_c"], "sea_state": init.get("sea_state", 2),
                     "wind_kn": init.get("wind_kn", 10)}
         self.guests = {}
@@ -165,14 +166,27 @@ class Simulator:
         return self.run_hash()
 
     def run_hash(self) -> str:
+        """Hash of every snapshot, decisions included; wall-time latency fields are left out so two runs
+        of the same inputs and seed hash the same (replay is the redundancy check)."""
         h = hashlib.sha256()
         for s in self.snapshots:
-            h.update(json.dumps(s, sort_keys=True).encode())
+            h.update(json.dumps(_strip_timing(s), sort_keys=True).encode())
         return h.hexdigest()[:16]
 
     def header(self) -> dict:
         return {"scenario": self.inputs.scenario["id"], "seed": self.seed, "mission": self.mission,
                 "crew": self.fsm.crew, "inputs": self.inputs.hashes}
+
+
+TIMING_KEYS = {"latency_ms", "within_ceiling"}
+
+
+def _strip_timing(obj):
+    if isinstance(obj, dict):
+        return {k: _strip_timing(v) for k, v in obj.items() if k not in TIMING_KEYS}
+    if isinstance(obj, list):
+        return [_strip_timing(v) for v in obj]
+    return obj
 
 
 def write_jsonl(path: Path, sim: Simulator) -> None:
@@ -181,4 +195,6 @@ def write_jsonl(path: Path, sim: Simulator) -> None:
         f.write(json.dumps({"header": sim.header()}, sort_keys=True) + "\n")
         for s in sim.snapshots:
             f.write(json.dumps(s, sort_keys=True) + "\n")
-        f.write(json.dumps({"run_hash": sim.run_hash(), "events_applied": sim.applied, "fsm_log": sim.fsm.log}, sort_keys=True) + "\n")
+        decisions = [d for s in sim.snapshots for d in s.get("decisions", [])]
+        f.write(json.dumps({"run_hash": sim.run_hash(), "events_applied": sim.applied, "fsm_log": sim.fsm.log,
+                            "decisions": decisions}, sort_keys=True) + "\n")
