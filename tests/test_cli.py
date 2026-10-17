@@ -25,3 +25,12 @@ def test_a_bad_edit_is_refused_with_the_field(capsys):
 def test_unknown_priority_file_is_refused(capsys):
     assert cli.main(["admit", "G4", "--mission", "fishing"]) == 2
     assert "no priority file 'fishing'" in capsys.readouterr().out
+
+
+def test_demo_starts_the_screen_on_the_live_engine(monkeypatch, capsys):
+    from sdv.ui import server
+    seen = {}
+    monkeypatch.setattr(server, "run", lambda host, port, source: seen.update(host=host, port=port, source=source))
+    assert cli.main(["demo", "--port", "8123"]) == 0
+    assert seen == {"host": "127.0.0.1", "port": 8123, "source": "live"}
+    assert "http://127.0.0.1:8123/" in capsys.readouterr().out
