@@ -14,6 +14,7 @@ import importlib
 import json
 import os
 import sys
+import threading
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -75,6 +76,7 @@ class TickOut:
     commands: list
     inputs: list = field(default_factory=list)
     standby: str | None = None          # "in step", or the first field where the standby's decision differs
+    safety: dict = field(default_factory=dict)   # the 200 MS table built at this tick: request -> row (state, reason)
 
 
 class Loop:
@@ -86,6 +88,7 @@ class Loop:
         # DEC-56: the standby board runs its own estimator and core on the primary's frames and inputs, in lockstep
         self.standby = (Estimator(scenario, mission, variant, seed), Core(mission)) if standby else None
         self.standby_state = "in step" if standby else None
+        self.lock = threading.Lock()
         self.inputs = {int(k): list(v) for k, v in (inputs or {}).items()}
         self.tick = -1
         self.commands: list = []
@@ -96,17 +99,58 @@ class Loop:
             self.logs = {k: open(log_dir / f"{k}.jsonl", "w") for k in ("frames", "inputs", "snapshots", "decisions", "timing")}
 
     def add_input(self, inp: dict) -> int:
-        """A laptop input arriving now is stamped with the next tick (the last completed tick plus one)."""
+        """A laptop input arriving now is stamped with the next tick (the last completed tick plus one). A safety
+        request is answered at once instead (safety())."""
+        if inp["type"] == "safety_request":
+            self.safety(inp["payload"]["request"], inp.get("injected", False))
+            return self.tick
         t = self.tick + 1
         self.inputs.setdefault(t, []).append({**inp, "t_s": t})
         return t
 
+    def safety(self, request: str, injected: bool = False) -> list[dict]:
+        """A.8 200 ms: answered between ticks from the table built at the last completed tick n, logged with n; its
+        commands join the ones decided on n and are applied in frame n + 1. A replay answers it after the decisions of n."""
+        with self.lock:
+            if self.tick < 0:
+                raise RuntimeError("no safety table before the first tick")
+            inp = {"t_s": self.tick, "type": "safety_request", "injected": injected, "payload": {"request": request}}
+            self.inputs.setdefault(self.tick, []).append(inp)
+            k = len(self.core.timing)
+            records = self._answer(inp)
+            if self.logs:
+                self.logs["inputs"].write(canonical(inp) + "\n")
+                for r in records:
+                    self.logs["decisions"].write(canonical(r) + "\n")
+                for t in self.core.timing[k:]:
+                    self.logs["timing"].write(canonical(t) + "\n")
+                for f in self.logs.values():
+                    f.flush()
+            return records
+
+    def _answer(self, inp: dict) -> list[dict]:
+        records, commands = self.core.safety(inp["payload"]["request"])
+        self.commands = self.commands + commands
+        if self.standby:
+            s_recs, s_cmds = self.standby[1].safety(inp["payload"]["request"])
+            if self.standby_state == "in step":
+                diff = (first_difference([canonical(r) for r in records], [canonical(r) for r in s_recs])
+                        or first_difference([canonical(c) for c in commands], [canonical(c) for c in s_cmds]))
+                if diff:
+                    self.standby_state = f"out of step at tick {inp['t_s']}: {diff}"
+        return records
+
     def step(self) -> TickOut:
+        with self.lock:
+            return self._step()
+
+    def _step(self) -> TickOut:
         n = self.tick + 1
         t0 = time.perf_counter()
         stamped = self.inputs.get(n, [])
         to_sim = [i for i in stamped if EVENTS[i["type"]]["to"] == "simulator"]
-        to_core = [i for i in stamped if EVENTS[i["type"]]["to"] == "core"]
+        to_core = [i for i in stamped if EVENTS[i["type"]]["to"] == "core" and i["type"] != "safety_request"]
+        replayed_safety = [i for i in stamped if i["type"] == "safety_request"]
         frame = r1(self.sim.step(n, self.commands, to_sim))
         snap = self.est.step(frame)
         k = len(self.core.timing)
@@ -121,19 +165,23 @@ class Loop:
                 if diff:
                     self.standby_state = f"out of step at tick {n}: {diff}"
         self.commands, self.tick = commands, n
+        for i in replayed_safety:              # a replay: the requests logged with n, answered after n's decisions
+            records = records + self._answer(i)
         ms = (time.perf_counter() - t0) * 1000
         self.wall.append({"tick": n, "compute_ms": round(ms, 3)})
         if self.logs:
             self.logs["frames"].write(canonical(frame) + "\n")
             for i in stamped:
-                self.logs["inputs"].write(canonical(i) + "\n")
+                if i["type"] != "safety_request":
+                    self.logs["inputs"].write(canonical(i) + "\n")
             self.logs["snapshots"].write(canonical(snap) + "\n")
             for r in records:
                 self.logs["decisions"].write(canonical(r) + "\n")
             for t in self.core.timing[k:]:
                 self.logs["timing"].write(canonical(t) + "\n")
             self.logs["timing"].write(canonical({"tick": n, "compute_ms": round(ms, 3)}) + "\n")
-        return TickOut(n, frame, snap, records, commands, stamped, self.standby_state)
+        return TickOut(n, frame, snap, records, self.commands, stamped, self.standby_state,
+                       {k: {x: v[x] for x in ("action", "guest", "state", "reason")} for k, v in self.core.safety_table.items()})
 
     def ticks(self, until: int, pace: float | None = None):
         """Every tick up to `until`; with pace (ticks per wall second) the loop sleeps to each deadline and logs overruns."""

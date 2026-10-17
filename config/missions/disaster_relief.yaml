@@ -2,5 +2,5 @@ id: disaster_relief
 name: Disaster relief
 weights: {coastal_connectivity: 1.0, fresh_water: 1.0, sar_air: 1.0, ocean_data: 0.5, passive_rf_detection: 0.2, seabed_inspection: 0.2}
 mission_critical: [G5, G6]
-tiers: {discretionary: [G1, G3]}
+shed_order: {passive_rf_detection: 1, seabed_inspection: 1}
 notes: The comms node and the water maker go last; the RF sensor and the survey vehicle throttle first.

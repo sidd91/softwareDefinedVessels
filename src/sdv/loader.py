@@ -165,6 +165,8 @@ def check_mission(mission: dict, cards: dict[str, dict], vocab: Vocabulary, sche
     doc = json.loads(json.dumps(mission))  # YAML writes crew levels as ints; the schema reads the JSON form
     for rule, levels in (doc.get("confirm") or {}).items():
         doc["confirm"][rule] = {str(k): v for k, v in levels.items()}
+    if "tiers" in doc:
+        return ["tiers: replaced by response.safety_command (200 MS) and shed_order (DEC-60); mission_critical is 60 S, every other guest 5 S"]
     problems = _schema_problems(doc, schema)
     if problems:
         return problems
@@ -175,14 +177,14 @@ def check_mission(mission: dict, cards: dict[str, dict], vocab: Vocabulary, sche
     for i, gid in enumerate(doc["mission_critical"]):
         if gid not in cards:
             problems.append(f"mission_critical[{i}]: no loaded card {gid}")
-    seen = {g: "mission_critical" for g in doc["mission_critical"]}
-    for tier, gids in (doc.get("tiers") or {}).items():
-        for i, gid in enumerate(gids):
-            if gid not in cards:
-                problems.append(f"tiers.{tier}[{i}]: no loaded card {gid}")
-            elif gid in seen:
-                problems.append(f"tiers.{tier}[{i}]: {gid} is already {seen[gid]}; a guest sits in one tier only")
-            seen[gid] = tier
+    for i, gid in enumerate((doc.get("response") or {}).get("safety_command", [])):
+        if gid not in cards:
+            problems.append(f"response.safety_command[{i}]: no loaded card {gid}")
+        elif gid in doc["mission_critical"]:
+            problems.append(f"response.safety_command[{i}]: {gid} is mission_critical (60 S); a guest has one response class")
+    for i, gid in enumerate(doc["mission_critical"]):
+        if gid in cards and cards[gid].get("criticality", {}).get("safety_critical"):
+            problems.append(f"mission_critical[{i}]: {gid} is safety-critical on its card (200 MS); a profile cannot put it on the ladder")
     for name in doc.get("shed_order", {}):
         if name not in capabilities:
             problems.append(f"shed_order.{name}: no loaded card returns this capability")

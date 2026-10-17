@@ -105,7 +105,7 @@ D1 to D4 read one ledger (`src/sdv/ledger.py`) and write the same
 | D1 Admission (30 s) | `src/sdv/admission.py` | A verdict that holds at both gensets, 200 kW and 30 °C, and survives one genset down by throttling (rule below); for yes-if, the least mission value lost |
 | D2 Placement (30 s) | `src/sdv/placement.py` | No installed part left without a position; most parts placed; fewest port moves; preferred positions first |
 | D3 Right of way (2 s) | `src/sdv/arbitration.py` | Hard limits first (the drone's 12-minute landing rule), then mission-weighted value from the priority file; cost to the loser stated |
-| D4 Degradation (5 s, 60 s) | `src/sdv/shedding.py` | Vessel-critical never shed, hard limits first; throttle before shed; then the profile's criticality tier (discretionary first, mission-critical last), its `shed_order`, then least mission loss per kW freed on the binding line, rechecked each step; ladder precomputed every tick |
+| D4 Degradation (5 s, 60 s) | `src/sdv/shedding.py` | By [response class](docs/RESPONSE_TIME.md): 200 MS never shed (safety table), 5 S first, 60 S mission-critical one step a second; throttle before shed in each class, then `shed_order`, then least mission loss per kW; ladder precomputed every tick |
 | D5 Crew as a setting | `src/sdv/crew_policy.py` (planned) | Per rule and crew level (14, 6, 0): confirm, standing plan, automatic or forbidden; a priority file may override a level, never to confirm at 0 (A.6); rule R3 in the [Scenario C memo](docs/SCENARIO_C_MEMO.md) |
 | D6 Physical Account | `tools/physical_account.py` (built) | Every assumed number, with its reason and where code uses it: [docs/PHYSICAL_ACCOUNT.md](docs/PHYSICAL_ACCOUNT.md) |
 

@@ -112,9 +112,9 @@ def guest_page(card: dict, A: dict, signals: dict, missions: dict, cards: dict) 
         lines.append(f"- **Hard limit:** when {w['signal']} {w['op']} {w['value']}, {t['action'].replace('_', ' ')}{within}.")
     for x in (card.get("relations") or {}).get("excludes", []):
         lines.append(f"- **Excludes:** its {x['activity']} cannot run with {x['excludes']}.")
-    lines += ["", "## Priority by mission profile", "", "| Profile | Weight | Tier |", "|---|---|---|"]
+    lines += ["", "## Priority by mission profile", "", "| Profile | Weight | Response class |", "|---|---|---|"]
     for m in missions.values():
-        lines.append(f"| {m['name']} | {m['weights'].get(cap['name'], 0)} | {Lg.tier_of(cards, gid, m).replace('_', ' ')} |")
+        lines.append(f"| {m['name']} | {m['weights'].get(cap['name'], 0)} | {Lg.response_tag(A, Lg.response_of(cards, gid, m))} |")
     lines += ["", "## Troubleshooting", "", "| ArgOS shows | What it means | What to check |", "|---|---|---|"]
     for s in sig:
         if s["producer"] == "estimator":
@@ -132,8 +132,8 @@ def guest_page(card: dict, A: dict, signals: dict, missions: dict, cards: dict) 
     shed = sorted(card["modes"], key=lambda m: -m["power_kw"])
     lines += ["", "## FAQ", "",
               f"**Why did ArgOS move {gid} to a lower mode?** The ship was over its power or cooling limit. ArgOS steps "
-              f"guests down in the order the active profile sets: throttles before sheds, discretionary guests first, "
-              f"mission-critical last. {gid}'s steps: " + " to ".join(m["name"] for m in shed) + ".",
+              f"guests down by response class: 5 S guests give power in the first action, within 5 s; mission-critical "
+              f"60 S guests only if still needed, one step per second, within 60 s; 200 MS guests never. {gid}'s steps: " + " to ".join(m["name"] for m in shed) + ".",
               "",
               f"**Can {gid} be restored by hand?** Yes, from its own controls. ArgOS will step it down again while the limit binds; "
               "a recovered genset or pump must read healthy for 60 s before ArgOS restores any guest.",

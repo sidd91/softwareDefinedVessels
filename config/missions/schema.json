@@ -35,11 +35,12 @@
         "type": "string",
         "pattern": "^G[0-9]+$"
       },
-      "uniqueItems": true
+      "uniqueItems": true,
+      "description": "Mission-critical guests (B.0): response class 60 S, the last to give power, one step per tick within the 60 s full sequence."
     },
     "shed_order": {
       "type": "object",
-      "description": "Optional declared shed order, keyed by capability name like weights. Precedence: safety-critical guests are never shed and hard limits come first; throttles come before sheds; then the criticality tier (tiers); then this order; then the least mission value lost per kW freed. A positive rank goes before every unlisted capability (1 first), a negative rank after them (-1 last); unlisted capabilities keep the computed order in between, and equal ranks fall back to it. A name that no loaded guest card returns is refused.",
+      "description": "Optional declared shed order, keyed by capability name like weights. Precedence: safety-critical guests are never shed and hard limits come first; throttles come before sheds; then the response class (5 S before 60 S, never 200 MS); throttles before sheds inside each class; then this order; then the least mission value lost per kW freed. A positive rank goes before every unlisted capability (1 first), a negative rank after them (-1 last); unlisted capabilities keep the computed order in between, and equal ranks fall back to it. A name that no loaded guest card returns is refused.",
       "minProperties": 1,
       "propertyNames": {
         "$ref": "#/$defs/name"
@@ -65,21 +66,13 @@
     "notes": {
       "type": "string"
     },
-    "tiers": {
+    "response": {
       "type": "object",
-      "description": "Optional criticality tiers for graceful degradation (DEC-59), by guest id. Four tiers, degraded in this order: discretionary first, then mission support (every guest not listed), then mission_critical (the list above) last; vessel_critical is never shed under this profile, like a card's safety_critical. Throttles still come before sheds; within a tier the declared shed_order, then the least mission value lost per kW freed. A guest may sit in one tier only.",
       "minProperties": 1,
       "additionalProperties": false,
+      "description": "Optional response classes (A.8, DEC-60). The brief's ceilings are the degradation priorities, in a fixed order: safety_command (200 MS) is never shed and ArgOS only stops, holds or secures it; mission_critical (60 S) gives power last, one step per tick after a fresh reading, within 60 s of the fault; every other guest is shed_first_action (5 S) and gives power in the first action, within 5 s. A card's safety_critical is always 200 MS; a profile may add guests to it, never remove one.",
       "properties": {
-        "vessel_critical": {
-          "type": "array",
-          "items": {
-            "type": "string",
-            "pattern": "^G[0-9]+$"
-          },
-          "uniqueItems": true
-        },
-        "discretionary": {
+        "safety_command": {
           "type": "array",
           "items": {
             "type": "string",

@@ -38,9 +38,9 @@ def _line(l: Line) -> dict:
 
 def _step(s) -> dict:
     if isinstance(s, dict):
-        return {k: s[k] for k in ("guest", "from_mode", "to_mode", "frees_kw", "cost_per_kw", "capability_lost_pct", "mission_critical", "shed", "tier") if k in s}
+        return {k: s[k] for k in ("guest", "from_mode", "to_mode", "frees_kw", "cost_per_kw", "capability_lost_pct", "mission_critical", "shed", "response", "due_t_s", "from_kw", "to_kw") if k in s}
     return {"guest": s.guest, "from_mode": s.from_mode, "to_mode": s.to_mode, "frees_kw": s.frees_kw, "cost_per_kw": round(s.price, 4),
-            "capability_lost_pct": round(100 * s.capability_lost, 1), "mission_critical": s.mission_critical, "shed": s.shed, "tier": s.tier}
+            "capability_lost_pct": round(100 * s.capability_lost, 1), "mission_critical": s.mission_critical, "shed": s.shed, "response": s.response}
 
 
 def _finish(r: dict) -> dict:
@@ -94,8 +94,10 @@ def from_d4(d: dict, *, seq: int, snapshot: dict) -> dict:
                     "demand": b["demand"], "free": b["free"], "unit": b["unit"], "degraded_by": list(b["degraded_by"])},
         "load_kw": d["load_kw"], "limit_kw": d["limit_kw"], "load_after_kw": d["load_after_kw"],
         "steps": [_step(s) for s in d["steps"]], "armed": [_step(s) for s in d["armed"]], "losses": d["losses"],
+        "queued": [_step(s) for s in d.get("queued", [])], "responses": d.get("responses", {}),
         "order_source": "computed",
         "raw_event_t_s": d.get("raw_event_t_s"), "confirmed_t_s": d.get("confirmed_t_s"), "first_shed_due_t_s": d.get("first_shed_due_t_s"),
+        "full_sequence_due_t_s": d.get("full_sequence_due_t_s"),
         "inputs_hash": inputs_hash(snapshot, d["mission"]),
     }
     if "trigger" in d:
@@ -111,4 +113,27 @@ def from_d5(*, seq: int, snapshot: dict, verdict: str, crew: int, deck_evidence:
          "subject": "G4 recovery under rule R3", "mission": mission["id"], "verdict": verdict, "rule": "R3",
          "crew_aboard": crew, "deck_evidence": deck_evidence, "deadline_t_s": deadline_t_s,
          "inputs_hash": inputs_hash(snapshot, mission["id"])}
+    return _finish(r)
+
+
+def from_restore(*, seq: int, snapshot: dict, mission: dict, guest: str, from_mode: str, to_mode: str, binding: dict,
+                 load_kw: float, load_after_kw: float, limit_kw: float, healthy_since_t_s: float | None, responses: dict) -> dict:
+    """A shed guest stepped back up once every fault has read healthy for the restore hold (A.8 30 s budget, DEC-60)."""
+    run = snapshot["run"]
+    r = {"seq": seq, "tick": run["tick"], "t_s": run["t_ship_s"], "applies_at_tick": run["tick"] + 1, "kind": "D4",
+         "subject": f"restore {guest}", "mission": mission["id"], "verdict": "restore", "binding": binding,
+         "load_kw": load_kw, "limit_kw": limit_kw, "load_after_kw": load_after_kw, "free_after_kw": limit_kw - load_after_kw,
+         "steps": [{"guest": guest, "from_mode": from_mode, "to_mode": to_mode, "frees_kw": load_kw - load_after_kw,
+                    "response": "restore"}],
+         "armed": [], "losses": {}, "queued": [], "responses": responses, "order_source": "computed",
+         "healthy_since_t_s": healthy_since_t_s, "ceiling_ms": 30000, "inputs_hash": inputs_hash(snapshot, mission["id"])}
+    return _finish(r)
+
+
+def from_safety(row: dict, *, seq: int, tick: int, mission: dict) -> dict:
+    """A safety command (A.8: stop, hold, secure in 200 ms) answered from the table built at the last completed tick."""
+    r = {"seq": seq, "tick": tick, "t_s": tick, "applies_at_tick": tick + 1, "kind": "safety",
+         "subject": f"{row['action']} {row['guest']}", "mission": mission["id"], "verdict": row["state"],
+         "safety_request": row["request"], "safety_action": row["action"], "guest": row["guest"], "reason": row["reason"],
+         "ceiling_ms": 200, "inputs_hash": inputs_hash(row)}
     return _finish(r)

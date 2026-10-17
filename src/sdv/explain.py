@@ -235,7 +235,24 @@ def _armed(r: dict) -> str:
     return f" First armed step: {_move(a)}, frees {n(a['frees_kw'])} kW."
 
 
+def _queued(r: dict) -> str:
+    q = r.get("queued") or []
+    if not q:
+        return ""
+    return f" Next if still short: {_move(q[0])}, by minute {minute(q[0]['due_t_s'])}."
+
+
+def _restore(r: dict) -> str:
+    s = r["steps"][0]
+    since = r.get("healthy_since_t_s")
+    why = f"every fault healthy since minute {minute(since)}" if since is not None else "no fault open"
+    return (f"Restored {s['guest']} from {mode(s['from_mode'])} to {mode(s['to_mode'])}: {why}. "
+            f"Load {n(r['load_after_kw'])} of {n(r['limit_kw'])} kW.")
+
+
 def d4(r: dict) -> str:
+    if r["verdict"] == "restore":
+        return _restore(r)
     load, limit = n(r["load_kw"]), n(r["limit_kw"])
     if r["verdict"] in ("hold", "unconfirmed"):
         reserved = [f"{g}'s {n(kw)} kW reserved" for g, kw in (r.get("reserved") or {}).items() if kw]
@@ -252,7 +269,7 @@ def d4(r: dict) -> str:
     out = f"{label} binds{_cause(r)}: {load} kW against the {limit} kW limit. "
     out += f"{steps}, {verb} {n(freed)} kW and the load is {n(r['load_after_kw'])} kW"
     losses = _losses(r)
-    return out + (f": {losses}." if losses else ".")
+    return out + (f": {losses}." if losses else ".") + _queued(r)
 
 
 # ------------------------------------------------------------------------------------------------ D5 crew policy
@@ -301,5 +318,23 @@ def d5(r: dict) -> str:
     return head + f" {guest}{at} must land by minute {minute(deadline)}."
 
 
+# ------------------------------------------------------------------------------------------------ safety, 200 ms
+
+SAFETY_SENT = {"g2_stop_winch": "Winch stopped: {reason}.", "g3_hold_depth": "G3 told to hold depth, {reason}.",
+               "r3_hold_landing": "G4's landing held: {reason}.", "g4_return_home": "G4 called home: {reason}."}
+SAFETY_WHAT = {"g2_stop_winch": "winch stop", "g3_hold_depth": "G3 hold", "r3_hold_landing": "landing hold",
+               "g4_return_home": "recall of G4"}
+
+
+def safety(r: dict) -> str:
+    req, v, reason = r["safety_request"], r["verdict"], r["reason"]
+    if v == "sent":
+        return SAFETY_SENT[req].format(reason=reason)
+    what = SAFETY_WHAT.get(req, req.replace("_", " "))
+    if v == "not_needed":
+        return f"No {what} needed: {reason}."
+    return f"{what[0].upper() + what[1:]} not possible: {reason}."
+
+
 def sentence(r: dict) -> str:
-    return {"D1": d1, "D2": d2, "D3": d3, "D4": d4, "D5": d5}[r["kind"]](r)
+    return {"D1": d1, "D2": d2, "D3": d3, "D4": d4, "D5": d5, "safety": safety}[r["kind"]](r)

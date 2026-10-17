@@ -162,26 +162,43 @@ class Step:
     mission_critical: bool
     shed: bool
     rank: tuple
-    tier: str = "mission_support"
+    response: str = "shed_first_action"
 
     @property
     def order_key(self) -> tuple:
-        return (self.shed, TIER_RANK[self.tier], self.rank, self.price, self.guest)
+        """Admission's order (D1's one-genset-down check, DEC-35): throttles before sheds, then the response class."""
+        return (self.shed, RESPONSE_RANK[self.response], self.rank, self.price, self.guest)
+
+    @property
+    def shed_key(self) -> tuple:
+        """D4's order (DEC-60): every 5 S step before any 60 S step, throttles before sheds inside each class."""
+        return (RESPONSE_RANK[self.response], self.shed, self.rank, self.price, self.guest)
 
 
-# Graceful degradation by criticality tier (DEC-59): discretionary first, mission support, mission-critical last;
-# vessel-critical (a card's safety_critical, or the profile's tiers.vessel_critical) is never shed.
-TIERS = ("vessel_critical", "mission_critical", "mission_support", "discretionary")
-TIER_RANK = {"discretionary": 0, "mission_support": 1, "mission_critical": 2}
+# Response classes (A.8, DEC-60): the brief's ceilings are the degradation priorities, hard-coded in this order.
+#   safety_command      200 MS  never on the ladder; ArgOS only stops, holds or secures it, from the safety table
+#   shed_first_action     5 S   gives power first: the first action, applied within 5 s of the fault (the default)
+#   shed_full_sequence   60 S   mission-critical: gives power only after every 5 S step, one step per tick after a
+#                               fresh reading, all within 60 s of the fault
+# D4 sheds every 5 S step before any 60 S step, throttles before sheds inside each class; then the profile's
+# shed_order; then mission value lost per kW. D1's one-genset-down check keeps throttles first (Step.order_key).
+RESPONSE = ("safety_command", "shed_first_action", "shed_full_sequence")
+RESPONSE_RANK = {"shed_first_action": 0, "shed_full_sequence": 1}
 
 
-def tier_of(cards: dict, gid: str, mission: dict) -> str:
-    t = mission.get("tiers") or {}
-    if cards[gid].get("criticality", {}).get("safety_critical") or gid in t.get("vessel_critical", []):
-        return "vessel_critical"
-    if gid in mission["mission_critical"]:
-        return "mission_critical"
-    return "discretionary" if gid in t.get("discretionary", []) else "mission_support"
+def response_of(cards: dict, gid: str, mission: dict) -> str:
+    """A guest's response class: the card's safety_critical or the profile's response.safety_command, then mission_critical."""
+    r = mission.get("response") or {}
+    if cards[gid].get("criticality", {}).get("safety_critical") or gid in r.get("safety_command", []):
+        return "safety_command"
+    return "shed_full_sequence" if gid in mission["mission_critical"] else "shed_first_action"
+
+
+def response_tag(A: dict, cls: str) -> str:
+    """The on-screen tag, formatted from response_time_s so config and screen cannot disagree: 200 MS, 5 S, 60 S, 30 S, 2 S."""
+    key = {"restore": "admission"}.get(cls, cls)
+    sec = A["response_time_s"][key]
+    return f"{round(sec * 1000)} MS" if sec < 1 else f"{sec:g} S"
 
 
 def _shed_rank(mission: dict, capability: str) -> tuple:
@@ -193,10 +210,10 @@ def _shed_rank(mission: dict, capability: str) -> tuple:
 
 
 def next_step(cards: dict, gid: str, mode: str, mission: dict) -> Step | None:
-    """One guest's next step down its mode ladder; None if the mode cannot be interrupted, is off, or the guest is vessel-critical."""
+    """One guest's next step down its mode ladder; None if the mode cannot be interrupted, is off, or the guest is 200 MS (safety_command)."""
     card = cards[gid]
-    tier = tier_of(cards, gid, mission)
-    if tier == "vessel_critical":
+    response = response_of(cards, gid, mission)
+    if response == "safety_command":
         return None
     ordered = sorted(card["modes"], key=lambda m: -m["power_kw"])
     names = [m["name"] for m in ordered]
@@ -210,19 +227,20 @@ def next_step(cards: dict, gid: str, mode: str, mission: dict) -> Step | None:
     lost = a["capability_retained"] - b["capability_retained"]
     cap = card["capability"]["name"]
     value = mission["weights"].get(cap, 0.0) * lost
-    return Step(gid, a["name"], b["name"], frees, lost, value, value / frees, tier == "mission_critical",
-                b["capability_retained"] <= 0, _shed_rank(mission, cap), tier)
+    return Step(gid, a["name"], b["name"], frees, lost, value, value / frees, response == "shed_full_sequence",
+                b["capability_retained"] <= 0, _shed_rank(mission, cap), response)
 
 
-def ladder(cards: dict, modes: dict[str, str], mission: dict) -> list[Step]:
-    """The full precomputed ladder from the current modes: each round takes the cheapest next step of any guest."""
+def ladder(cards: dict, modes: dict[str, str], mission: dict, for_shed: bool = False) -> list[Step]:
+    """The full precomputed ladder from the current modes: each round takes the cheapest next step of any guest.
+    for_shed orders it as D4 executes it (5 S before 60 S); otherwise as D1's throttle check reads it."""
     current = dict(modes)
     steps = []
     while True:
         options = [s for s in (next_step(cards, g, m, mission) for g, m in current.items()) if s]
         if not options:
             return steps
-        best = min(options, key=lambda s: s.order_key)
+        best = min(options, key=lambda s: s.shed_key if for_shed else s.order_key)
         steps.append(best)
         current[best.guest] = best.to_mode
 

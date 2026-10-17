@@ -8,6 +8,9 @@ over-commitment is stale, the ladder stays armed and the record says the fault i
 from __future__ import annotations
 
 from sdv import ledger as Lg
+from sdv import loader as Ld
+
+RT = Ld.load_assumptions()["response_time_s"]
 
 
 def _fresh(field: dict) -> bool:
@@ -25,7 +28,7 @@ def shed(cards: dict, mission: dict, snap: dict, reservations: dict[str, float] 
     power, heat = cap["power"]["capacity"], cap["heat"]["capacity"]
     limit = cap["shed_ceiling_kw"]
     binding_cls, binding_cap = ("heat", heat) if heat <= power else ("power", power)
-    steps = Lg.ladder(cards, modes, mission)
+    steps = Lg.ladder(cards, modes, mission, for_shed=True)
     confirmed = [f for f in snap.get("faults", []) if f["state"] == "confirmed"]
     unconfirmed = [f for f in snap.get("faults", []) if f["state"] == "held_stale"]
     stale_inputs = [n for n, f in snap["plant"].items() if f.get("stale")]
@@ -41,15 +44,27 @@ def shed(cards: dict, mission: dict, snap: dict, reservations: dict[str, float] 
         record.update(raw_event_t_s=newest["raw_event_t_s"], confirmed_t_s=newest["confirmed_t_s"],
                       first_shed_due_t_s=newest["first_shed_due_t_s"], trigger=newest["fault"], trigger_subject=newest["subject"],
                       trigger_injected=newest.get("injected", False))
+    t = record["t_s"]
+    first_due = record.get("first_shed_due_t_s", t + RT["shed_first_action"])
+    full_due = newest["full_sequence_due_t_s"] if confirmed else t + RT["shed_full_sequence"]
+    record["first_shed_due_t_s"], record["full_sequence_due_t_s"] = first_due, full_due
     over = load > limit + 1e-9
     acts = over and not unconfirmed and not stale_inputs
-    taken = Lg.steps_to_fit(steps, load, limit) if acts else []
-    if over and taken is None:
-        taken = steps  # every step there is; the record shows what is still over
+    needed = Lg.steps_to_fit(steps, load, limit) if acts else []
+    if over and needed is None:
+        needed = steps  # every step there is; the record shows what is still over
+    # A.8 as priorities: the 5 S steps go together as the first action; a 60 S step goes alone, and the next one
+    # only on a later tick, after a fresh reading shows it is still needed (ARCHITECTURE: rechecked after each step).
+    first = [s for s in needed if s.response == "shed_first_action"]
+    taken = first if first else needed[:1]
+    queued = needed[len(taken):]
+    due = {"shed_first_action": first_due, "shed_full_sequence": full_due}
     record["verdict"] = "shed" if taken else ("hold" if not over else "unconfirmed")
-    record["steps"] = [_step(s) for s in taken]
+    record["steps"] = [_step(s, due) for s in taken]
+    record["queued"] = [_step(s, due) for s in queued]
     rest = steps[len(taken):]
-    record["armed"] = [_step(s) for s in rest[:3]]
+    record["armed"] = [_step(s, due) for s in rest[:3]]
+    record["responses"] = {g: Lg.response_of(cards, g, mission) for g in guests}
     after = load - sum(s.frees_kw for s in taken)
     record["load_after_kw"] = after
     record["free_after_kw"] = limit - after
@@ -66,7 +81,7 @@ def shed(cards: dict, mission: dict, snap: dict, reservations: dict[str, float] 
     return record
 
 
-def _step(s: Lg.Step) -> dict:
+def _step(s: Lg.Step, due: dict) -> dict:
     return {"guest": s.guest, "from_mode": s.from_mode, "to_mode": s.to_mode, "frees_kw": s.frees_kw,
             "cost_per_kw": round(s.price, 4), "capability_lost_pct": round(100 * s.capability_lost, 1),
-            "mission_critical": s.mission_critical, "shed": s.shed, "tier": s.tier}
+            "mission_critical": s.mission_critical, "shed": s.shed, "response": s.response, "due_t_s": due[s.response]}

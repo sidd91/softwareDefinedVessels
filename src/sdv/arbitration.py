@@ -81,6 +81,21 @@ def recovery_lead_s(A: dict, crew: int) -> float:
     return confirm + clear + A["rules"]["r3"]["approach_min"] * 60
 
 
+def recovery_due(A: dict, cards: dict, snap: dict) -> dict | None:
+    """The G4 hard limit that calls for its recovery now, or None: the battery limit at once; a land-by deadline alone
+    (endurance) only once the recovery lead time is needed."""
+    g4 = snap["guests"].get("G4")
+    if not g4 or g4["activity"]["value"] not in ("airborne", "launch_recovery"):
+        return None
+    t = snap["run"]["t_ship_s"]
+    land_by = g4["land_by_t_s"]["value"]
+    lead = recovery_lead_s(A, snap["crew"]["crew_aboard"]["value"])
+    active = [l for l in cards["G4"].get("hard_limits", []) if _limit_active(l, _value(snap, l["when"]["signal"]))]
+    urgent = [l for l in active if l["then"]["action"] == "land_or_ditch"]
+    due = [l for l in active if l["then"]["action"] == "land" and land_by is not None and land_by - t <= lead]
+    return (urgent or due or [None])[0]
+
+
 def right_of_way(A: dict, signals: dict, cards: dict, mission: dict, snap: dict) -> dict | None:
     """D3 on one snapshot: G4's recovery against G3's survey leg (Scenario B minute 8), or None if no conflict."""
     g4, g3 = snap["guests"].get("G4"), snap["guests"].get("G3")
@@ -89,11 +104,7 @@ def right_of_way(A: dict, signals: dict, cards: dict, mission: dict, snap: dict)
     t = snap["run"]["t_ship_s"]
     land_by = g4["land_by_t_s"]["value"]
     lead = recovery_lead_s(A, snap["crew"]["crew_aboard"]["value"])
-    active = [l for l in cards["G4"].get("hard_limits", []) if _limit_active(l, _value(snap, l["when"]["signal"]))]
-    urgent = [l for l in active if l["then"]["action"] == "land_or_ditch"]
-    # A land-by deadline alone (endurance) calls for recovery only once its lead time is needed.
-    due = [l for l in active if l["then"]["action"] == "land" and land_by is not None and land_by - t <= lead]
-    limit = (urgent or due or [None])[0]
+    limit = recovery_due(A, cards, snap)
     if limit is None:
         return None
     tol = signals["derivations"]["speed_tolerance_kn"]["value"]

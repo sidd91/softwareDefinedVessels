@@ -36,7 +36,7 @@
       "capability_lost_pct": 30.0,
       "mission_critical": false,
       "shed": false,
-      "tier": "mission_support"
+      "response": "shed_first_action"
     }
   ],
   "armed": [
@@ -51,7 +51,7 @@
       "capability_lost_pct": 70.0,
       "mission_critical": false,
       "shed": false,
-      "tier": "mission_support"
+      "response": "shed_first_action"
     },
     {
       "guest": "G4",
@@ -64,7 +64,7 @@
       "capability_lost_pct": 40.0,
       "mission_critical": false,
       "shed": false,
-      "tier": "mission_support"
+      "response": "shed_first_action"
     }
   ],
   "order_source": "computed",

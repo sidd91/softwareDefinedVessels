@@ -98,6 +98,7 @@ Deadline: **Sun 2026-10-18 10:00 PDT**.
 | DEC-57 | Sat 14:51 | Deployment Reference Kit: full technical documentation, troubleshooting and FAQ for the vessel and every guest, held on each device whose storage allows it, plus a printed copy and an SSD copy aboard. How the kit is uploaded at port is part of the design | Logan | Claude for Logan |
 | DEC-58 | Sat 14:51 | Mission profiles can be changed at sea (priority swap, or an edited profile from the builder); every change is a logged input, so a replay reproduces it | Logan | Claude for Logan |
 | DEC-59 | Sat 14:51 | Graceful degradation follows criticality tiers inside the profile: vessel-safety critical is never shed, mission-critical goes last, the rest in between by mission loss per kW freed. Tier names and their ordering are Claude's proposal, for Logan to confirm | Logan; tiers by Claude | Claude for Logan |
+| DEC-60 | Sat 15:38 | Degradation priorities are the brief's A.8 response classes (replaces DEC-59's four tiers, per Logan): 200 MS (card safety_critical or profile response.safety_command) is never shed and is acted on only by stop, hold or secure from a safety table rebuilt every tick and answered on arrival; 5 S (the default) gives power in the first action, applied within 5 s of the fault; 60 S (mission_critical) gives power only after every 5 S step, one step per tick after a fresh reading, within 60 s; restoring a shed guest is a 30 S decision once every fault is healthy for 60 s; D3 and D5 carry 2 S. D4 runs every 5 S step before any 60 S step (throttle before shed inside each class); D1's one-genset-down check keeps throttles first (DEC-35). Discretionary tiers become shed_order ranks. Two calls for Logan's team: 5 S guests may be switched off before a 60 S guest is throttled (sar minute-19 armed ladder now G5 off, not G4 slower), and the tier folding | Logan (thresholds as tags); design by Claude as core owner, two calls to confirm | Claude for Logan |
 
 ## Conflicts and risks to watch
 
@@ -893,3 +894,24 @@ core on the primary's frames and inputs and reports "in step" or the first diffe
 explains it in plain words. tests/test_kit.py: 14 tests. 936 tests pass.
 Decisions: none new (implements DEC-56, DEC-57). Conflicts: none new. Deferrals: the reading of "per additional
 25 m" (4 boards at 60 m) for Logan to confirm; real vendor manuals come with each guest.
+
+### Sat 15:38 PDT · Response classes as degradation priorities, the 200 ms safety table, 30 s restore (DEC-60), on the branch for review · Claude Opus 5.5 on behalf of Logan Walker (GhostWalka)
+
+Logan asked for graceful degradation along the brief's 200 ms, 5 s and 30 s thresholds, as status tags hard-coded
+into the degradation priorities. Two of three independent designs (brief-first, operator-first) were judged and
+merged; the third was stopped to save time. Built: src/sdv/ledger.py response classes (response_of, response_tag
+formatted from response_time_s, D4's class-first shed order); profile key response.safety_command replacing tiers
+(patrol and disaster relief move their discretionary guests to shed_order; the loader names the old key); D4 takes
+the 5 S steps together as the first action and a 60 S step alone per tick, with queued steps and due ticks on every
+step; src/sdv/safety.py, the 200 ms table (stop G2's winch, hold G3 at depth, hold G4's landing, call G4 home: ready,
+not needed or cannot, with the reason), answered between ticks by Loop.safety, logged with the last completed tick,
+replayed after that tick's decisions, mirrored on the standby; the landing hold lifts on a fresh landing-officer
+clear report; the 30 s restore steps the last shed guest back up once every fault is healthy and it fits. Found and
+fixed in passing: G4's recovery opened only through a D3 conflict, so a G3 already holding would have left G4 to
+ditch; R3 now opens from G4's hard limit directly. Record schema: kind safety, verdicts restore, sent, not_needed,
+cannot; queued, responses, full_sequence_due_t_s; step response and due_t_s (tier dropped; argos-explain's fixtures
+migrated, the sar minute-19 armed ladder updated). docs/RESPONSE_TIME.md gives every tag's criteria in plain words.
+tests/test_response.py (19) replaces tests/test_tiers.py. 1255 tests pass. Not merged to main: Logan asked to pause
+after the adversarial review and fixes so the team can review.
+Decisions: DEC-60. Conflicts: none new. Deferrals: the two design calls in DEC-60 to Logan's team; a drone-side hold
+command (guest_command G4 hold_landing) is Siddharth's to add to the command list.

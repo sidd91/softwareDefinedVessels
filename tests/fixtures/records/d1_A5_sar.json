@@ -33,7 +33,7 @@
         "capability_lost_pct": 20.0,
         "mission_critical": false,
         "shed": false,
-        "tier": "mission_support"
+        "response": "shed_first_action"
       }
     ]
   },
