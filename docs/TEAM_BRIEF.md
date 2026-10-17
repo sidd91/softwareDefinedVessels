@@ -1,6 +1,6 @@
 # Team brief: where we are and what needs you
 
-Status: Sat 00:42 PDT. Written by Claude Opus 5.5 on behalf of Logan Walker (GhostWalka) for Logan and
+Status: Sat 00:51 PDT. Written by Claude Opus 5.5 on behalf of Logan Walker (GhostWalka) for Logan and
 Siddharth. One page; details are linked. No work split is proposed here (WORKLOG DEC-29).
 
 ## Where things stand
@@ -36,16 +36,15 @@ Siddharth. One page; details are linked. No work split is proposed here (WORKLOG
 ## Requirement gaps
 
 [The requirements matrix](REQUIREMENTS.md) traces 554 requirements from every page of the slides and
-brief (509 called out): 11 done, 332 drafted, 193 planned, 9 gaps, 9 not applicable. Most planned rows
-wait on the same thing, the ledger and the D1 to D4 engines. The nine gaps:
+brief (509 called out): 11 done, 337 drafted, 197 planned, 9 not applicable, and **no open gaps**. Most
+planned rows wait on the same thing, the ledger and the D1 to D4 engines. The last nine gaps were closed
+overnight with honest answers; the ones that still need a team decision:
 
-- **Brief call-outs to decide:** shorter installation windows at 6 aboard (R-088); the exact rationale
-  fields, verdict, bound resource, condition, free amount and need with units (R-148); G1's 30 % loss when
-  our own radar transmits unless "quiet radio" is declared (R-362); propulsion pods as a power consumer
-  (R-239); the slide's ambiguous 6 m "LOB" dimension (R-238).
-- **Light items:** the slide chart's spike times versus its callouts (R-207); designing from what a
-  Kubernetes request cannot express (R-500); registering for Copernicus Marine early, which needs a
-  person to create the account (R-514); starting the synthetic generators in hour 1 (R-522).
+- **Shorter installation windows at 6 aboard** (R-088): model crew as a watch schedule or just a count?
+- **G1's 30 % loss when our radar transmits** (R-362): add a degradation field to the schema, or treat
+  it as a G1 special case?
+- **Copernicus Marine** (R-514) needs a person to register; Argo data needs no account and may be enough.
+- **First generators to build** (R-522): proposed genset trip, drone battery and seawater temperature.
 
 ## Tonight, for your review
 
