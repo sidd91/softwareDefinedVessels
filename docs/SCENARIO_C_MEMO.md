@@ -58,8 +58,8 @@ old); G4 at 18 % must land in about 10 min, needs 4 to approach, and confirm plu
 
 ## By crew level
 
-In Scenario B, G4 reports 18 % at min 8. At our assumed 100 % over 90 min (assumption 2) it passed
-20 % about 1.8 min earlier, leaving 10.2 min; less our assumed 4 min approach (assumption 1), 6.2 min
+In Scenario B, G4 reports 18 % at min 8. At our assumed 100 % over 90 min (`r3.drain_pct_min`) it passed
+20 % about 1.8 min earlier, leaving 10.2 min; less our assumed 4 min approach (`r3.approach_min`), 6.2 min
 against a 6 min lead at 14. That 12 s margin is why the window opens on the drain trend. At 6 the
 lead is 15 min against at most 8, so the zone stays clear from launch.
 
@@ -67,7 +67,7 @@ lead is 15 min against at most 8, so the zone stays clear from launch.
 |---|---|---|---|
 | 14, patrol | Bridge confirms the clear-deck call (A.6's 15-60 s, applied by us); HLO may override. Hands: crew clear and sweep, 3-5 min | Clear-deck call when the window opens; hold and release | Landing on a detection nobody overrode |
 | 6, monitoring | Bridge approves a standing recovery plan at launch, since a live yes plus clearing (3 + 12 min) cannot fit in 8; HLO may override | Zone kept clear launch to secured; deck, winch and ramp work refused up to 90 min (endurance, brief B; extending the recovery-only exclusions is our choice) | A recovery that needs clearing first |
-| 0, night transit | Nothing live (A.6); the departing crew's plan stands | Launch refused unless recovery stays possible for the 90 min sortie (assumption 8); land only on a fresh "unchanged, empty" reading | Clearing the deck; any confirmation or override |
+| 0, night transit | Nothing live (A.6); the departing crew's plan stands | Launch refused unless recovery stays possible for the 90 min sortie (`r3.uncrewed_launch`); land only on a fresh "unchanged, empty" reading | Clearing the deck; any confirmation or override |
 
 At 0 there are no people to count; the hazard is loose gear, which is what the camera watches. The
 hold protects the ship: a bad landing meets no fire team (research E3). The camera checks that the
@@ -85,17 +85,11 @@ shore clearance instead.
    "not now; when: after G4 is secured".
 3. **At 0.** Webcam turned away: hold, no button, cost to G4 stated.
 
-## Assumptions (Physical Account lines)
+## Assumptions
 
-1. `r3.approach_min` = 4, or G4's estimate if longer; transit runs alongside clearing.
-2. `r3.drain_pct_min` = 1.11 (100 % over 90 min, brief B); G4 never drains slower. Unverified.
-3. `r3.stale_s`: camera 3 s, G4 telemetry 10 s.
-4. `r3.change_threshold`: how much of a marker or zone must change to count; a false alarm costs a hold, a miss a damaged drone.
-5. `r3.zone`: marked landing area, flying stations masked; G4 secured with no deck hand.
-6. `r3.override`: HLO only, at 14 and 6; logged; one landing; a new detection cancels it.
-7. `r3.camera`: fixed deck camera, inference in the 20 % ship-systems reserve (A.7), never shed.
-8. `r3.uncrewed_launch`: automatic landing and securing, fixed deck firefighting (unconfirmed), lit or low-light view for 90 min.
-9. `r3.unchanged`: all deck markers visible and the frame matches the last sweep.
+The rule's nine parameters (`r3.*`: approach time, drain rate, staleness, change threshold, zone,
+override, camera, uncrewed launch, unchanged deck) live in `config/assumptions.yaml` with their
+reasons, and appear in the Physical Account.
 
 ## Open questions for the team
 

@@ -127,11 +127,12 @@ requirements:
   how: 'Mechanism: the brief names the 2-page memo the ''Scenario C design memo'' (p5 Must-have; p2 calls D5 a design
     deliverable), while slide p14 says it explains architectural logic and constraint handling, which the brief
     places in the README (architecture diagram, D1 to D6 and what each optimises, at most 3 pages). Today: docs/SCENARIO_C_MEMO.md
-    drafts rule R3 (1,241 words by wc); README.md carries the Architecture diagram and Decision classes table; docs/ARCHITECTURE.md
+    drafts rule R3 (1,129 words); README.md carries the Architecture diagram and Decision classes table; docs/ARCHITECTURE.md
     is the longer source (five principles, twelve components, seven data contracts, engine ceilings). Quick LibreOffice
-    renders (11 pt body) gave about 2.4 pages for the memo, and for the README three pages on Letter (the third
-    nearly full) or a little over three on A4, so the memo is over its limit and the README at or over its. Missing:
-    an agreed mapping, a PDF route, owners. Proof: page counts of both rendered PDFs before the Sun 09:15 freeze.'
+    renders (11 pt body) gave 2 A4 pages at 11 pt (LibreOffice render) for the memo, and for the README three pages
+    on Letter (the third nearly full) or a little over three on A4, so the memo is over its limit and the README
+    at or over its. Missing: an agreed mapping, a PDF route, owners. Proof: page counts of both rendered PDFs before
+    the Sun 09:15 freeze.'
   links:
   - label: Scenario C memo
     path: docs/SCENARIO_C_MEMO.md
@@ -298,11 +299,11 @@ requirements:
     (DEC-21, proposed and awaiting team review), and later as a compiled rule the RuleEngine evaluates every tick
     with a per-crew policy of confirm, automatic or forbidden (GAMEPLAN D5; DEC-17). Binding numbers: crew of 14,
     6 and 0; deck clearing 3-5 min at 14, 8-12 at 6, and at 0 only if already clear; confirmation 15-60 s and 1-3
-    min; G4 below 20 % must land within 12 min; safety commands within 200 ms. Today: the draft is 1,241 words by
-    wc including markdown; its nine r3.* assumptions are not in config/assumptions.yaml or the Physical Account,
-    and ARCHITECTURE''s conditions snapshot lacks the inputs R3 reads (people on deck, deck-marker state with frame
-    age, G4 battery and secured state). ARCHITECTURE lists the D5 owner as open (CON-07). Proof: the memo''s Live
-    demo section at 14, 6 and 0, and DEMO_SCRIPT''s crew-dial and landing-zone breadth lines.'
+    min; G4 below 20 % must land within 12 min; safety commands within 200 ms. Today: the draft is 1,129 words including
+    markdown; its nine r3.* assumptions are not in config/assumptions.yaml or the Physical Account, and ARCHITECTURE''s
+    conditions snapshot lacks the inputs R3 reads (people on deck, deck-marker state with frame age, G4 battery
+    and secured state). ARCHITECTURE lists the D5 owner as open (CON-07). Proof: the memo''s Live demo section at
+    14, 6 and 0, and DEMO_SCRIPT''s crew-dial and landing-zone breadth lines.'
   links:
   - label: 'Memo: by crew level'
     path: docs/SCENARIO_C_MEMO.md#by-crew-level
@@ -331,13 +332,13 @@ requirements:
   - brief p5, Success criteria, Must-have
   quote: a memo (≤ 2 pages) on one implicit rule
   how: 'Mechanism: the memo covers one rule, R3; the mast clause of research rule R-E3-1 was cut so it stays one
-    rule. Length is bound at 2 pages (brief p3 and p5). Measured Sat 17 Oct: docs/SCENARIO_C_MEMO.md is 1,241 words
-    by wc including markdown: about 904 words of prose, 162 in the crew-level table, 126 in the trigger block and
-    46 in headings. Quick LibreOffice renders (11 pt body, Letter and A4) ran to about 2.4 pages, counting the status
-    line, the Live demo section (93 words), nine assumptions (148) and two open questions (40), so the draft is
-    roughly 0.4 page over. Easiest cuts: move the nine r3.* lines into the Physical Account, where they belong anyway,
-    and drop the status line and open questions from the final. Proof: render with the chosen PDF route (R-024)
-    and count pages; no page check exists yet.'
+    rule. Length is bound at 2 pages (brief p3 and p5). Measured Sat 17 Oct: docs/SCENARIO_C_MEMO.md is 1,129 words
+    including markdown: about 904 words of prose, 162 in the crew-level table, 126 in the trigger block and 46 in
+    headings. Quick LibreOffice renders (11 pt body, Letter and A4) ran to 2 A4 pages at 11 pt (LibreOffice render),
+    counting the status line, the Live demo section (93 words), nine assumptions (148) and two open questions (40),
+    so the draft is roughly 0.4 page over. Easiest cuts: move the nine r3.* lines into the Physical Account, where
+    they belong anyway, and drop the status line and open questions from the final. Proof: render with the chosen
+    PDF route (R-024) and count pages; no page check exists yet.'
   links:
   - label: Memo
     path: docs/SCENARIO_C_MEMO.md
@@ -755,11 +756,11 @@ requirements:
   how: 'Mechanism: the markdown draft docs/SCENARIO_C_MEMO.md must become a PDF of at most 2 pages (brief p5 Deliverables
     and Must-have). GAMEPLAN Stack leaves the route open (''pandoc or a Python PDF path; decide at M5''), and docs/SOFTWARE_LOG.md
     plans ReportLab or WeasyPrint, neither installed. On this laptop pandoc is absent and LibreOffice 26.2 is installed
-    but not yet logged in SOFTWARE_LOG; quick HTML-to-PDF renders through LibreOffice gave about 2.4 pages at 11
-    pt on both Letter and A4, so the page limit binds before the route does. Scheduled in the Polish block (Sat
-    21:30 to Sun 01:00), M5 at Sun 01:00. Missing: route, page style, committed PDF, owner. Proof: commit the PDF
-    beside the markdown and check its page count before the Sun 09:15 freeze; the same route serves the README and
-    Physical Account checks (R-019, R-552).'
+    but not yet logged in SOFTWARE_LOG; quick HTML-to-PDF renders through LibreOffice gave 2 A4 pages at 11 pt (LibreOffice
+    render) at 11 pt on both Letter and A4, so the page limit binds before the route does. Scheduled in the Polish
+    block (Sat 21:30 to Sun 01:00), M5 at Sun 01:00. Missing: route, page style, committed PDF, owner. Proof: commit
+    the PDF beside the markdown and check its page count before the Sun 09:15 freeze; the same route serves the
+    README and Physical Account checks (R-019, R-552).'
   links:
   - label: Memo
     path: docs/SCENARIO_C_MEMO.md
@@ -3895,7 +3896,7 @@ requirements:
     it does implicitly must be written down" (p2) and the glossary''s flight deck entry, "free of people and obstacles".
     Numbers: G4 below 20 % lands within 12 min; deck clear 3-5 min at 14, 8-12 at 6, only if already clear at 0;
     confirm 15-60 s or 1-3 min. At 14 the 12 s margin makes the window open on the battery trend. The glossary''s
-    ship-motion limit is traced in R-553. Today: memo drafted, about 1,240 words, page count unconfirmed. Proof:
+    ship-motion limit is traced in R-553. Today: memo drafted, about 1,129 words, page count unconfirmed. Proof:
     memo live-demo section at 14 and 6; DEMO_SCRIPT breadth line "Landing zone not clear" (DEC-26).'
   links:
   - label: Rule and why
@@ -6360,10 +6361,10 @@ requirements:
     The memo''s row ''0, night transit'': nothing live, the departing crew''s plan stands, G4 launch refused unless
     recovery stays possible for the 90-min sortie, landing only on a fresh ''unchanged, empty'' camera reading,
     clearing impossible; a blind camera means hold, so below 20 % G4 ditches and the record states that cost. Length:
-    1,241 words by wc on the markdown, about 950 without the trigger code block and table rows; three rough scratch
-    renders to A4 PDF through LibreOffice (body about 11 pt) each ran to 3 pages, with 140 to 200 words on page
-    3, so it must be trimmed for the 2-page limit (brief p5). Proof planned: memo live demo step 3. R3 is proposed,
-    not adopted (DEC-21).'
+    1,129 words on the markdown, about 950 without the trigger code block and table rows; three rough scratch renders
+    to A4 PDF through LibreOffice (body about 11 pt) each ran to 3 pages, with 140 to 200 words on page 3, so it
+    must be trimmed for the 2-page limit (brief p5). Proof planned: memo live demo step 3. R3 is proposed, not adopted
+    (DEC-21).'
   links:
   - label: 'Memo: by crew level'
     path: docs/SCENARIO_C_MEMO.md#by-crew-level
@@ -12207,11 +12208,11 @@ requirements:
   how: 'Mechanism: both documents live in the repo and sit on GAMEPLAN''s never-cut list. The Polish block (Sat
     21:30 to Sun 01:00) makes the memo PDF and regenerates the account, and Sun 01:00-05:30 regenerates it again.
     State: docs/PHYSICAL_ACCOUNT.md has 16 assumed rows, 11 of them ''not yet used in code'', no heat.*, card or
-    r3.* rows, and a closing paragraph with no amount. docs/SCENARIO_C_MEMO.md is 1,241 words by wc. Limits: account
-    one page (brief p11), memo 2 pages (brief p5). Rough renders tonight outside the repo (LibreOffice, A4, 2 cm
-    margins, 9 to 11 pt) put the account at 2 to 4 pages and the memo at 3 every time, so both are over. No owner
-    is named for either (CON-07; DEC-29 leaves the split to Logan and Siddharth). Proof: a page-count check on both
-    PDFs before the Sun 09:15 freeze, and the README deliverables table linking the PDFs.'
+    r3.* rows, and a closing paragraph with no amount. docs/SCENARIO_C_MEMO.md is 1,129 words. Limits: account one
+    page (brief p11), memo 2 pages (brief p5). Rough renders tonight outside the repo (LibreOffice, A4, 2 cm margins,
+    9 to 11 pt) put the account at 2 to 4 pages and the memo at 3 every time, so both are over. No owner is named
+    for either (CON-07; DEC-29 leaves the split to Logan and Siddharth). Proof: a page-count check on both PDFs
+    before the Sun 09:15 freeze, and the README deliverables table linking the PDFs.'
   links:
   - label: Physical Account
     path: docs/PHYSICAL_ACCOUNT.md
@@ -12861,7 +12862,7 @@ requirements:
   quote: 2-PAGE DESIGN MEMO
   how: 'Mechanism: docs/SCENARIO_C_MEMO.md is the source. The PDF route is open (GAMEPLAN Stack: pandoc or a Python
     PDF path, decide at M5; SOFTWARE_LOG plans ReportLab or WeasyPrint). Pandoc is not installed on the laptop;
-    LibreOffice is. Measured tonight: wc -w gives 1,241 words including markdown, split into 950 prose, 126 in the
+    LibreOffice is. Measured tonight: wc -w gives 1,129 words including markdown, split into 950 prose, 126 in the
     trigger block and 163 in the crew-level table. WORKLOG 23:06''s 895 and 1,173 are stale. Rough renders outside
     the repo (LibreOffice, A4, 2 cm margins, 10.5 to 11 pt) all came to 3 pages, with 6 to 27 lines on page 3 depending
     on font and table layout. Cutting the internal status line and ''Open questions for the team'' saves about 7
@@ -15885,18 +15886,25 @@ requirements:
   - brief p11, Annex C
   - 'brief p8, Glossary: Physical Account'
   quote: One page.
-  how: 'Today docs/PHYSICAL_ACCOUNT.md lists 16 assumed numbers; the Scenario C memo adds nine r3.* assumptions
-    and the cards add more, so it will outgrow one page. Plan: render it grouped by Annex C''s resource-class rows
-    (power, heat, positions, mass, data, state transitions, compute and response time, mission priorities and crew,
-    anything else), one line per assumption, and check the page count when rendered to PDF alongside the memo.'
+  how: tools/physical_account.py now renders a one-page docs/PHYSICAL_ACCOUNT.md grouped by Annex C's rows (electrical
+    power, heat, positions, mass and stability, data links, state transitions, compute and response time, mission
+    priorities and crew, guest cards), merging related keys into one line each (power balance, reserve by speed,
+    mission line wiring, R3 timing, R3 deck evidence, R3 authority) with short reasons stored as `short` in config/assumptions.yaml
+    provenance; docs/PHYSICAL_ACCOUNT_DETAIL.md keeps all 28 assumed keys with full reasons and code locations.
+    A rough LibreOffice render of the HTML still gives about 2 pages, so the page count must be checked in the team's
+    final PDF route; if it overflows, shorten the guest-card line first.
   links:
-  - label: Physical Account draft
+  - label: One-page account
     path: docs/PHYSICAL_ACCOUNT.md
-  - label: generator
+  - label: Detail page
+    path: docs/PHYSICAL_ACCOUNT_DETAIL.md
+  - label: Generator
     path: tools/physical_account.py
+  - label: Assumptions with short reasons
+    path: config/assumptions.yaml
   decisions:
   - DEC-24
-  status: planned
+  status: drafted
   question: When the list no longer fits one page, do we group by Annex C row and move detail into an appendix the
     jury may skip?
 - id: R-553

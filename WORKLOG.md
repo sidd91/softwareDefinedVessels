@@ -411,3 +411,20 @@ Work done:
 Decisions: the hull length and reserve-by-speed values are assumptions for team review, not decisions.
 Conflicts: the motion model in research assumed a 65 m hull and should be re-run at 60 m. Deferrals: none.
 Requirements touched: R-060, R-137, R-205, R-237, R-270, R-323, R-483.
+
+### Sat 00:42 PDT · Memo fits two pages; Physical Account restructured · Claude Opus 5.5 on behalf of Logan Walker (GhostWalka)
+
+All work in this entry was done by Claude on Logan's behalf while he sleeps.
+
+Work done:
+- Scenario C memo: its nine rule parameters moved into `config/assumptions.yaml` (`rules.r3.*`, each with
+  a reason), so they are Physical Account lines as the brief requires; the memo points to them. Now 1,129
+  words; a LibreOffice render at 11 pt on A4 gives 2 pages with room to spare.
+- Physical Account: `tools/physical_account.py` now writes a one-page `docs/PHYSICAL_ACCOUNT.md` grouped by
+  Annex C's rows, with related keys merged and short reasons (new `short` field in provenance), the guest
+  cards' own assumptions summarised, and the closing question; `docs/PHYSICAL_ACCOUNT_DETAIL.md` keeps
+  every key in full. A rough render still gives about 2 pages, so the final PDF route must confirm one page.
+- Requirement rows quoting the old memo length updated; R-552 updated. Tests: 12 pass.
+
+Conflicts: the one-page Physical Account is not yet proven (R-552). Deferrals: none.
+Requirements touched: R-004, R-009, R-010, R-024, R-120, R-203, R-408, R-435, R-552.

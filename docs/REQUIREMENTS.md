@@ -26,12 +26,12 @@ not built; gap = nothing addresses it yet; not-applicable = out of scope by the 
 | [Live demo](requirements/live-demo.md) | 31 | 30 | 0 | 11 | 19 | 1 | 0 |
 | [Platform model and ship state (Annex A)](requirements/platform-model-and-ship-state-annex-a.md) | 72 | 71 | 0 | 62 | 7 | 2 | 1 |
 | [Guest manifest and cards (Annex B)](requirements/guest-manifest-and-cards-annex-b.md) | 72 | 70 | 5 | 64 | 2 | 1 | 0 |
-| [Physical Account (Annex C)](requirements/physical-account-annex-c.md) | 25 | 25 | 0 | 23 | 2 | 0 | 0 |
+| [Physical Account (Annex C)](requirements/physical-account-annex-c.md) | 25 | 25 | 0 | 24 | 1 | 0 | 0 |
 | [Constraints](requirements/constraints.md) | 68 | 65 | 0 | 46 | 22 | 0 | 0 |
 | [Stack, data and tools](requirements/stack-data-and-tools.md) | 38 | 10 | 1 | 13 | 20 | 3 | 1 |
 | [Out of scope](requirements/out-of-scope.md) | 9 | 8 | 0 | 3 | 0 | 0 | 6 |
 | [Data use and AI rules](requirements/data-use-and-ai-rules.md) | 11 | 9 | 0 | 7 | 3 | 0 | 1 |
-| **All** | **554** | **509** | **11** | **331** | **194** | **9** | **9** |
+| **All** | **554** | **509** | **11** | **332** | **193** | **9** | **9** |
 
 ## Gaps
 

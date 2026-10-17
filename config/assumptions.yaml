@@ -106,31 +106,52 @@ installation:
     minutes: {drone_swap: 30, vehicle_swap: 45}
   at_sea_uncrewed: logical_only
 
+rules:
+  r3:
+    approach_min: 4
+    drain_pct_min: 1.11
+    stale_s: {camera: 3, g4_telemetry: 10}
+    change_threshold: to_calibrate
+    zone: marked landing area, flying-stations positions masked, drone secured with no deck hand
+    override: landing officer only, at 14 and 6 aboard, logged, valid for one landing, cancelled by a new detection
+    camera: fixed flight-deck camera, inference in the 20 % ship-systems compute reserve, never shed
+    uncrewed_launch: needs automatic landing and securing, fixed deck firefighting and a lit or low-light deck view for the 90 min sortie
+    unchanged: all deck markers visible and the frame matches the last crew sweep
+
 admission:
   seawater_scan_step_c: 0.1
   seawater_scan_max_c: 35
 
 provenance:
-  hull.loa_m: {source: assumed, why: "The slides show a 60 m vessel (reference drawing and demo baseline); the brief allows 60-70 m. We use 60 m; research/sensors/navigation_environment.md assumed 65 m for its roll model and should be re-run at 60 m."}
+  rules.r3.approach_min: {source: assumed, short: "final approach only; transit overlaps deck clearing", why: "Scenario C rule R3: final approach and landing from the loiter point; G4's own estimate is used if longer. Transit from range runs alongside deck clearing."}
+  rules.r3.drain_pct_min: {source: assumed, short: "100 % over 90 min, never slower; unverified", why: "R3: 100 % over the 90 min endurance (brief B, G4); we assume G4 never drains slower, which dates the 20 % crossing conservatively. Unverified."}
+  rules.r3.stale_s: {source: assumed, short: "older readings count as unknown", why: "R3: a camera frame older than 3 s or drone telemetry older than 10 s counts as unknown."}
+  rules.r3.change_threshold: {source: assumed, short: "false alarm holds, miss risks the drone; calibrate", why: "R3: how much of a deck marker or zone must change to count as not clear. A false alarm costs a hold, a miss a damaged drone. To be calibrated on the demo webcam."}
+  rules.r3.zone: {source: assumed, short: "fire party clear; drone secured with no deck hand", why: "R3 guards the marked landing area; the fire party and landing officer stand near but clear of it, which assumes the drone is secured with no deck hand (research E3 puts deck crew on deck for helicopters)."}
+  rules.r3.override: {source: assumed, short: "an authority act; impossible at 0 aboard", why: "R3: an override is an authority act, not a sensor reading; impossible at 0 aboard (brief A.6)."}
+  rules.r3.camera: {source: assumed, short: "ship supply, in the 20 % compute reserve", why: "R3: the deck camera is ship supply, so its inference sits in the ship-systems compute reserve (brief A.7) and is never shed."}
+  rules.r3.uncrewed_launch: {source: assumed, short: "nobody can clear the deck at 0 aboard", why: "R3 at 0 aboard: nobody can clear the deck (brief A.6), so a launch is refused unless recovery stays possible for the whole sortie. Fixed deck firefighting availability is unconfirmed."}
+  rules.r3.unchanged: {source: assumed, short: "evidence the deck stayed clear since the sweep", why: "R3 at 0 aboard: the evidence that the deck is still clear since the last crew sweep."}
+  hull.loa_m: {source: assumed, short: "slides show 60 m; brief allows 60-70 m", why: "The slides show a 60 m vessel (reference drawing and demo baseline); the brief allows 60-70 m. We use 60 m; research/sensors/navigation_environment.md assumed 65 m for its roll model and should be re-run at 60 m."}
   hull.allowed_loa_m: {source: brief A intro}
-  power.guest_reserve_kw_by_speed: {source: assumed, why: "The brief says the reserve is a function of speed and gives 200 kW nominal at cruise within 150-250 kW. Less propulsion load at slow speed leaves more for guests, so slow takes the top of the range and fast the bottom."}
-  power.envelope_reserve_kw: {source: assumed, why: "The envelope covers the slow and cruise bands, so admission uses the lower of their reserves: 200 kW."}
+  power.guest_reserve_kw_by_speed: {source: assumed, short: "less propulsion load at slow speed", why: "The brief says the reserve is a function of speed and gives 200 kW nominal at cruise within 150-250 kW. Less propulsion load at slow speed leaves more for guests, so slow takes the top of the range and fast the bottom."}
+  power.envelope_reserve_kw: {source: assumed, short: "lower of the slow and cruise bands", why: "The envelope covers the slow and cruise bands, so admission uses the lower of their reserves: 200 kW."}
   ship_state.emission: {source: brief A.6}
   power.guest_reserve_kw: {source: brief A.1}
   power.peak_extra_kw: {source: brief A.1, A.9}
   power.peak_max_s: {source: brief A.1}
   power.mission_line_kw: {source: brief A.1}
-  power.line_lost_on_trip: {source: assumed, why: "The brief lets us choose. Both lines survive a trip, so the reduced total reserve, not a single line, binds."}
-  power.shed_headroom_kw: {source: assumed, why: "Kept free after shedding so a normal load swing does not re-trigger the sequence."}
-  power.gensets.load_limit: {source: assumed, why: "Common practice is to load gensets to about 90 % of rating; with it, two 450 kW sets close against the brief's 200 kW guest reserve."}
-  power.hotel_kw.committed: {source: assumed, why: "Upper end of the brief's 250-400 kW hotel range, the conservative choice."}
-  power.ship_aux_kw: {source: assumed, why: "Ship auxiliaries outside hotel load; chosen so 810 kW minus 400 hotel minus 55 leaves the brief's 200 kW guest reserve with 155 kW spare."}
-  power.hotel_shed_on_trip_kw: {source: assumed, why: "Non-essential hotel load the PMS drops on a trip, so one 405 kW set leaves the brief's 100 kW for guests."}
-  power.trip_confirm: {source: assumed, why: "A single sensor must not trigger a shed; 2 of 3 independent signals confirm a trip (Viking Sky lesson)."}
+  power.line_lost_on_trip: {source: assumed, short: "brief lets us choose; the total then binds", why: "The brief lets us choose. Both lines survive a trip, so the reduced total reserve, not a single line, binds."}
+  power.shed_headroom_kw: {source: assumed, short: "a load swing must not re-trigger shedding", why: "Kept free after shedding so a normal load swing does not re-trigger the sequence."}
+  power.gensets.load_limit: {source: assumed, short: "usual practice; closes to the 200 kW reserve", why: "Common practice is to load gensets to about 90 % of rating; with it, two 450 kW sets close against the brief's 200 kW guest reserve."}
+  power.hotel_kw.committed: {source: assumed, short: "top of the brief's 250-400 kW range", why: "Upper end of the brief's 250-400 kW hotel range, the conservative choice."}
+  power.ship_aux_kw: {source: assumed, short: "balances 810 kW down to the 200 kW reserve", why: "Ship auxiliaries outside hotel load; chosen so 810 kW minus 400 hotel minus 55 leaves the brief's 200 kW guest reserve with 155 kW spare."}
+  power.hotel_shed_on_trip_kw: {source: assumed, short: "leaves the brief's 100 kW on one set", why: "Non-essential hotel load the PMS drops on a trip, so one 405 kW set leaves the brief's 100 kW for guests."}
+  power.trip_confirm: {source: assumed, short: "one bad sensor must not shed (Viking Sky)", why: "A single sensor must not trigger a shed; 2 of 3 independent signals confirm a trip (Viking Sky lesson)."}
   heat: {source: brief A.2}
   mass: {source: brief A.4}
-  data.satcom_envelope_mbps: {source: assumed, why: "Admission is judged at the low end of the brief's 2-8 Mbit/s SATCOM range."}
-  data.los_radio_operating_mbps: {source: assumed, why: "Within the drone's 5-20 km operating range the line-of-sight radio delivers its top rate; range loss is handled at run time, not at admission."}
+  data.satcom_envelope_mbps: {source: assumed, short: "low end of the brief's 2-8 Mbit/s", why: "Admission is judged at the low end of the brief's 2-8 Mbit/s SATCOM range."}
+  data.los_radio_operating_mbps: {source: assumed, short: "top rate inside the operating range", why: "Within the drone's 5-20 km operating range the line-of-sight radio delivers its top rate; range loss is handled at run time, not at admission."}
   data: {source: brief A.5}
   compute: {source: brief A.7}
   response_time_s: {source: brief A.8}
@@ -139,14 +160,14 @@ provenance:
   positions.flight_deck: {source: brief A.3}
   positions.stern_ramp: {source: brief A.3}
   positions.mast_free: {source: brief A.3}
-  positions.bay1.power_line: {source: assumed, why: "One connection per bay; Bay 1 on the port line."}
-  positions.bay2.power_line: {source: assumed, why: "Bay 2 on the starboard line, so the two bays never share a line."}
-  positions.flight_deck.power_line: {source: assumed, why: "Flight deck on starboard; drone charging and a Bay 2 guest together stay under 150 kW."}
-  positions.mast_free.power_line: {source: assumed, why: "Mast on port, the lighter-loaded line."}
-  positions.hangar_roof: {source: assumed, why: "The brief allows G5's antenna on the hangar roof (x1.2, check drone clearance); we assume a 0.3 m2 antenna clears drone operations and limit the roof to 60 kg like the mast."}
+  positions.bay1.power_line: {source: assumed, short: "one connection per bay; split the lines", why: "One connection per bay; Bay 1 on the port line."}
+  positions.bay2.power_line: {source: assumed, short: "Bay 2 never shares a line with Bay 1", why: "Bay 2 on the starboard line, so the two bays never share a line."}
+  positions.flight_deck.power_line: {source: assumed, short: "drone charge plus a Bay 2 guest under 150 kW", why: "Flight deck on starboard; drone charging and a Bay 2 guest together stay under 150 kW."}
+  positions.mast_free.power_line: {source: assumed, short: "the lighter-loaded line", why: "Mast on port, the lighter-loaded line."}
+  positions.hangar_roof: {source: assumed, short: "small antenna clears drone ops; 60 kg like the mast", why: "The brief allows G5's antenna on the hangar roof (x1.2, check drone clearance); we assume a 0.3 m2 antenna clears drone operations and limit the roof to 60 kg like the mast."}
   envelope: {source: brief A.10}
   ship_state: {source: brief A.6}
   crew: {source: brief A.6}
   installation: {source: brief A.11}
-  admission.seawater_scan_step_c: {source: assumed, why: "Resolution for reporting the seawater temperature at which a verdict flips."}
-  admission.seawater_scan_max_c: {source: assumed, why: "Scan a little past the 30 °C design point to show the stress case off Florida (30.4 °C)."}
+  admission.seawater_scan_step_c: {source: assumed, short: "resolution of the reported tipping point", why: "Resolution for reporting the seawater temperature at which a verdict flips."}
+  admission.seawater_scan_max_c: {source: assumed, short: "covers the 30.4 °C Florida stress case", why: "Scan a little past the 30 °C design point to show the stress case off Florida (30.4 °C)."}
