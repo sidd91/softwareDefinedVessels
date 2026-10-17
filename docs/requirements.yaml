@@ -2189,7 +2189,10 @@ requirements:
     kW is reserved for 20 min. Caveat: the load-out is 13.015 t (CON-12). Missing: state machine, D3, simulator
     (M2, slipping per CON-10). Shown: DEMO_SCRIPT 00:10 to 00:25. Update: decided by DEC-32; Scenario B runs G3,
     G4, G5, and the full load-out is refused at the pier with this alternative recommended and a logged override
-    available.'
+    available. Decided (DEC-40): brief''s story at minutes 0-12 (minute-12 trip holds, D4 shows 0 steps and both
+    armed ladders); G4 lands at minute 17; an added, labelled pump fault at minute 19 makes cooling bind (75 kW
+    against 81): survey slows G4''s charge (56 kW), sar drops G5 to 8 kW (44 kW). Timeline: config/scenarios/scenario_b.yaml;
+    checked by tests/test_scenario_b_timeline_data.py.'
   links:
   - label: 'DEMO_SCRIPT: Scenario B'
     path: docs/DEMO_SCRIPT.md#scenario-b-90-s-deep
@@ -2209,11 +2212,16 @@ requirements:
     path: docs/EXPECTED_OUTCOMES.md
   - label: Oracle fixture, checked against the cards
     path: tests/oracles/expected_outcomes.yaml
+  - label: Scenario B timeline
+    path: config/scenarios/scenario_b.yaml
+  - label: Scenario B timeline test
+    path: tests/test_scenario_b_timeline_data.py
   decisions:
   - DEC-26
   - CON-12
   - CON-10
   - DEC-32
+  - DEC-40
   status: planned
   question: Do both priority sets state the loser's cost in one unit (survey minutes delayed against drone recharge
     minutes deferred), so the jury can compare the two outcomes side by side?
@@ -2235,7 +2243,10 @@ requirements:
     worst case (125 kW) the shortfall is 30 kW and the brief''s ''G5 to 8 kW'' appears. The load-out itself breaks
     mass (CON-12). Missing: D4, ledger, tests. Shown: DEMO_SCRIPT 00:40 to 00:42. Update: decided by DEC-32; Scenario
     B runs G3, G4, G5, and the full load-out is refused at the pier with this alternative recommended and a logged
-    override available.'
+    override available. Decided (DEC-40): brief''s story at minutes 0-12 (minute-12 trip holds, D4 shows 0 steps
+    and both armed ladders); G4 lands at minute 17; an added, labelled pump fault at minute 19 makes cooling bind
+    (75 kW against 81): survey slows G4''s charge (56 kW), sar drops G5 to 8 kW (44 kW). Timeline: config/scenarios/scenario_b.yaml;
+    checked by tests/test_scenario_b_timeline_data.py.'
   links:
   - label: 'GAMEPLAN: shedding ladder'
     path: GAMEPLAN.md#shedding-ladder-d4-precomputed-every-tick
@@ -2253,10 +2264,15 @@ requirements:
     path: docs/EXPECTED_OUTCOMES.md
   - label: Oracle fixture, checked against the cards
     path: tests/oracles/expected_outcomes.yaml
+  - label: Scenario B timeline
+    path: config/scenarios/scenario_b.yaml
+  - label: Scenario B timeline test
+    path: tests/test_scenario_b_timeline_data.py
   decisions:
   - DEC-16
   - CON-12
   - DEC-32
+  - DEC-40
   status: planned
   question: Does D4 shed against each guest's declared worst case (125 kW, 30 kW over the 95 kW ceiling) or its
     metered draw (87 kW, nothing to shed), and if metered, what min-12 load makes the brief's sequence happen?

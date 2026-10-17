@@ -1,0 +1,20 @@
+# Scenario B event timeline (WORKLOG DEC-32, DEC-40). Input for the simulator once it exists.
+# Minutes 0, 8 and 12 follow the brief exactly; the landing time is pinned by seed; the cooling fault
+# at minute 19 is an ADDED event, labelled on screen, sourced to brief A.2 (-40 %) and A.6 (no repair at sea).
+id: scenario_b
+guests: [G3, G4, G5]
+location: {name: Strait of Sicily cable corridor, seawater_c: 24}
+seed_pins: {confirm_min: 1, deck_clear_min: 4, approach_min: 4, g4_lands_at_min: 17}
+events:
+  - {t_min: 0, type: baseline, note: "3 kn over the cable route, G3 on its 40-min leg on the acoustic link, G4 airborne, G5 full"}
+  - {t_min: 8, type: guest_report, guest: G4, battery_pct: 18, wind_kn: 22}
+  - {t_min: 12, type: genset_trip, gensets_online: 1, cooling: nominal}
+  - {t_min: 17, type: guest_state, guest: G4, state: landed_fast_charging}
+  - {t_min: 19, type: cooling_degraded, factor: 0.6, confirmed: true, added_event: true, trigger: {after: {guest: G4, state: landed_fast_charging}, delay_min: 2}}
+  - {t_min: 24, type: genset_restart, gensets_online: 2, optional: true}
+# After the fault, G3 asks to start its 25 kW charge (not interruptible), so it must fit before it starts.
+# Survey: G3 finishes the re-run leg (paused min 8-23, 40 min leg) with G4 still on its slowed charge.
+# Rescue: G3 was recovered after the min-8 abort and asks once it is on the cradle.
+g3_charge_requests:
+  - {mission: survey, others: {G4: charge, G5: full}}
+  - {mission: sar, others: {G4: fast_charge, G5: low_power}}

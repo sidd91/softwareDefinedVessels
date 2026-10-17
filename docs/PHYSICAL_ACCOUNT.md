@@ -5,26 +5,28 @@ Full reasons and code locations: [detail page](PHYSICAL_ACCOUNT_DETAIL.md). Gene
 
 | Annex C row | What we assumed | Value | Why | Used in |
 |---|---|---|---|---|
-| Electrical power | reserve by speed | slow 250, cruise 200, fast 150 kW; envelope 200 kW | less propulsion at slow speed; admit at the lower band | not yet |
-|  | mission line wiring | Bay 1 port, Bay 2 stbd, deck stbd, mast port; lost on trip: none | split positions across lines; both survive a trip | not yet |
-|  | shed headroom kw | 5 | a load swing must not re-trigger shedding | not yet |
+| Electrical power | reserve by speed | slow 250, cruise 200, fast 150 kW; envelope 200 kW | less propulsion at slow speed; admit at the lower band | test |
+|  | mission line wiring | Bay 1 port, Bay 2 stbd, deck stbd, mast port; lost on trip: none | split positions across lines; both survive a trip | test |
+|  | shed headroom kw | 5 | a load swing must not re-trigger shedding | test |
 |  | power balance | load limit 0.9; hotel 400 kW; aux 55 kW; hotel shed 150 kW | 2 x 405 kW less 455 kW committed = 355 kW: the 200 kW reserve plus 155 kW spare; one set plus hotel shed = 100 kW | test |
 |  | trip confirm | rule text, see detail | one bad sensor must not shed (Viking Sky) | not yet |
+| Heat rejection | degraded confirm | rule text, see detail | a camera alone never confirms a cooling fault | not yet |
+|  | chillers on essential board | True | chillers survive the hotel shed on a trip | not yet |
+|  | degraded means | one chilled-water pump of two | degraded = one pump of two | not yet |
 | Positions | loa m | 60 | slides show 60 m; brief allows 60-70 m | not yet |
-|  | hangar roof | rule text, see detail | small antenna clears drone ops; 60 kg like the mast | card |
+|  | hangar roof | rule text, see detail | small antenna clears drone ops; 60 kg like the mast | card, test |
 | Mass / stability | G4 hangar mass | 850 kg, not Annex B's 900 kg | organizer correction (WORKLOG DEC-22) | card, test |
 |  | Scenario B load-out | G2, G3, G4, G5: 13.015 t against 10 t | the brief's own scenario exceeds its margin (CON-12) | test |
-| Data links | satcom envelope mbps | 2 | low end of the brief's 2-8 Mbit/s | not yet |
+| Data links | satcom envelope mbps | 2 | low end of the brief's 2-8 Mbit/s | test |
 |  | los radio operating mbps | 20 | top rate inside the operating range | not yet |
 | State transitions | R3 lead time | slow end of A.6: confirm 1 min at 14, 3 at 6; clear 5 min at 14, 12 at 6 | the rule must hold in the worst case | not yet |
-| Compute / response time | tipping-point scan | 0.1 °C steps to 35 °C | reports where a verdict flips | not yet |
-| Mission priorities / crew | R3 timing | approach 4 min; drain 1.11 %/min; stale 3 s camera, 10 s drone | dates the drone's deadline conservatively; drain unverified | not yet |
+| Compute / response time | tipping-point scan | 0.1 °C steps to 35 °C | reports where a verdict flips | test |
+| Mission priorities / crew | R3 timing | approach 4 min; drain 1.11 %/min; stale 3 s camera, 10 s drone | dates the drone's deadline conservatively; drain unverified | test |
 |  | R3 deck evidence | landing zone; threshold to calibrate; markers and frame match | camera proves the zone unchanged since the sweep | not yet |
 |  | R3 authority | landing officer at 14 and 6; at 0 launch only if recovery stays possible | humans override only when aboard | not yet |
 |  | weights per mission | four files; weights 0.2 to 1.0; one or two mission-critical guests each | Annex B gives only high, medium, low | test |
 | Guest cards | gaps in Annex B | compute cores: G1 2, G2 2, G3 4, G4 4, G6 1; capability kept in lower modes: G2 sampling 0.8, G2 standby 0.0, G3 standby 0.3, G4 charge 0.7, G4 standby 0.3; link floors: G3 acoustic min 1, G5 satcom min 1 | Annex B gives the kW, not cores, capability kept or link floors | card |
 |  | G6 desalination | all numbers ours | our invented sixth card | card |
-| Heat rejection | nothing beyond Annex A | - | - | - |
 
 **Closing question (draft, team to confirm).** One change: a 50 kW, 12.5 kWh battery bridge that lifts the
 one-genset-down guest reserve from 100 to 150 kW for the 5-15 min restart. Scenario B's four guests at their sustained worst (G2 20 +

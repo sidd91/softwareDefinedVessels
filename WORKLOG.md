@@ -78,6 +78,7 @@ Deadline: **Sun 2026-10-18 10:00 PDT**.
 | DEC-37 | Sat 10:12 | In port, installed guests may move between bays so a new card fits; the verdict reports each move with its crane time (architecture Q4) | Logan | Claude for Logan |
 | DEC-38 | Sat 10:12 | Admission judges data links at guests' minimum rates and reports the nominal shortfall as degraded quality | Logan | Claude for Logan |
 | DEC-39 | Sat 10:12 | Install approval: FastAPI, uvicorn and websockets now; opencv-python-headless and onnxruntime when the camera and UNO Q steps start; all open-source, logged in docs/SOFTWARE_LOG.md when installed | Logan | Claude for Logan |
+| DEC-40 | Sat 10:25 | Scenario B setup: the brief's story at minutes 0, 8 and 12 (G3 underwater; the minute-12 trip holds and D4 runs on screen with 0 steps and both armed ladders shown); G4 lands at minute 17 (seed); ADDED, labelled event at minute 19: a chilled-water pump fails (x0.6, 80 kW loop, 75 kW ceiling), so cooling binds against 81 kW: survey slows G4's charge to 10 kW (56 kW), sar takes G5 to 8 kW (44 kW). Robot-charging start rejected because it removes the minute-8 conflict. Confirmed by four critics and a judge (req R-066, R-067) | Logan (option); critics and judge (timing) | Claude for Logan |
 
 ## Conflicts and risks to watch
 
@@ -594,3 +595,14 @@ Decisions: DEC-36. Conflicts: CON-13 closed. Deferrals: none.
 Logan decided port moves allowed (DEC-37), data links judged at minimum rates (DEC-38) and the install list
 (DEC-39). Minute-12 robot charging question explained to Logan; decision pending.
 Decisions: DEC-37 to DEC-39. Conflicts: none new. Deferrals: none.
+
+### Sat 10:25 PDT · Scenario B setup decided (DEC-40) · Claude Opus 5.5 on behalf of Logan Walker (GhostWalka)
+
+Logan chose the brief's story plus a cooling fault and asked for critics and a judge. All four critics confirmed
+that starting with the robot charging removes the minute-8 conflict, and all four found that a fault at minute 14
+hits before the drone has landed; the judge moved it to minute 19 after a pinned landing at minute 17. Added
+`config/scenarios/scenario_b.yaml` (the event timeline), three cooling assumptions with reasons, a test that
+recomputes the minute-12 and minute-19 numbers, and updated the storyboard and expected outcomes.
+Accepted residual risk: a literal grader may want a cut at minute 12 itself, and an added fault can look staged;
+mitigated by the on-screen label, the A.2 and A.6 sourcing and the camera-leak foreshadow.
+Decisions: DEC-40. Conflicts: none new. Deferrals: none.

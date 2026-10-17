@@ -28,6 +28,9 @@ heat:
   kw_heat_per_kw_electric: 1.0
   inertia: {extra_kw: 30, duration_s: 60, cooldown_s: 600}
   air_cooled_max_kw: 2
+  degraded_confirm: plant alarm plus flow or delta-T, automatic
+  chillers_on_essential_board: true
+  degraded_means: one chilled-water pump of two
 
 mass:
   margin_t: 10
@@ -123,6 +126,9 @@ admission:
   seawater_scan_max_c: 35
 
 provenance:
+  heat.degraded_confirm: {source: assumed, short: "a camera alone never confirms a cooling fault", why: "Scenario B (DEC-40): a cooling fault counts as confirmed only on the plant alarm plus flow or delta-T, automatically; camera evidence alone only precomputes the plan."}
+  heat.chillers_on_essential_board: {source: assumed, short: "chillers survive the hotel shed on a trip", why: "Chillers and chilled-water pumps sit on the essential board inside the 55 kW ship auxiliaries, so the 150 kW non-essential hotel shed on a genset trip does not take cooling with it."}
+  heat.degraded_means: {source: assumed, short: "degraded = one pump of two", why: "The brief's -40 % degraded loop (A.2) is read as one of two chilled-water pumps lost."}
   rules.r3.approach_min: {source: assumed, short: "final approach only; transit overlaps deck clearing", why: "Scenario C rule R3: final approach and landing from the loiter point; G4's own estimate is used if longer. Transit from range runs alongside deck clearing."}
   rules.r3.drain_pct_min: {source: assumed, short: "100 % over 90 min, never slower; unverified", why: "R3: 100 % over the 90 min endurance (brief B, G4); we assume G4 never drains slower, which dates the 20 % crossing conservatively. Unverified."}
   rules.r3.stale_s: {source: assumed, short: "older readings count as unknown", why: "R3: a camera frame older than 3 s or drone telemetry older than 10 s counts as unknown."}

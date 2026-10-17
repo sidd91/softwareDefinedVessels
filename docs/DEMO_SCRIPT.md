@@ -21,17 +21,20 @@ marks the decision as overridden. The demo runs G3, G4, G5.
 Simulated time runs fast (about 12 minutes of ship time in about 60 s); decisions run in real time
 and show their latency against the ceiling. Location: Strait of Sicily cable corridor, 24 °C water.
 
-| Clock | Ship time | What happens | What the jury sees |
-|---|---|---|---|
-| 00:00 | min 0 | Baseline: 3 kn over the cable route, G3 surveying on its acoustic link, G5 at 45 kW, G4 airborne on a SAR sortie | Schematic, eight gauges steady, priority file the jury chose, crew 14 |
-| 00:10 | min 8 | G4 reports 18 % battery in 22 kn wind. G3's conditions (3 kn, steady, quiet, no deck machinery) and G4's (deck clear, 5-12 kn, turn into wind, ramp free) collide | The conflict appears as two condition sets, not an alarm |
-| 00:12 | min 8 | **D3 decides within 2 s.** Hard limit first: below 20 % G4 must land within 12 min or ditch, so "wait for the end of the leg" is off the table | Decision record with latency, binding constraint and cost to the loser |
-| | | *Survey priority:* G3 holds depth before its acoustic link breaks; the survey pauses for the minimum 15-minute recovery window and the leg is re-run | Sentence names the survey minutes lost |
-| 00:25 | min 8 | **We swap to the other priority file (rescue if the jury chose survey, survey if it chose rescue). Same event, re-decided.** The survey is suspended, the ship is released to manoeuvre, and G4's 35 kW charge is reserved ahead of everything | Both decisions side by side: same code, two ships |
-| 00:40 | min 12 | **Genset trips.** The guest reserve halves to about 100 kW while G4 draws 35 kW and G5 45 kW | Power gauge drops; cooling gauge rechecked |
-| 00:42 | min 12 | **D4 sheds in a declared order** within 5 s for the first action and 60 s for the sequence: throttle before shed (with G3 charging, 105 kW against a 95 kW ceiling: survey slows the drone's charge to 10 kW; rescue drops the comms node to 8 kW), the winner kept alive, every guest's loss stated | Ladder with timestamps against the 5 s and 60 s ceilings; one line per guest |
-| 01:00 | | **Breadth strip**, one line each, labelled live or replayed (below) | |
-| 01:25 | | Close: "Same code, two ships, explained in one sentence each." | |
+Decided as WORKLOG DEC-40; event timeline in `config/scenarios/scenario_b.yaml`.
+
+| Clock | Ship time | What happens | Survey file | Rescue file |
+|---|---|---|---|---|
+| 00:00 | min 0 | Baseline as in the brief: 3 kn over the cable route, 24 °C water, G3 on its 40-min leg, G4 airborne, G5 full | 46 kW | 46 kW |
+| 00:10 | min 8 | G4 reports 18 % in 22 kn; G3's and G4's condition sets collide on screen | | |
+| 00:12 | min 8 | D3 decides within 2 s; hard limit first (land by min 18.2) | G4 recovers; G3 holds depth, survey paused to min 23, leg re-run: 25-27 survey minutes lost | survey suspended, ship free to manoeuvre, G4's 35 kW reserved first; leg aborted |
+| 00:25 | min 8 | Swap to the other priority file; same event, both records side by side | | |
+| 00:40 | min 12 | Genset trips, cooling nominal: ceiling 95 kW | 48 of 95 kW, holds | 81 of 95 kW, holds |
+| 00:42 | min 12 | D4 runs within 5 s: 0 steps needed, every loss "none", both armed ladders shown; one sentence on why the brief's 105 kW case does not occur (G3 is on its leg) | next step: G4 charge 35 to 10 kW | next step: G5 to 8 kW |
+| 00:48 | min 12-17 | Fast-forward: G4 lands at min 17 and fast-charges; the camera shows a growing leak under chilled-water pump 1, information only | 81 of 95 kW | 81 of 95 kW |
+| 00:55 | min 19 | ADDED EVENT, labelled: chilled-water pump 1 fails (confirmed by plant alarm). Loop 133.3 to 80 kW; ceiling 75 kW; cooling binds, not power | 81 against 75 | 81 against 75 |
+| 00:57 | min 19 | D4 walks the same ladder: first action within 5 s, done within 60 s | G4 charge to 10 kW: 56 of 75; G4 loses 30 % | G5 to low power: 44 of 75; G5 loses 70 % |
+| 01:05 | min 24 (optional) | Genset restarts: nothing given back, cooling still binds for the voyage | 56 | 44 |
 
 The exact shed order comes from the ledger and the active priority file, not from this script.
 

@@ -125,3 +125,16 @@ one-genset-down line now has three states, tested against a 95 kW gate. Checked 
 
 G3 charging cannot be interrupted, so it never earns throttle credit. Information line only: with cooling at
 -40 % the chilled-water gate at 30 °C is 67 kW; Logan kept this as information only (DEC-36, closing CON-13).
+
+## Scenario B as decided (DEC-40)
+
+Load-out G3, G4, G5; G3 underwater on its leg; G4 lands at minute 17. Checked by `tests/test_scenario_b_timeline_data.py`.
+
+| Moment | Ceiling | Survey | Rescue |
+|---|---|---|---|
+| Min 12, genset trip, cooling nominal | min(100, 133.3) - 5 = 95 kW | G3 1 + G4 2 (airborne) + G5 45 = 48, holds | G3 1 + G4 35 (reserved) + G5 45 = 81, holds |
+| Min 19, pump fault (x0.6), G4 fast-charging | min(100, 80) - 5 = 75 kW | 81 over; G4 35 to 10 kW, 56 | 81 over; G5 45 to 8 kW, 44 |
+| After the fault, G3 asks to start its 25 kW charge (not interruptible) | 75 kW | G3 25 + G4 10 + G5 45 = 80 over; G5 to 8 kW first, then G3 starts: 43 | G3 25 + G4 35 + G5 8 = 68, starts at once |
+
+The fault is tied to the event "G4 landed and fast-charging" plus 2 minutes, so it always falls inside G4's
+20-minute fast charge (minutes 17 to 37). Restore order once cooling recovers is left to the engine build (T-tasks in BUILD_PLAN).
