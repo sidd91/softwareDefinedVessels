@@ -197,7 +197,7 @@ requirements:
   - label: 'Demo: Scenario A'
     path: docs/DEMO_SCRIPT.md#scenario-a-jurys-card-deep
   - label: Load-out decision (CON-12)
-    path: docs/DEMO_SCRIPT.md#decision-needed-first-scenario-bs-load-out-breaks-the-briefs-own-margins
+    path: docs/DEMO_SCRIPT.md#scenario-b-load-out-decided-worklog-dec-32
   - label: Rehearsal and fallbacks
     path: docs/DEMO_SCRIPT.md#rehearsal-and-fallbacks
   - label: Rehearse block
@@ -591,7 +591,7 @@ requirements:
   - label: Presence test
     path: tests/test_brief_arithmetic.py
   - label: Scenario B load-out (CON-12)
-    path: docs/DEMO_SCRIPT.md#decision-needed-first-scenario-bs-load-out-breaks-the-briefs-own-margins
+    path: docs/DEMO_SCRIPT.md#scenario-b-load-out-decided-worklog-dec-32
   decisions:
   - DEC-15
   - CON-12
@@ -932,7 +932,7 @@ requirements:
   - label: G2 needs bay clear
     path: manifests/G2.yaml
   - label: Scenario B load-out finding
-    path: docs/DEMO_SCRIPT.md#decision-needed-first-scenario-bs-load-out-breaks-the-briefs-own-margins
+    path: docs/DEMO_SCRIPT.md#scenario-b-load-out-decided-worklog-dec-32
   - label: Bay story drill
     path: docs/DEMO_SCRIPT.md#scenario-a-jurys-card-deep
   decisions:
@@ -1595,7 +1595,7 @@ requirements:
   - label: G4 ramp exclusion
     path: manifests/G4.yaml
   - label: Scenario B load-out finding
-    path: docs/DEMO_SCRIPT.md#decision-needed-first-scenario-bs-load-out-breaks-the-briefs-own-margins
+    path: docs/DEMO_SCRIPT.md#scenario-b-load-out-decided-worklog-dec-32
   - label: Bay story drill
     path: docs/DEMO_SCRIPT.md#scenario-a-jurys-card-deep
   decisions:
@@ -1668,7 +1668,7 @@ requirements:
   - label: Correction check
     path: WORKLOG.md#fri-2056-pdt--brief-correction-checked--claude-opus-55-on-behalf-of-logan-walker-ghostwalka
   - label: Scenario B load-out finding
-    path: docs/DEMO_SCRIPT.md#decision-needed-first-scenario-bs-load-out-breaks-the-briefs-own-margins
+    path: docs/DEMO_SCRIPT.md#scenario-b-load-out-decided-worklog-dec-32
   - label: 35 kg drill
     path: docs/DEMO_SCRIPT.md#scenario-a-jurys-card-deep
   decisions:
@@ -2194,7 +2194,7 @@ requirements:
   - label: 'DEMO_SCRIPT: Scenario B'
     path: docs/DEMO_SCRIPT.md#scenario-b-90-s-deep
   - label: 'DEMO_SCRIPT: load-out decision (CON-12)'
-    path: docs/DEMO_SCRIPT.md#decision-needed-first-scenario-bs-load-out-breaks-the-briefs-own-margins
+    path: docs/DEMO_SCRIPT.md#scenario-b-load-out-decided-worklog-dec-32
   - label: 'G3 card: survey conditions'
     path: manifests/G3.yaml
   - label: 'G4 card: hard limits'
@@ -3646,7 +3646,7 @@ requirements:
   - label: 'Demo: Scenario B'
     path: docs/DEMO_SCRIPT.md#scenario-b-90-s-deep
   - label: Load-out decision (CON-12)
-    path: docs/DEMO_SCRIPT.md#decision-needed-first-scenario-bs-load-out-breaks-the-briefs-own-margins
+    path: docs/DEMO_SCRIPT.md#scenario-b-load-out-decided-worklog-dec-32
   - label: D3 engine row
     path: docs/ARCHITECTURE.md#decision-engines-inputs-objective-ceiling
   - label: Conditions in G3
@@ -3828,7 +3828,7 @@ requirements:
   - label: 'Demo: Scenario B'
     path: docs/DEMO_SCRIPT.md#scenario-b-90-s-deep
   - label: Load-out decision (CON-12)
-    path: docs/DEMO_SCRIPT.md#decision-needed-first-scenario-bs-load-out-breaks-the-briefs-own-margins
+    path: docs/DEMO_SCRIPT.md#scenario-b-load-out-decided-worklog-dec-32
   - label: Decision record
     path: docs/ARCHITECTURE.md#data-contracts
   decisions:
@@ -4569,7 +4569,7 @@ requirements:
   - label: 'Demo: Scenario A'
     path: docs/DEMO_SCRIPT.md#scenario-a-jurys-card-deep
   - label: 'Demo: Scenario B load-out flag'
-    path: docs/DEMO_SCRIPT.md#decision-needed-first-scenario-bs-load-out-breaks-the-briefs-own-margins
+    path: docs/DEMO_SCRIPT.md#scenario-b-load-out-decided-worklog-dec-32
   - label: Physical Account
     path: docs/PHYSICAL_ACCOUNT.md
   decisions:
@@ -4690,7 +4690,7 @@ requirements:
   - label: CON-12
     path: WORKLOG.md#conflicts-and-risks-to-watch
   - label: 'Demo: Scenario B load-out flag'
-    path: docs/DEMO_SCRIPT.md#decision-needed-first-scenario-bs-load-out-breaks-the-briefs-own-margins
+    path: docs/DEMO_SCRIPT.md#scenario-b-load-out-decided-worklog-dec-32
   - label: 'Demo: 35 kg drill'
     path: docs/DEMO_SCRIPT.md#scenario-a-jurys-card-deep
   decisions:
@@ -5804,7 +5804,7 @@ requirements:
   - label: 'Demo: Scenario B'
     path: docs/DEMO_SCRIPT.md#scenario-b-90-s-deep
   - label: Load-out decision
-    path: docs/DEMO_SCRIPT.md#decision-needed-first-scenario-bs-load-out-breaks-the-briefs-own-margins
+    path: docs/DEMO_SCRIPT.md#scenario-b-load-out-decided-worklog-dec-32
   - label: CON-12
     path: WORKLOG.md#conflicts-and-risks-to-watch
   - label: D3 and D4 engines
@@ -6535,7 +6535,7 @@ requirements:
   - label: Demo 00:40-00:42
     path: docs/DEMO_SCRIPT.md#scenario-b-90-s-deep
   - label: Load-out decision (CON-12)
-    path: docs/DEMO_SCRIPT.md#decision-needed-first-scenario-bs-load-out-breaks-the-briefs-own-margins
+    path: docs/DEMO_SCRIPT.md#scenario-b-load-out-decided-worklog-dec-32
   - label: WORKLOG conflicts
     path: WORKLOG.md#conflicts-and-risks-to-watch
   decisions:
@@ -6655,7 +6655,7 @@ requirements:
   - label: Scenario B, 90 s storyboard
     path: docs/DEMO_SCRIPT.md#scenario-b-90-s-deep
   - label: Load-out decision
-    path: docs/DEMO_SCRIPT.md#decision-needed-first-scenario-bs-load-out-breaks-the-briefs-own-margins
+    path: docs/DEMO_SCRIPT.md#scenario-b-load-out-decided-worklog-dec-32
   - label: Event timeline contract
     path: docs/ARCHITECTURE.md#data-contracts
   - label: GAMEPLAN older beats
@@ -6748,7 +6748,7 @@ requirements:
   - label: Rehearsal plan
     path: docs/DEMO_SCRIPT.md#rehearsal-and-fallbacks
   - label: Load-out decision
-    path: docs/DEMO_SCRIPT.md#decision-needed-first-scenario-bs-load-out-breaks-the-briefs-own-margins
+    path: docs/DEMO_SCRIPT.md#scenario-b-load-out-decided-worklog-dec-32
   decisions:
   - DEC-26
   - CON-12
@@ -7286,7 +7286,7 @@ requirements:
   - label: Reserve and headroom
     path: config/assumptions.yaml
   - label: Load-out decision
-    path: docs/DEMO_SCRIPT.md#decision-needed-first-scenario-bs-load-out-breaks-the-briefs-own-margins
+    path: docs/DEMO_SCRIPT.md#scenario-b-load-out-decided-worklog-dec-32
   - label: CON-12
     path: WORKLOG.md#conflicts-and-risks-to-watch
   decisions:
@@ -8442,7 +8442,7 @@ requirements:
   - label: Scenario B
     path: docs/DEMO_SCRIPT.md#scenario-b-90-s-deep
   - label: Load-out decision
-    path: docs/DEMO_SCRIPT.md#decision-needed-first-scenario-bs-load-out-breaks-the-briefs-own-margins
+    path: docs/DEMO_SCRIPT.md#scenario-b-load-out-decided-worklog-dec-32
   decisions:
   - DEC-02
   - DEC-26
@@ -8977,7 +8977,7 @@ requirements:
   - label: 'Demo: Scenario A drills'
     path: docs/DEMO_SCRIPT.md#scenario-a-jurys-card-deep
   - label: 'Demo: Scenario B load-out'
-    path: docs/DEMO_SCRIPT.md#decision-needed-first-scenario-bs-load-out-breaks-the-briefs-own-margins
+    path: docs/DEMO_SCRIPT.md#scenario-b-load-out-decided-worklog-dec-32
   decisions:
   - DEC-22
   - CON-12
@@ -9047,7 +9047,7 @@ requirements:
   - label: 'Demo: Scenario A drills'
     path: docs/DEMO_SCRIPT.md#scenario-a-jurys-card-deep
   - label: 'Demo: Scenario B load-out'
-    path: docs/DEMO_SCRIPT.md#decision-needed-first-scenario-bs-load-out-breaks-the-briefs-own-margins
+    path: docs/DEMO_SCRIPT.md#scenario-b-load-out-decided-worklog-dec-32
   decisions:
   - CON-12
   - DEC-32
@@ -9681,7 +9681,7 @@ requirements:
   - label: 'WORKLOG: conflicts (CON-12)'
     path: WORKLOG.md#conflicts-and-risks-to-watch
   - label: 'DEMO_SCRIPT: Scenario B load-out decision'
-    path: docs/DEMO_SCRIPT.md#decision-needed-first-scenario-bs-load-out-breaks-the-briefs-own-margins
+    path: docs/DEMO_SCRIPT.md#scenario-b-load-out-decided-worklog-dec-32
   - label: 'DEMO_SCRIPT: Scenario A drills'
     path: docs/DEMO_SCRIPT.md#scenario-a-jurys-card-deep
   decisions:
@@ -11268,7 +11268,7 @@ requirements:
   - label: 'DEMO_SCRIPT: Scenario A drills'
     path: docs/DEMO_SCRIPT.md#scenario-a-jurys-card-deep
   - label: 'DEMO_SCRIPT: Scenario B load-out (CON-12)'
-    path: docs/DEMO_SCRIPT.md#decision-needed-first-scenario-bs-load-out-breaks-the-briefs-own-margins
+    path: docs/DEMO_SCRIPT.md#scenario-b-load-out-decided-worklog-dec-32
   decisions:
   - CON-12
   - DEC-32
@@ -11927,7 +11927,7 @@ requirements:
   - label: 'DEMO_SCRIPT: Scenario A drills'
     path: docs/DEMO_SCRIPT.md#scenario-a-jurys-card-deep
   - label: 'DEMO_SCRIPT: Scenario B load-out (CON-12)'
-    path: docs/DEMO_SCRIPT.md#decision-needed-first-scenario-bs-load-out-breaks-the-briefs-own-margins
+    path: docs/DEMO_SCRIPT.md#scenario-b-load-out-decided-worklog-dec-32
   decisions:
   - CON-12
   - DEC-32
@@ -12283,7 +12283,7 @@ requirements:
   - label: Brief arithmetic tests
     path: tests/test_brief_arithmetic.py
   - label: Scenario B load-out (CON-12)
-    path: docs/DEMO_SCRIPT.md#decision-needed-first-scenario-bs-load-out-breaks-the-briefs-own-margins
+    path: docs/DEMO_SCRIPT.md#scenario-b-load-out-decided-worklog-dec-32
   decisions:
   - CON-09
   - CON-12
@@ -12894,7 +12894,7 @@ requirements:
   - label: 'Demo: rehearsal'
     path: docs/DEMO_SCRIPT.md#rehearsal-and-fallbacks
   - label: 'Demo: CON-12 load-out flag'
-    path: docs/DEMO_SCRIPT.md#decision-needed-first-scenario-bs-load-out-breaks-the-briefs-own-margins
+    path: docs/DEMO_SCRIPT.md#scenario-b-load-out-decided-worklog-dec-32
   - label: 'GAMEPLAN: older script (superseded)'
     path: GAMEPLAN.md#demo-script-90-s-of-scenario-b-scenario-a-with-the-jurys-card-failsafe-encore
   decisions:
