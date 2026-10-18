@@ -949,3 +949,12 @@ stopped, the globe session was stopped before it changed anything (globe on hold
 Decisions: none new. Conflicts: Siddharth's feat/ship-state-fsm carries his weather support (fbe59a5) and a second
 governor (9a99dc7), neither on main, for the team sync. Deferrals: DEC-60's two calls (5 S guests may be switched
 off before a 60 S guest is throttled; discretionary tiers folded into shed_order) to Logan's team.
+
+### Sat 22:03 PDT · Minute 12: the hold sentence carries the whole armed ladder and the envelope case · Claude Fable 5.1 on behalf of Siddharth Chawla (sidd91)
+
+What: the minute-12 D4 hold said only "0 steps" and the first armed step; the must-have reads "min-12 explicit shedding sequence" (R-067).
+shed() now records each guest's draw now beside its envelope draw (`envelope`), carried by from_d4 and the schema; the hold sentence
+lists the whole armed ladder in order (move, kW freed, capability lost) and why the envelope set does not arise (105 kW against the 95 kW limit, but G3 holding depth at 1 kW and G4 airborne at 2 kW).
+Files: src/sdv/{shedding,records,explain}.py, config/decision_record.schema.json, tests/fixtures/records/d4_m12_{survey,sar}.json (regenerated from the engine; sar's ladder as DEC-60 orders it), expected_sentences.yaml, tests/test_{explain,decisions_b}.py, docs/DEMO_SCRIPT.md.
+Tests: 1279 pass; the ops view renders it at t=745. Branch fix/minute-12-sentence (88a9915), pushed for a teammate to merge.
+Decisions: none. Conflicts: none. Requirements touched: R-067, R-196.
