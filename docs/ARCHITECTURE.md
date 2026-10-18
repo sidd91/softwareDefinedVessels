@@ -174,12 +174,14 @@ as owner of the scenario timing (DEC-51), and DEC-40 stands until he does.
 
 - Minute 8, rescue: G3's leg is aborted and it holds at sea. It is recovered over the ramp only after G4
   has landed, because the flight deck and the ramp are mutually exclusive.
-- Minute 12: the trip holds under both files against the 95 kW ceiling, with 0 steps. Survey loads 48 kW:
-  G4 is airborne at 2 kW with no charge to throttle, so the first armed step is G5 full to low power
-  (frees 37 kW, 0.0038 per kW). Rescue loads 81 kW with G4's 35 kW reserved, and the first armed step is
-  also G5 full to low power (0.0189 per kW).
-- Minute 19, INJECTED pump fault (ceiling 75 kW, cooling binds): survey slows G4's charge from 35 to
-  10 kW (56 kW); rescue takes G5 from 45 to 8 kW (44 kW).
+- Minute 12: the trip holds under both files against the 95 kW power limit, with 0 steps. Survey loads
+  49.5 kW (48 on the chilled-water loop; G1's 1.5 kW is air-cooled, DEC-63): G4 is airborne at 2 kW with no
+  charge to throttle, so the first armed step is G5 full to low power (frees 37 kW, 0.0038 per kW). Rescue
+  loads 82.5 kW (81 on the loop) with G4's 35 kW reserved, and the first armed step is also G5 full to low
+  power (0.0189 per kW).
+- Minute 19, INJECTED pump fault (loop limit 75 kW against the loop's 81 kW: cooling binds while the bus is
+  at 82.5 of 95): survey slows G4's charge from 35 to 10 kW (loop 56 kW); rescue takes G5 from 45 to 8 kW
+  (loop 44 kW).
 
 **Time base.** The ledger ticks at 1 Hz in ship time. Decisions and safety commands run when an event
 arrives, not at the next tick. Latency is measured in wall-clock time. The demo clock can hold and jump.

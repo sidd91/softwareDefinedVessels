@@ -1153,6 +1153,21 @@ fields, MAST 3 of 3, POWER the bus, COOLING the loop, the mimic with G1 SENSOR o
 OPEN_QUESTIONS #4, ORGANIZER_MESSAGE, DEMO_READINESS and docs/requirements.yaml still quote the DEC-32 set and 48 / 81 kW (history); the PDFs were not rebuilt.
 Branch fix/scenario-b-loadout-g1, pushed for a teammate to merge.
 Decisions: DEC-63. Conflicts: CON-18 settled for Scenario B. Requirements touched: R-066, R-067.
+Review (Claude Fable 5.1, independent, on this branch, Sat 23:50 PDT): diff read against the task; suite 1485 green before and after the
+review's own edits; `sdv run` under both files prints minute 8 byte-identical to origin/main, minute 12 HOLD 49.5 / 82.5 of 95 with G1 full to
+off as the last 5 S armed step and the 106.5 kW envelope clause, minute 19 cooling binds 81 against 75 with the same first steps and the loop
+at 56 / 44 after (bus 57.5 / 45.5), G1 'nothing' in the losses; both replays EQUAL. Every figure recomputed by hand from the cards and
+assumptions: mass 9.56 t, stability 9.853 t-eq (the task's 9.898 counted the antenna on the mast too, which the 60 kg / 0.6 m2 slot cannot
+take), loop 48 / 81 against the bus 49.5 / 82.5, gate 106.5 of 100 with 81.5 / 69.5 after the throttles, bus-load readings 252.2 / 354.5 /
+387.5. The schema rejects unknown fields at the top level, in a step and in an envelope entry and validates all 20 record fixtures and the 12
+live records; `sdv demo` on :8431 at t=745 and 1145 under both files reads POWER on the bus, COOLING on the loop, DEMAND '81.0 kW CHW ·
+82.5 kW TOTAL', MAST '3 / 3 · 2 HOST · G1 SENSOR' and G1 SENSOR in the mimic's MAST zone; ops view at 19:05 under rescue screenshotted with
+Playwright; the branch merges clean (fast-forward on 4c4f93c). Fixed here: GAMEPLAN.md, docs/ARCHITECTURE.md and docs/OPEN_QUESTIONS.md still
+stated the DEC-32 set and 48 / 81 kW; docs/PHYSICAL_ACCOUNT_DETAIL.md regenerated (one 'Used in' line had moved with the main merge). Left as
+history, reported: docs/requirements.yaml status notes, DESIGN_FREEZE row 5, BUILD_PLAN T6, ORGANIZER_MESSAGE and the design comps still quote
+DEC-32; the two merge commits carry no Co-Authored-By trailer; DATA LINKS reads 6.2 / 6.0 Mbit/s REDUCED from minute 0 under the organisers'
+set (a line for the presenter, not a defect).
+
 ### Sat 22:58 PDT · SIM-bar clicks land at x12 (fix/simbar-clicks, for a teammate to merge) · Claude Fable 5.1 on behalf of Siddharth Chawla (sidd91)
 What: the rehearsal's cross-cutting Red. app.js rebuilt #sim-speed, #sim-jump, #sim-file and #chips by innerHTML on every /ws frame, so a press that straddled a frame (any ordinary 80-150 ms click at x12) never fired; the groups now go through util.paint() and the chips through a new util.paintEach() (one slot per chip, so the crew button outlives its neighbours' ticks); PACE and PRIORITY carry aria-pressed; HOLD/RUN, RESTART and the view tabs were already static markup.
 Files: src/sdv/ui/static/js/app.js, src/sdv/ui/static/js/util.js, tests/test_ui_static.py (new, 5 tests).

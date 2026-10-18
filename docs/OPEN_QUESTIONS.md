@@ -78,7 +78,7 @@ No specific answer is recorded for #37 or #39, so their fallbacks stand.
 |---|---|---|
 | 1 | Merge the plan and build into main? | DEC-34; PR #2 merged (DEC-48) |
 | 2 | Who owns what? | DEC-47: Siddharth the simulator, ship-state machine and commands; Logan the rest. Board and PDFs open as #46 and #51 |
-| 4 | Scenario B load-out (13.0 t against 10 t, Bay 2 twice)? | DEC-32: G3, G4, G5 |
+| 4 | Scenario B load-out (13.0 t against 10 t, Bay 2 twice)? | DEC-32: G3, G4, G5; superseded by DEC-63: the organisers' G1, G3, G4, G5 (9.56 t) |
 | 5 | Which envelope corner decides admission? | DEC-35 |
 | 6 | In port, may installed guests move between bays? | DEC-37 |
 | 7 | Is the decision record the single source for screen and demo? | Yes (freeze section 2, DEC-44). Replay compares the decision log; wall-clock timing sits in a separate log |
