@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import copy
 import json
+import math
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable
@@ -23,6 +24,33 @@ import yaml
 
 ROOT = Path(__file__).resolve().parents[2]
 CONDITION_TYPES = {"enum", "boolean", "number", "integer"}
+# The largest number a card or priority file may carry. The largest shipped is 3600 s. Far beyond it D1's float
+# arithmetic overflows (a 400-digit integer) or carries inf into the record, and jsonschema lets NaN past every bound.
+NUMBER_MAX = 1_000_000
+KINDS = {"object": "a section of named fields", "array": "a list", "string": "text", "number": "a number",
+         "integer": "a whole number", "boolean": "true or false", "null": "empty"}
+# What a value quoted back in a refusal never carries: a second colon, a semicolon, braces, and what repr would escape
+# or re-quote. The door (sdv.loop), sdv admit and the Admission screen quote by this rule (quotable).
+UNQUOTABLE = ":;{}'\"\\"
+QUOTED_MAX = 40     # a file problem quotes a text back only when it is this short
+# The schemas' name patterns, in words: "'Survey' is not a plain lower-case name", never the regular expression.
+PATTERNS = {"^[a-z][a-z0-9_]*$": "a plain lower-case name", "^G[0-9]+$": "a guest id such as G4",
+            "^(G[0-9]+\\.)?[a-z][a-z0-9_]*$": "a signal name such as wind_kn or G4.battery_pct",
+            "^G[0-9]+\\.[a-z][a-z0-9_]*$": "a guest activity such as G3.surveying"}
+
+
+def quotable(text: str, longest: int) -> bool:
+    """Text a refusal may quote back: at most `longest` characters, printable, and none of UNQUOTABLE, so its repr
+    adds only the two quotes around it."""
+    return len(text) <= longest and text.isprintable() and not any(c in UNQUOTABLE for c in text)
+
+
+def _said(x) -> str | None:
+    """A value as a file problem may quote it: a number, or a short text quotable() allows. Else None, and the
+    problem is said without it (true or false, empty, a section and a list are described, never written as Python)."""
+    if _number(x):
+        return repr(x)
+    return repr(x) if isinstance(x, str) and quotable(x, QUOTED_MAX) else None
 
 
 class LoadError(Exception):
@@ -68,9 +96,105 @@ def _path(parts) -> str:
     return out or "(root)"
 
 
+def _closest(e):
+    """An anyOf or oneOf refusal names the field inside the section: drop the branches whose type does not fit, then
+    take the deepest error left (installation.at_sea.people, not the whole at_sea section with its note)."""
+    while e.validator in ("anyOf", "oneOf") and e.context:
+        near = [c for c in e.context if not (c.validator == "type" and len(c.absolute_path) == len(e.absolute_path))]
+        if not near:
+            break
+        e = max(near, key=lambda c: len(c.absolute_path))
+    return e
+
+
+def _kind(x) -> str:
+    if isinstance(x, dict):
+        return "a section"
+    if isinstance(x, list):
+        return "a list"
+    if isinstance(x, bool):
+        return "true or false"
+    if _number(x):
+        return "a number"
+    return "text" if isinstance(x, str) else ("empty" if x is None else "a value")
+
+
+def _message(e) -> str:
+    """jsonschema's message, unless it quotes a whole section, a list or a long text back (a note can carry any
+    punctuation): then the rule alone, in words."""
+    x = e.instance
+    want = e.validator_value
+    if e.validator == "not":    # jsonschema says "0 should not be valid under {'const': 0}"
+        const = want.get("const") if isinstance(want, dict) and set(want) == {"const"} else None
+        if const == 0 and list(e.absolute_path)[:1] == ["shed_order"]:
+            return "a rank cannot be 0"
+        return f"cannot be {const}" if isinstance(const, (int, float, str)) and not isinstance(const, bool) \
+            else "is not in a form this field allows"
+    said = _said(x)
+    if e.validator == "enum":   # the choices in words, never Python's list: "'auto' is not one of confirm, ..."
+        listed = ", ".join(str(w) for w in want)
+        if said:
+            return f"{said} is not one of {listed}"
+        return f"is {_kind(x)} where one of {listed} is expected" if isinstance(x, (dict, list)) else f"is not one of {listed}"
+    if e.validator == "pattern":    # the rule in words, never the regular expression
+        rule = f"is not {PATTERNS[want]}" if want in PATTERNS else "is not in a form this field allows"
+        return f"{said} {rule}" if said else rule
+    if e.validator == "additionalProperties" and isinstance(x, dict) and isinstance(e.schema, dict):
+        extra = [k for k in x if k not in e.schema.get("properties", {})]
+        if not all(isinstance(k, str) and _said(k) for k in extra):
+            return "has a field that is not allowed here"
+    if repr(x) not in e.message or not (isinstance(x, (dict, list)) or (isinstance(x, str) and said is None)):
+        return e.message
+    if e.validator == "type":
+        return f"is {_kind(x)} where {' or '.join(KINDS.get(k, k) for k in ([want] if isinstance(want, str) else want))} is expected"
+    if e.validator in ("minItems", "minProperties"):
+        return f"needs at least {want} {'item' if e.validator == 'minItems' else 'field'}{'s' if want != 1 else ''}"
+    if e.validator == "uniqueItems":
+        return "repeats an item"
+    if e.validator == "oneOf":
+        return "fits more than one of the forms this field allows"
+    return "is not in a form this field allows"
+
+
 def _schema_problems(doc: Any, schema: dict) -> list[str]:
     v = jsonschema.Draft202012Validator(schema)
-    return [f"{_path(e.absolute_path)}: {e.message}" for e in sorted(v.iter_errors(doc), key=lambda e: list(e.absolute_path))]
+    return [f"{_path(c.absolute_path)}: {_message(c)}"
+            for c in (_closest(e) for e in sorted(v.iter_errors(doc), key=lambda e: list(e.absolute_path)))]
+
+
+def _number_problems(doc: Any) -> list[str]:
+    """Every number that is not finite or is beyond NUMBER_MAX, by its field. Checked before the schema, which would
+    print a 5000-digit integer back (Python refuses to)."""
+    out = []
+
+    def walk(x, parts):
+        if isinstance(x, dict):
+            for k, v in x.items():
+                walk(v, parts + [k])
+        elif isinstance(x, list):
+            for i, v in enumerate(x):
+                walk(v, parts + [i])
+        elif isinstance(x, float) and not math.isfinite(x):
+            out.append(f"{_path(parts)}: {x} is not a finite number")
+        elif _number(x) and abs(x) > NUMBER_MAX:
+            shown = "the number given" if abs(x) >= 1e15 else (int(x) if float(x).is_integer() else x)
+            if x > 0:
+                out.append(f"{_path(parts)}: {shown} is above {NUMBER_MAX}, the largest number a file may carry")
+            else:
+                out.append(f"{_path(parts)}: {shown} is below -{NUMBER_MAX}, the smallest number a file may carry")
+
+    walk(doc, [])
+    return out
+
+
+def in_words(problem: str) -> str:
+    """One problem as the Admission screen says it after the field it names: the rule in plain words, jsonschema's
+    type names spelled out, and no semicolon or colon left to break the sentence."""
+    head, sep, said = problem.partition(": ")
+    said = said if sep else head
+    for t, words in KINDS.items():
+        said = said.replace(f"is not of type '{t}'", f"is not {words}")
+    return said.replace(";", ",").replace(": ", ", ").replace(":", " ")
 
 
 def _number(x) -> bool:
@@ -130,7 +254,7 @@ def check_card(card: dict, vocab: Vocabulary, schema: dict, allow_unregistered: 
     card handed over as a file is then judged with an empty activity set. Its conditions and exclusions are still
     checked for signal names and values, but not for activity names, so admission rests on its quantities,
     positions and relations only (D1 reads no condition; activities matter at sea, to D3 and D5)."""
-    problems = _schema_problems(card, schema)
+    problems = _number_problems(card) or _schema_problems(card, schema)
     if problems:
         return problems
     gid = card["id"]
@@ -172,11 +296,12 @@ def check_card(card: dict, vocab: Vocabulary, schema: dict, allow_unregistered: 
 
 
 def check_mission(mission: dict, cards: dict[str, dict], vocab: Vocabulary, schema: dict) -> list[str]:
-    """Every problem with one priority file against the loaded cards and the ship profile."""
-    doc = json.loads(json.dumps(mission))  # YAML writes crew levels as ints; the schema reads the JSON form
-    for rule, levels in (doc.get("confirm") or {}).items():
-        doc["confirm"][rule] = {str(k): v for k, v in levels.items()}
-    if "tiers" in doc:
+    """Every problem with one priority file against the loaded cards and the ship profile. A confirm block, or a
+    rule's levels, that is not a section is the schema's to refuse, with the field named."""
+    if problems := _number_problems(mission):
+        return problems
+    doc = json.loads(json.dumps(mission))  # YAML writes crew levels as ints; the schema reads the JSON form (keys as strings)
+    if isinstance(doc, dict) and "tiers" in doc:
         return ["tiers: replaced by response.safety_command (200 MS) and shed_order (DEC-60); mission_critical is 60 S, every other guest 5 S"]
     problems = _schema_problems(doc, schema)
     if problems:
@@ -184,7 +309,8 @@ def check_mission(mission: dict, cards: dict[str, dict], vocab: Vocabulary, sche
     capabilities = {c["capability"]["name"] for c in cards.values()}
     for name in doc["weights"]:
         if name not in capabilities:
-            problems.append(f"weights.{name}: no loaded card returns this capability ({sorted(capabilities)})")
+            problems.append(f"weights.{name}: no loaded card returns this capability, "
+                            f"the loaded cards return {', '.join(sorted(capabilities))}")
     for i, gid in enumerate(doc["mission_critical"]):
         if gid not in cards:
             problems.append(f"mission_critical[{i}]: no loaded card {gid}")
@@ -201,7 +327,8 @@ def check_mission(mission: dict, cards: dict[str, dict], vocab: Vocabulary, sche
             problems.append(f"shed_order.{name}: no loaded card returns this capability")
     for rule in doc.get("confirm", {}):
         if rule not in vocab.rules:
-            problems.append(f"confirm.{rule}: no rule {rule!r} in config/assumptions.yaml ({sorted(vocab.rules)})")
+            problems.append(f"confirm.{rule}: no rule {rule!r} in config/assumptions.yaml, "
+                            f"it defines {', '.join(sorted(vocab.rules))}")
     return problems
 
 
@@ -222,6 +349,8 @@ def load_card(path: Path, vocab: Vocabulary | None = None, root: Path = ROOT, al
         mark = getattr(err, "problem_mark", None)
         where = f" at line {mark.line + 1}, column {mark.column + 1}" if mark else ""
         raise LoadError(path, [f"yaml: {getattr(err, 'problem', None) or ' '.join(str(err).split())}{where}"]) from None
+    except ValueError as err:  # a value YAML parses but Python cannot build, such as an integer over 4300 digits
+        raise LoadError(path, [f"yaml: {' '.join(str(err).split(';')[0].split(':')[0].split())}"]) from None
     problems = check_card(card, vocab, _schema(root, "manifests/schema.json"), allow_unregistered)
     if problems:
         raise LoadError(path, problems)

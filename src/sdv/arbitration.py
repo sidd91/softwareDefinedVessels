@@ -114,9 +114,9 @@ def right_of_way(A: dict, signals: dict, cards: dict, mission: dict, snap: dict)
     leg = signals["derivations"]["g3_leg"]
     leg_end = g3["leg_started_t_s"]["value"] + leg["leg_length_s"]
     wait_feasible = leg_end <= land_by
-    weights = mission["weights"]
-    w_win = weights[cards["G4"]["capability"]["name"]]
-    w_lose = weights[cards["G3"]["capability"]["name"]]
+    weights = mission["weights"]    # a capability the file leaves out weighs 0, as in D1 and D4
+    w_win = weights.get(cards["G4"]["capability"]["name"], 0.0)
+    w_lose = weights.get(cards["G3"]["capability"]["name"], 0.0)
     reserve = w_win >= w_lose or "G4" in mission["mission_critical"]
     pause = w_lose >= w_win
     flown_min = g3["leg_flown_s"]["value"] / 60

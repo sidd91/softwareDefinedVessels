@@ -15,6 +15,7 @@ What each folder and file holds. Back to the [README](../README.md).
 | `docs/DEPLOYMENT.md` | The governor's computers aboard (boards, standby, edge nodes), the Deployment Reference Kit and its port upload (DEC-56 to DEC-58) |
 | `tests/oracles/expected_outcomes.yaml` | Expected verdicts, numbers and ladders for the Scenario A drills and Scenario B, checked against the cards |
 | `tools/physical_account.py` | Writes the one-page [PHYSICAL_ACCOUNT.md](PHYSICAL_ACCOUNT.md) and the full [PHYSICAL_ACCOUNT_DETAIL.md](PHYSICAL_ACCOUNT_DETAIL.md) from the assumptions and the cards |
+| `tools/deploy_map/` | Route-weather planning tool: samples cached Open-Meteo weather (CC BY 4.0) along a mission plan and judges every profile's admission at the route's seawater; offline 2D map with Natural Earth coastlines (public domain) |
 | `tools/build_pdfs.py` | Builds the README, Scenario C memo and Physical Account PDFs and checks their page limits |
 | `tools/render_requirements.py` | Renders `docs/requirements.yaml` into [REQUIREMENTS.md](REQUIREMENTS.md) and `docs/requirements/` |
 | `docs/` | [Design freeze](DESIGN_FREEZE.md), [architecture and data contracts](ARCHITECTURE.md), [requirements matrix](REQUIREMENTS.md), [Scenario C memo](SCENARIO_C_MEMO.md), [Physical Account](PHYSICAL_ACCOUNT.md), [demo storyboard](DEMO_SCRIPT.md), [expected outcomes](EXPECTED_OUTCOMES.md), [message to the organizers](ORGANIZER_MESSAGE.md), [board bring-up](NODE_B_BOARD.md) (the measuring instrument), [software and AI log](SOFTWARE_LOG.md) |

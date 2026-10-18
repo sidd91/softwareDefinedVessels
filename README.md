@@ -6,11 +6,11 @@ the hull's finite physical budget and decides, in seconds and in one plain sente
 aboard, where they go, who wins when two want the same thing, and what is shed when a generator trips.
 
 > **Status (Sat 23:50 PDT): the engine (D1 to D5, the 200 ms safety table, estimator, tick loop, replay) and the screen
-> run end to end with `uv run sdv demo`; 1485 tests pass.**
+> run end to end with `uv run sdv demo`; 1773 tests pass.**
 
 ## Run it
 
-Python 3.12 via uv: `uv sync` once on Wi-Fi, then everything runs offline; `uv run pytest` runs the 1485 tests.
+Python 3.12 via uv: `uv sync` once on Wi-Fi, then everything runs offline; `uv run pytest` runs the 1774 tests.
 
 ```bash
 uv run sdv admit G4 --installed G1,G2,G3 --mission survey
@@ -132,7 +132,8 @@ Every path: [docs/REPOSITORY_MAP.md](docs/REPOSITORY_MAP.md); every requirement 
   executed shed is the minute-19 pump fault, labelled INJECTED.
 - The plant is a scripted A.6 model (`tests/support/sim_stub.py`, labelled SCRIPTED PLANT · A.6 on screen), not a physics
   simulator; `SDV_SIM=module:Class` swaps another in; the team's own simulator is on `feat/ship-state-fsm`, not main.
-  Scenario B runs at the brief's 24 °C seawater; no live or cached public-data feed is on main.
+  Scenario B runs at the brief's 24 °C seawater. Only the separate route-weather tool (`tools/deploy_map`) reads public
+  data: cached Open-Meteo weather (CC BY 4.0) and Natural Earth coastlines (public domain).
 - A jury card file is judged on the CLI (`sdv admit --card`), not uploaded on screen. The screen has no roles or access
   control. With nobody aboard, R3 trusts a deck latched clear at the last sweep. Numbers come from the brief's
   annexes and our labelled assumptions, never from a real vessel.

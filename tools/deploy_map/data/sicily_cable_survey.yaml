@@ -1,0 +1,20 @@
+# Copied from Siddharth's branch feat/ship-state-fsm (commit fbe59a5, 'add support for weather modeling') for the standalone deployment map.
+# His plan; the map reads it unchanged. When his environment port reaches main (audit #20), the map reads config/plans/ instead.
+# Mission plan: where the ship goes and when, so the environment the governor sees is generated from
+# public data along the route instead of typed into a scenario. Read by src/sdv/environment.py; the data
+# cache in config/environment/ is written once by tools/fetch_environment.py (Open-Meteo, CC BY 4.0).
+id: sicily_cable_survey
+name: Strait of Sicily cable corridor survey
+mission: survey
+depart_utc: "2026-10-01T06:00"
+days: 14
+# Mazara del Vallo (Sicily) to Kelibia (Tunisia) corridor; the mid point is research/SENSOR_CATALOG.md's demo location.
+waypoints:
+  - {id: off_mazara, lat: 37.55, lon: 12.40, eta_h: 0}
+  - {id: corridor_mid, lat: 37.30, lon: 11.90, eta_h: 120}
+  - {id: off_kelibia, lat: 36.95, lon: 11.25, eta_h: 240}
+  - {id: corridor_mid_return, lat: 37.30, lon: 11.90, eta_h: 336}
+provenance:
+  waypoints: {source: assumed, why: "The brief names a cable route in the Strait of Sicily and 3 kn survey legs; three points along the Mazara del Vallo to Kelibia corridor, about five days apart at survey speed, are our pick. Only the environment read at each point depends on them."}
+  depart_utc: {source: assumed, why: "The two weeks before the hackathon, the most recent complete archive period; seawater starts near the brief's 24 C for Scenario B. August would be 28.6-30.1 C."}
+  days: {source: brief A.10, why: "14 days without a port call."}

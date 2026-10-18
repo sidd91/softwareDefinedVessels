@@ -10,9 +10,12 @@ log and the input log, never the simulator, and reproduces every snapshot and re
 """
 from __future__ import annotations
 
+import copy
 import importlib
 import json
+import math
 import os
+import re
 import sys
 import threading
 import time
@@ -23,19 +26,30 @@ import yaml
 
 from sdv.core import Core
 from sdv.estimator import Estimator, r1
-from sdv.loader import ROOT
+from sdv.loader import NUMBER_MAX, ROOT, quotable
 
-EVENTS = yaml.safe_load((ROOT / "config/signals.yaml").read_text())["events"]
+SIGNALS = yaml.safe_load((ROOT / "config/signals.yaml").read_text())
+EVENTS, FEEDS = SIGNALS["events"], list(SIGNALS["feeds"])
 TICKS_PER_S = 12        # demo pacing x12: a ship minute in 5 s
 
 
+def _capped(x):
+    """An integer beyond float range as the largest float, its sign kept: what a log can carry of it."""
+    return -sys.float_info.max if x < 0 else sys.float_info.max
+
+
 def canonical(obj) -> str:
-    """The log serializer: numbers to 0.1, whole numbers as integers, sorted keys, no whitespace."""
+    """The log serializer of frames, snapshots, records and timing: numbers to 0.1, whole numbers as integers, sorted
+    keys, no whitespace. An integer beyond float range is capped at the largest float, never a crash. Inputs are
+    logged exact instead."""
     def norm(x):
         if isinstance(x, bool) or x is None or isinstance(x, str):
             return x
         if isinstance(x, (int, float)):
-            v = round(float(x), 1)
+            try:
+                v = round(float(x), 1)
+            except OverflowError:
+                v = _capped(x)
             return int(v) if v.is_integer() else v
         if isinstance(x, dict):
             return {k: norm(v) for k, v in x.items()}
@@ -43,6 +57,151 @@ def canonical(obj) -> str:
             return [norm(v) for v in x]
         return x
     return json.dumps(norm(obj), sort_keys=True, separators=(",", ":"))
+
+
+def exact(obj) -> str:
+    """The input log serializer: sorted keys, no whitespace, every number as it was sent. A juror's weight of 0.24 must
+    reach the standby and a replay as 0.24, not canonical's 0.2. A log line read back gives the same input. An integer
+    too long to write (Python's digit limit) is logged as the largest float, sign kept, so every side reads the same
+    input and the loader refuses it as above its largest number."""
+    try:
+        return json.dumps(obj, sort_keys=True, separators=(",", ":"))
+    except ValueError:
+        return json.dumps(_writable(obj), sort_keys=True, separators=(",", ":"))
+
+
+def _writable(x):
+    if isinstance(x, dict):
+        return {k: _writable(v) for k, v in x.items()}
+    if isinstance(x, (list, tuple)):
+        return [_writable(v) for v in x]
+    if isinstance(x, int) and not isinstance(x, bool) and abs(x) > sys.float_info.max:
+        return _capped(x)
+    return x
+
+
+_QUOTABLE = 20      # a refusal quotes a value back only when it is this short and quotable (sdv.loader)
+_FIELD = re.compile(r"[A-Za-z_][A-Za-z0-9_]{0,39}\Z")
+NESTING_MAX = 64    # levels of sections and lists an object input may carry: the standby's deepcopy and every walk stay far
+                    # inside Python's recursion limit
+
+
+def _number(v) -> bool:
+    return isinstance(v, (int, float)) and not isinstance(v, bool)
+
+
+def _finite(v) -> bool:
+    """math.isfinite without its OverflowError: an integer is always finite, however long."""
+    return isinstance(v, int) or math.isfinite(v)
+
+
+def _quoted(v) -> str | None:
+    """The value as a refusal may quote it, or None when it must be described instead: a section, a list, empty, true
+    or false, a text the door does not quote (quotable) and a number beyond NUMBER_MAX are never quoted back (no
+    second colon, no braces, no None or True as Python writes them, no 5000 digits)."""
+    if v is None or isinstance(v, (bool, dict, list, tuple)) or (_number(v) and _finite(v) and abs(v) > NUMBER_MAX):
+        return None
+    if isinstance(v, str) and not quotable(v, _QUOTABLE):
+        return None
+    return repr(v)
+
+
+def _what(v) -> str:
+    if isinstance(v, dict):
+        return "an object"
+    if isinstance(v, (list, tuple)):
+        return "a list"
+    if isinstance(v, str):
+        return "text"
+    if v is None:
+        return "empty"
+    if isinstance(v, bool):
+        return "true or false"
+    return "a number" if _number(v) else "a value"
+
+
+def _too_deep(v, most: int = NESTING_MAX) -> bool:
+    """More than `most` levels of sections and lists, walked without recursion (a 5000-level value never reaches the
+    recursion limit here)."""
+    todo = [(v, 1)]
+    while todo:
+        x, level = todo.pop()
+        if isinstance(x, (dict, list, tuple)):
+            if level > most:
+                return True
+            todo.extend((y, level + 1) for y in (x.values() if isinstance(x, dict) else x))
+    return False
+
+
+def _unloggable(v) -> str | None:
+    """Why a value cannot be written to the input log, or None when it can."""
+    if _too_deep(v):
+        return "is nested too deep to log"
+    try:
+        json.dumps(v)
+    except ValueError:
+        return "holds a number too long to log"
+    except TypeError:
+        return "holds a value the input log cannot carry"
+    return None
+
+
+def _conform(field: str, want, v, guests):
+    """One payload value against its events type (config/signals.yaml): the value, a whole-number float in an integer
+    field made an integer, or ValueError naming the field. A number beyond NUMBER_MAX is refused in any field, and a
+    value that is not quoted back (_quoted) is described in plain words."""
+    number = _number(v)
+    if number and _finite(v) and abs(v) > NUMBER_MAX:     # compared as is: 10**400 never meets float()
+        if v > 0:
+            raise ValueError(f"{field} is above {NUMBER_MAX}, the largest number an input may carry")
+        raise ValueError(f"{field} is below -{NUMBER_MAX}, the smallest number an input may carry")
+    if number and isinstance(v, float) and math.isfinite(v) and v.is_integer() and (
+            want == "integer" or (isinstance(want, list) and all(isinstance(c, int) for c in want))):
+        v = int(v)                          # 6.0 sent for crew level 6 is the level 6
+    said = _quoted(v)
+    choices = want if isinstance(want, list) else guests if want == "guest" else FEEDS if want == "feed" else None
+    if choices is not None:
+        if any(v == c and type(v) is type(c) for c in choices):
+            return v
+        listed = ", ".join(map(str, choices))
+        raise ValueError(f"{field} {said} is not one of {listed}" if said else f"{field} is {_what(v)}, not one of {listed}")
+    checks = {"string": lambda: isinstance(v, str), "object": lambda: isinstance(v, dict), "boolean": lambda: isinstance(v, bool),
+              "any": lambda: True, "integer": lambda: number and isinstance(v, int),
+              "number": lambda: number and _finite(v), "number?": lambda: v is None or (number and _finite(v))}
+    ok = checks.get(want, lambda: False)()      # a type the check does not know is refused, never waved through
+    if not ok:
+        what = {"string": "text", "object": "an object", "boolean": "true or false", "integer": "a whole number",
+                "number": "a number", "number?": "a number"}.get(want, f"of type {want}")
+        raise ValueError(f"{field} {said} is not {what}" if said else f"{field} is {_what(v)}, not {what}")
+    if want in ("object", "any") and (why := _unloggable(v)):
+        raise ValueError(f"{field} {why}")
+    return v
+
+
+def check_input(inp: dict, guests=()) -> dict:
+    """A laptop input against its config/signals.yaml events contract, before the simulator or the estimator sees it:
+    {type, injected, payload} as it will be stamped, or ValueError naming the field that breaks the contract."""
+    t = inp.get("type")
+    named = isinstance(t, str) and (t in EVENTS or _quoted(t) is not None)    # an event's own name is always quoted
+    try:
+        ev = EVENTS.get(t) if isinstance(t, str) else None
+        if ev is None or "laptop" not in ev["from"]:
+            raise ValueError(f"{t} is not a laptop input" if named else "the type given is not a laptop input")
+        if not isinstance(inp.get("payload"), dict):
+            raise ValueError("payload is not an object")
+        spec, optional, payload = ev["payload"], ev.get("optional", []), inp["payload"]
+        extra = sorted((k for k in payload if k not in spec), key=str)
+        if extra:
+            plain = isinstance(extra[0], str) and _FIELD.match(extra[0])
+            raise ValueError(f"{extra[0]} is not in the contract" if plain else "the payload has a field that is not in the contract")
+        missing = [k for k in spec if k not in payload and k not in optional]
+        if missing:
+            raise ValueError(f"{missing[0]} is missing")
+        guests = list(guests)
+        injected = _conform("injected", "boolean", inp.get("injected", False), guests)
+        return {"type": t, "injected": injected, "payload": {k: _conform(k, spec[k], v, guests) for k, v in payload.items()}}
+    except ValueError as e:
+        raise ValueError(f"input {t!r} refused: {e}" if named else f"input refused: {e}") from None
 
 
 def load_simulator(scenario="scenario_b", mission="survey", seed=0, variant="default"):
@@ -98,20 +257,28 @@ class Loop:
             log_dir.mkdir(parents=True, exist_ok=True)
             self.logs = {k: open(log_dir / f"{k}.jsonl", "w", buffering=1) for k in ("frames", "inputs", "snapshots", "decisions", "timing")}
 
+    def check_input(self, inp: dict) -> dict:
+        """The input as it will be stamped, or ValueError naming the field off its contract (check_input)."""
+        return check_input(inp, tuple(self.core.cards))
+
     def add_input(self, inp: dict) -> int:
-        """A laptop input arriving now is stamped with the next tick (the last completed tick plus one). A safety
-        request is answered at once instead (safety())."""
+        """A laptop input arriving now is checked against its contract and stamped with the next tick (the last
+        completed tick plus one), after any tick in progress. A safety request is answered at once instead (safety())."""
+        inp = self.check_input(inp)
         if inp["type"] == "safety_request":
-            self.safety(inp["payload"]["request"], inp.get("injected", False))
+            self.safety(inp["payload"]["request"], inp["injected"])
             return self.tick
-        t = self.tick + 1
-        self.inputs.setdefault(t, []).append({**inp, "t_s": t})
-        return t
+        with self.lock:
+            t = self.tick + 1
+            self.inputs.setdefault(t, []).append({**inp, "t_s": t})
+            return t
 
     def safety(self, request: str, injected: bool = False) -> list[dict]:
         """A.8 200 ms: answered between ticks from the table built at the last completed tick n, logged with n; its
-        commands join the ones decided on n and are applied in frame n + 1. A replay answers it after the decisions of n."""
+        commands join the ones decided on n and are applied in frame n + 1. A replay answers it after the decisions of n.
+        The latency counts from here, so a wait for the tick in progress is in it."""
         from sdv.safety import REQUESTS
+        started = time.perf_counter()
         if request not in REQUESTS:
             raise ValueError(f"no safety request {request!r} ({', '.join(REQUESTS)})")
         with self.lock:
@@ -120,9 +287,9 @@ class Loop:
             inp = {"t_s": self.tick, "type": "safety_request", "injected": injected, "payload": {"request": request}}
             self.inputs.setdefault(self.tick, []).append(inp)
             k = len(self.core.timing)
-            records = self._answer(inp)
+            records = self._answer(inp, started)
             if self.logs:
-                self.logs["inputs"].write(canonical(inp) + "\n")
+                self.logs["inputs"].write(exact(inp) + "\n")
                 for r in records:
                     self.logs["decisions"].write(canonical(r) + "\n")
                 for t in self.core.timing[k:]:
@@ -131,8 +298,8 @@ class Loop:
                     f.flush()
             return records
 
-    def _answer(self, inp: dict) -> list[dict]:
-        records, commands = self.core.safety(inp["payload"]["request"])
+    def _answer(self, inp: dict, started: float | None = None) -> list[dict]:
+        records, commands = self.core.safety(inp["payload"]["request"], started)
         self.commands = self.commands + commands
         if self.standby:
             s_recs, s_cmds = self.standby[1].safety(inp["payload"]["request"])
@@ -154,13 +321,19 @@ class Loop:
         to_sim = [i for i in stamped if EVENTS[i["type"]]["to"] == "simulator"]
         to_core = [i for i in stamped if EVENTS[i["type"]]["to"] == "core" and i["type"] != "safety_request"]
         replayed_safety = [i for i in stamped if i["type"] == "safety_request"]
-        frame = r1(self.sim.step(n, self.commands, to_sim))
+        # Every side reads the frame and the core inputs as the logs hold them: the frame canonical, the inputs exact.
+        line = canonical(r1(self.sim.step(n, self.commands, to_sim)))
+        frame, core_in = json.loads(line), json.loads(exact(to_core))
         snap = self.est.step(frame)
         k = len(self.core.timing)
-        records, commands = self.core.decide(snap, to_core)
+        records, commands = self.core.decide(snap, core_in)
+        if core_in:         # a swap or a profile applied at sea: run.mission names the file in force from snapshot n + 1
+            self.est.mission = self.core.mission["id"]
         if self.standby:
-            s_snap = self.standby[0].step(json.loads(canonical(frame)))
-            s_recs, s_cmds = self.standby[1].decide(s_snap, json.loads(canonical(to_core)))
+            s_snap = self.standby[0].step(json.loads(line))
+            s_recs, s_cmds = self.standby[1].decide(s_snap, copy.deepcopy(core_in))
+            if core_in:
+                self.standby[0].mission = self.standby[1].mission["id"]
             if self.standby_state == "in step":
                 diff = (first_difference([canonical(snap)], [canonical(s_snap)])
                         or first_difference([canonical(r) for r in records], [canonical(r) for r in s_recs])
@@ -173,9 +346,9 @@ class Loop:
         ms = (time.perf_counter() - t0) * 1000
         self.wall.append({"tick": n, "compute_ms": round(ms, 3)})
         if self.logs:
-            self.logs["frames"].write(canonical(frame) + "\n")
+            self.logs["frames"].write(line + "\n")
             for i in stamped:
-                self.logs["inputs"].write(canonical(i) + "\n")
+                self.logs["inputs"].write(exact(i) + "\n")
             self.logs["snapshots"].write(canonical(snap) + "\n")
             for r in records:
                 self.logs["decisions"].write(canonical(r) + "\n")

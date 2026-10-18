@@ -10,15 +10,68 @@ from __future__ import annotations
 
 import copy
 import json
+import re
 from pathlib import Path
 
+from sdv import loader as Ld
 from sdv import loop as L
+from sdv.core import PLAIN_ID
 from sdv.ui.data import END_T_S, SCENARIO, Moment
 from sdv.ui.view import clock
 
 # Laptop inputs the screen may send (config/signals.yaml events with from: laptop), and the ones the core consumes.
-LAPTOP_INPUTS = ("priority_swap", "profile_applied", "crew_change", "deck_report", "standing_plan", "deck_sweep", "bridge_answer")
+# A safety_request is answered at once from the last tick's 200 MS table (sdv.loop.Loop.safety).
+LAPTOP_INPUTS = ("priority_swap", "profile_applied", "crew_change", "deck_report", "standing_plan", "deck_sweep", "bridge_answer",
+                 "safety_request")
 CORE_INPUTS = ("priority_swap", "profile_applied")
+
+
+def _name(x) -> str | None:
+    """A file id the event log may quote, or None: never a long or punctuated text from a payload."""
+    return x if isinstance(x, str) and PLAIN_ID.match(x) else None
+
+
+def _no_file(mission) -> str:
+    """A swap the screen refuses at the door: the name quoted only when it is a plain file name."""
+    return f"no priority file {mission}" if _name(mission) else "no such priority file is loaded"
+
+
+def _kept(mission_id: str) -> str:
+    """The file in force after a refusal, named when its id is a plain name (an id may be any length)."""
+    return f"{mission_id} kept." if _name(mission_id) else "The file in force is kept."
+
+
+SHOWN_MAX = 40      # a field path or a word longer than this is cut in a row, as sdv admit cuts a long edit
+JUMP_REFUSED = "jump refused: the time given is not a number"
+
+
+def jump_target(t, end: int = END_T_S) -> int | None:
+    """The tick a jump asks for, within the run, or None when the time given is not a number (text, empty, true or
+    false, a list, nan, infinity, or digits past Python's limit)."""
+    if isinstance(t, bool):
+        return None
+    try:
+        n = int(t)
+    except (TypeError, ValueError, OverflowError):
+        return None
+    return max(0, min(n, end))
+
+
+def _cut(text: str) -> str:
+    return re.sub(r"\S{%d,}" % (SHOWN_MAX + 1), lambda m: m.group()[:SHOWN_MAX - 3] + "...", text)
+
+
+def _refusal(what: str, problem: str, kept: str) -> str:
+    """A refused profile as one plain sentence, the field named as the Admission screen names it:
+    "Profile jury_a refused: confirm.r3 (automatic is not a section of named fields). survey kept."
+    A long field path or word is cut, and a problem that still carries a brace, a quote or a backslash after its
+    quoted plain values are unwrapped is told as a form the field refuses."""
+    field, sep, _ = problem.partition(": ")
+    said = re.sub(r"'([^'\"\\]*)'", r"\1", Ld.in_words(problem))
+    if any(c in said for c in "{}'\"\\"):
+        said = "is not in a form this field allows"
+    where = f"{field} ({said})" if sep and re.fullmatch(r"[\w.\[\]]+", field) else said
+    return f"{what} refused: {_cut(where)}. {_kept(kept)}"
 
 
 def _log_key(s: dict) -> tuple:
@@ -54,6 +107,7 @@ class Run:
         self.stored: dict[int, dict] = {}
         self._want: set[int] = set()
         self._last_key = None
+        self._rejected_seen = 0                 # the core's refusals already told in the event log
         self.step()
 
     @property
@@ -65,7 +119,15 @@ class Run:
         return getattr(self.loop.sim, "argos_label", "simulator")
 
     def add_input(self, inp: dict) -> int:
-        t = self.loop.add_input(inp)
+        inp = self.loop.check_input(inp)
+        if inp["type"] == "safety_request":       # answered now: its record shows at once, a re-run answers it again
+            k = len(self.loop.core.timing)
+            self.records += self.loop.safety(inp["payload"]["request"], inp["injected"])
+            for r in self.loop.core.timing[k:]:
+                self.timing[r["seq"]] = r["latency_ms"]
+            t = self.loop.tick
+        else:
+            t = self.loop.add_input(inp)
         self.laptop.setdefault(t, []).append({**inp, "t_s": t})
         return t
 
@@ -95,20 +157,37 @@ class Run:
             self.stored[n] = snap
             if out.records:
                 self._want.add(n + 1)
-        mine = [i for i in self.laptop.get(n, []) if i["type"] in CORE_INPUTS]
-        for i in mine:
+        # The core logs each input it refuses with its place among the tick's core inputs, read here as the loop
+        # stamped them: a swap or a profile is in force unless the core refused it.
+        refusals = {r["input"]: r for r in core.rejected[self._rejected_seen:]}
+        self._rejected_seen = len(core.rejected)
+        kept = was["id"]
+        to_core = [i for i in self.loop.inputs.get(n, []) if L.EVENTS[i["type"]]["to"] == "core" and i["type"] != "safety_request"]
+        for k, i in enumerate(to_core):
+            if i["type"] not in CORE_INPUTS:
+                continue
+            payload = i.get("payload") if isinstance(i.get("payload"), dict) else {}
+            refused = refusals.get(k)
             if i["type"] == "priority_swap":
-                self.inputs_log.append({"t_s": n, "type": "STATE", "tag": "PRIORITY",
-                                        "msg": f"Priority file {i['payload']['mission']}.yaml in force.", "injected": False})
-            else:
-                prof = i["payload"]["profile"]
-                refused = next((r for r in core.rejected if r["tick"] == n and r["profile"] == prof.get("id")), None)
+                name = _name(payload.get("mission"))
                 if refused:
-                    msg = f"Profile {prof.get('id', '?')} refused: {refused['problems'][0]}. {was['id']} kept."
+                    what = f"Swap to {name}.yaml" if name else "Priority swap"
+                    msg = f"{what} refused: no such priority file is loaded. {_kept(kept)}"
+                else:   # in force: the name is a loaded file's id, schema-valid but of any length
+                    kept = payload["mission"]
+                    msg = f"Priority file {name}.yaml in force." if name else "Priority swap in force."
+                tag = "PRIORITY"
+            else:
+                prof = payload.get("profile")
+                if refused:
+                    name = _name(prof.get("id")) if isinstance(prof, dict) else None
+                    msg = _refusal(f"Profile {name}" if name else "Profile", refused["problems"][0], kept)
                 else:
-                    msg = f"Profile {prof['id']} applied at sea and in force."
-                self.inputs_log.append({"t_s": n, "type": "STATE", "tag": "PROFILE", "msg": msg, "injected": False,
-                                        "refused": bool(refused)})
+                    kept, name = prof["id"], _name(prof["id"])
+                    msg = f"Profile {name} applied at sea and in force." if name else "Profile applied at sea and in force."
+                tag = "PROFILE"
+            self.inputs_log.append({"t_s": n, "type": "STATE", "tag": tag, "msg": msg, "injected": False,
+                                    "refused": bool(refused)})
 
     def advance_to(self, t_s: int) -> None:
         t_s = min(int(t_s), END_T_S)
@@ -235,7 +314,9 @@ class LiveReplay:
         elif cmd == "speed" and msg.get("value") in self.speeds:
             self.speed = msg["value"]
         elif cmd == "jump":
-            target = max(0, min(int(msg.get("t", 0)), END_T_S))
+            target = jump_target(msg.get("t", 0))
+            if target is None:
+                return JUMP_REFUSED
             if target < self.t_s:
                 dropped = [(t, m) for t, m in self.run.swaps() if t > target]    # asked after the target: not replayed
                 self._rerun(target)
@@ -252,16 +333,25 @@ class LiveReplay:
             self.running = True
         elif cmd == "mission":
             if msg.get("value") not in missions:
-                return f"no priority file {msg.get('value')}"
+                return _no_file(msg.get("value"))
             if self.t_s == 0:
                 self._rerun(0, msg["value"], keep_inputs=False)
             else:
                 self.run.add_input({"type": "priority_swap", "injected": False, "payload": {"mission": msg["value"]}})
         elif cmd == "input":
-            inp = msg.get("input") or {}
-            if inp.get("type") not in LAPTOP_INPUTS or not isinstance(inp.get("payload"), dict):
-                return f"input {inp.get('type')!r} is not a laptop input"
-            if inp["type"] == "priority_swap" and inp["payload"].get("mission") not in missions:
-                return f"no priority file {inp['payload'].get('mission')}"      # the core has no such file: refused, not stamped
-            self.run.add_input({"type": inp["type"], "injected": bool(inp.get("injected", False)), "payload": inp["payload"]})
+            inp = msg.get("input") if isinstance(msg.get("input"), dict) else {}
+            t = inp.get("type")
+            if t not in LAPTOP_INPUTS:      # quoted back only when it is a plain name, as the input check does
+                return f"input {t!r} is not a laptop input" if isinstance(t, str) and L._quoted(t) \
+                    else "input refused: the type given is not a laptop input"
+            if not isinstance(inp.get("payload"), dict):
+                return f"input {t!r} refused: payload is not an object"
+            if t == "priority_swap" and inp["payload"].get("mission") not in missions:
+                return _no_file(inp["payload"].get("mission"))      # the core has no such file: refused, not stamped
+            try:          # off its signals.yaml contract: refused with the field named, never stamped
+                checked = self.run.loop.check_input({"type": inp["type"], "injected": bool(inp.get("injected", False)),
+                                                     "payload": inp["payload"]})
+            except ValueError as e:
+                return str(e)
+            self.run.add_input(checked)
         return None

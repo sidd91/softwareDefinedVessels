@@ -105,6 +105,8 @@ def from_d4(d: dict, *, seq: int, snapshot: dict) -> dict:
     if "trigger" in d:
         r["trigger"] = d["trigger"]
         r["injected"] = d["trigger_injected"]
+    if d["verdict"] == "unconfirmed" and d.get("unconfirmed_because"):   # why nothing was shed, for the sentence
+        r["unconfirmed_because"] = d["unconfirmed_because"]
     return _finish(r)
 
 

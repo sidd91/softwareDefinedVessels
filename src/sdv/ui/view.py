@@ -555,10 +555,14 @@ def decision(I: Inputs, m: Moment, gs: dict, pl: dict) -> dict | None:
         lo, hi = loser["minutes_lost"]
         cost = f"{loser['guest']} SURVEY LOSS {lo:.0f} TO {hi:.0f} min" + (" · OPEN-ENDED" if loser["open_ended"] else "")
         when = lim["when"]
-        sig = when["signal"].split(".")[-1]
-        sig_word = {"battery_pct": "BATT"}.get(sig, words(sig))
+        sig, v = when["signal"].split(".")[-1], when["value"]
+        if isinstance(v, (int, float)) and not isinstance(v, bool):
+            sig_word = {"battery_pct": "BATT"}.get(sig, words(sig))
+            cond = f"{sig_word} {when['op']} {v}{' %' if sig.endswith('_pct') else ''}"
+        else:   # a state limit, G4's endurance while airborne: the value is a word, as in the sentence
+            cond = words(f"{Rec.explain.WORD_OPS.get(when['op'], when['op'])} {v}")
         out["rows"] = [
-            ("HARD LIMIT", f"{lim['guest']} {sig_word} {when['op']} {when['value']} % · LAND WITHIN {lim['then'].get('within_min')} min", False),
+            ("HARD LIMIT", f"{lim['guest']} {cond} · LAND WITHIN {lim['then'].get('within_min')} min", False),
             ("LAND BY", f"{clock(r['deadline_t_s'])} · T-{clock(max(0, r['deadline_t_s'] - m.t_s))[3:]}", False),
             ("DECISION", f"{r['proceeds']} RECOVERS · {loser['guest']} {words(HOLDS.get(loser.get('holds'), loser.get('holds') or ''))}", False),
             ("LEG", f"{loser['guest']} {words(loser.get('leg', ''))}", False),
@@ -745,8 +749,8 @@ def log_rows(I: Inputs, m: Moment) -> list[dict]:
             typ, tag = "HOLD", "D4"
         elif r["kind"] == "D5":
             typ, tag = "CREW POLICY", f"{r.get('rule', 'R3')} · {r.get('crew_aboard', '')}".rstrip(" ·")
-        else:
-            typ, tag = r["kind"], words(r.get("rule", r["subject"]))
+        else:   # a safety command (200 MS), or any other record: its kind in upper case, as every row type reads
+            typ, tag = r["kind"].upper(), words(r.get("rule", r["subject"]))
         rows.append({"t_s": r["t_s"], "order": 3, "type": typ, "tag": tag, "msg": r["sentence"], "injected": False, "seq": r["seq"]})
     for e in m.inputs:
         rows.append({**e, "order": 1})
@@ -958,14 +962,15 @@ def _apply(cards: dict, I: Inputs, schema: dict, target: str, raw) -> tuple[dict
     """One jury edit on a copy of the cards, re-validated: (cards, None); (None, problem) when the schema refuses the
     edited card, a card-rejected decision; (None, EditError) when the edit cannot be applied at all (no such card or
     field, not a number), a refusal of the request that leaves the previous verdict standing."""
-    from sdv.cli import EditError, apply_edit
+    from sdv.cli import EditError, apply_edit, no_card, said_field
     gid, _, fld = target.partition(".")
+    named = said_field(target) or "the field given"     # cut when long, never a brace or a semicolon on the screen
     if gid not in cards:
-        return None, EditError(target, f"no card {gid}")
+        return None, EditError(named, no_card(gid))
     try:
         edited = apply_edit(cards[gid], fld, str(raw))
     except EditError as e:
-        return None, EditError(target, e.reason)
+        return None, EditError(named, e.reason)
     problems = Ld.check_card(edited, I.vocab, schema)
     if problems:
         return None, problems[0]
@@ -997,7 +1002,7 @@ def admit(I: Inputs, case_id: str = "A1-survey", edits: dict[str, str] | None = 
         if isinstance(problem, Exception):  # not a decision: the request is refused and the last verdict stands
             return {"refused": {"field": problem.field, "reason": problem.reason}}
         if problem:
-            rejected = {"field": target, "problem": problem}
+            rejected = {"field": target, "problem": Ld.in_words(problem)}
             break
         cards = nxt
         applied[target] = raw

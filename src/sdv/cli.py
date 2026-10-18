@@ -3,6 +3,7 @@
     uv run sdv admit G4 --installed G1,G2,G3 [--mission survey] [--set G4.hangar.mass_t=0.8 | --set G4.consumes.power_kw.peak=40]
     uv run sdv admit G7 --card path/G7.yaml --installed G4,G5 --mission disaster_relief     a card handed over as a file
     uv run sdv run [--mission sar] [--log-dir runs/b-sar]        Scenario B through the loop, one line per decision
+    uv run sdv run --safety 300:g3_hold_depth                    a 200 ms safety request after tick 300 (repeatable)
     uv run sdv replay runs/b-sar [--mission sar]                 the logs replayed and compared byte for byte
     uv run sdv kit plan|build|verify|install|rollback            the governor's computers and the Reference Kit
     uv run sdv demo [--port 8000] [--log-dir runs/live]          the screen on the live engine (the one demo command);
@@ -19,6 +20,7 @@ from __future__ import annotations
 
 import argparse
 import copy
+import re
 import sys
 import time
 from pathlib import Path
@@ -49,13 +51,59 @@ class EditError(ValueError):
 LADDER_RUNGS = ("nominal", "peak", "min")
 
 
+SHOWN_MAX = 20      # an edit longer than this is never echoed back: "the value given" instead
+FIELD_MAX = 40      # a field path longer than this is cut, as the door (sdv.loop) and the operations screen cut one
+_DIGITS = re.compile(r"^\s*[+-]?\d+(_\d+)*\s*$")    # what int() reads as a whole number
+
+
+def shown(raw: str, longest: int = SHOWN_MAX) -> str:
+    """An edit as a message may echo it: as typed when short, else its first characters and an ellipsis."""
+    return raw if len(raw) <= longest else raw[:longest - 3] + "..."
+
+
+def _plain(text: str) -> bool:
+    """Text the door would quote back whatever its length (sdv.loader.quotable): printable, no colon, semicolon,
+    brace, quote or backslash."""
+    return Ld.quotable(text, len(text))
+
+
+def said_field(field: str) -> str | None:
+    """A field path or card id as a message may name it, cut past FIELD_MAX, or None when the door would not quote it."""
+    return shown(field, FIELD_MAX) if _plain(field) else None
+
+
+def no_card(gid: str) -> str:
+    said = said_field(gid)
+    return f"no card {said}" if said else "no such card"
+
+
+def _echo(target: str, raw: str) -> str:
+    """The edit as sdv admit echoes it, " target=value" with each cut when long. A target or a value the door would
+    not quote is left out."""
+    said = said_field(target)
+    if said is None:
+        return ""
+    return f" {said}={shown(raw)}" if _plain(raw) else f" {said}"
+
+
 def _number(field: str, raw: str) -> int | float:
+    said = repr(raw) if Ld.quotable(raw, SHOWN_MAX) else "the value given"     # the door's rule (sdv.loop._quoted)
     try:
         value = float(raw) if any(c in raw for c in ".eE") else int(raw)
     except ValueError:
-        raise EditError(field, f"{raw!r} is not a number") from None
+        if _DIGITS.match(raw):
+            # a whole number past Python's digit limit (4300 digits). Its sign, underscores and leading zeros do not
+            # count: 0000...1 is 1. What is still past the limit is far beyond the largest a card may carry, so the
+            # loader refuses it as it refuses a 400-digit one (above or below), never "not a number"
+            text = raw.strip()
+            negative = text.startswith("-")
+            digits = text.lstrip("+-").replace("_", "").lstrip("0") or "0"
+            if len(digits) <= sys.get_int_max_str_digits():
+                return -int(digits) if negative else int(digits)
+            return -sys.float_info.max if negative else sys.float_info.max
+        raise EditError(field, f"{said} is not a number") from None
     if value != value or value in (float("inf"), float("-inf")):
-        raise EditError(field, f"{raw!r} is not a finite number")
+        raise EditError(field, f"{said} is not a finite number")
     return value
 
 
@@ -69,7 +117,8 @@ def _child(node, key: str, field: str):
             return named[0]
     elif isinstance(node, dict) and key in node:
         return node[key]
-    raise EditError(field, f"no field {field} on the card")
+    said = said_field(field)
+    raise EditError(field, f"no field {said} on the card" if said else "the card has no such field")
 
 
 def apply_edit(card: dict, field: str, raw: str) -> dict:
@@ -86,7 +135,7 @@ def apply_edit(card: dict, field: str, raw: str) -> dict:
     key = keys[-1]
     old = _child(node, key, field)
     if isinstance(old, bool) or not isinstance(old, (int, float)):
-        raise EditError(field, f"{field} is not a number on the card")
+        raise EditError(field, f"{said_field(field) or 'the field given'} is not a number on the card")
     node[int(key) if isinstance(node, list) else key] = value
     if node is card["consumes"]["power_kw"] and key in LADDER_RUNGS:
         for m in card["modes"]:  # the ladder follows the card (LADDER_RUNGS)
@@ -144,19 +193,19 @@ def cmd_admit(args) -> int:
         target, _, raw = edit.partition("=")
         gid, _, fld = target.partition(".")
         if gid not in cards:
-            print(f"refused: edit {target}={raw}: no card {gid}. Previous card kept.")
+            print(f"refused: edit{_echo(target, raw)}: {no_card(gid)}. Previous card kept.")
             return 2
         try:
             edited = apply_edit(cards[gid], fld, raw)
         except EditError as e:
-            print(f"refused: {gid} edit {target}={raw}: {e.reason}. Previous card kept.")
+            print(f"refused: {gid} edit{_echo(target, raw)}: {e.reason}. Previous card kept.")
             return 2
         problems = Ld.check_card(edited, vocab, Ld._schema(Ld.ROOT, "manifests/schema.json"), allow_unregistered=gid == jury)
         if problems:
-            print(f"refused: {gid} edit {target}={raw}: {problems[0]}. Previous card kept.")
+            print(f"refused: {gid} edit{_echo(target, raw)}: {problems[0]}. Previous card kept.")
             return 2
         cards[gid] = edited
-        print(f"edited: {target} = {raw}, card re-validated")
+        print(f"edited: {shown(target, FIELD_MAX)} = {shown(raw)}, card re-validated")
     t0 = time.perf_counter()
     r = Ad.admit(A, cards, installed, card_id, missions[args.mission])
     ms = (time.perf_counter() - t0) * 1000
@@ -190,16 +239,42 @@ def _clock(t: float) -> str:
     return f"{int(t) // 60:02d}:{int(t) % 60:02d}"
 
 
+def _safety_requests(specs: list[str]) -> dict[int, list[str]]:
+    """--safety T:request, repeatable: the requests answered from the table of tick T, in the order given."""
+    from sdv.safety import REQUESTS
+    out: dict[int, list[str]] = {}
+    for spec in specs:
+        t, _, req = spec.partition(":")
+        if not t.strip().isdigit():
+            raise ValueError(f"safety request tick {t!r} is not a tick (0 or more)")
+        if req not in REQUESTS:
+            raise ValueError(f"no safety request {req!r} ({', '.join(REQUESTS)})")
+        out.setdefault(int(t), []).append(req)
+    return out
+
+
 def cmd_run(args) -> int:
     from pathlib import Path
 
     from sdv import loop as L
+    try:
+        safety = _safety_requests(args.safety or [])
+    except ValueError as e:
+        print(f"refused: {e}")
+        return 2
+    late = [t for t in safety if t > args.until]
+    if late:
+        print(f"refused: safety request tick {late[0]} is after the last tick {args.until}")
+        return 2
     sim = L.load_simulator(mission=args.mission, variant=args.variant)
     run = L.Loop(sim, args.mission, args.variant, inputs=L.scripted_inputs() if not args.no_script else {},
                  log_dir=Path(args.log_dir) if args.log_dir else None)
     print(f"RUN scenario_b · file {args.mission} · variant {args.variant} · simulator {sim.argos_label}")
     for out in run.ticks(until=args.until, pace=args.pace or None):
-        for r in out.records:
+        records = list(out.records)
+        for req in safety.get(out.tick, []):        # sent between ticks, as from the screen: logged with this tick
+            records += run.safety(req, injected=True)
+        for r in records:
             print(f"{_clock(r['t_s'])}  {r['kind']} {r['verdict'].upper():10} {r['sentence']}")
     run.close()
     worst = max(run.core.timing, key=lambda t: t["latency_ms"] / t["ceiling_ms"], default=None)
@@ -237,7 +312,11 @@ def cmd_kit(args) -> int:
             print(f"  {d['id']:26} {d['kind']:6} {d['site']:24} {size:>8}  {d['role']}")
         return 0
     if args.action == "build":
-        m = K.build(Path(args.path or "dist/kit"))
+        try:
+            m = K.build(Path(args.path or "dist/kit"))
+        except ValueError as e:
+            print(f"REFUSED {e}")
+            return 1
         print(f"BUILT {args.path or 'dist/kit'}: {len(m['files'])} files, {m['bytes'] / 1e6:.2f} MB, commit {m['commit']}")
         for d in m["placement"]:
             print(f"  {d['id']:26} {d['holds']}")
@@ -288,6 +367,8 @@ def main(argv: list[str] | None = None) -> int:
     r.add_argument("--pace", type=float, default=0, help="ticks per wall second (12 for the demo); 0 runs unpaced")
     r.add_argument("--log-dir", help="write the frame, input, snapshot, decision and timing logs here")
     r.add_argument("--no-script", action="store_true", help="no scripted laptop inputs (nobody answers the bridge)")
+    r.add_argument("--safety", action="append", metavar="T:request",
+                   help="a 200 ms safety request answered from tick T's table (r3_hold_landing, g3_hold_depth, g2_stop_winch, g4_return_home)")
     r.set_defaults(func=cmd_run)
     p2 = sub.add_parser("replay", help="re-run a logged run from its frame and input logs and compare")
     p2.add_argument("log_dir")

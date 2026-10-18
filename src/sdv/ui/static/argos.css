@@ -104,6 +104,7 @@ table.big { font-size: 14px; }
 .t-FULL, .t-STATE, .t-START, .t-RUN-TRIP-OFF { background: var(--strip); color: var(--ink); }
 .t-ARBITRATION, .t-YES { background: var(--blue); color: var(--white); }
 .t-HOLD { background: var(--navy); color: var(--white); }
+.t-SAFETY { background: var(--red-pale); color: var(--red); border: 1px solid var(--red); }
 .t-EXECUTED { background: var(--amber-pale); color: var(--ink); border: 1px solid var(--amber); }
 .t-ARMED, .t-LAST, .t-COMMANDED { background: var(--white); color: var(--ink); border: 1px solid var(--frame); }
 .t-DOWN, .t-NOT-NOW, .t-CARD-REJECTED { background: var(--muted); color: var(--white); }

@@ -67,7 +67,7 @@ Before the jury arrives: page open and at LINK UP, clock running (a cold start b
 | 0:25 | JUMP 12 | freeze 0.38 s (0.38-0.72 s); HOLD record at 0:26 (18.4 s after RESTART in the 35 s run) | the minute-12 line in section 4 |
 | 0:26-0:45 | dwell (measured dwell to T+14:00 was 28.3 s) | | |
 | 0:45 | JUMP 19 | freeze 0.90 s (0.90-1.23 s); shed COMMANDED at 0:46 (29.56 s after RESTART), EXECUTED one tick later (29.64 s, 83 ms) | '… G5 full to low power, frees 37 kW and the load is 44 kW: G5 loses 70 %, G3 and G4 nothing.' Point at INJECTED on the trigger, RESULT 44.0 / 75.0 kW, POWER 'USABLE 31.0 kW · CHW BINDS' |
-| 0:46-0:80 | dwell; T+20:00 arrives 34.5 s after RESTART in the 35 s run, by about 0:80 with the long dwells | | |
+| 0:46-0:80 | dwell. T+20:00 arrives 34.5 s after RESTART in the 35 s run. With the long dwells it arrives at about 0:51, 5 s after JUMP 19 lands at T+18:57 (measured Sun 04:27 PDT over /ws, T+20:00 at 0:50.8), and the clock stops there with about 30 s of the planned dwell left | | |
 | +20 s if wanted | MISSION COMPARE tab, click 00:08 then 00:19 on the timeline | both instant (/api/compare 10 ms) | read the DIFFERENCE rows: DECISION HOLDING DEPTH vs HOLDING AT SEA, LEG PAUSED vs ABORTED, RESERVED -- vs G4 35 kW; at 00:19 FREED 25 vs 37, RESULT 56 vs 44, CAPABILITY 'G3 30 % · G4 70 % · G5 100 %' vs 'G3 30 % · G4 100 % · G5 30 %' |
 
 Replace DEMO_SCRIPT.md:37-46 (minute 8 at 00:10, minute 12 at 00:40) with this clock column: RESTART 00:00, JUMP 08 at 00:06 → record 00:08, JUMP 12 at about 00:25 → record 00:26, JUMP 19 at about 00:45 → shed 00:46, end by 00:80.

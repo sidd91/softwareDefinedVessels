@@ -201,6 +201,10 @@ def test_ws_streams_the_live_loop_and_takes_laptop_inputs(loop_server):
             msg = json.loads(ws.recv(timeout=5))
         ws.send(json.dumps({"cmd": "input", "input": {"type": "genset_trip", "payload": {}}}))
         refused = json.loads(ws.recv(timeout=5))
+        for _ in range(10):         # a tick in flight when the hold landed may send one more held frame first
+            if "refused" in refused:
+                break
+            refused = json.loads(ws.recv(timeout=5))
         assert refused["refused"].startswith("input 'genset_trip'")
         prof = dict(I.missions["sar"], id="sar_ws", name="Rescue ws")
         ws.send(json.dumps({"cmd": "input", "input": {"type": "profile_applied", "payload": {"profile": prof}}}))

@@ -102,6 +102,10 @@ Deadline: **Sun 2026-10-18 10:00 PDT**.
 | DEC-61 | Sat 21:40 | Scenario B minute 12 (DEC-51, freeze F4): the DEC-40 timeline stands. The minute-12 D4 record states the full armed ladder in declared order and why the brief's 105 kW set does not arise (G3 at sea on its own battery, G4 airborne); the minute-19 pump fault, labelled injected, runs that ladder live. No new timeline variant before the demo (req R-067) | Siddharth | Claude Fable 5.1 for Siddharth |
 | DEC-62 | Sat 21:40 | Rubric audit of main accepted as the work list (`docs/AUDIT_MAIN.md`): must-have gaps first (power-edit crash, minute-12 sentence, crew-chip crash guards, data/compute admission lines, Physical Account tracer), then README truth pass and PDFs; everything else declared as a limitation. `feat/ship-state-fsm` is never merged wholesale: plant and environment are ported behind main's simulator interface, engines, records and UI stay main's (req R-016, R-064 to R-067, R-069) | Siddharth | Claude Fable 5.1 for Siddharth |
 | DEC-63 | Sat 23:32 | Scenario B load-out is G1 + G3 + G4 + G5 (9.56 t): the organisers' forum answer of 17 Oct ('Scenario B loadout' thread, Software-Defined Vessel forum; question by Filip Debef 08:22, answer by Graziano 08:55: 'Use G1 + G3 + G4 + G5 for Scenario B ... G3 in Bay 1, G5 in Bay 2, G1 on the mast, G5's antenna on the hangar roof. The Annexes take precedence over the demo narrative.'). Supersedes the G3, G4, G5 set of DEC-32; the refusal of G2-G5 at the pier stands. Settles CON-18 for Scenario B: the antenna is on the hangar roof (req R-066, R-067) | Siddharth | Claude Fable 5.1 for Siddharth |
+| DEC-64 | Sat 21:53 | Final-night split (Discord sync): Siddharth covers the code: his audit tracks #1, #2, #4, #5, #6, #12/#19, the demo rehearsal, README truth pass, UX simplification. Logan covers the slides (VC or commander style, no paragraphs, buzzwords, slides last), the deployment map with weather ranges for mission parameters, long-running soak tests reported to Siddharth, Q&A prep, and subsidiary UI design calls agreed with Siddharth. Separate branches per feature, merged at the end | Logan and Siddharth | Claude for Logan |
+| DEC-65 | Sat 22:32 | Slogan: "ArgOS: Reliability through Automation" | Logan | Claude for Logan |
+| DEC-66 | Sat 22:27 | Deployment map built standalone (tools/deploy_map, branch feat/deployment-map): 2D, offline, Natural Earth coastlines (public domain, approved by Logan) and Siddharth's Open-Meteo route cache; seeded points along the route and inside a +/-10 km area; mission parameters (cooling at route P90 and max seawater, weather-window shares, D1 by the real engine at route seawater) per profile. Whether it joins the ArgOS screen is a later team call | Logan | Claude for Logan |
+| DEC-67 | Sun 00:40 | No handoff after tonight (Logan): Logan's session fixes every open item in docs/HANDOFF_SIDDHARTH.md and the soak's reachable crashes, in Siddharth's files, on fix/handoff-{core,shedding,loop,cards,leftovers}; our branches merge once the organisers' load-out is on main; main and the `submission` tag move only on a green release gate. Supersedes DEC-64's code split for those items | Logan | Claude for Logan |
 
 ## Conflicts and risks to watch
 
@@ -1261,3 +1265,172 @@ README and docs/SOFTWARE_LOG.md; rehearsal on the laptop with the checklist in d
 main moves (`git tag -f -a submission <commit> && git push -f origin submission`).
 Decisions: none new. Conflicts: none open besides the submission route. Requirements touched: R-016, R-552.
 
+### Sat 23:38 PDT · Our post-freeze work reviewed twice, fixed and handed over · Claude Opus 5.5 on behalf of Logan Walker (GhostWalka)
+
+What: two adversarial reviews of the post-freeze work in Logan's lane (estimator, safety table, kit), then three
+skeptics on the fixes (correctness, determinism, regressions). Branch fix/review-ours, two commits.
+Commit 1 (58aa013):
+- change keys normalised like the logs, so the standby and replay agree after a feed drop;
+- allowed values checked for every signal (crew 10 refused);
+- a signal never heard on a dropped feed takes its fallback;
+- crew answers expire (deck report 300 s, landing officer's wind 120 s, standing plan 5400 s);
+- kit build never replaces a folder that is not a kit, and a refused install keeps both slots;
+- the winch stop is not offered with the winch off;
+- safety reasons read as one sentence.
+Commit 2 (skeptics, all repro'd before the fix):
+- an hourly feed dropped before its first reading keeps its fallback after the drop ends (crash before);
+- a stale crew-level fallback is not a crew change, so a short laptop drop keeps the plan;
+- the departing crew's plan stands at the hand-over to 0 aboard (SCENARIO_C_MEMO);
+- expiry counts from first sight when a simulator omits reported_t_s;
+- integer signals are cast, so a crew level of 6.0 keeps the standby in step;
+- malformed sweeps, requests and rates are refused;
+- a G4 that is not reporting is never called safe (the landing hold stays offered, the recall is by radio);
+- kit verify, install and build refuse a manifest that is not an argos kit, a JSON list, a missing folder or a file, without a traceback, and the slots are kept;
+- kit pages carry no semicolons;
+- kit.py text formatted from config, moved here from docs/review-fixes so that branch carries docs only;
+- untracked tools/deploy_map/out, committed by mistake in 58aa013.
+docs/HANDOFF_SIDDHARTH.md: #22 added at the top, a crash on main in explain.d3 (n('airborne') after a G4 telemetry drop at 480 to 520), plus three notes.
+Files: src/sdv/estimator.py, src/sdv/safety.py, src/sdv/kit.py, src/sdv/cli.py, tests/test_review_fixes.py, docs/HANDOFF_SIDDHARTH.md.
+Tests: 9 added (19 in test_review_fixes.py).
+Decisions: none. Conflicts: none.
+Deferrals: explain.py crash #22 and loop.py float frames to Siddharth (his files, DEC-64).
+
+### Sat 22:32 PDT · Final-night split, deck draft, deployment map, review fleet (DEC-64 to DEC-66) · Claude Opus 5.5 on behalf of Logan Walker (GhostWalka)
+
+- Split recorded (DEC-64): Siddharth's audit tracks are his; nothing here touches his files.
+- Pitch deck draft: 8 slides as a Slides artifact, template order (title and team, challenge fit, demo, innovation, USPs, scalability, thanks); placeholders for team number, bios, pilot length; slides finished last, no paragraphs (Logan).
+- Deployment map (DEC-66) on feat/deployment-map: 16 tests; route seawater P90 25.9 °C, max 27.0 °C; gust P90 25 kn; G4 flight deck open about 90 % of sampled hours; one pump down at max seawater leaves 76 kW against the 105 kW Scenario B load-out. Data sources logged in SOFTWARE_LOG.
+- Fleet running, report-only: a soak test of main, two strong reviews of this session's post-freeze work (engine; kit, map and docs), a docs writer for the slide facts (PITCH_FACTS, JURY_QA, ARCHITECTURE_ONE_PAGE on docs/pitch-facts), a slide copy spec.
+- For Siddharth: main's Physical Account prints on 2 pages since the tracer fix (limit 1), measured with tools/build_pdfs.py account at 1148d11.
+- A watcher waits for Siddharth's UX simplification on main to take the deck's screenshots.
+
+Decisions: DEC-64 to DEC-66. Conflicts: none new. Deferrals: team number, bios and the AI-list source (#27) from Logan.
+
+### Sat 23:12 PDT · Deployment map review fixes (feat/deployment-map) · Claude Opus 5.5 on behalf of Logan Walker (GhostWalka)
+
+- Douglas scale one state low: tops now [0.0, 0.1, 0.5, 1.25, 2.5, 4.0, 6.0, 9.0, 14.0] (2.0 m is state 4, not 3).
+- Ranges from the data, not the 400 samples: ROUTE is all 337 planned hours, AREA all 1080 hours at the 3 distinct grid points (4 waypoints). Seawater route P90 25.82, route max 25.98, area max 27.2 °C. Sea state route P90 4. D1 and the cooling rows read the route P90 and max: 129.3 and 128.9 kW, one pump down 77.4 kW against the 105 kW load-out.
+- Samples stay for the dots and windows, now over the unique legs within the voyage hours: G2 and G3 100 %, G4 89.2 %.
+- Label "WEATHER RANGES · 1-15 OCT 2026 · OPEN-METEO ARCHIVE" from the data. Footer links Open-Meteo and CC BY 4.0, credits Natural Earth and "PLAN S. CHAWLA". Seed and point count off the header (kept in deployment.json). A mission-critical guest outside the load-out says NOT IN LOAD-OUT.
+- 31 tests (was 16), 1345 pass.
+
+Decisions: none. Conflicts: Siddharth's fbe59a5 Douglas list has the same off-by-one, noted in tools/deploy_map/config.yaml, his file left alone. Deferrals: his fix before his port reaches main, and whether the map joins the ArgOS screen (team).
+
+### Sat 23:39 PDT · Deployment map: sea state before rounding, Marine credit, offline test (feat/deployment-map) · Claude Opus 5.5 on behalf of Logan Walker (GhostWalka)
+
+- Sea state now read from the blended wave before rounding: hour 293 blends to 1.2519 m, shown as 1.25, read SS 4 (was SS 3). Route hours by sea state now SS 2: 108, SS 3: 181, SS 4: 48 (were 108, 183, 46).
+- Unchanged: seawater route P90 25.82, route max 25.98, area max 27.2 °C; sea state route P90 4, route max 4, area max 5; gust route P90 24.45 kn; G2 and G3 100 %, G4 89.2 %; cooling 129.3 and 128.9 kW, one pump down 77.4 kW against the 105 kW load-out.
+- Ranges heading now "WEATHER RANGES · 1-15 OCT 2026 · OPEN-METEO MARINE AND ARCHIVE" (seawater and waves come from the Marine API).
+- Offline test also forbids remote and protocol-relative src, <link href>, @import and url(), and still allows <a href> links.
+- 32 tests (was 31). Page rebuilt locally (out/ is gitignored).
+
+Decisions: none. Conflicts: none. Deferrals: none.
+
+### Sat 23:18 PDT · Review fixes to this session's docs, kit text from config, on docs/review-fixes · Claude Opus 5.5 on behalf of Logan Walker (GhostWalka)
+
+A review of the docs this session wrote found claims the code does not back. Each one was checked against
+origin/main (6a91f5d) by grep or by running it, then fixed. RESPONSE_TIME: MET and MISSED are not computed yet;
+records carry due ticks (first_shed_due_t_s, full_sequence_due_t_s, each step's due_t_s) and queued steps; the
+safety table states ready, not_needed or cannot, and an answered request is a record with verdict sent; the
+screen shows the class tags only, plus the due minute in a D4 sentence with a queued step, and no safety state.
+STATE_ESTIMATION: marked not built the restart transition on gensets_online (the estimator refuses a simulator
+reading of it), the decision watchdog and timed_out, and the landing officer's crew_report stage (the core does not
+read hlo_wind_kn); a pending fault cancels only when all of its subject's own votes read false; fixtures match
+except since_t_s and the substituted.rule wording; "logged" is the estimator's in-memory log; run logs use
+sdv.loop.canonical; the core ignores card_edited; bridge_close and the survey resume add no record; derived
+"confirmed" covers restoring. Crew answer expiry is not on main, so step 4 is unchanged. DEPLOYMENT: the kit covers
+every card in manifests/ (vendor manuals listed as required), the build is not filtered by D1 or D2 yet, the
+heartbeat, the 3 s takeover, zone boards, the edge shed-table push and page regeneration at sea are marked Design,
+the standby state is in the tick output and on the screen, not in the five logs, and "tier" is now "weight and
+response class". NICE_TO_HAVE: status refreshed, the VENTUNO Q is the primary board (DEC-56), a Built since list
+(builder, restore, standby in lockstep), the failover-by-replay and restore rows dropped, globe rows kept.
+src/sdv/kit.py, text only: the runbook and FAQ numbers are formatted from config (confirm_rules, restart_min, the
+bridge wait_s, restore healthy_hold_s, the class tags), same output at today's config; two runbook rows say
+"design, not built", and the out-of-step row names the tick output instead of the logs.
+Files: docs/RESPONSE_TIME.md, docs/STATE_ESTIMATION.md, docs/DEPLOYMENT.md, docs/NICE_TO_HAVE.md, src/sdv/kit.py, WORKLOG.md.
+Tests: tests/test_kit.py and tests/test_requirements_trace.py 18 passed; full suite 1457 passed; no test changed.
+Decisions: none. Conflicts: README calls the VENTUNO Q an instrument only, against DEC-56; the screen's STANDBY OUT
+OF STEP chip does not name the differing field, while the Reference page says it does. Both are Siddharth's files,
+left to him. Deferrals: README notes for Siddharth (VENTUNO Q role, data credits if the deployment map merges,
+tools/deploy_map in REPOSITORY_MAP); the crew answer expiry text waits for fix/review-ours to reach main.
+
+### Sat 23:46 PDT · Second review of docs/review-fixes: response time on screen, due ticks, compare built; kit.py moved · Claude Opus 5.5 on behalf of Logan Walker (GhostWalka)
+
+A second review found claims in this branch's docs that the code does not back. Each was checked in the code or
+by running the core, then fixed. Correction to the Sat 23:18 entry: MET and MISSED per step are still not
+computed, but the screen already shows the acting decision's time against its limit. The RESPONSE tile and the
+ledger's RESPONSE D4 row add NORMAL or LATE. The D3 and D4 panels' RESPONSE row and the Admission header show the
+time against the limit. It is the compute time from the timing log in a live run, and ship time from the raw
+event to the applied tick in a fixture replay. D3's panel shows a LAND BY countdown. "Class tags only" was wrong.
+RESPONSE_TIME: the status no longer says config and screen cannot disagree. The server formats the tags, but the
+operations screen's set of known tags, the builder footer and the Reference page carry the A.8 values as fixed
+text. Due ticks count from the fault's raw event, or from the first over-limit tick when no fault is confirmed or
+the overload started after it confirmed. A restore record carries no due tick, and its limit is the 30 s
+ceiling_ms. The `cannot` reason says why, and the crew's action where there is one. STATE_ESTIMATION: a third
+fixture difference, the fixtures' free-text `notes`. In the core's run the close carries the D5 record's seq (2)
+and the resume the D3 record's seq (1). The script's drafted seqs predate the D5 record. NICE_TO_HAVE: Mission
+compare (built-in files, live reference runs) under Built since, its Ideas row narrowed to the jury's own file,
+"Unanswered means no" dropped from the R3 row, the builder is DEC-55 (applied at sea under DEC-58).
+DEPLOYMENT: Board 1 running the governor and the SSD copies of the kit and run logs are marked Design (today the
+governor runs on the laptop). No doc on this branch quotes deployment-map figures, so none were changed.
+src/sdv/kit.py is back to origin/main: its text changes moved to fix/review-ours, so this branch carries docs only.
+Files: docs/RESPONSE_TIME.md, docs/STATE_ESTIMATION.md, docs/NICE_TO_HAVE.md, docs/DEPLOYMENT.md, src/sdv/kit.py
+(reverted), WORKLOG.md.
+Tests: tests/test_kit.py, tests/test_requirements_trace.py and the eight tests that read docs/ files, 894 passed.
+Decisions: none. Conflicts: none. STATE_ESTIMATION edits avoid the lines of Siddharth's unmerged
+fix/scenario-b-loadout-g1. Deferrals: for Siddharth, a change to response_time_s needs ops.js CLASS_TAGS,
+builder.js's response-class footer and reference.js's tag rows edited by hand (UI files, his).
+### Sun 00:08 PDT · Slide facts refreshed against main 4c4f93c (docs/pitch-facts) · Claude Opus 5.5 on behalf of Logan Walker (GhostWalka)
+What: merged origin/main 4c4f93c (fix packs 2, 3a, 3b) into docs/pitch-facts, clean, as 1fae181. Every fact in docs/PITCH_FACTS.md, docs/JURY_QA.md and docs/ARCHITECTURE_ONE_PAGE.md re-measured by command between Sat 23:38 and Sun 00:07 PDT: the CLI and its subcommands (`sdv admit --card` new), the 14 Scenario A cases and 10 edits, both Scenario B runs and replays, standby and the 200 ms safety table, crew 14, 6 and 0, the kit (plan, build, verify, install, rollback), the Physical Account and its PDF, `sdv demo` with a logged screen run replayed. Changed: a kW edit now decides (was a crash), crew 6 and 0 and `--variant crew0` run with the scripted answer (were crashes), every screen run is logged and replays, timings measured alone (D1 0.9 to 7.4 ms, D3 0.3 ms, first shed 0.3 to 0.4 ms, safety under 0.05 ms, worst tick 1.8 ms), the 0-aboard sentence, the "Used in" and page count of the account. Map facts now come from feat/deployment-map b1926e3 (route P90 25.8 °C, area max 27.2 °C, sea state 4 and 5, G4 window 89 %, cooling 129.3, 128.9, 77.4 and 120 kW). The older 27.0 °C and 90 % are gone. Do-not-claim adds: standby takeover, edge nodes holding a shed table, MET and MISSED verdicts, D4 shedding 17 times on a dropped guest meter and late on a dropped PMS feed (handoff #1, #2), standby out of step on that guest-meter drop (in step on fix/review-ours), no safety or landing-officer control on screen, the account PDF at 2 pages on a rebuild, no tag on origin. Six old limits are now fixed on main and listed as claimable. Facts on Logan's unmerged branches carry "(on branch X, not on main yet)". Scenario B load-out facts carry "(changes when fix/scenario-b-loadout-g1 merges: ...)", measured on c5c7f1d: 49.5 and 82.5 kW at minute 12, the 106.5 kW envelope set, G1 full to off on the ladder, 9.56 t.
+Files: docs/PITCH_FACTS.md, docs/JURY_QA.md, docs/ARCHITECTURE_ONE_PAGE.md, WORKLOG.md. Copies of other branches and the measurement scripts stayed in the session scratchpad.
+Tests: `uv run pytest -q` 1492 passed in 510.96 s on 1fae181 (main's 1476 plus the 16 map tests from 5f09b6c, the other test files equal main's). fix/review-ours: 10 of 10 in tests/test_review_fixes.py. fix/scenario-b-loadout-g1: 1485 collected.
+Decisions: none. Conflicts: origin/main moved to 7b9a804 (the load-out branch, same code as c5c7f1d) at 23:53 PDT, mid-check. The baseline stays 4c4f93c as asked, with the load-out values labelled. DEC-63 is used twice (the final-night split on feat/deployment-map, the load-out on fix/scenario-b-loadout-g1): flagged, not renumbered here. Handoff #3 (standby out of step after a 0.45 / 0.35 profile) did not reproduce: in step under survey and sar.
+Deferrals: to Siddharth, his files: the DEMO_READINESS status table and T-30 step 1, the DEMO_SCRIPT presenter rules for fix/simbar-clicks and fix/jury-card-file, D4 on a dropped guest meter or PMS feed (handoff #1, #2), the account PDF over 1 page on a rebuild. To Logan: merging fix/review-ours, feat/deployment-map and docs/review-fixes, and refreshing the deck's load-out numbers if the demo freezes at or after 7b9a804.
+
+### Sun 03:30 PDT · Final integration: our branches, all handoff fixes, plain-language deck · Claude Opus 5.5 on behalf of Logan Walker (GhostWalka)
+
+What: integrate/logan-final = origin/main cfbc78d (tagged `submission`) + fix/review-ours + feat/deployment-map +
+docs/review-fixes + docs/pitch-facts (clean merges), then the handoff fixes (DEC-67), each with a test that fails without it
+and an adversarial reviewer:
+- fix/handoff-core (e2c5e54): #22 a word hard limit reads as words (D3 sentence and the screen row), #5 the bridge wait runs
+  from R3's own ask and a confirmation hidden by a feed drop still counts, #6 one re-ask per hard-limit onset, #7 G3 held by a
+  safety request resumes after G4 is secured, #8 a policy hold re-runs the policy, #16 the unconfirmed D4 says why, partial
+  profile weights, an unknown priority swap refused.
+- fix/handoff-shedding (ff315b1): #1 no shed on stand-in draws, #2 only the binding line's stand-ins hold D4 back, #9 the
+  delayed first action keeps its 5 s due tick.
+- fix/handoff-loop (5f88b05): #3 inputs logged exactly and the standby gets its own copy, #17 add_input takes the lock,
+  #18 safety latency counts the lock wait, #21 the snapshot names the file in force, one frame for every side, #15
+  safety_request as a laptop input and `sdv run --safety`, the laptop input contract, stub gaps, the ws test race.
+- fix/handoff-cards (249ce35): bad confirm blocks, plain card-refusal sentences, finite and bounded numbers.
+- fix/handoff-leftovers (83f1eb7, repair 710f9f7): non-object profiles, huge integers, plain door and row wording, refused
+  swaps logged as refused, long digit edits, an upper-case SAFETY row, D4 acting on a line over on fresh values beside a kW
+  stand-in, a mode back from its stand-in not counted as a landed step.
+- Ours: the decision IDs renumbered after the DEC-63 collision (ours are DEC-64 to DEC-66), the map reads Scenario B's
+  load-out from config, the safety table answers a forbidden recovery at 0 aboard as forbidden (verifier finding).
+- Docs: HANDOFF_SIDDHARTH.md is now a status table, PITCH_FACTS for the final main, README test count 1712 and the map's data
+  credits (README.pdf rebuilt, 3/3 pages), REPOSITORY_MAP row for tools/deploy_map.
+- Deck (claude.ai artifact, not in the repo): rebuilt as 12 slides (problem, prototype, architecture, cards and profiles,
+  graceful degradation, design choices, real-world use, path to a trial, demo last), screenshots from this build, then every
+  sentence rewritten in plain public language (two lay reviewers, an editor, a cold reader). Logan's "why this challenge" line
+  is on the Team slide.
+Checks: full suite 1712 collected (1711 pass, 1 strict xfail: recovery_lead_s reads confirm_s by str(crew), fixing it moves the
+pinned 6-aboard D5). Scripted survey and rescue runs (frames, inputs, snapshots, decisions) byte-identical to cfbc78d, replays
+EQUAL. The run sheet driven live over /ws matched docs/DEMO_SCRIPT.md step by step.
+Decisions: DEC-67. Conflicts: none. Deferrals: team number, bios, trial length and repository visibility (private) to Logan;
+a screen button for safety requests and the hard-coded response tags in the JS to the team (UI).
+
+
+### Sun 04:55 PDT · Main and the submission tag moved to the gated build, then the gate's polish · Claude Opus 5.5 on behalf of Logan Walker (GhostWalka)
+
+What: a release gate on ee50ece (two independent agents) passed the build and the demo: full suite twice with no flakes,
+scripted survey and rescue runs byte-identical to cfbc78d with old and new logs replaying across both, the run sheet driven
+over /ws matching docs/DEMO_SCRIPT.md word for word, zero browser console errors, kit build and verify, the map tool. main was
+fast-forwarded cfbc78d to 466600c (no force) and the `submission` tag re-pointed to it as Siddharth's note describes.
+The gate's skeptic found four polish items, all fixed on fix/polish (bb3326c) with tests/test_polish.py (62 tests) and a
+second skeptic: Admission and CLI refusals quote a value only by the door's rule, a deeply nested profile is refused at the
+door, enum and pattern problems read in words, a non-number jump is refused, None and booleans are described, newline-safe
+name patterns. docs/DEMO_SCRIPT.md and DEMO_READINESS.md: at x12 T+20:00 arrives at about 0:51, then about 30 s of dwell.
+Two older items stay open (crafted messages only): schema patterns ending in $ accept a trailing newline in a profile id,
+and type problems on the PROFILE row print True or None as Python writes them.
+Tests: 1774 collected, 1773 pass, 1 strict xfail. README count updated, README.pdf rebuilt (3/3 pages).
+Decisions: none new. Conflicts: none. Deferrals: as in the Sun 03:40 entry.
