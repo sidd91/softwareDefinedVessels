@@ -48,14 +48,14 @@ deck_ok  = 14, 6: the deck reads clear, or a fresh hlo_deck_report == clear (at 
 hold     = window and not deck_ok
 ```
 
-Unknown never means clear: a missing HLO report, or one older than 5 min, counts as not clear, as does a missing
-sweep; deck movement after the sweep, other than G4's launch, voids the latch; stale telemetry dates the 20 %
-crossing as early as the last report allows; an unanswered confirmation is a no.
+Unknown never means clear: a missing HLO report counts as not clear (its 5 min life in `config/signals.yaml` is not yet
+enforced), as does a missing sweep; deck movement after the sweep, other than G4's launch, voids the latch; stale
+telemetry dates the 20 % crossing as early as the last report allows; an unanswered confirmation is a no.
 
 ## How a crew rule becomes a constraint
 
 `hold` above is a typed condition over signals named in `config/signals.yaml` (crew aboard, G4's activity and
-land-by time, the HLO report, bridge requests, standing plan, latched deck); the estimator refuses any other name.
+land-by time, the HLO report, bridge requests, standing plan, latched deck); the loader refuses any other name.
 While `hold` is true the flight-deck line has no free capacity, so a decision that needs G4 on deck binds on it and
 its sentence names the signals that made `hold` true. "Hold landing clearance" is a safety-table row, answered
 within 200 ms (A.8). No priority file lifts it: a file may set who decides at each crew level (`confirm`), never
@@ -74,8 +74,8 @@ within 200 ms (A.8). No priority file lifts it: a file may set who decides at ea
 
 In Scenario B, G4 reports 18 % at minute 8; at our slowest assumed drain, 1.11 %/min, it passed 20 % at minute
 6.2, so it must land by minute 18.2. The D3 decision at minute 8 recovers G4 at once: confirm 1, clear 4 and
-approach 4 min land it at minute 17 (18.0 with a 5 min clear). At 6 aboard the 15 min lead exceeds the 8 min left
-after the approach, so the zone must stay clear from launch.
+approach 4 min land it at minute 17. At 6 aboard the 15 min lead exceeds the 8 min left after the approach, so the
+zone must stay clear from launch.
 
 | Aboard | A human confirms | Automatic | Impossible |
 |---|---|---|---|
@@ -89,8 +89,8 @@ Three crew levels run through the same loop (`uv run sdv run`, the crew chip on 
 `tests/test_crew_levels.py`), each ending in a D5 record built from its fields; the brief asks for two live.
 
 1. **14 aboard**, Scenario B as scripted: the bridge is asked at minute 8 on the landing officer's report, confirms
-   at minute 9, the deck is cleared at the A.6 pace and G4 lands at minute 17. A "not clear" report is the 200 ms
-   row `r3_hold_landing`: held until a fresh "clear" report.
+   at minute 9, the deck is cleared at the A.6 pace and G4 lands at minute 17. The 200 ms row `r3_hold_landing`, a loop
+   safety request with no screen control, holds deck work until a fresh "clear" report.
 2. **6 aboard**: without an approved standing plan the recovery is held ("no standing plan approved"); with one,
    "Not now at 6 aboard: G4 recovery under rule R3 waits until the landing officer reports the zone clear. Deck
    clearing lead 15 min against 8 min, 7 min over", then cleared at the 8-12 min pace on that report. The plan and
@@ -98,7 +98,8 @@ Three crew levels run through the same loop (`uv run sdv run`, the crew chip on 
 3. **0 aboard**: automatic on a deck latched clear at the last sweep (`sdv run --variant crew0`); with no sweep, or
    an occupied deck, "Recovery forbidden at 0 aboard: ... G4 ditches by minute 18.2."
 
-The plan at 6 lapses when guests, priorities or crew change; the departing crew approve the 0-aboard plan and make
-the last sweep. Designed, not built: refusing winch, ramp and zone work in the window, and the HLO's single override.
+The departing crew approve the 0-aboard plan and make the last sweep. Designed, not built: the plan at 6 lapsing when
+guests, priorities or crew change, refusing winch, ramp and zone work in the window, and the HLO's single override.
 R3's parameters (approach 4 min, drain 1.11 %/min, telemetry stale after 10 s, deck evidence, latched deck, uncrewed
-launch) sit with their reasons in `rules.r3` of `config/assumptions.yaml` and in the Physical Account; report life (5 min) and fastest drain (1.5 %/min) in `config/signals.yaml`.
+launch) sit with their reasons in `rules.r3` of `config/assumptions.yaml`; the fastest drain (1.5 %/min) in
+`config/signals.yaml`.

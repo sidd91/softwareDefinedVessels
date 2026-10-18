@@ -1160,3 +1160,22 @@ R-085, R-086, R-089, R-090, R-091, R-093, R-094, R-095, R-097, R-099, R-100, R-1
 R-110, R-111, R-112, R-113, R-114, R-115, R-116, R-117, R-119, R-122, R-124, R-125, R-126, R-127, R-135, R-145, R-146, R-151,
 R-155, R-196, R-197, R-206, R-209, R-218, R-234, R-235, R-243, R-269, R-286, R-447, R-448, R-451, R-452, R-453, R-507, R-508,
 R-509, R-510, R-540, R-541, R-554.
+
+### Sun 00:12 PDT · Review of docs/readme-truth: six sentences brought to what runs, PDFs rebuilt 3/2/1 (docs/readme-truth) · Claude Fable 5.1 on behalf of Siddharth Chawla (sidd91)
+
+What: independent review of the truth pass against origin/main 4c4f93c. Sixty-odd claims checked by reading or running: `sdv --help`,
+`sdv admit` with accepted and refused edits and a G7 card file, `sdv run` and `sdv replay` under both files and `--variant crew0`,
+`sdv demo` on port 8451 driven over `/ws` (crew_change, standing_plan, deck_report accepted, an unknown type refused), SIGINT for the
+`LAST RUN` line, the screen's own run replayed byte for byte. Scenario B load-out lines in Deliverables byte-identical to main.
+Fixed in the README: Ctrl+C prints a `LAST RUN` line, not the `RUN n` line; D2 writes no record of its own (its layout is in D1's);
+B.0 `excludes` are always activity-conditioned (manifests/schema.json requires `activity`), `requires` is data D1 does not read; the
+minute-12 record carries the next three armed steps (shedding.py `rest[:3]`; the ladder has four), not the whole ladder; no role views
+exist, so "no roles or access control". Fixed in the memo: the loader, not the estimator, refuses unknown names; the 5 min report
+life and the plan lapsing on a change of guests, priorities or crew are declared in config/signals.yaml (`expires_after_s`) and read
+by no code; `r3_hold_landing` answers a loop safety request (tests/test_response.py) with no screen control, it is not the HLO's
+"not clear" report. PDFs rebuilt with the scratchpad pandoc 3.12.1 + headless Chromium route; both documents were full to the line,
+so the fixes were paid for by trimming words ("ceilings are A.8's", "labelled INJECTED", the 18.0 parenthesis, the test citation).
+Files: README.md, docs/SCENARIO_C_MEMO.md, docs/pdf/README.pdf, docs/pdf/SCENARIO_C_MEMO.pdf, WORKLOG.md. Tests: none added; full
+suite 1476 passed before and after the edits. Page counts: README Letter 3 / A4 3, memo 2 / 2, account 1 / 1 (unchanged bytes).
+Open: docs/DEMO_SCRIPT.md (+03 row) plans a live "zone not clear, held within 200 ms" segment, but no screen control issues a
+safety request; the run-sheet branch owns that line. Decisions: none. Conflicts: none. Requirements touched: none.

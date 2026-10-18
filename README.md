@@ -35,7 +35,7 @@ views (Operations, constraint ledger, Mission compare, Admission review with the
 nominal or peak kW, the profile and rule builder, Reference), a SIM bar (hold, pace, jump to minute 8,
 12 or 19, restart, swap the priority file) and a crew chip (14, 6, 0 aboard). Every run the screen shows is logged
 under `--log-dir` (default `runs/live`); the terminal prints `RUN n under <file>.yaml logs to <dir>; replay: uv run sdv
-replay <dir> --mission <file>` per run and on Ctrl+C.
+replay <dir> --mission <file>` per run, and a `LAST RUN` line on Ctrl+C.
 
 ## Architecture
 
@@ -82,8 +82,8 @@ consumers in a fixed order on a generator loss; ArgOS makes that ladder mission-
 ## Decision classes
 
 Components live in `src/sdv/`; D1 to D4 read one ledger (`ledger.py`), D1 to D5 write the same
-[decision record](docs/ARCHITECTURE.md#data-contracts) and every sentence is built from its fields (`explain.py`);
-ceilings are the brief's (A.8).
+[decision record](docs/ARCHITECTURE.md#data-contracts) (D2's inside D1's) and every sentence is built from its fields
+(`explain.py`); ceilings are A.8's.
 
 | Class (ceiling) | Component | What it optimises |
 |---|---|---|
@@ -124,18 +124,18 @@ Every path: [docs/REPOSITORY_MAP.md](docs/REPOSITORY_MAP.md); every requirement 
 
 - Admission answers for a ship alongside: yes, yes-if or no. Scenario A' (admission under way, the A.11 windows in each
   card's `installation.at_sea`, "not now and when", the 0-crew logical reconfiguration) is designed, not built. B.0
-  `part_of` and conditional `excludes` are enforced (D2, D3); absolute excludes and `requires` are data D1 does not read.
+  `part_of` (D2) and the cards' activity-conditioned `excludes` (D3) are enforced; `requires` is data D1 does not read.
 - Over-consumption is metered, not detected or handled offender-first. D2 is lexicographic (no margin objective, no
   rejected alternatives, CON-18). D3 covers one contention, G4's recovery against G3's survey leg, only while G4's
   hard limit is active; the priority file decides how the loser yields.
 - The -40 % loop at 30 °C is an information line on the Admission view, not in the verdict (DEC-36); both mission lines
   survive a genset trip by choice (A.9). Minute 12 holds by design: the load fits under the 95 kW ceiling with 0 steps;
-  the record states the whole armed ladder and why the brief's envelope set does not arise (DEC-40, DEC-61); the
-  executed shed is the minute-19 pump fault, injected and labelled INJECTED.
+  the record states the next three armed steps and why the brief's envelope set does not arise (DEC-40, DEC-61); the
+  executed shed is the minute-19 pump fault, labelled INJECTED.
 - The plant is a scripted A.6 model (`tests/support/sim_stub.py`, labelled "test double" on screen), not a physics
   simulator; `SDV_SIM=module:Class` swaps another in; the team's own simulator is on `feat/ship-state-fsm`, not main.
   Scenario B runs at the brief's 24 °C seawater; no live or cached public-data feed is on main.
-- A jury card file is judged on the CLI (`sdv admit --card`), not uploaded on screen. Role views are labels, not access
+- A jury card file is judged on the CLI (`sdv admit --card`), not uploaded on screen. The screen has no roles or access
   control. With nobody aboard, R3 trusts a deck latched clear at the last sweep. Numbers come from the brief's
   annexes and our labelled assumptions, never from a real vessel.
 
