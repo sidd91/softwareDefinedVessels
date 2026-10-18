@@ -24,7 +24,6 @@ const TAGS = [
   ['ARBITRATION', 'Event log', 'Right-of-way decision by D3 between incompatible guest conditions.'],
   ['CREW POLICY', 'Event log', 'D5 decision on rule R3 at the crew level aboard: confirm, standing plan, automatic, forbidden, held or cleared.'],
   ['STATE', 'Event log', 'Guest or ship state change completed or reported.'],
-  ['INJECTED', 'Event log marker', 'Fault entered by the scenario timeline, not by plant behaviour.'],
   ['VALID / PROBLEMS', 'Profile builder', 'The loader accepts the file, or names each field it refuses.'],
   ['STANDBY IN STEP', 'Title bar', 'The standby board, running its own estimator and core on the same frames, decides the same. OUT OF STEP names the first field that differs.'],
   ['YES', 'Admission verdict', 'Fits every line at the envelope: both gensets, 200 kW reserve, seawater 30 °C. Holds with one genset down.'],

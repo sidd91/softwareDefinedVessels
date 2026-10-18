@@ -13,10 +13,9 @@ export function tag(word, lg = false) {
   return `<span class="tag${lg ? ' lg' : ''} ${tagClass(word)}">${esc(word)}</span>`;
 }
 
-export const INJECTED = '<span class="injected">INJECTED</span>';
-
-export function injected(flag) {
-  return flag ? ' ' + INJECTED : '';
+// Scenario faults show exactly as plant faults do: no marker on screen.
+export function injected() {
+  return '';
 }
 
 export function stateWord(word) {
