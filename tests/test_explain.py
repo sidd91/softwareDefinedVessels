@@ -178,7 +178,7 @@ def test_d4_minute_12_holds_with_0_steps_and_the_armed_step():
         steps = [f"{a['guest']} {E.mode(a['from_mode'])} to {E.mode(a['to_mode'])}, {E.n(a['from_kw'])} to {E.n(a['to_kw'])} kW, "
                  f"frees {E.n(a['frees_kw'])} kW ({E.n(a['capability_lost_pct'])} % lost)" for a in r["armed"]]
         assert len(steps) == 3 and steps[0] == "G5 full to low power, 45 to 8 kW, frees 37 kW (70 % lost)"
-        assert f". Armed in priced order: {', then '.join(steps)}. " in s
+        assert f". Armed in order: {', then '.join(steps)}. " in s
         total = sum(e["envelope_kw"] for e in r["envelope"].values())
         assert total == 105 > r["limit_kw"] == 95 > r["load_kw"] == load
         assert ("The envelope case does not arise: G3 charging 25 kW, G4 fast charge 35 kW and G5 full 45 kW would be 105 kW "

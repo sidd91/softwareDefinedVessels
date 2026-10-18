@@ -25,7 +25,6 @@ WINS = {"launch_recovery": "recovers first"}
 ACTIVITY_NOUNS = {"surveying": "survey"}
 ACTIVITIES = {"holding_depth": "holding depth", "holding_at_sea": "holding at sea", "launch_recovery": "launching or recovering",
               "on_cradle": "on its cradle", "probe": "probing", "winch": "on the winch", "production": "producing", "start": "starting"}
-ORDERS = {"computed": "priced", "declared": "declared"}
 WAITS = {"depth": "holds depth", "at_sea": "holds at sea"}
 
 
@@ -250,7 +249,7 @@ def _ladder(r: dict) -> str:
         steps.append(step)
     if not steps:
         return ""
-    return f" Armed in {ORDERS.get(r.get('order_source'), 'priced')} order: " + ", then ".join(steps) + "."
+    return " Armed in order: " + ", then ".join(steps) + "."
 
 
 def _envelope(r: dict) -> str:

@@ -119,5 +119,5 @@
   "confirmed_t_s": 721,
   "first_shed_due_t_s": 725,
   "inputs_hash": "4ff8aaca11be1511",
-  "sentence": "Holds: 48 of 95 kW with one genset down, 0 steps, no capability lost. Armed in priced order: G5 full to low power, 45 to 8 kW, frees 37 kW (70 % lost), then G5 low power to off, 8 to 0 kW, frees 8 kW (30 % lost), then G4 standby to off, 2 to 0 kW, frees 2 kW (30 % lost). The envelope case does not arise: G3 charging 25 kW, G4 fast charge 35 kW and G5 full 45 kW would be 105 kW against the 95 kW limit, but G3 is holding depth in standby (1 kW) and G4 is airborne in standby (2 kW)."
+  "sentence": "Holds: 48 of 95 kW with one genset down, 0 steps, no capability lost. Armed in order: G5 full to low power, 45 to 8 kW, frees 37 kW (70 % lost), then G5 low power to off, 8 to 0 kW, frees 8 kW (30 % lost), then G4 standby to off, 2 to 0 kW, frees 2 kW (30 % lost). The envelope case does not arise: G3 charging 25 kW, G4 fast charge 35 kW and G5 full 45 kW would be 105 kW against the 95 kW limit, but G3 is holding depth in standby (1 kW) and G4 is airborne in standby (2 kW)."
 }
