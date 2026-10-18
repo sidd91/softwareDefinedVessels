@@ -231,13 +231,24 @@ def create_app(inputs: data.Inputs | None = None, source: str = "live", profiles
         rp = Live(I, mission, t0, speed, running) if source == "live" else Replay(I, mission, t0, speed, running)
         changed = asyncio.Event()
         refusals: list[str] = []
+        errors: list[str] = []
+
+        def guarded(fn, *args):
+            """One step of the run (a tick, a command, the payload). An exception in the engine is reported to the
+            screen as an error frame and the run is held at the tick it failed on; the socket stays up."""
+            try:
+                return fn(*args)
+            except Exception as e:  # noqa: BLE001
+                errors.append(f"{type(e).__name__}: {e}")
+                rp.command({"cmd": "hold"})
+                return None
 
         async def receive():
             try:
                 while True:
                     msg = await websocket.receive_json()
                     if isinstance(msg, dict):
-                        refused = rp.command(msg)
+                        refused = guarded(rp.command, msg)
                         if refused:
                             refusals.append(refused)
                         changed.set()
@@ -248,7 +259,11 @@ def create_app(inputs: data.Inputs | None = None, source: str = "live", profiles
         loop = asyncio.get_running_loop()
 
         async def send():
-            p = rp.payload()
+            p = guarded(rp.payload)
+            while errors:
+                await websocket.send_json({"type": "error", "tick": rp.t_s, "t_s": rp.t_s, "message": errors.pop(0)})
+            if p is None:
+                return
             if refusals:
                 p["refused"] = refusals.pop()
             await websocket.send_json(p)
@@ -261,7 +276,7 @@ def create_app(inputs: data.Inputs | None = None, source: str = "live", profiles
                 try:
                     await asyncio.wait_for(changed.wait(), timeout)
                 except asyncio.TimeoutError:
-                    rp.advance()
+                    guarded(rp.advance)
                     due += 1 / rp.speed
                     if due < loop.time() - 1:
                         due = loop.time() + 1 / rp.speed  # fell behind: do not burst

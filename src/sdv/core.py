@@ -109,15 +109,63 @@ class Core:
             ok = snap["crew"]["standing_plan"]["value"] == "approved"
             return ("standing_plan", evidence) if ok else ("held", "no standing plan approved")
         if how == "automatic":
-            ok = snap["crew"]["deck_latched_clear"]["value"] is True
-            return ("automatic", evidence) if ok else ("forbidden", "deck activity since the last crew sweep voided the latch")
+            if snap["crew"]["deck_latched_clear"]["value"] is True:
+                return "automatic", evidence
+            sweep = snap["crew"]["last_sweep"]["value"]
+            if not sweep:
+                return "forbidden", "no crew sweep is known, the deck is not latched clear"
+            if sweep.get("result") != "clear":
+                return "forbidden", "the last crew sweep found the deck not clear"
+            return "forbidden", "deck activity since the last crew sweep voided the latch"
         return "forbidden", f"the {self.mission['name'].lower()} file forbids it at {crew} aboard"
 
+    def _r3_window_min(self) -> float:
+        """Minutes G4's land-or-ditch limit leaves to clear the deck: its within_min less the approach (rules.r3)."""
+        lim = next(l for l in self.cards["G4"]["hard_limits"] if l["then"]["action"] == "land_or_ditch")
+        return lim["then"]["within_min"] - self.A["rules"]["r3"]["approach_min"]
+
+    def _deck_short(self, snap: dict) -> dict | None:
+        """Why the crew aboard cannot clear the flight deck for G4, or None when it reads clear, the landing officer
+        reports the zone clear, or they can (A.6 ship_state.deck.clear_min). At 0 aboard nobody can: forbidden. At a
+        level whose lead, the confirm and the clear at the transition_picks worst case, exceeds the minutes the hard
+        limit leaves after the approach, the zone had to be kept clear from launch (docs/SCENARIO_C_MEMO.md): not now,
+        with the lead as the binding line."""
+        deck = snap["ship_state"]["deck_flight_deck"]["value"]
+        rep = snap["crew"]["hlo_deck_report"]
+        if deck == "clear" or (rep["value"] == "clear" and not rep["stale"]):
+            return None
+        crew = snap["crew"]["crew_aboard"]["value"]
+        if self.A["ship_state"]["deck"]["clear_min"].get(crew) is None:
+            return {"verdict": "forbidden", "state": "forbidden", "evidence": f"the flight deck is {deck} and nobody aboard can clear it"}
+        picks = self.A["transition_picks"]["r3_worst_case"]
+        lead, window = picks["confirm_min"][crew] + picks["clear_deck_min"][crew], self._r3_window_min()
+        if lead <= window:
+            return None
+        binding = {"class": "r3_lead", "label": Rec.explain.LABELS["r3_lead"], "capacity": window, "demand": lead,
+                   "free": window - lead, "unit": "min"}
+        return {"verdict": "not-now", "state": "held", "evidence": f"the flight deck is {deck} and {crew} aboard cannot clear it in time",
+                "binding": binding, "next_window": {"kind": "event", "event": "the landing officer reports the zone clear"}}
+
+    @staticmethod
+    def _shorted(r3: dict, verdict: str, evidence: str) -> tuple[str, str, dict]:
+        """The verdict, evidence and extra record fields after _clear_or_withhold: as given, unless the crew aboard could
+        not clear the deck (r3["short"]), when the refusal's verdict, its reason and its line take over."""
+        s = r3.get("short")
+        if not s:
+            return verdict, evidence, {}
+        return s["verdict"], f"{evidence}, {s['evidence']}", {k: s[k] for k in ("binding", "next_window") if k in s}
+
     def _clear_or_withhold(self, snap: dict, r3: dict) -> list:
-        """The turn into the wind and the deck clear, or nothing while a 200 MS landing hold is in force."""
+        """The turn into the wind and the deck clear, or nothing while a 200 MS landing hold is in force, or nothing when
+        the crew aboard cannot clear the deck for G4 (r3["short"] then carries the refusal for the record)."""
         if self.landing_hold is not None:
             r3["withheld"] = True
             return []
+        short = self._deck_short(snap)
+        if short:
+            r3["short"], r3["state"], r3["withheld"] = short, short["state"], False
+            return []
+        r3.pop("short", None)
         r3["cleared_cmds"], r3["withheld"] = True, False
         return self._clear_cmds(snap)
 
@@ -128,7 +176,7 @@ class Core:
         seq = self._take_seq()
         r3 = {"seq": seq, "request_seq": None, "state": verdict, "landed_t_s": None, "deadline_t_s": deadline_t_s,
               "cleared_cmds": False, "evidence": evidence}
-        c = []
+        c, extra = [], {}
         if verdict == "confirm":
             req = self.next_request
             self.next_request += 1
@@ -139,9 +187,10 @@ class Core:
             c += self._clear_or_withhold(snap, r3)
             if r3.get("withheld"):
                 evidence += ", deck clearing waits for the landing hold to lift"
+            verdict, evidence, extra = self._shorted(r3, verdict, evidence)
         self.r3 = r3
         r = Rec.from_d5(seq=seq, snapshot=snap, verdict=verdict, crew=crew, deck_evidence=evidence,
-                        deadline_t_s=deadline_t_s, mission=self.mission)
+                        deadline_t_s=deadline_t_s, mission=self.mission, **extra)
         out.append(self._record(r, started, c, cmds))
 
     def _r3_reopen(self, snap: dict, deadline_t_s: float | None, out: list, cmds: list) -> None:
@@ -187,6 +236,7 @@ class Core:
             if req and (req["state"] in ("confirmed", "denied") or t - req["asked_t_s"] > self.wait_s[crew]):
                 started = time.perf_counter()
                 seq = self._take_seq()
+                extra = {}
                 if req["state"] == "confirmed":
                     r3["state"] = "cleared"
                     c = self._clear_or_withhold(snap, r3)
@@ -194,6 +244,7 @@ class Core:
                     evidence = f"the bridge confirmed at minute {Rec.explain.minute(req['answered_t_s'])}"
                     if r3.get("withheld"):
                         evidence += ", deck clearing waits for the landing hold to lift"
+                    verdict, evidence, extra = self._shorted(r3, verdict, evidence)
                 else:
                     r3["state"] = "held"
                     c = []
@@ -201,7 +252,7 @@ class Core:
                     evidence = "the bridge denied the recovery" if req["state"] == "denied" else "no answer from the bridge"
                 r3["evidence"] = evidence
                 r = Rec.from_d5(seq=seq, snapshot=snap, verdict=verdict, crew=crew, deck_evidence=evidence,
-                                deadline_t_s=r3["deadline_t_s"], mission=self.mission)
+                                deadline_t_s=r3["deadline_t_s"], mission=self.mission, **extra)
                 out.append(self._record(r, started, c, cmds))
         if r3["landed_t_s"] is None and g4.get("activity", {}).get("value") == "landed":
             r3["landed_t_s"] = t

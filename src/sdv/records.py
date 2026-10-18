@@ -106,13 +106,19 @@ def from_d4(d: dict, *, seq: int, snapshot: dict) -> dict:
     return _finish(r)
 
 
-def from_d5(*, seq: int, snapshot: dict, verdict: str, crew: int, deck_evidence: str, deadline_t_s: float | None, mission: dict) -> dict:
-    """Rule R3 at the crew level aboard (docs/SCENARIO_C_MEMO.md): who clears G4's recovery, and on what evidence."""
+def from_d5(*, seq: int, snapshot: dict, verdict: str, crew: int, deck_evidence: str, deadline_t_s: float | None, mission: dict,
+            binding: dict | None = None, next_window: dict | None = None) -> dict:
+    """Rule R3 at the crew level aboard (docs/SCENARIO_C_MEMO.md): who clears G4's recovery, and on what evidence. A
+    not-now also carries the line that bound (the deck clearing lead) and the window that lifts it."""
     run = snapshot["run"]
     r = {"seq": seq, "tick": run["tick"], "t_s": run["t_ship_s"], "applies_at_tick": run["tick"] + 1, "kind": "D5",
          "subject": "G4 recovery under rule R3", "mission": mission["id"], "verdict": verdict, "rule": "R3",
          "crew_aboard": crew, "deck_evidence": deck_evidence, "deadline_t_s": deadline_t_s,
          "inputs_hash": inputs_hash(snapshot, mission["id"])}
+    if binding is not None:
+        r["binding"] = binding
+    if next_window is not None:
+        r["next_window"] = next_window
     return _finish(r)
 
 
