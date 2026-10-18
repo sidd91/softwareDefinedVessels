@@ -949,3 +949,15 @@ stopped, the globe session was stopped before it changed anything (globe on hold
 Decisions: none new. Conflicts: Siddharth's feat/ship-state-fsm carries his weather support (fbe59a5) and a second
 governor (9a99dc7), neither on main, for the team sync. Deferrals: DEC-60's two calls (5 S guests may be switched
 off before a 60 S guest is throttled; discretionary tiers folded into shed_order) to Logan's team.
+
+### Sat 22:15 PDT · Crew chip at 6 and 0 aboard refused honestly, never a crash · Claude Fable 5.1 on behalf of Siddharth Chawla (sidd91)
+
+Branch fix/crew-chip-guards for a teammate to merge. On main the Operations crew chip 14 to 6 or 0 around minute 8-9 raised in
+the test double (a bridge answer with no open request, clear_deck at a level it did not know), the /ws loop let the socket
+die and the page reconnected into a silent restart at 14 aboard; `sdv run --variant crew0` crashed the same way. Now the
+double ignores and logs the stray answer, clears in A.6's 8-12 min at 6 and refuses clearing at 0; the core says "forbidden"
+at 0 (deck state in the evidence) and "not now" at 6 with the fixture's line, deck clearing lead 15 min against 8 min, 7 min
+over; the screen turns an engine exception into an error frame, holds the run and shows one ALARM · ENGINE row.
+Files: src/sdv/core.py, src/sdv/records.py, src/sdv/ui/server.py, src/sdv/ui/static/js/app.js, tests/support/sim_stub.py,
+tests/test_crew_levels.py (new), tests/test_ui_server.py. Tests: 13 added, full suite 1291 passed, no existing test changed.
+Decisions: none. Conflicts: none. Requirements touched: R-009, R-011, R-012.
