@@ -105,6 +105,23 @@ def test_a_file_yaml_cannot_read_is_refused_at_its_line(tmp_path, capsys):
     assert f"refused {path}: yaml: " in out and "line 3, column 1" in out
 
 
+def test_a_path_that_cannot_be_read_is_refused_not_a_traceback(tmp_path, capsys):
+    """A mistyped path on stage ends in the one refusal line and exit 2, never a Python traceback."""
+    missing = tmp_path / "nope.yaml"
+    assert cli.main(["admit", "--card", str(missing), "--installed", "G4,G5"]) == 2
+    assert f"refused {missing}: file: No such file or directory" in capsys.readouterr().out
+    assert cli.main(["admit", str(missing)]) == 2                                  # the path in place of the id too
+    assert f"refused {missing}: file: No such file or directory" in capsys.readouterr().out
+    folder = tmp_path / "G7.yaml"
+    folder.mkdir()
+    assert cli.main(["admit", "--card", str(folder)]) == 2
+    assert f"refused {folder}: file: Is a directory" in capsys.readouterr().out
+    binary = tmp_path / "G8.yaml"
+    binary.write_bytes(b"\xff\xfeid: G8\n")
+    assert cli.main(["admit", "--card", str(binary)]) == 2
+    assert f"refused {binary}: file: not UTF-8 text (invalid start byte at byte 0)" in capsys.readouterr().out
+
+
 def test_the_file_must_be_the_card_named(tmp_path, capsys):
     path = write(tmp_path / "G7.yaml", g7())
     assert cli.main(["admit", "G6", "--card", path]) == 2
@@ -133,11 +150,13 @@ def test_load_cards_reports_a_bad_file_and_keeps_going(manifests):
     write(manifests / "G8.yaml", bad)
     write(manifests / "G9.yaml", copy.deepcopy(G6))                 # a copy that kept G6's id
     (manifests / "G10.yaml").write_text("modes: [\n")
+    (manifests / "G11.yaml").mkdir()                                  # a directory the glob matches too
     refused: list[Ld.LoadError] = []
     cards = Ld.load_cards(vocab=VOCAB, refused=refused)
     assert sorted(cards) == SIX and cards["G6"] == G6
     assert [Ld.refusal(e) for e in refused] == [
         f"refused {manifests / 'G10.yaml'}: yaml: expected the node content, but found '<stream end>' at line 2, column 1",
+        f"refused {manifests / 'G11.yaml'}: file: Is a directory",
         f"refused {manifests / 'G7.yaml'}: id: G7 has no activity registry in config/signals.yaml",
         f"refused {manifests / 'G8.yaml'}: placement.parts[0].mass_t: 'abc' is not of type 'number'",
         f"refused {manifests / 'G9.yaml'}: id: G6 is already loaded from G6.yaml",

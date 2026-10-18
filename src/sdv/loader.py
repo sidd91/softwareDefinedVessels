@@ -210,10 +210,14 @@ def _schema(root: Path, rel: str) -> dict:
 
 
 def load_card(path: Path, vocab: Vocabulary | None = None, root: Path = ROOT, allow_unregistered: bool = False) -> dict:
-    """One card file, or a LoadError naming the field (a file YAML cannot read is refused the same way)."""
+    """One card file, or a LoadError naming the field. A path that cannot be read (mistyped, a directory, not UTF-8
+    text) and a file YAML cannot parse are refused the same way, so neither ends in a traceback on stage or at start-up."""
     vocab = vocab or load_vocabulary(root)
     try:
         card = _read(Path(path))
+    except (OSError, UnicodeDecodeError) as err:
+        why = (err.strerror or str(err)) if isinstance(err, OSError) else f"not UTF-8 text ({err.reason} at byte {err.start})"
+        raise LoadError(path, [f"file: {why}"]) from None
     except yaml.YAMLError as err:
         mark = getattr(err, "problem_mark", None)
         where = f" at line {mark.line + 1}, column {mark.column + 1}" if mark else ""

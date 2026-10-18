@@ -54,7 +54,8 @@ uv run sdv admit --card path/to/G7.yaml --installed G4,G5 --mission disaster_rel
 ```
 
 A missing or wrong field is named (`refused path/to/G7.yaml: placement.parts[0].mass_t: 'abc' is not of
-type 'number'`, exit code 2). With no activity registered yet for its id, the card is judged on its quantities,
+type 'number'`, exit code 2), and so is a path that cannot be read (`refused path/to/G7.yaml: file: No such
+file or directory`). With no activity registered yet for its id, the card is judged on its quantities,
 positions and relations and the output says `activities not registered: conditions not judged`. A file in
 `manifests/` that fails is reported once at start-up (`refused manifests/G7.yaml: <field>: <problem>`) and
 skipped; the other cards load.
