@@ -105,6 +105,7 @@ Deadline: **Sun 2026-10-18 10:00 PDT**.
 | DEC-64 | Sat 21:53 | Final-night split (Discord sync): Siddharth covers the code: his audit tracks #1, #2, #4, #5, #6, #12/#19, the demo rehearsal, README truth pass, UX simplification. Logan covers the slides (VC or commander style, no paragraphs, buzzwords, slides last), the deployment map with weather ranges for mission parameters, long-running soak tests reported to Siddharth, Q&A prep, and subsidiary UI design calls agreed with Siddharth. Separate branches per feature, merged at the end | Logan and Siddharth | Claude for Logan |
 | DEC-65 | Sat 22:32 | Slogan: "ArgOS: Reliability through Automation" | Logan | Claude for Logan |
 | DEC-66 | Sat 22:27 | Deployment map built standalone (tools/deploy_map, branch feat/deployment-map): 2D, offline, Natural Earth coastlines (public domain, approved by Logan) and Siddharth's Open-Meteo route cache; seeded points along the route and inside a +/-10 km area; mission parameters (cooling at route P90 and max seawater, weather-window shares, D1 by the real engine at route seawater) per profile. Whether it joins the ArgOS screen is a later team call | Logan | Claude for Logan |
+| DEC-67 | Sun 00:40 | No handoff after tonight (Logan): Logan's session fixes every open item in docs/HANDOFF_SIDDHARTH.md and the soak's reachable crashes, in Siddharth's files, on fix/handoff-{core,shedding,loop,cards,leftovers}; our branches merge once the organisers' load-out is on main; main and the `submission` tag move only on a green release gate. Supersedes DEC-64's code split for those items | Logan | Claude for Logan |
 
 ## Conflicts and risks to watch
 
@@ -1374,3 +1375,36 @@ Files: docs/PITCH_FACTS.md, docs/JURY_QA.md, docs/ARCHITECTURE_ONE_PAGE.md, WORK
 Tests: `uv run pytest -q` 1492 passed in 510.96 s on 1fae181 (main's 1476 plus the 16 map tests from 5f09b6c, the other test files equal main's). fix/review-ours: 10 of 10 in tests/test_review_fixes.py. fix/scenario-b-loadout-g1: 1485 collected.
 Decisions: none. Conflicts: origin/main moved to 7b9a804 (the load-out branch, same code as c5c7f1d) at 23:53 PDT, mid-check. The baseline stays 4c4f93c as asked, with the load-out values labelled. DEC-63 is used twice (the final-night split on feat/deployment-map, the load-out on fix/scenario-b-loadout-g1): flagged, not renumbered here. Handoff #3 (standby out of step after a 0.45 / 0.35 profile) did not reproduce: in step under survey and sar.
 Deferrals: to Siddharth, his files: the DEMO_READINESS status table and T-30 step 1, the DEMO_SCRIPT presenter rules for fix/simbar-clicks and fix/jury-card-file, D4 on a dropped guest meter or PMS feed (handoff #1, #2), the account PDF over 1 page on a rebuild. To Logan: merging fix/review-ours, feat/deployment-map and docs/review-fixes, and refreshing the deck's load-out numbers if the demo freezes at or after 7b9a804.
+
+### Sun 03:30 PDT · Final integration: our branches, all handoff fixes, plain-language deck · Claude Opus 5.5 on behalf of Logan Walker (GhostWalka)
+
+What: integrate/logan-final = origin/main cfbc78d (tagged `submission`) + fix/review-ours + feat/deployment-map +
+docs/review-fixes + docs/pitch-facts (clean merges), then the handoff fixes (DEC-67), each with a test that fails without it
+and an adversarial reviewer:
+- fix/handoff-core (e2c5e54): #22 a word hard limit reads as words (D3 sentence and the screen row), #5 the bridge wait runs
+  from R3's own ask and a confirmation hidden by a feed drop still counts, #6 one re-ask per hard-limit onset, #7 G3 held by a
+  safety request resumes after G4 is secured, #8 a policy hold re-runs the policy, #16 the unconfirmed D4 says why, partial
+  profile weights, an unknown priority swap refused.
+- fix/handoff-shedding (ff315b1): #1 no shed on stand-in draws, #2 only the binding line's stand-ins hold D4 back, #9 the
+  delayed first action keeps its 5 s due tick.
+- fix/handoff-loop (5f88b05): #3 inputs logged exactly and the standby gets its own copy, #17 add_input takes the lock,
+  #18 safety latency counts the lock wait, #21 the snapshot names the file in force, one frame for every side, #15
+  safety_request as a laptop input and `sdv run --safety`, the laptop input contract, stub gaps, the ws test race.
+- fix/handoff-cards (249ce35): bad confirm blocks, plain card-refusal sentences, finite and bounded numbers.
+- fix/handoff-leftovers (83f1eb7, repair 710f9f7): non-object profiles, huge integers, plain door and row wording, refused
+  swaps logged as refused, long digit edits, an upper-case SAFETY row, D4 acting on a line over on fresh values beside a kW
+  stand-in, a mode back from its stand-in not counted as a landed step.
+- Ours: the decision IDs renumbered after the DEC-63 collision (ours are DEC-64 to DEC-66), the map reads Scenario B's
+  load-out from config, the safety table answers a forbidden recovery at 0 aboard as forbidden (verifier finding).
+- Docs: HANDOFF_SIDDHARTH.md is now a status table, PITCH_FACTS for the final main, README test count 1712 and the map's data
+  credits (README.pdf rebuilt, 3/3 pages), REPOSITORY_MAP row for tools/deploy_map.
+- Deck (claude.ai artifact, not in the repo): rebuilt as 12 slides (problem, prototype, architecture, cards and profiles,
+  graceful degradation, design choices, real-world use, path to a trial, demo last), screenshots from this build, then every
+  sentence rewritten in plain public language (two lay reviewers, an editor, a cold reader). Logan's "why this challenge" line
+  is on the Team slide.
+Checks: full suite 1712 collected (1711 pass, 1 strict xfail: recovery_lead_s reads confirm_s by str(crew), fixing it moves the
+pinned 6-aboard D5). Scripted survey and rescue runs (frames, inputs, snapshots, decisions) byte-identical to cfbc78d, replays
+EQUAL. The run sheet driven live over /ws matched docs/DEMO_SCRIPT.md step by step.
+Decisions: DEC-67. Conflicts: none. Deferrals: team number, bios, trial length and repository visibility (private) to Logan;
+a screen button for safety requests and the hard-coded response tags in the JS to the team (UI).
+

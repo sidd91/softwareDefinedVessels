@@ -1,5 +1,12 @@
 # ArgOS pitch facts
 
+> **Final main, Sun 18 Oct ~04:00 PDT** (integrate/logan-final, then main): 1712 tests collected, all pass but one
+> deliberate strict xfail (the recovery-lead lookup, kept so the 6-aboard demo record stays as pinned). Every item in
+> docs/HANDOFF_SIDDHARTH.md is fixed except that one, the deployment map is merged (section 10 numbers hold, load-out
+> G1 + G3 + G4 + G5 read from config), and the scripted survey and rescue runs are byte-identical to the tagged
+> `submission` commit cfbc78d. X-25, X-26, X-27 and X-30 below are updated for this.
+
+
 **ArgOS: Reliability through Automation**
 
 - The single source for every number and claim a slide may use.
@@ -222,7 +229,7 @@ The jury's one-number edit (all A1's set unless named):
 
 | ID | Fact | Value | Verified by | When |
 |---|---|---|---|---|
-| F-60 | Test suite on main `4c4f93c` | 1476 tests, all pass. This branch: 1492 passed in 510.96 s, which is main's 1476 plus the 16 map tests from `5f09b6c`. The other test files equal main's | C13, C14 | 23:39 to 23:49 |
+| F-60 | Test suite on the final main | 1712 tests collected, all pass except one strict xfail (tests/test_handoff_core.py, the recovery-lead lookup). Earlier: main 4c4f93c 1476, 7b9a804 1485 | `uv run pytest -q` on integrate/logan-final | Sun 03:40 |
 | F-61 | Test suite on fix/scenario-b-loadout-g1 | 1485 collected, main's 1476 plus 9 (now, since the load-out reached main at 7b9a804: 1485 on main). Siddharth's review logs 1485 green | C14, its WORKLOG | 23:58 |
 | F-62 | Known flaky test | `tests/test_ui_server.py::test_ws_streams_the_live_loop_and_takes_laptop_inputs` fails in some full runs and passes alone (docs/HANDOFF_SIDDHARTH.md, on branch fix/review-ours, not on main yet). It passed in C13 | C13 | 23:47 |
 | F-63 | Tests for tonight's fixes: jury edits, jury card file, crew levels | 150, all in the 1476 | C14 | 23:58 |
@@ -256,7 +263,7 @@ The jury's one-number edit (all A1's set unless named):
 | F-113 | Kit build into a used folder | on main it replaces the folder (a file in it was deleted). "REFUSED ... holds files and is not a kit", exit 1, and install checks a staging copy before it touches a slot (on branch fix/review-ours, not on main yet) | C16 | 23:56 |
 | F-114 | The board tonight | not connected: `adb devices` lists none | C23 | 23:55 |
 
-## 10. Deployment map (on branch feat/deployment-map, not on main yet)
+## 10. Deployment map (tools/deploy_map, merged)
 
 Every row in this section is from feat/deployment-map `b1926e3` (C17). This branch still carries the older `5f09b6c` copy of the tool: do not use its numbers.
 
@@ -342,12 +349,12 @@ Not built, or partial. Sources: Siddharth's audit (`docs/AUDIT_MAIN.md`, section
 | X-20 | the deployment map is part of the ArgOS screen | standalone tool (on branch feat/deployment-map, not on main yet) | C17 |
 | X-22 | certified, or cyber-secure | out of scope by the brief | C22 |
 | X-24 | edge nodes hold the shed table | design only. Nothing builds, pushes or reads a shed table | C19, F-74 |
-| X-25 | D4 never sheds on a stale feed | a stale plant feed blocks the shed: "Not shed ... not confirmed". But a dropped guest-meter feed makes D4 shed on the fallback draw, 17 times, ticks 1133 to 1149. And a dropped PMS feed holds the shed to tick 1175, past its 1145 due tick | C12, handoff #1 and #2 (Siddharth's) |
-| X-26 | the standby stays in step on any input | in step on both runs and on an edited profile (F-56). Out of step on main after a dropped guest-meter feed (F-110) | C12 |
-| X-27 | a 200 ms safety request from the screen | the engine answers it in under 0.05 ms (F-20). No screen control sends one | `src/sdv/ui/live.py:20`, handoff #15 |
+| X-25 | D4 never sheds on a stale feed | now true for draws and capacities: D4 acts only on a line that is over on fresh readings, and a line over only on stand-in values stays unconfirmed with the ladder armed (handoff #1, #2). Do not claim it for a fresh mode reading taken just before a command lands (a 3 s window) | tests/test_handoff_shedding.py, tests/test_handoff_leftovers.py |
+| X-26 | the standby stays in step on any input | in step on both runs, edited profiles, feed drops, whole-number floats and every fuzzed laptop input tried tonight (handoff #3, float frames). Still say "in every run we tried", not "any input" | tests/test_handoff_loop.py |
+| X-27 | a 200 ms safety request from the screen | the engine answers one in under 0.05 ms, and it can now be sent as a laptop input or with `sdv run --safety T:request` (handoff #15). No screen button sends one | `src/sdv/ui/live.py`, `src/sdv/cli.py` |
 | X-28 | the landing officer's report, the deck sweep or a standing plan from the screen | the crew chip (14, 6, 0) is the only crew control on screen. The engine takes the others as laptop inputs, no button sends them | `src/sdv/ui/live.py:20`, C19 |
 | X-29 | the Physical Account fits one page | the committed PDF is 1 page from an older build. A rebuild gives 2 (F-115) | C18 |
-| X-30 | a tagged submission | no tag on origin tonight | C24 |
+| X-30 | a tagged submission | origin has the tag `submission` (Siddharth, Sun 00:25, cfbc78d), re-pointed to the final main once it passes | `git ls-remote --tags origin` |
 | X-31 | the kit is filtered by the port's admission decisions, or rebuilt aboard for a guest swapped at sea | the kit covers every card in `manifests/`, built ashore by `sdv kit build` | docs/review-fixes `docs/DEPLOYMENT.md` (on branch docs/review-fixes, not on main yet) |
 
 Fixed on main since the first pass. These may now be claimed, with the fact named:
