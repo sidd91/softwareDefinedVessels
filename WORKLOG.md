@@ -949,3 +949,14 @@ stopped, the globe session was stopped before it changed anything (globe on hold
 Decisions: none new. Conflicts: Siddharth's feat/ship-state-fsm carries his weather support (fbe59a5) and a second
 governor (9a99dc7), neither on main, for the team sync. Deferrals: DEC-60's two calls (5 S guests may be switched
 off before a 60 S guest is throttled; discretionary tiers folded into shed_order) to Logan's team.
+
+### Sat 21:59 PDT · D1 binds on the data links and compute (branch fix/d1-data-compute-lines, for a teammate to merge) · Claude Fable 5.1 on behalf of Siddharth Chawla (sidd91)
+
+Admission judged six of the eight classes: a SATCOM or compute oversubscription came aboard with no line to name, against
+README's DEC-38 sentence. ledger.admission_lines() now adds satcom, los_radio and backbone (each guest at its card minimum,
+else nominal, DEC-38; capacities from A.data) and compute (nominal cores against A.compute nodes x cores_per_node x guest_share);
+SHIP_WIDE, explain, cli, the admit screen and the record schema's descriptions carry the classes and the units Mbit/s and cores.
+Files: src/sdv/{ledger,admission,explain,cli,ui/view}.py, config/decision_record.schema.json, tests/test_admission_links.py (22 tests).
+Tests: 1300 pass (1278 on main + 22); no oracle verdict or binding moves; /api/admit and the CLI render the lines. README's DEC-38
+wording left alone: the nominal shortfall is still not shown as degraded quality. Commit 26a6b69, pushed.
+Decisions: none. Conflicts: none. Requirements touched: none (R-046's eight classes are now all judged at D1; its row is unchanged).
