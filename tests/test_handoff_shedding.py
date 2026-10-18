@@ -81,15 +81,18 @@ def test_a_guest_meter_never_heard_is_never_shed_on_its_fallbacks(tmp_path):
     assert in_step_and_replayed(outs, tmp_path)
 
 
-def test_a_missing_mode_reading_counts_at_its_highest_draw_and_sheds_nothing():
+def test_a_missing_mode_reading_counts_at_its_highest_draw_and_is_never_stepped():
     """A guest whose mode was never reported (null, not marked stale) is unknown, not standby: it counts at its highest
-    draw on the armed ladder and D4 does not act on it."""
+    draw on the armed ladder and D4 takes no step from it. Adjusted with the leftovers (item 8): this asserted no shed
+    at all, but the loop is over on fresh values alone (G3's fresh 1 kW, G4 35, G5 45: 81 against 75), so the
+    over-limit is certain and G4 is shed. A line over only on the stand-in stays unconfirmed
+    (test_handoff_leftovers.py::test_a_line_over_only_on_stand_in_values_stays_unconfirmed)."""
     s = copy.deepcopy(SNAP["scenario_b_survey_m19"])
     s["guests"]["G3"]["mode"] = {"value": None, "source": "plant", "age_s": None, "confidence": "assumed", "stale": False}
     d = D4.shed(CARDS, MISSIONS["survey"], s)
     assert d["draws"]["G3"] == 25 and d["load_kw"] == 105
-    assert d["verdict"] == "unconfirmed" and d["steps"] == [] and d["armed"]
-    assert d["unconfirmed_because"] == "reading missing"
+    assert d["verdict"] == "shed" and [(st["guest"], st["to_mode"]) for st in d["steps"]] == [("G4", "charge")]
+    assert all(st["guest"] != "G3" for st in d["steps"] + d["queued"]) and d["armed"]
 
 
 # ------------------------------------------------------------------------------------------------ #2 the binding line

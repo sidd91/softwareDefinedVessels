@@ -10,6 +10,7 @@ frame n + 1, each carrying the seq of the record that sent it. Wall-clock latenc
 """
 from __future__ import annotations
 
+import re
 import time
 
 import yaml
@@ -25,6 +26,7 @@ from sdv import shedding as D4
 CEILING_MS = {"D1": "admission", "D2": "placement", "D3": "arbitration", "D4": "shed_first_action", "D5": "arbitration",
               "safety": "safety_command"}
 ACTIVE_FAULT = ("pending", "held_stale", "confirmed", "restoring")
+PLAIN_ID = re.compile(r"^[A-Za-z0-9_.-]{1,40}$")   # a file name a refusal may quote back
 
 
 def _pred_value(pred, current):
@@ -44,7 +46,9 @@ class Core:
         self.cards = Ld.load_cards(vocab=vocab)
         self.missions = Ld.load_missions(self.cards, vocab)
         self.mission_schema = Ld._schema(root, "config/missions/schema.json")
-        self.rejected: list[dict] = []          # profiles refused at sea, with the fields named; the previous one is kept
+        # profiles and swaps refused at sea, with the fields named and the input's place among the tick's core inputs;
+        # the file in force is kept
+        self.rejected: list[dict] = []
         self.signals = yaml.safe_load((root / "config/signals.yaml").read_text())
         self.mission = self.missions[mission]
         self.seq = 0
@@ -65,6 +69,7 @@ class Core:
         self.landing_hold: dict | None = None   # {"t_s": tick} while a 200 MS landing hold is in force
         self.commanded: dict[str, str] = {}     # the mode ArgOS last set per guest (shed or restore)
         self.over_since: float | None = None    # first tick of the current over-limit stretch, for the A.8 due ticks
+        self.fresh_modes: dict[str, tuple] = {} # guest -> (its last fresh mode, the tick it changed between fresh readings)
         sig = {x["name"]: x for x in self.signals["signals"]}
         self.wait_s = {int(k): v for k, v in sig["bridge_requests"]["wait_s"]["by_crew"].items()}
 
@@ -332,19 +337,26 @@ class Core:
     # ---------------------------------------------------------------------------------------------- one tick
     def decide(self, snap: dict, core_inputs: list | None = None) -> tuple[list, list]:
         out, cmds = [], []
-        for i in core_inputs or []:
+        for k, i in enumerate(core_inputs or []):
+            payload = i.get("payload") if isinstance(i.get("payload"), dict) else {}
             if i["type"] == "priority_swap":
-                mid = i["payload"].get("mission")
+                mid = payload.get("mission")
                 if isinstance(mid, str) and mid in self.missions:
                     self.mission = self.missions[mid]
                 else:   # a typo, or a profile refused or not yet applied: the file in force stays
-                    self.rejected.append({"tick": snap["run"]["tick"], "profile": mid,
-                                          "problems": [f"no priority file {mid} is loaded"]})
+                    named = mid if isinstance(mid, str) and PLAIN_ID.match(mid) else None
+                    self.rejected.append({"tick": snap["run"]["tick"], "input": k, "type": "priority_swap", "profile": named,
+                                          "problems": [f"no priority file {named} is loaded" if named
+                                                       else "no priority file of that name is loaded"]})
             elif i["type"] == "profile_applied":
-                prof = i["payload"]["profile"]
-                problems = Ld.check_mission(prof, self.cards, self.vocab, self.mission_schema)
+                prof = payload.get("profile")
+                if not isinstance(prof, dict):   # text, empty, a list or a number: refused, never read as a file
+                    problems = [f"(root): the profile sent is {Ld._kind(prof)}, not a priority file"]
+                else:
+                    problems = Ld.check_mission(prof, self.cards, self.vocab, self.mission_schema)
                 if problems:
-                    self.rejected.append({"tick": snap["run"]["tick"], "profile": prof.get("id"), "problems": problems})
+                    self.rejected.append({"tick": snap["run"]["tick"], "input": k, "type": "profile_applied",
+                                          "profile": prof.get("id") if isinstance(prof, dict) else None, "problems": problems})
                 else:
                     self.missions[prof["id"]] = prof
                     self.mission = prof
@@ -399,7 +411,8 @@ class Core:
             self._r3_follow(snap, out, cmds)
 
         started = time.perf_counter()
-        d = D4.shed(self.cards, self.mission, snap, self.reservations, onset_t_s=self.over_since)
+        d = D4.shed(self.cards, self.mission, snap, self.reservations, onset_t_s=self.over_since,
+                    mode_changed_t_s=self._mode_changes(snap))
         over = d["load_kw"] > d["limit_kw"] + 1e-9
         self.over_since = (self.over_since if self.over_since is not None else snap["run"]["t_ship_s"]) if over else None
         key = None
@@ -423,6 +436,21 @@ class Core:
         self.safety_tick, self.last_snap, self.last_cmds = snap["run"]["tick"], snap, list(cmds)
         self._rebuild_table()
         return out, cmds
+
+    def _mode_changes(self, snap: dict) -> dict:
+        """Per guest, the tick its mode last changed between two fresh readings, None before any change. A stand-in
+        (a lost guest_meter reads the highest-draw mode) is skipped, so a mode back from its stand-in to the value it
+        had before is no change, and no step of a shed stretch landed by it (D4's first due tick)."""
+        t = snap["run"]["t_ship_s"]
+        for g, b in snap["guests"].items():
+            if not D4.fresh(b["mode"]):
+                continue
+            was = self.fresh_modes.get(g)
+            if was is None:
+                self.fresh_modes[g] = (b["mode"]["value"], None)
+            elif was[0] != b["mode"]["value"]:
+                self.fresh_modes[g] = (b["mode"]["value"], t)
+        return {g: v[1] for g, v in self.fresh_modes.items()}
 
     def _expire_g3_hold(self, snap: dict) -> None:
         """A hold on its way to G3 stops counting once G3 reports it, once the link drops (the reply is lost), or after

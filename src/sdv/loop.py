@@ -15,6 +15,7 @@ import importlib
 import json
 import math
 import os
+import re
 import sys
 import threading
 import time
@@ -25,21 +26,30 @@ import yaml
 
 from sdv.core import Core
 from sdv.estimator import Estimator, r1
-from sdv.loader import ROOT
+from sdv.loader import NUMBER_MAX, ROOT
 
 SIGNALS = yaml.safe_load((ROOT / "config/signals.yaml").read_text())
 EVENTS, FEEDS = SIGNALS["events"], list(SIGNALS["feeds"])
 TICKS_PER_S = 12        # demo pacing x12: a ship minute in 5 s
 
 
+def _capped(x):
+    """An integer beyond float range as the largest float, its sign kept: what a log can carry of it."""
+    return -sys.float_info.max if x < 0 else sys.float_info.max
+
+
 def canonical(obj) -> str:
     """The log serializer of frames, snapshots, records and timing: numbers to 0.1, whole numbers as integers, sorted
-    keys, no whitespace. Inputs are logged exact instead."""
+    keys, no whitespace. An integer beyond float range is capped at the largest float, never a crash. Inputs are
+    logged exact instead."""
     def norm(x):
         if isinstance(x, bool) or x is None or isinstance(x, str):
             return x
         if isinstance(x, (int, float)):
-            v = round(float(x), 1)
+            try:
+                v = round(float(x), 1)
+            except OverflowError:
+                v = _capped(x)
             return int(v) if v.is_integer() else v
         if isinstance(x, dict):
             return {k: norm(v) for k, v in x.items()}
@@ -51,29 +61,98 @@ def canonical(obj) -> str:
 
 def exact(obj) -> str:
     """The input log serializer: sorted keys, no whitespace, every number as it was sent. A juror's weight of 0.24 must
-    reach the standby and a replay as 0.24, not canonical's 0.2. A log line read back gives the same input."""
-    return json.dumps(obj, sort_keys=True, separators=(",", ":"))
+    reach the standby and a replay as 0.24, not canonical's 0.2. A log line read back gives the same input. An integer
+    too long to write (Python's digit limit) is logged as the largest float, sign kept, so every side reads the same
+    input and the loader refuses it as above its largest number."""
+    try:
+        return json.dumps(obj, sort_keys=True, separators=(",", ":"))
+    except ValueError:
+        return json.dumps(_writable(obj), sort_keys=True, separators=(",", ":"))
+
+
+def _writable(x):
+    if isinstance(x, dict):
+        return {k: _writable(v) for k, v in x.items()}
+    if isinstance(x, (list, tuple)):
+        return [_writable(v) for v in x]
+    if isinstance(x, int) and not isinstance(x, bool) and abs(x) > sys.float_info.max:
+        return _capped(x)
+    return x
+
+
+_QUOTABLE = 20      # a refusal quotes a value back only when it is this short and carries no ':' or ';'
+_FIELD = re.compile(r"^[A-Za-z_][A-Za-z0-9_]{0,39}$")
+
+
+def _number(v) -> bool:
+    return isinstance(v, (int, float)) and not isinstance(v, bool)
+
+
+def _finite(v) -> bool:
+    """math.isfinite without its OverflowError: an integer is always finite, however long."""
+    return isinstance(v, int) or math.isfinite(v)
+
+
+def _quoted(v) -> str | None:
+    """The value as a refusal may quote it, or None when it must be described instead: a section, a list, a long or
+    punctuated text and a number beyond NUMBER_MAX are never quoted back (no second colon, no 5000 digits)."""
+    if isinstance(v, (dict, list, tuple)) or (_number(v) and _finite(v) and abs(v) > NUMBER_MAX):
+        return None
+    if isinstance(v, str) and (len(v) > _QUOTABLE or ":" in v or ";" in v or not v.isprintable()):
+        return None
+    return repr(v)
+
+
+def _what(v) -> str:
+    if isinstance(v, dict):
+        return "an object"
+    if isinstance(v, (list, tuple)):
+        return "a list"
+    if isinstance(v, str):
+        return "text"
+    return "a number" if _number(v) else "a value"
+
+
+def _unloggable(v) -> str | None:
+    """Why a value cannot be written to the input log, or None when it can."""
+    try:
+        json.dumps(v)
+    except ValueError:
+        return "holds a number too long to log"
+    except TypeError:
+        return "holds a value the input log cannot carry"
+    return None
 
 
 def _conform(field: str, want, v, guests):
     """One payload value against its events type (config/signals.yaml): the value, a whole-number float in an integer
-    field made an integer, or ValueError naming the field."""
-    number = isinstance(v, (int, float)) and not isinstance(v, bool)
+    field made an integer, or ValueError naming the field. A number beyond NUMBER_MAX is refused in any field, and a
+    value that is not quoted back (_quoted) is described in plain words."""
+    number = _number(v)
+    if number and _finite(v) and abs(v) > NUMBER_MAX:     # compared as is: 10**400 never meets float()
+        if v > 0:
+            raise ValueError(f"{field} is above {NUMBER_MAX}, the largest number an input may carry")
+        raise ValueError(f"{field} is below -{NUMBER_MAX}, the smallest number an input may carry")
     if number and isinstance(v, float) and math.isfinite(v) and v.is_integer() and (
             want == "integer" or (isinstance(want, list) and all(isinstance(c, int) for c in want))):
         v = int(v)                          # 6.0 sent for crew level 6 is the level 6
+    said = _quoted(v)
     choices = want if isinstance(want, list) else guests if want == "guest" else FEEDS if want == "feed" else None
     if choices is not None:
         if any(v == c and type(v) is type(c) for c in choices):
             return v
-        raise ValueError(f"{field} {v!r} is not one of {', '.join(map(str, choices))}")
-    ok = {"string": isinstance(v, str), "object": isinstance(v, dict), "boolean": isinstance(v, bool), "any": True,
-          "integer": number and isinstance(v, int),
-          "number": number and math.isfinite(v), "number?": v is None or (number and math.isfinite(v))}.get(want, False)
-    if not ok:                              # a type the check does not know is refused, never waved through
+        listed = ", ".join(map(str, choices))
+        raise ValueError(f"{field} {said} is not one of {listed}" if said else f"{field} is {_what(v)}, not one of {listed}")
+    checks = {"string": lambda: isinstance(v, str), "object": lambda: isinstance(v, dict), "boolean": lambda: isinstance(v, bool),
+              "any": lambda: True, "integer": lambda: number and isinstance(v, int),
+              "number": lambda: number and _finite(v), "number?": lambda: v is None or (number and _finite(v))}
+    ok = checks.get(want, lambda: False)()      # a type the check does not know is refused, never waved through
+    if not ok:
         what = {"string": "text", "object": "an object", "boolean": "true or false", "integer": "a whole number",
                 "number": "a number", "number?": "a number"}.get(want, f"of type {want}")
-        raise ValueError(f"{field} {v!r} is not {what}")
+        raise ValueError(f"{field} {said} is not {what}" if said else f"{field} is {_what(v)}, not {what}")
+    if want in ("object", "any") and (why := _unloggable(v)):
+        raise ValueError(f"{field} {why}")
     return v
 
 
@@ -81,16 +160,18 @@ def check_input(inp: dict, guests=()) -> dict:
     """A laptop input against its config/signals.yaml events contract, before the simulator or the estimator sees it:
     {type, injected, payload} as it will be stamped, or ValueError naming the field that breaks the contract."""
     t = inp.get("type")
+    named = isinstance(t, str) and (t in EVENTS or _quoted(t) is not None)    # an event's own name is always quoted
     try:
         ev = EVENTS.get(t) if isinstance(t, str) else None
         if ev is None or "laptop" not in ev["from"]:
-            raise ValueError(f"{t} is not a laptop input")
+            raise ValueError(f"{t} is not a laptop input" if named else "the type given is not a laptop input")
         if not isinstance(inp.get("payload"), dict):
             raise ValueError("payload is not an object")
         spec, optional, payload = ev["payload"], ev.get("optional", []), inp["payload"]
-        extra = sorted(k for k in payload if k not in spec)
+        extra = sorted((k for k in payload if k not in spec), key=str)
         if extra:
-            raise ValueError(f"{extra[0]} is not in the contract")
+            plain = isinstance(extra[0], str) and _FIELD.match(extra[0])
+            raise ValueError(f"{extra[0]} is not in the contract" if plain else "the payload has a field that is not in the contract")
         missing = [k for k in spec if k not in payload and k not in optional]
         if missing:
             raise ValueError(f"{missing[0]} is missing")
@@ -98,7 +179,7 @@ def check_input(inp: dict, guests=()) -> dict:
         injected = _conform("injected", "boolean", inp.get("injected", False), guests)
         return {"type": t, "injected": injected, "payload": {k: _conform(k, spec[k], v, guests) for k, v in payload.items()}}
     except ValueError as e:
-        raise ValueError(f"input {t!r} refused: {e}") from None
+        raise ValueError(f"input {t!r} refused: {e}" if named else f"input refused: {e}") from None
 
 
 def load_simulator(scenario="scenario_b", mission="survey", seed=0, variant="default"):

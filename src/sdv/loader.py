@@ -90,6 +90,10 @@ def _kind(x) -> str:
         return "a section"
     if isinstance(x, list):
         return "a list"
+    if isinstance(x, bool):
+        return "true or false"
+    if _number(x):
+        return "a number"
     return "text" if isinstance(x, str) else ("empty" if x is None else "a value")
 
 

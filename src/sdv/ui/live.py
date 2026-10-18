@@ -10,9 +10,12 @@ from __future__ import annotations
 
 import copy
 import json
+import re
 from pathlib import Path
 
+from sdv import loader as Ld
 from sdv import loop as L
+from sdv.core import PLAIN_ID
 from sdv.ui.data import END_T_S, SCENARIO, Moment
 from sdv.ui.view import clock
 
@@ -21,6 +24,20 @@ from sdv.ui.view import clock
 LAPTOP_INPUTS = ("priority_swap", "profile_applied", "crew_change", "deck_report", "standing_plan", "deck_sweep", "bridge_answer",
                  "safety_request")
 CORE_INPUTS = ("priority_swap", "profile_applied")
+
+
+def _name(x) -> str | None:
+    """A file id the event log may quote, or None: never a long or punctuated text from a payload."""
+    return x if isinstance(x, str) and PLAIN_ID.match(x) else None
+
+
+def _refusal(what: str, problem: str, kept: str) -> str:
+    """A refused profile as one plain sentence, the field named as the Admission screen names it:
+    "Profile jury_a refused: confirm.r3 (automatic is not a section of named fields). survey kept." """
+    field, sep, _ = problem.partition(": ")
+    said = re.sub(r"'([^']*)'", r"\1", Ld.in_words(problem))
+    where = f"{field} ({said})" if sep and re.fullmatch(r"[\w.\[\]]+", field) else said
+    return f"{what} refused: {where}. {kept} kept."
 
 
 def _log_key(s: dict) -> tuple:
@@ -56,6 +73,7 @@ class Run:
         self.stored: dict[int, dict] = {}
         self._want: set[int] = set()
         self._last_key = None
+        self._rejected_seen = 0                 # the core's refusals already told in the event log
         self.step()
 
     @property
@@ -105,20 +123,35 @@ class Run:
             self.stored[n] = snap
             if out.records:
                 self._want.add(n + 1)
-        mine = [i for i in self.laptop.get(n, []) if i["type"] in CORE_INPUTS]
-        for i in mine:
+        # The core logs each input it refuses with its place among the tick's core inputs, read here as the loop
+        # stamped them: a swap or a profile is in force unless the core refused it.
+        refusals = {r["input"]: r for r in core.rejected[self._rejected_seen:]}
+        self._rejected_seen = len(core.rejected)
+        kept = was["id"]
+        to_core = [i for i in self.loop.inputs.get(n, []) if L.EVENTS[i["type"]]["to"] == "core" and i["type"] != "safety_request"]
+        for k, i in enumerate(to_core):
+            if i["type"] not in CORE_INPUTS:
+                continue
+            payload = i.get("payload") if isinstance(i.get("payload"), dict) else {}
+            refused = refusals.get(k)
             if i["type"] == "priority_swap":
-                self.inputs_log.append({"t_s": n, "type": "STATE", "tag": "PRIORITY",
-                                        "msg": f"Priority file {i['payload']['mission']}.yaml in force.", "injected": False})
-            else:
-                prof = i["payload"]["profile"]
-                refused = next((r for r in core.rejected if r["tick"] == n and r["profile"] == prof.get("id")), None)
+                name = _name(payload.get("mission"))
                 if refused:
-                    msg = f"Profile {prof.get('id', '?')} refused: {refused['problems'][0]}. {was['id']} kept."
+                    what = f"Swap to {name}.yaml" if name else "Priority swap"
+                    msg = f"{what} refused: no such priority file is loaded. {kept} kept."
                 else:
-                    msg = f"Profile {prof['id']} applied at sea and in force."
-                self.inputs_log.append({"t_s": n, "type": "STATE", "tag": "PROFILE", "msg": msg, "injected": False,
-                                        "refused": bool(refused)})
+                    msg, kept = f"Priority file {name}.yaml in force.", name
+                tag = "PRIORITY"
+            else:
+                prof = payload.get("profile")
+                if refused:
+                    name = _name(prof.get("id")) if isinstance(prof, dict) else None
+                    msg = _refusal(f"Profile {name}" if name else "Profile", refused["problems"][0], kept)
+                else:
+                    msg, kept = f"Profile {prof['id']} applied at sea and in force.", prof["id"]
+                tag = "PROFILE"
+            self.inputs_log.append({"t_s": n, "type": "STATE", "tag": tag, "msg": msg, "injected": False,
+                                    "refused": bool(refused)})
 
     def advance_to(self, t_s: int) -> None:
         t_s = min(int(t_s), END_T_S)
