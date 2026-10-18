@@ -78,7 +78,7 @@ def table(cards: dict, snap: dict, decided: list[dict], r3: dict | None, g3_hold
         return out
     state = r3["state"] if r3 else None
     crew = snap["crew"]["crew_aboard"]["value"]
-    if g4 not in FLYING:
+    if g4 is not None and g4 not in FLYING:          # a G4 never heard may be flying: the hold stays offered
         out["r3_hold_landing"] = _row("r3_hold_landing", "not_needed", f"G4 is {_words(g4)}, not flying")
     elif landing_hold is not None:
         out["r3_hold_landing"] = _row("r3_hold_landing", "not_needed", "the landing is already held")
@@ -92,7 +92,9 @@ def table(cards: dict, snap: dict, decided: list[dict], r3: dict | None, g3_hold
         out["r3_hold_landing"] = _row("r3_hold_landing", "ready", "deck work for G4 waits for the landing officer to report the zone clear",
                                       effect="hold")
     verdict, evidence = policy or ("confirm", "")
-    if g4 != "airborne":
+    if g4 is None:
+        out["g4_return_home"] = _row("g4_return_home", "cannot", "G4 is not reporting, so the landing officer calls G4 home by radio")
+    elif g4 != "airborne":
         out["g4_return_home"] = _row("g4_return_home", "not_needed", f"G4 is {_words(g4)}, not airborne")
     elif landing_hold is not None:
         out["g4_return_home"] = _row("g4_return_home", "cannot", "the landing is held until the landing officer reports the zone clear")

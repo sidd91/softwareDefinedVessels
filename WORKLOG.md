@@ -1092,3 +1092,32 @@ Review (Claude Fable 5.1 for Siddharth, same branch): driven on :8403 with Playw
 t=0, SIGINT with a browser connected) all replay EQUAL and the LAST RUN line reaches a nohup log. One fix: a
 `priority_swap` laptop input naming an unknown file (or none) is refused as "no priority file X" instead of stamped;
 before, RESTART or a JUMP (`Run.swaps()`) or the next tick raised KeyError and the socket dropped. +1 test; 1284 pass.
+### Sat 23:38 PDT · Our post-freeze work reviewed twice, fixed and handed over · Claude Opus 5.5 on behalf of Logan Walker (GhostWalka)
+
+What: two adversarial reviews of the post-freeze work in Logan's lane (estimator, safety table, kit), then three
+skeptics on the fixes (correctness, determinism, regressions). Branch fix/review-ours, two commits.
+Commit 1 (58aa013):
+- change keys normalised like the logs, so the standby and replay agree after a feed drop;
+- allowed values checked for every signal (crew 10 refused);
+- a signal never heard on a dropped feed takes its fallback;
+- crew answers expire (deck report 300 s, landing officer's wind 120 s, standing plan 5400 s);
+- kit build never replaces a folder that is not a kit, and a refused install keeps both slots;
+- the winch stop is not offered with the winch off;
+- safety reasons read as one sentence.
+Commit 2 (skeptics, all repro'd before the fix):
+- an hourly feed dropped before its first reading keeps its fallback after the drop ends (crash before);
+- a stale crew-level fallback is not a crew change, so a short laptop drop keeps the plan;
+- the departing crew's plan stands at the hand-over to 0 aboard (SCENARIO_C_MEMO);
+- expiry counts from first sight when a simulator omits reported_t_s;
+- integer signals are cast, so a crew level of 6.0 keeps the standby in step;
+- malformed sweeps, requests and rates are refused;
+- a G4 that is not reporting is never called safe (the landing hold stays offered, the recall is by radio);
+- kit verify, install and build refuse a manifest that is not an argos kit, a JSON list, a missing folder or a file, without a traceback, and the slots are kept;
+- kit pages carry no semicolons;
+- kit.py text formatted from config, moved here from docs/review-fixes so that branch carries docs only;
+- untracked tools/deploy_map/out, committed by mistake in 58aa013.
+docs/HANDOFF_SIDDHARTH.md: #22 added at the top, a crash on main in explain.d3 (n('airborne') after a G4 telemetry drop at 480 to 520), plus three notes.
+Files: src/sdv/estimator.py, src/sdv/safety.py, src/sdv/kit.py, src/sdv/cli.py, tests/test_review_fixes.py, docs/HANDOFF_SIDDHARTH.md.
+Tests: 9 added (19 in test_review_fixes.py).
+Decisions: none. Conflicts: none.
+Deferrals: explain.py crash #22 and loop.py float frames to Siddharth (his files, DEC-63).

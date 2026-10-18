@@ -1,4 +1,4 @@
-# Review handoff for Siddharth (Sat 23:4x PDT)
+# Review handoff for Siddharth (Sat 23:10 PDT, updated Sat 23:40)
 
 From two strong reviews of Logan's post-freeze work (each defect reproduced by a script). Items below are in your files. Logan's own fixes are on `fix/review-ours`. Severity first, then a one-line repro and the fix.
 
@@ -6,6 +6,7 @@ From two strong reviews of Logan's post-freeze work (each defect reproduced by a
 
 | # | Sev | Where | Repro | Fix |
 |---|---|---|---|---|
+| 22 | high | explain.py:199 (`d3`) | Scripted Scenario B plus `feed_drop g4_telemetry` 480 to 520: the loop crashes at tick 908, `ValueError: Unknown format code 'f'` from `n('airborne')` (G4's endurance hard limit is a word, not a number). Same on main 4c4f93c. A G4 telemetry drop is a likely live injection | `v = when['value']; shown = n(v) if isinstance(v, (int, float)) and not isinstance(v, bool) else str(v).replace('_', ' ')`, then `{shown}{unit}` |
 | 3 | high | loop.py:125, 178, 163 | Profile applied at 1100 with sar_air 0.45, coastal 0.35. Primary sheds G4 at 1141; replay and standby shed G5 (`canonical()` rounds the weights to 0.5 and 0.3). Screen shows STANDBY OUT OF STEP after a juror's own profile | Log inputs unrounded (canonical for frames and snapshots only); pass the standby `copy.deepcopy(to_core)` |
 | 1 | high | shedding.py:26-28, 58 | `feed_drop guest_meter` at 1130 to 1150: every mode falls back to its highest draw, 105 against 95 kW, and D4 sheds G4 every tick (17 records), then G5 at 1141, which stays low after the feed returns | `acts` also needs a fresh mode and kW for every counted guest, else `unconfirmed` with the ladder armed |
 | 2 | high | shedding.py:37, 58 | `feed_drop pms` at 1135 to 1175: at 1141 cooling binds 81 against 75 kW on fresh chilled-water data, the fault is confirmed, yet D4 waits until 1175 (due 1145) | Block only when the binding class's capacity or a counted draw is a stand-in value |
@@ -35,3 +36,11 @@ From two strong reviews of Logan's post-freeze work (each defect reproduced by a
 | README:90 | README | VENTUNO Q "instrument only" vs DEC-56 primary board: "instrument in the demo, primary in the deployment design" |
 | If the map merges | README:161-163, REPOSITORY_MAP | Data cached (Open-Meteo, CC BY 4.0) and "Coastlines: Natural Earth (public domain)"; a `tools/deploy_map` row |
 | Flaky test | tests/test_ui_server.py `test_ws_streams_the_live_loop_and_takes_laptop_inputs` | KeyError 'refused' at :169 in full runs (a tick frame can arrive before the refusal); passes alone |
+
+## Found by the second review (not urgent)
+
+| Item | Where | Note |
+|---|---|---|
+| A whole-number float crew level | loop.py `_step` | A websocket client sending `crew_aboard 6.0`: the primary core gets 6.0, the standby and replay get 6 (`canonical`). The estimator now casts integer signals on `fix/review-ours`, so the snapshot is 6 on both sides. `json.loads(canonical(frame))` in `_step` would close it at the source |
+| Response tags hard-coded | ops.js:5 `CLASS_TAGS`, builder.js:236/241, reference.js:18-20/117-119 | A change to `response_time_s` in config makes the guest-list and shed-order tags vanish. Build the tags from `/api/meta` or the builder catalog's `responses[].tag` |
+| Never-heard feeds with no fallback value | estimator (Logan's side) | pms, chw, emission, guest_backbone or g4_telemetry dropped from tick 0: fields whose fallback is "the last value" stay unknown (null, assumed), as on main. The safety table no longer calls an unreported G4 safe |

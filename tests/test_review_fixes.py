@@ -139,3 +139,128 @@ def test_a_refused_install_keeps_both_slots_and_the_rollback(tmp_path, kit):
     assert not r["installed"] and "manifest" in r["problems"][0]
     assert (root / "slot_a").exists() and (root / "slot_b").exists()
     assert K.rollback(root) == "slot_a"
+
+
+# ---------------------------------------------------------------------------------------- after the skeptics (Sat 23:30)
+class Filtered:
+    """The test double with every frame passed through `edit` first, as a simulator that matches the schema but differs."""
+    def __init__(self, sim, edit):
+        self.sim, self.edit = sim, edit
+
+    def step(self, *a, **k):
+        return self.edit(copy.deepcopy(self.sim.step(*a, **k)))
+
+    def __getattr__(self, name):
+        return getattr(self.sim, name)
+
+
+def run_with(edit, until, inputs, mission="survey", **kw):
+    loop = Loop(Filtered(load_simulator(mission=mission), edit), mission, inputs=inputs, **kw)
+    outs = list(loop.ticks(until=until))
+    loop.close()
+    return loop, outs
+
+
+def test_an_hourly_feed_dropped_before_its_first_reading_keeps_its_fallback_after_the_drop():
+    """#11: seawater is hourly, so after a drop from 0 to 20 the next reading is an hour away: still unknown, still 30."""
+    _, outs = run(until=40, inputs={0: [inp(0, "feed_drop", feed="public_data", until_t_s=20)]})
+    s = outs[-1].snapshot
+    assert s["environment"]["seawater_c"]["value"] == 30 and s["environment"]["seawater_c"]["stale"]
+    assert s["feeds"]["public_data"]["stale"]
+
+
+def test_a_short_laptop_drop_at_6_aboard_keeps_the_standing_plan():
+    """#12: the stale crew level's fallback is not a crew change; the plan returns with the feed."""
+    inputs = {20: [inp(20, "crew_change", crew_aboard=6, people_available=4)],
+              30: [inp(30, "standing_plan", state="approved")],
+              100: [inp(100, "feed_drop", feed="laptop", until_t_s=110)]}
+    _, outs = run(until=130, inputs=inputs)
+    assert outs[40].snapshot["crew"]["standing_plan"]["value"] == "approved"
+    assert outs[125].snapshot["crew"]["standing_plan"]["value"] == "approved"
+
+
+def test_the_departing_crews_plan_stands_at_0_aboard_and_a_new_crew_voids_it():
+    """#12, docs/SCENARIO_C_MEMO.md: at the hand-over to 0 the plan stands; a crew coming back aboard approves again."""
+    inputs = {10: [inp(10, "crew_change", crew_aboard=6, people_available=4)],
+              20: [inp(20, "standing_plan", state="approved")],
+              30: [inp(30, "crew_change", crew_aboard=0, people_available=0)],
+              60: [inp(60, "crew_change", crew_aboard=14, people_available=8)]}
+    _, outs = run(until=70, inputs=inputs)
+    assert outs[50].snapshot["crew"]["crew_aboard"]["value"] == 0
+    assert outs[50].snapshot["crew"]["standing_plan"]["value"] == "approved"
+    assert outs[65].snapshot["crew"]["standing_plan"]["value"] == "none"
+
+
+def test_crew_answers_expire_without_reported_t_s():
+    """#12: reported_t_s is optional in frame.schema.json, so expiry counts from when the answer was first seen."""
+    def strip(frame):
+        for r in frame.get("signals", {}).values():
+            r.pop("reported_t_s", None)
+        return frame
+    inputs = {10: [inp(10, "standing_plan", state="approved")],
+              20: [inp(20, "crew_change", crew_aboard=6, people_available=4)],
+              100: [inp(100, "deck_report", deck="clear", wind_kn=20)]}
+    _, outs = run_with(strip, 410, inputs)
+    crew = outs[25].snapshot["crew"]
+    assert "reported_t_s" not in crew["standing_plan"] and crew["standing_plan"]["value"] == "none"
+    assert outs[350].snapshot["crew"]["hlo_deck_report"]["value"] == "clear"
+    assert outs[405].snapshot["crew"]["hlo_deck_report"]["value"] == "not_clear"
+
+
+def test_a_whole_number_crew_level_sent_as_a_float_keeps_the_standby_in_step(tmp_path):
+    """6.0 live and 6 from the log are one crew level."""
+    def as_float(frame):
+        r = frame.get("signals", {}).get("crew_aboard")
+        if r and r["value"] is not None:
+            r["value"] = float(r["value"])
+        return frame
+    _, outs = run_with(as_float, 60, {20: [inp(20, "crew_change", crew_aboard=6, people_available=4)]},
+                       log_dir=tmp_path, standby=True)
+    assert all(o.standby == "in step" for o in outs)
+    assert type(outs[-1].snapshot["crew"]["crew_aboard"]["value"]) is int
+
+
+def test_malformed_sweeps_requests_and_rates_are_refused():
+    from sdv.estimator import Estimator
+    est = Estimator()
+    S = est.SIG
+    assert not est._valid(S["last_sweep"], "x") and not est._valid(S["last_sweep"], 5)
+    assert est._valid(S["last_sweep"], {"t_s": -4200, "result": "clear"})
+    assert not est._valid(S["bridge_requests"], [5]) and est._valid(S["bridge_requests"], [])
+    assert not est._valid(S["G1.data_demand"], {"science": "x"}) and est._valid(S["G1.data_demand"], {"science": 1.5})
+
+
+def test_a_g4_that_is_not_reporting_is_never_called_safe():
+    """Unknown never means safe: a G4 never heard may be flying, so the landing hold stays offered."""
+    snap = copy.deepcopy(SNAP["scenario_b_survey_m00"])
+    snap["guests"]["G4"]["activity"]["value"] = None
+    rows = Sf.table(CARDS, snap, [], None, False)
+    assert rows["r3_hold_landing"]["state"] != "not_needed"
+    assert rows["g4_return_home"]["state"] == "cannot" and "None" not in rows["g4_return_home"]["reason"]
+
+
+def test_kit_manifests_that_are_not_argos_kits_are_refused_without_a_traceback(tmp_path, kit):
+    """#13, #14: a manifest that is not an argos kit, a JSON list, a file in place of a folder: refused, slots kept."""
+    root = tmp_path / "device"
+    assert K.install(kit, root)["slot"] == "slot_a"
+    for name, text in (("empty", '{"files": []}'), ("list", "[]")):
+        bad = tmp_path / name
+        bad.mkdir()
+        (bad / "manifest.json").write_text(text)
+        r = K.install(bad, root)
+        assert not r["installed"] and r["kept"] == "slot_a" and "manifest" in r["problems"][0]
+        assert K.verify(bad) and "manifest" in K.verify(bad)[0]
+        with pytest.raises(ValueError):
+            K.build(bad)
+    assert not K.install(tmp_path / "nowhere", root)["installed"]
+    afile = tmp_path / "afile"
+    afile.write_text("keep me")
+    with pytest.raises(ValueError):
+        K.build(afile)
+    assert afile.read_text() == "keep me"
+    assert (root / "slot_a" / "manifest.json").exists() and (root / "current").resolve().name == "slot_a"
+
+
+def test_kit_pages_built_from_the_signals_carry_no_semicolons(kit):
+    pages = [kit / "governor/RUNBOOK.md", kit / "INDEX.md", *sorted((kit / "guests").glob("*.md"))]
+    assert all(";" not in p.read_text() for p in pages), [p.name for p in pages if ";" in p.read_text()]
