@@ -237,7 +237,11 @@ def cmd_kit(args) -> int:
             print(f"  {d['id']:26} {d['kind']:6} {d['site']:24} {size:>8}  {d['role']}")
         return 0
     if args.action == "build":
-        m = K.build(Path(args.path or "dist/kit"))
+        try:
+            m = K.build(Path(args.path or "dist/kit"))
+        except ValueError as e:
+            print(f"REFUSED {e}")
+            return 1
         print(f"BUILT {args.path or 'dist/kit'}: {len(m['files'])} files, {m['bytes'] / 1e6:.2f} MB, commit {m['commit']}")
         for d in m["placement"]:
             print(f"  {d['id']:26} {d['holds']}")

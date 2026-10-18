@@ -14,6 +14,12 @@ REQUESTS = ("r3_hold_landing", "g3_hold_depth", "g2_stop_winch", "g4_return_home
 ACTION = {"g2_stop_winch": ("stop", "G2"), "g3_hold_depth": ("hold", "G3"), "r3_hold_landing": ("hold", "G4"),
           "g4_return_home": ("secure", "G4")}
 FLYING = ("airborne", "launch_recovery")
+STATE = {"launch_recovery": "in launch and recovery", "airborne": "airborne", "landed": "landed", "none": "not flying",
+         "holding_depth": "holding depth", "holding_at_sea": "holding at sea", "on_cradle": "on its cradle"}
+
+
+def _words(activity) -> str:
+    return STATE.get(activity, str(activity).replace("_", " "))
 
 
 def _row(request: str, state: str, reason: str, commands=(), effect: str | None = None) -> dict:
@@ -41,7 +47,7 @@ def table(cards: dict, snap: dict, decided: list[dict], r3: dict | None, g3_hold
         out["g2_stop_winch"] = _row("g2_stop_winch", "not_needed", "G2 is not aboard")
     elif any(c["kind"] == "set_mode" and c["args"]["guest"] == "G2" for c in decided):
         out["g2_stop_winch"] = _row("g2_stop_winch", "not_needed", "G2's mode is already being changed this second")
-    elif _value(snap, "G2", "mode") == "winch" or _value(snap, "G2", "activity") == "winch":
+    elif _value(snap, "G2", "mode") == "winch":
         modes = sorted(cards["G2"]["modes"], key=lambda m: -m["power_kw"])
         names = [m["name"] for m in modes]
         down = names[min(names.index("winch") + 1, len(names) - 1)]
@@ -55,9 +61,9 @@ def table(cards: dict, snap: dict, decided: list[dict], r3: dict | None, g3_hold
     if "G3" not in aboard:
         out["g3_hold_depth"] = _row("g3_hold_depth", "not_needed", "G3 is not aboard")
     elif act != "surveying":
-        out["g3_hold_depth"] = _row("g3_hold_depth", "not_needed", f"G3 is {str(act).replace('_', ' ')}, not surveying")
+        out["g3_hold_depth"] = _row("g3_hold_depth", "not_needed", f"G3 is {_words(act)}, not surveying")
     elif not snap["links"]["acoustic_link_up"]["value"]:
-        out["g3_hold_depth"] = _row("g3_hold_depth", "cannot", "the acoustic link is down: keep the course steady and the ship quiet until it is back")
+        out["g3_hold_depth"] = _row("g3_hold_depth", "cannot", "the acoustic link is down, so keep the course steady and the ship quiet until it is back")
     elif g3_hold_pending or any(c["kind"] == "guest_command" and c["args"]["guest"] == "G3" for c in decided):
         out["g3_hold_depth"] = _row("g3_hold_depth", "not_needed", "a hold is already on its way to G3")
     else:
@@ -72,28 +78,30 @@ def table(cards: dict, snap: dict, decided: list[dict], r3: dict | None, g3_hold
         return out
     state = r3["state"] if r3 else None
     crew = snap["crew"]["crew_aboard"]["value"]
-    if g4 not in FLYING:
-        out["r3_hold_landing"] = _row("r3_hold_landing", "not_needed", f"G4 is {str(g4).replace('_', ' ')}, not flying")
+    if g4 is not None and g4 not in FLYING:          # a G4 never heard may be flying: the hold stays offered
+        out["r3_hold_landing"] = _row("r3_hold_landing", "not_needed", f"G4 is {_words(g4)}, not flying")
     elif landing_hold is not None:
         out["r3_hold_landing"] = _row("r3_hold_landing", "not_needed", "the landing is already held")
     elif crew == 0:
-        out["r3_hold_landing"] = _row("r3_hold_landing", "cannot", "nobody aboard can lift a hold: recovery runs on the deck latched clear")
+        out["r3_hold_landing"] = _row("r3_hold_landing", "cannot", "nobody aboard can lift a hold, so recovery runs on the deck latched clear")
     elif g4 == "launch_recovery" or (r3 and r3.get("cleared_cmds")):
-        out["r3_hold_landing"] = _row("r3_hold_landing", "cannot", "the deck is already being cleared for G4: the landing officer waves G4 off by radio")
+        out["r3_hold_landing"] = _row("r3_hold_landing", "cannot", "the deck is already being cleared for G4, so the landing officer waves G4 off by radio")
     elif state in ("held", "forbidden"):
         out["r3_hold_landing"] = _row("r3_hold_landing", "not_needed", f"G4's recovery is already {state}")
     else:
         out["r3_hold_landing"] = _row("r3_hold_landing", "ready", "deck work for G4 waits for the landing officer to report the zone clear",
                                       effect="hold")
     verdict, evidence = policy or ("confirm", "")
-    if g4 != "airborne":
-        out["g4_return_home"] = _row("g4_return_home", "not_needed", f"G4 is {str(g4).replace('_', ' ')}, not airborne")
+    if g4 is None:
+        out["g4_return_home"] = _row("g4_return_home", "cannot", "G4 is not reporting, so the landing officer calls G4 home by radio")
+    elif g4 != "airborne":
+        out["g4_return_home"] = _row("g4_return_home", "not_needed", f"G4 is {_words(g4)}, not airborne")
     elif landing_hold is not None:
-        out["g4_return_home"] = _row("g4_return_home", "cannot", "the landing is held: the landing officer must report the zone clear first")
+        out["g4_return_home"] = _row("g4_return_home", "cannot", "the landing is held until the landing officer reports the zone clear")
     elif state in ("asked", "cleared"):
         out["g4_return_home"] = _row("g4_return_home", "not_needed", "G4's recovery is already under way")
     elif verdict in RECALL:
         out["g4_return_home"] = _row("g4_return_home", "ready", RECALL[verdict], effect="open_r3")
     else:
-        out["g4_return_home"] = _row("g4_return_home", "cannot", f"recovery {verdict}: {evidence}")
+        out["g4_return_home"] = _row("g4_return_home", "cannot", f"recovery {verdict}, {evidence}")
     return out

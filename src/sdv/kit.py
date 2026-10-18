@@ -1,7 +1,7 @@
 """The Deployment Reference Kit (DEC-57) and the governor's computers (DEC-56).
 
     sdv kit plan                      the boards, edge nodes and kit copies for this hull, and what each device holds
-    sdv kit build [--out dist/kit]    the kit: vessel, governor runbook, one datasheet per guest, manifest with checksums
+    sdv kit build [DIR]               the kit (default dist/kit): vessel, governor runbook, one datasheet per guest, manifest with checksums
     sdv kit verify DIR                every file against the manifest (each device runs this after a port upload)
     sdv kit install KIT --root DIR    staged install: copy to the idle slot, verify, switch, keep the old slot for rollback
 
@@ -82,6 +82,15 @@ def _modes_table(card: dict) -> str:
     return "\n".join(rows)
 
 
+def _n(x) -> str:
+    """A config number as text: 1, 60, 0.2."""
+    return f"{x:g}"
+
+
+def _restore_hold_s(signals: dict) -> str:
+    return _n(signals["confirm_rules"]["restore"]["healthy_hold_s"])
+
+
 def _pred(v) -> str:
     if isinstance(v, dict):
         lo, hi = v.get("min"), v.get("max")
@@ -121,22 +130,25 @@ def guest_page(card: dict, A: dict, signals: dict, missions: dict, cards: dict) 
             continue
         feed = signals["feeds"].get(s.get("feed"), {})
         after = feed.get("stale_after_s") or feed.get("stale_after_link_up_s")
-        rule = s["fallback"].get("rule") or f"taken as {s['fallback'].get('value')}"
+        rule = (s["fallback"].get("rule") or f"taken as {s['fallback'].get('value')}").replace("; ", ". ")
         lines.append(f"| {s['name']} STALE | no reading for more than {after} s on the {s.get('feed')} feed | "
                      f"{feed.get('what', s.get('feed'))}. Meanwhile: {rule} |")
     over = next((x for x in signals["signals"] if x["name"] == f"{gid}.overdraw_pct"), None)
     if over:
         d = signals["derivations"]["overdraw"]
         lines.append(f"| {gid} OVER-DRAW | metered kW above the mode's declared kW by more than {d['threshold_pct']} % for {d['hold_s']} s | "
-                     "the guest's own load; the ledger counts the metered kW until it falls back |")
+                     "the guest's own load. The ledger counts the metered kW until it falls back |")
     shed = sorted(card["modes"], key=lambda m: -m["power_kw"])
+    rt = A["response_time_s"]
+    tag = lambda cls: Lg.response_tag(A, cls)
     lines += ["", "## FAQ", "",
               f"**Why did ArgOS move {gid} to a lower mode?** The ship was over its power or cooling limit. ArgOS steps "
-              f"guests down by response class: 5 S guests give power in the first action, within 5 s; mission-critical "
-              f"60 S guests only if still needed, one step per second, within 60 s; 200 MS guests never. {gid}'s steps: " + " to ".join(m["name"] for m in shed) + ".",
+              f"guests down by response class. {tag('shed_first_action')} guests give power in the first action, within "
+              f"{_n(rt['shed_first_action'])} s. Mission-critical {tag('shed_full_sequence')} guests only if still needed, one step per second, "
+              f"within {_n(rt['shed_full_sequence'])} s. {tag('safety_command')} guests never. {gid}'s steps: " + " to ".join(m["name"] for m in shed) + ".",
               "",
-              f"**Can {gid} be restored by hand?** Yes, from its own controls. ArgOS will step it down again while the limit binds; "
-              "a recovered genset or pump must read healthy for 60 s before ArgOS restores any guest.",
+              f"**Can {gid} be restored by hand?** Yes, from its own controls. ArgOS will step it down again while the limit binds. "
+              f"A recovered genset or pump must read healthy for {_restore_hold_s(signals)} s before ArgOS restores any guest.",
               "", f"**What if {gid}'s feed is lost?** ArgOS keeps a conservative value, marks it STALE and never sheds on it.", "",
               "## Vendor documents (required at admission)", ""]
     vend = ROOT / "docs/kit/vendor" / gid
@@ -149,16 +161,22 @@ def guest_page(card: dict, A: dict, signals: dict, missions: dict, cards: dict) 
 def runbook(A: dict, signals: dict) -> str:
     g = A["governor"]
     rt = A["response_time_s"]
+    trip = signals["confirm_rules"]["genset_trip"]
+    restart = A["power"]["gensets"]["restart_min"]
+    wait = next(s for s in signals["signals"] if s["name"] == "bridge_requests")["wait_s"]["by_crew"]
+    full = max(wait)
     lines = ["# ArgOS runbook", "",
-             f"{governor_boards(A)} governor boards ({', '.join(g['roles'])}); edge nodes at {', '.join(g['edge_nodes']['sites']).replace('_', ' ')}.",
+             f"{governor_boards(A)} governor boards ({', '.join(g['roles'])}). Edge nodes at {', '.join(g['edge_nodes']['sites']).replace('_', ' ')}.",
              "", "| Event | ArgOS does | Crew does |", "|---|---|---|",
-             f"| Genset trip | confirms on 2 of 3 votes in 1 s, first step within {rt['shed_first_action']} s, full plan within {rt['shed_full_sequence']} s | check the PMS; restart takes 5 to 15 min |",
-             "| Chilled-water pump fault | confirms on alarm or stop plus low flow or high delta-T; steps guests to the cooling limit | restore the pump; ArgOS restores guests 60 s after it reads healthy |",
-             "| A feed goes STALE | holds a conservative value, tightens admission, arms the ladder, never sheds on it | check the named feed; the value returns on its first fresh reading |",
-             "| Bridge request unanswered | counts as no after its wait (60 s at 14 aboard) | answer on the bridge panel |",
-             f"| Primary board lost | the standby, already in step, takes over after {g['takeover_after_s']} s without heartbeat | replace the board at port; any board can be primary |",
-             "| Standby out of step | alarm: the two boards decided differently on the same inputs | keep the primary; the logs show the first field that differs |",
-             "| Every board lost | each edge node keeps its last shed table; guests hold their modes | restart a board from the SSD copy |",
+             f"| Genset trip | confirms on {trip['needed']} of {len(trip['votes'])} votes in {_n(trip['hold_s'])} s, first step within {rt['shed_first_action']} s, "
+             f"full plan within {rt['shed_full_sequence']} s | check the PMS. A restart takes {_n(restart[0])} to {_n(restart[1])} min |",
+             "| Chilled-water pump fault | confirms on alarm or stop plus low flow or high delta-T, then steps guests to the cooling limit | "
+             f"restore the pump. ArgOS restores guests {_restore_hold_s(signals)} s after it reads healthy |",
+             "| A feed goes STALE | holds a conservative value, tightens admission, arms the ladder, never sheds on it | check the named feed. The value returns on its first fresh reading |",
+             f"| Bridge request unanswered | counts as no after its wait ({_n(wait[full])} s at {full} aboard) | answer on the bridge panel |",
+             f"| Primary board lost | design, not built: the standby, already in step, takes over after {g['takeover_after_s']} s without heartbeat | replace the board at port. Any board can be primary |",
+             "| Standby out of step | alarm: the two boards decided differently on the same inputs | keep the primary. The tick output names the first field that differs |",
+             "| Every board lost | design, not built: each edge node keeps its last shed table, and guests hold their modes | restart a board from the SSD copy |",
              "| Profile refused | keeps the previous profile and names the field | fix the field in the builder and apply again |", ""]
     return "\n".join(lines)
 
@@ -182,6 +200,10 @@ def build(out: Path) -> dict:
     missions = Ld.load_missions(cards, vocab)
     signals = yaml.safe_load((ROOT / "config/signals.yaml").read_text())
     if out.exists():
+        if not out.is_dir():
+            raise ValueError(f"{out} is a file, not a kit folder: refusing to replace it")
+        if any(out.iterdir()) and _manifest(out)[0] is None:
+            raise ValueError(f"{out} holds files and is not a kit: refusing to replace it")
         shutil.rmtree(out)
     files: dict[str, list[str]] = {}
     every = ["all"]
@@ -233,9 +255,24 @@ def place(A: dict, manifest: dict) -> list[dict]:
     return out
 
 
+def _manifest(kit: Path) -> tuple[dict | None, str | None]:
+    """The kit's manifest, or why there is none: unreadable, or not an argos kit."""
+    try:
+        m = json.loads((kit / "manifest.json").read_text())
+    except (OSError, ValueError) as e:
+        return None, f"no readable manifest: {type(e).__name__}"
+    if not isinstance(m, dict) or m.get("kit") != "argos-kit/1" or not isinstance(m.get("commit"), str) \
+            or not isinstance(m.get("files"), list) \
+            or not all(isinstance(f, dict) and isinstance(f.get("path"), str) and "sha256" in f for f in m["files"]):
+        return None, "not an argos kit manifest"
+    return m, None
+
+
 def verify(kit: Path) -> list[str]:
-    """Every problem: a missing file, a changed file, or a file the manifest does not list."""
-    m = json.loads((kit / "manifest.json").read_text())
+    """Every problem: no kit manifest, a missing file, a changed file, or a file the manifest does not list."""
+    m, why = _manifest(kit)
+    if m is None:
+        return [why]
     problems = []
     listed = set()
     for f in m["files"]:
@@ -259,19 +296,25 @@ def install(kit: Path, root: Path) -> dict:
     active = cur.resolve().name if cur.is_symlink() else None
     idle = "slot_b" if active == "slot_a" else "slot_a"
     target = root / idle
+    staging = root / "staging"
+    if not kit.is_dir():
+        return {"installed": False, "kept": active, "problems": [f"{kit} is not a kit folder"]}
+    if staging.exists():
+        shutil.rmtree(staging)
+    shutil.copytree(kit, staging)
+    problems = verify(staging)
+    if problems:
+        shutil.rmtree(staging)                       # both slots untouched: the rollback stays possible
+        return {"installed": False, "kept": active, "problems": problems}
     if target.exists():
         shutil.rmtree(target)
-    shutil.copytree(kit, target)
-    problems = verify(target)
-    if problems:
-        shutil.rmtree(target)
-        return {"installed": False, "kept": active, "problems": problems}
+    os.replace(staging, target)
     tmp = root / "current.new"
     if tmp.is_symlink() or tmp.exists():
         tmp.unlink()
     os.symlink(idle, tmp)
     os.replace(tmp, cur)
-    return {"installed": True, "slot": idle, "rollback": active, "commit": json.loads((target / "manifest.json").read_text())["commit"]}
+    return {"installed": True, "slot": idle, "rollback": active, "commit": _manifest(target)[0]["commit"]}
 
 
 def rollback(root: Path) -> str | None:
