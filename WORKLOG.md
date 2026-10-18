@@ -1051,3 +1051,13 @@ Decisions: DEC-63 to DEC-65. Conflicts: none new. Deferrals: team number, bios a
 - 31 tests (was 16), 1345 pass.
 
 Decisions: none. Conflicts: Siddharth's fbe59a5 Douglas list has the same off-by-one, noted in tools/deploy_map/config.yaml, his file left alone. Deferrals: his fix before his port reaches main, and whether the map joins the ArgOS screen (team).
+
+### Sat 23:39 PDT · Deployment map: sea state before rounding, Marine credit, offline test (feat/deployment-map) · Claude Opus 5.5 on behalf of Logan Walker (GhostWalka)
+
+- Sea state now read from the blended wave before rounding: hour 293 blends to 1.2519 m, shown as 1.25, read SS 4 (was SS 3). Route hours by sea state now SS 2: 108, SS 3: 181, SS 4: 48 (were 108, 183, 46).
+- Unchanged: seawater route P90 25.82, route max 25.98, area max 27.2 °C; sea state route P90 4, route max 4, area max 5; gust route P90 24.45 kn; G2 and G3 100 %, G4 89.2 %; cooling 129.3 and 128.9 kW, one pump down 77.4 kW against the 105 kW load-out.
+- Ranges heading now "WEATHER RANGES · 1-15 OCT 2026 · OPEN-METEO MARINE AND ARCHIVE" (seawater and waves come from the Marine API).
+- Offline test also forbids remote and protocol-relative src, <link href>, @import and url(), and still allows <a href> links.
+- 32 tests (was 31). Page rebuilt locally (out/ is gitignored).
+
+Decisions: none. Conflicts: none. Deferrals: none.

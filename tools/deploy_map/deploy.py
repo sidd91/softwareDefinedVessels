@@ -139,11 +139,13 @@ class Route:
 
     def weather(self, t_h: float, i: int, j: int, f: float) -> dict:
         k = min(max(int(t_h), 0), self.hours - 1) + self.offset_h
-        out = {}
+        raw = {}
         for key in VARS:
             a, b = self.series[self.wps[i]["id"]][key][k], self.series[self.wps[j]["id"]][key][k]
-            out[key] = None if a is None or b is None else round((1 - f) * a + f * b, 2)
-        out["sea_state"] = sea_state(out["wave_m"])
+            raw[key] = None if a is None or b is None else (1 - f) * a + f * b
+        # The sea state is read from the blended wave itself: rounding first would put 1.2519 m on the 1.25 top (SS 3).
+        out = {key: None if v is None else round(v, 2) for key, v in raw.items()}
+        out["sea_state"] = sea_state(raw["wave_m"])
         out["time_utc"] = (self.t0 + timedelta(hours=k)).strftime("%Y-%m-%d %H:%M")
         return out
 
@@ -460,7 +462,7 @@ tbody tr + tr {{ border-top:1px solid #1B2D47; }}
 <div class="map">{svg_map(d)}
 <div class="legend"><span><i class="dot" style="background:{SS_COLOR['low']}"></i>SEA STATE ≤ 3</span><span><i class="dot" style="background:{SS_COLOR['mid']}"></i>SEA STATE 4</span><span><i class="dot" style="background:{SS_COLOR['high']}"></i>SEA STATE ≥ 5</span><span>— ROUTE</span><span>▒ AREA ±{d['sampling']['corridor_km']} KM · ROUTE WEATHER</span></div></div>
 <div>
-<section><h2>WEATHER RANGES · {html.escape(r['period'])} · OPEN-METEO ARCHIVE</h2><table><thead><tr><th></th><th>ROUTE P90</th><th>ROUTE MAX</th><th>AREA MAX</th><th></th></tr></thead><tbody>
+<section><h2>WEATHER RANGES · {html.escape(r['period'])} · OPEN-METEO MARINE AND ARCHIVE</h2><table><thead><tr><th></th><th>ROUTE P90</th><th>ROUTE MAX</th><th>AREA MAX</th><th></th></tr></thead><tbody>
 {_row('SEAWATER', ro['seawater_c'], ar['seawater_c'], '°C')}{_row('WIND', ro['wind_kn'], ar['wind_kn'], 'kn')}{_row('GUST', ro['gust_kn'], ar['gust_kn'], 'kn')}{_row('WAVE', ro['wave_m'], ar['wave_m'], 'm', '{:.2f}')}{_row('SEA STATE', ro['sea_state'], ar['sea_state'], 'Douglas', '{:.0f}')}
 </tbody></table><div class="mono muted" style="margin-top:6px">{hist}</div></section>
 <section><h2>DEPLOYMENT PARAMETERS</h2><table><tbody>

@@ -96,6 +96,20 @@ def test_weather_at_a_waypoint_is_that_waypoints_own_series():
         assert all(math.isclose(got[key], own[key][k], abs_tol=0.01) for key in M.VARS)
 
 
+def test_the_sea_state_is_read_from_the_blended_wave_before_it_is_rounded():
+    # Hour 293, between off_kelibia (1.02 m) and corridor_mid_return (1.44 m): the blend is 1.2519 m, over the 1.25 top.
+    lat, lon, i, j, f = ROUTE.at_hour(293)
+    k = 293 + ROUTE.offset_h
+    a, b = (ROUTE.series[ROUTE.wps[n]["id"]]["wave_m"][k] for n in (i, j))
+    assert round((1 - f) * a + f * b, 4) == 1.2519
+    got = ROUTE.weather(293, i, j, f)
+    assert (got["wave_m"], got["sea_state"]) == (1.25, 4)          # shown at 2 decimals, read as SS 4 not SS 3
+    hist = {}
+    for h in M.route_hours(ROUTE):
+        hist[h["sea_state"]] = hist.get(h["sea_state"], 0) + 1
+    assert hist == {2: 108, 3: 181, 4: 48}
+
+
 # ---------------------------------------------------------------------------------------------- the ranges
 def _route_seawater_by_hand() -> list[float]:
     """Every planned hour, departure to the last waypoint: position by hour, seawater blended between the two waypoints."""
@@ -194,14 +208,16 @@ def test_a_mission_critical_guest_outside_the_load_out_says_so():
 
 # ---------------------------------------------------------------------------------------------- the page
 def test_the_page_is_self_contained_and_credits_its_data():
-    assert not re.search(r"""src=["']https?:|@import|url\(https?:""", PAGE)      # links are fine, fetches are not
+    # <a href> links are fine, fetches are not: no remote src, <link href>, @import or url(), protocol-relative included
+    assert re.search(r"""src=["']?(https?:)?//|<link[^>]+href=["']?(https?:)?//|@import|url\(["']?(https?:)?//""", PAGE) is None
+    assert re.search(r"""<a href=["']https?://""", PAGE)
     assert ('<a href="https://open-meteo.com/">Weather data by Open-Meteo.com</a> · '
             '<a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>') in PAGE
     assert "Made with Natural Earth" in PAGE and "<svg" in PAGE
 
 
 def test_the_page_names_its_ranges_and_their_source():
-    assert "<h2>WEATHER RANGES · 1-15 OCT 2026 · OPEN-METEO ARCHIVE</h2>" in PAGE
+    assert "<h2>WEATHER RANGES · 1-15 OCT 2026 · OPEN-METEO MARINE AND ARCHIVE</h2>" in PAGE
     assert "<th>ROUTE P90</th><th>ROUTE MAX</th><th>AREA MAX</th>" in PAGE
     assert "<tr><th>SEAWATER</th><td>25.8</td><td>26.0</td><td>27.2</td>" in PAGE
     assert "COOLING AT ROUTE P90 SEAWATER" in PAGE and "COOLING AT ROUTE MAX SEAWATER" in PAGE and "ONE PUMP DOWN AT ROUTE MAX" in PAGE
