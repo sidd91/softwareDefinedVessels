@@ -42,7 +42,7 @@ const TAGS = [
 const TERMS = [
   ['ArgOS', 'Resource governor for the ship’s physical budget across eight classes.'],
   ['D1 ADMISSION', 'Whether a guest card can come aboard: YES, YES-IF, NO or NOT NOW, with the binding line named. Within 30 s.'],
-  ['D2 PLACEMENT', 'Where an admitted guest goes: bay, flight deck or mast position, with rejected alternatives. Within 30 s.'],
+  ['D2 PLACEMENT', 'Where an admitted guest goes: bay, flight deck or mast position, by enumeration under a lexicographic rule: installed parts keep a position, most parts placed, fewest port moves, preferred positions first. Within 30 s.'],
   ['D3 RIGHT OF WAY', 'Who wins when two guests need ship states that cannot both hold. Hard limits first, then mission weights. Within 2 s.'],
   ['D4 SHEDDING', 'Degradation by response class when demand exceeds the limit. 5 S guests first, then mission-critical 60 S guests one step a second. Throttle before switch-off inside each class. First step within 5 s, all within 60 s.'],
   ['D5 CREW POLICY', 'How each rule acts at 14, 6 or 0 aboard: crew confirms, standing plan, automatic or forbidden.'],
@@ -99,7 +99,7 @@ const UNITS = [
 
 const CLASSES = [
   ['D1 ADMISSION', 'Guest card verdict: YES, YES-IF, NO or NOT NOW.', '30 s'],
-  ['D2 PLACEMENT', 'Bay, deck or mast position, rejected alternatives listed.', '30 s'],
+  ['D2 PLACEMENT', 'Bay, deck or mast position; lexicographic rule, no rejected-alternatives list.', '30 s'],
   ['D3 RIGHT OF WAY', 'Incompatible guest conditions resolved. Hard limits first.', '2 s'],
   ['D4 SHEDDING', 'Degradation and shedding in the declared order.', '5 s first · 60 s all'],
   ['D5 CREW POLICY', 'Rule action per crew level.', 'with D3, D4'],

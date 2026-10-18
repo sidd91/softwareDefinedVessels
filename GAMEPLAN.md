@@ -168,9 +168,10 @@ directly. No solver (freeze delta 6).
   one genset down by throttling to the 95 kW gate, otherwise yes-if (DEC-35). Verdicts: yes / no /
   yes-if (ranked displacement list by mission value lost) / not-now-and-when (next installation
   window per A.11). Reports the seawater tipping point. By enumeration.
-- D2 placement: maximise the smallest normalised margin, tie-break on "future freedom" (how many
-  archetype cards remain admissible); prints rejected alternatives with their binding class. The
-  mast rule is written before T2 (CON-18).
+- D2 placement, as built: lexicographic, by enumeration of every allowed layout: no installed part
+  left without a position, most parts placed, fewest port moves, most parts in a preferred position,
+  then a fixed order. The margin objective, "future freedom" and the rejected-alternatives list of the
+  original plan are not built (CON-18).
 - D3 right of way: hard limits first (drone < 20 % ⇒ must land ≤ 12 min, so "wait for leg end" is
   infeasible), then utility = Σ mission weight × capability delivered. Cost to the loser is computed:
   under survey, 25 to 27 survey minutes; under rescue, G3's leg is aborted, it holds at sea and is

@@ -3,7 +3,7 @@
 Every number we rely on beyond Annex A and B, every Annex value we changed, and all we invented. Reasons and uses: [detail page](PHYSICAL_ACCOUNT_DETAIL.md).
 
 <table>
-<colgroup><col style="width:13%"><col style="width:15%"><col style="width:44.5%"><col style="width:17.5%"><col style="width:10%"></colgroup>
+<colgroup><col style="width:12.5%"><col style="width:14%"><col style="width:43%"><col style="width:16%"><col style="width:14.5%"></colgroup>
 <thead><tr><th>Annex C row</th><th>What we assumed</th><th>Value</th><th>Why</th><th>Used in</th></tr></thead>
 <tbody>
 <tr><td>Electrical power</td><td>guest reserve</td><td>cruise 200, one set down 100 kW; slow 250, fast 150; admit at 200</td><td>propulsion out of scope</td><td>code, test</td></tr>

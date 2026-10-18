@@ -283,7 +283,7 @@ def build(key: str, size: str, tmp: Path) -> tuple[Path, int, str]:
     md.write_text(prepare((ROOT / src).read_text(), tmp, key, html=True))
     css = tmp / f"print-{key}-{size}.css"
     css.write_text(CSS.read_text().replace("var(--page, Letter)", f"{size} landscape" if landscape else size)
-                   + ("\ntable { font-size: 8.1pt; }\n" if landscape else ""))   # the one-page account's dense table
+                   + ("\ntable { font-size: 7.9pt; line-height: 1.18; }\n" if landscape else ""))   # the one-page account's dense table
     html = tmp / f"{key}-{size}.html"
     run(["pandoc", str(md), "-f", "gfm", "-t", "html5", "--standalone", "--embed-resources",
          f"--resource-path={tmp}:{(ROOT / src).parent}", "--metadata", f"pagetitle={name[:-4]}",
