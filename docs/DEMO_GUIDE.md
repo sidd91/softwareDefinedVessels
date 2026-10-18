@@ -21,21 +21,20 @@ Use only one browser tab. A second tab runs its own separate copy of the demo.
 
 ## The run: 2 minutes, hard stop
 
-The bottom bar has the buttons: HOLD, PACE, JUMP (G4 LOW BATT, GEN 2 TRIP, CHW P1 TRIP), RESTART, PRIORITY SURVEY / RESCUE.
-Decisions appear in the panel on the right. Its first line says what was decided. Its last two rows, PRIORITY and
-CREW RULE, show the rules in force. Keep each line short and move on. You do not need to wait for the clock.
+Buttons used: RESTART and the three event buttons in the bottom bar (G4 LOW BATT, GEN 2 TRIP, CHW P1 TRIP), and the
+OPERATIONS and DEMO COMPARE tabs at the top. Click each once. You do not need to wait for the clock.
 
-| By | Do | Point at | Say |
+| By | Click | Point at | Say |
 |---|---|---|---|
-| 0:10 | Ask: "Rescue first, or survey first?" Click their pick (RESCUE or SURVEY), then RESTART | Top left: MISSION RESCUE (or SURVEY) | "Same software, your priorities." |
-| 0:30 | Click G4 LOW BATT | The right panel, first line | "Minute 8. The drone is low on battery and must land. The robot needs the ship slow, the drone needs it moving. ArgOS lands the drone first, in under a millisecond." |
-| 0:50 | Click GEN 2 TRIP | The POWER box | "Minute 12. A generator cuts out. Everything still fits on the other one, so nothing is turned off." |
-| 1:15 | Click CHW P1 TRIP | INJECTED in the right panel, then the COOLING box | "Minute 19. We break a cooling pump on purpose. ArgOS turns one thing down within the 5-second rule, and says why." |
-| 1:40 | Click DEMO COMPARE (last in the top menu) | The two columns | "Same failure, two priorities, two different answers. Survey slows the drone's charging. Rescue protects the drone." |
+| 0:15 | Nothing yet (you are on OPERATIONS) | The ship drawing, then the eight boxes under it | "This is what the crew sees: the ship, its equipment, and its budget of power, cooling, space and weight." |
+| 0:25 | RESTART, then DEMO COMPARE (last tab at the top) | The two columns | "The same ship under two missions, side by side. Survey on the left, rescue on the right." |
+| 0:50 | G4 LOW BATT | Both columns, first line | "Minute 8. The drone is low on battery. Both missions land it first. Survey pauses the underwater robot. Rescue cancels the robot's dive and saves power for the drone." |
+| 1:05 | GEN 2 TRIP | Both columns | "Minute 12. A generator cuts out. Everything still fits, so neither mission turns anything off." |
+| 1:30 | CHW P1 TRIP | Both columns, then the table underneath | "Minute 19. A cooling pump fails. Survey slows the drone's charging. Rescue turns the communications unit down instead. Each decided within the 5-second rule." |
+| 1:50 | OPERATIONS | The right panel: first line, then PRIORITY and CREW RULE | "Every decision comes with its reason and the rules in force." |
 | 2:00 | Stop | | "That is ArgOS." |
 
-If you are running long, skip the GEN 2 TRIP step. If the jury picked SURVEY at minute 8, say "the robot waits
-underwater" instead of anything about rescue.
+If you are running long, skip GEN 2 TRIP.
 
 ## If something goes wrong
 
