@@ -90,7 +90,7 @@ function simbar() {
     `<button type="button" data-speed="${s}" class="${s === t.speed ? 'on' : ''}" aria-pressed="${s === t.speed}">×${s}</button>`).join(''));
   const marks = (app.meta.marks[t.mission] || []).filter(m => m.t_s > 0);
   paint($('sim-jump'), '<span class="gl">JUMP</span>' + marks.map(m =>
-    `<button type="button" data-jump="${Math.max(0, m.at - 3)}" title="${esc(m.label)}">${esc(m.t.slice(3))}</button>`).join(''));
+    `<button type="button" data-jump="${Math.max(0, m.at - 3)}" title="${esc(m.label)}${m.injected ? ' (INJECTED)' : ''} at ${esc(m.t)}">${esc(m.label)}</button>`).join(''));
   paint($('sim-file'), '<span class="gl">PRIORITY</span>' + app.meta.missions.map(m =>
     `<button type="button" data-file="${esc(m.id)}" class="${m.id === t.mission ? 'on' : ''}" aria-pressed="${m.id === t.mission}">${esc(m.name)}</button>`).join(''));
   $('sim-fill').style.width = `${Math.round(100 * t.t_s / t.end_t_s)}%`;
