@@ -26,8 +26,12 @@ function wire(root) {
     } else if (el.matches('input[data-field]')) {
       const base = Number(el.dataset.base);
       const raw = el.value.trim();
-      if (raw !== '' && Number(raw) === base) delete state.edits[el.dataset.field];
-      else state.edits[el.dataset.field] = raw === '' ? 'blank' : raw;
+      if (raw !== '' && Number(raw) === base) {
+        // the card's own figure typed back withdraws the edit: it must leave the kept set too, or the next
+        // request would still send it as keep= and the verdict shown would be the withdrawn card's
+        delete state.edits[el.dataset.field];
+        delete state.good[el.dataset.field];
+      } else state.edits[el.dataset.field] = raw === '' ? 'blank' : raw;
       load(root);
     }
   });

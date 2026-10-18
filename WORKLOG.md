@@ -965,3 +965,10 @@ README.md (one example line), tests/test_jury_edits.py (new). Oracle tests uncha
 Tests: 123 new (the +20 % sweep over every consumes.* number and part mass of G1-G6 under survey and sar, ladder and
 refusal rules, CLI, view, API through uvicorn); full suite 1401 passed; screen driven with Playwright on port 8211.
 Decisions: none. Conflicts: none. Requirements touched: none (serves R-152, R-153, R-208; rows not edited).
+Review (Sat 22:30 PDT, Claude Fable 5.1 for Siddharth): diff read line by line, suite 1401 passed, 51 CLI edits and
+55 API queries (power nominal/peak/min, data, compute, cooling, mass, list index and mode name, nonsense field,
+string, negative, zero, blank, 1e999, nan, a 3000-character field) all a verdict or a refusal, screen driven with
+Playwright on 8401 through 24 edits. One fix on the branch: typing a figure's own value back dropped the edit from
+the request but not from the kept set, so the next request still sent it as keep= and the panel showed the withdrawn
+card's verdict (peak 50 then 35 back kept the 96.5 kW throttle step; pre-existing in wire() on main for mass edits).
+admit.js now withdraws it from both; the verdict follows the figure on the next Enter.
