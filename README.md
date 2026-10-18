@@ -6,11 +6,11 @@ the hull's finite physical budget and decides, in seconds and in one plain sente
 aboard, where they go, who wins when two want the same thing, and what is shed when a generator trips.
 
 > **Status (Sat 23:50 PDT): the engine (D1 to D5, the 200 ms safety table, estimator, tick loop, replay) and the screen
-> run end to end with `uv run sdv demo`; 1476 tests pass.**
+> run end to end with `uv run sdv demo`; 1485 tests pass.**
 
 ## Run it
 
-Python 3.12 via uv: `uv sync` once on Wi-Fi, then everything runs offline; `uv run pytest` runs the 1476 tests.
+Python 3.12 via uv: `uv sync` once on Wi-Fi, then everything runs offline; `uv run pytest` runs the 1485 tests.
 
 ```bash
 uv run sdv admit G4 --installed G1,G2,G3 --mission survey
@@ -25,17 +25,15 @@ uv run sdv demo
 `sdv admit` runs D1 and D2 on the real engine: verdict, binding line, every ledger line, placement, ranked yes-if
 options and the one-genset-down check, timed against the 30 s ceiling. `--set` is the jury's edit: any number on any
 card, re-validated; an edit that cannot be applied or fails the schema is refused with the field named and the previous
-card kept. `--card path.yaml` judges a card handed over as a file (a schema or vocabulary problem is refused with the
-field named; unregistered activities are judged on quantities, positions and relations, and the output says so); a
-bad file in `manifests/` is reported once at start and skipped. `sdv run` plays
-Scenario B through the tick loop and prints each decision's sentence; `sdv replay` re-runs the logs without the
-simulator and checks every snapshot and record byte for byte. `sdv demo` is the one demo command:
-the engine and the screen on http://127.0.0.1:8000 (`--port` if 8000 is busy), Scenario B live at x12 with six
-views (Operations, constraint ledger, Mission compare, Admission review with the jury's edits of part masses and
-nominal or peak kW, the profile and rule builder, Reference), a SIM bar (hold, pace, jump to minute 8,
-12 or 19, restart, swap the priority file) and a crew chip (14, 6, 0 aboard). Every run the screen shows is logged
-under `--log-dir` (default `runs/live`); the terminal prints `RUN n under <file>.yaml logs to <dir>; replay: uv run sdv
-replay <dir> --mission <file>` per run, and a `LAST RUN` line on Ctrl+C.
+card kept. `--card path.yaml` judges a card handed over as a file (schema or vocabulary problems refused by field;
+unregistered activities judged on quantities, positions and relations, and the output says so); a bad file in
+`manifests/` is reported once and skipped. `sdv run` plays Scenario B through the tick loop and prints each decision's
+sentence; `sdv replay` re-runs the logs without the simulator and checks every snapshot and record byte for byte.
+`sdv demo` is the one demo command: the engine and the screen on http://127.0.0.1:8000 (`--port` if busy), Scenario B
+live at x12 with six views (Operations, constraint ledger, Mission compare, Admission review with the jury's edits of
+masses and nominal or peak kW, the profile and rule builder, Reference), a SIM bar (hold, pace, jump to minute 8, 12
+or 19, restart, swap the priority file) and a crew chip (14, 6, 0 aboard). Every run the screen shows is logged under
+`--log-dir` (default `runs/live`) and the terminal prints the `uv run sdv replay <dir> --mission <file>` line for it.
 
 ## Architecture
 
@@ -98,7 +96,7 @@ Components live in `src/sdv/`; D1 to D4 read one ledger (`ledger.py`), D1 to D5 
 genset down by throttling to the 95 kW gate, otherwise yes-if, with the raw one-genset-down line always shown (DEC-35).
 In port, installed guests may move between bays, each move reported with its crane time (DEC-37). Data links are judged
 at the cards' minimum rates and compute at nominal (DEC-38), so a SATCOM or rack oversubscription has a line to name.
-The seawater tipping point is reported; D1 and D2 enumerate a few thousand layouts in 1 to 8 ms.
+The seawater tipping point is reported; D1 and D2 answer in 1 to 8 ms.
 
 ## Deliverables
 
@@ -108,13 +106,12 @@ The seawater tipping point is reported; D1 and D2 enumerate a few thousand layou
 - **README (at most 3 pages), Physical Account (1 page), Scenario C memo (PDF, at most 2 pages):** this
   file, the [account](docs/PHYSICAL_ACCOUNT.md) (from [config/assumptions.yaml](config/assumptions.yaml) and the cards) and
   the [memo](docs/SCENARIO_C_MEMO.md); `tools/build_pdfs.py` builds each PDF and checks its limit.
-- **Live demo, 90 s of Scenario B, then Scenario A with the jury's card:** [storyboard](docs/DEMO_SCRIPT.md),
-  planned. Scenario B runs G1, G3, G4 and G5, the organisers' load-out (DEC-63; G1 air-cooled on the mast, on the
-  bus and not on the chilled-water loop). Minute 8: D3 decides between the drone (G4) and the
-  seabed vehicle (G3) under both priority files. Minute 12: a genset trips; the load (49.5 kW survey, 82.5 kW
-  rescue) holds under the 95 kW power limit, and D4 shows both armed ladders, each starting with the comms node
-  (G5) to low power, with no step needed. Minute 19: a labelled, injected pump fault makes cooling bind on the
-  loop (81 against 75 kW, the bus at 82.5 of 95); D4 slows G4's charge to 10 kW (survey file) or takes G5 to 8 kW (rescue file) (DEC-40).
+- **Live demo, 90 s of Scenario B, then Scenario A with the jury's card:** [run sheet](docs/DEMO_SCRIPT.md).
+  Scenario B runs G1, G3, G4 and G5, the organisers' load-out (DEC-63; G1 air-cooled on the mast, on the bus, not on
+  the loop). Minute 8: D3 decides between the drone (G4) and the seabed vehicle (G3) under both priority files.
+  Minute 12: a genset trips; the load (49.5 kW survey, 82.5 kW rescue) holds under the 95 kW power limit and D4 shows
+  both armed ladders, no step needed. Minute 19: a labelled, injected pump fault makes cooling bind on the loop (81
+  against 75 kW, the bus at 82.5 of 95); D4 slows G4's charge to 10 kW (survey) or takes G5 to 8 kW (rescue) (DEC-40).
 
 ## Repository map
 
@@ -131,9 +128,9 @@ Every path: [docs/REPOSITORY_MAP.md](docs/REPOSITORY_MAP.md); every requirement 
   hard limit is active; the priority file decides how the loser yields.
 - The -40 % loop at 30 °C is an information line on the Admission view, not in the verdict (DEC-36); both mission lines
   survive a genset trip by choice (A.9). Minute 12 holds by design: the load fits under the 95 kW ceiling with 0 steps;
-  the record states the next three armed steps and why the brief's envelope set does not arise (DEC-40, DEC-61); the
+  the record states the whole armed ladder and why the brief's envelope set does not arise (DEC-40, DEC-61); the
   executed shed is the minute-19 pump fault, labelled INJECTED.
-- The plant is a scripted A.6 model (`tests/support/sim_stub.py`, labelled "test double" on screen), not a physics
+- The plant is a scripted A.6 model (`tests/support/sim_stub.py`, labelled SCRIPTED PLANT · A.6 on screen), not a physics
   simulator; `SDV_SIM=module:Class` swaps another in; the team's own simulator is on `feat/ship-state-fsm`, not main.
   Scenario B runs at the brief's 24 °C seawater; no live or cached public-data feed is on main.
 - A jury card file is judged on the CLI (`sdv admit --card`), not uploaded on screen. The screen has no roles or access
@@ -145,8 +142,8 @@ Every path: [docs/REPOSITORY_MAP.md](docs/REPOSITORY_MAP.md); every requirement 
 - Pier-side authoring: a card drafted from the equipment manuals with retrieval, every number cited into a provenance
   row (source, page, date), the loader as the gate that refuses an uncited figure, and a human signing the card before admission; never inside D1 to D6 or the sentence builder.
 - Measured against datasheet: meter each guest's draw against its card, name the 10-20 % over-consumer, and schedule
-  planned outages (pump service, genset maintenance) as capacity events the ledger sees ahead of time. Then Scenario A' with its windows, D2 with a margin term and rejected alternatives, D3 over any
-  colliding pair, ArgOS measured on hardware near A.7's rack, and more priority files and jury cards.
+  planned outages as capacity events the ledger sees ahead of time. Then Scenario A' with its windows, D2 with a margin
+  term and rejected alternatives, D3 over any colliding pair, ArgOS measured on hardware near A.7's rack, more files and cards.
 
 ## Declarations and licence
 

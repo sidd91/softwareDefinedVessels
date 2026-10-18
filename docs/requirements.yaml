@@ -4082,7 +4082,7 @@ requirements:
   how: 'Done: D1 to D5 are the pure functions in src/sdv/ (admission, placement, arbitration, shedding, core), each with
     its declared objective in the README ''Decision classes'' table and the ARCHITECTURE engine table, each writing
     the decision record of config/decision_record.schema.json with the binding line and a sentence built from the
-    record''s fields. Ceilings are measured on every record (timing log). Tests: the full suite, 1476 tests.'
+    record''s fields. Ceilings are measured on every record (timing log). Tests: the full suite, 1485 tests.'
   links:
   - label: README decision classes
     path: README.md#decision-classes
