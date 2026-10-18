@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ArgOS Room Map</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="/static/room/room.css">
+<script defer src="/static/room/room.js"></script>
+</head>
+<body class="preset-operate">
+<div class="wrap">
+  <header class="hdr">
+    <div class="brand">ArgOS <span class="brand-sub">room map</span></div>
+    <div class="status" id="status">connecting…</div>
+    <div class="seg jury" role="group" aria-label="Mission profile, chosen by the jury" id="profile"></div>
+    <div class="seg roles" role="group" aria-label="Role view" id="presets">
+      <button type="button" data-preset="watch" aria-pressed="false">Watch</button>
+      <button type="button" data-preset="operate" aria-pressed="true">Operate</button>
+      <button type="button" data-preset="configure" aria-pressed="false">Configure</button>
+      <button type="button" data-preset="verify" aria-pressed="false">Verify</button>
+    </div>
+    <span class="clock" id="clock">T+00:00:00</span>
+  </header>
+
+  <div class="ops ops-only" id="ops" role="group" aria-label="Simulation"></div>
+  <div class="steps ops-only" id="steps" role="list" aria-label="Demo run"></div>
+
+  <div class="main">
+    <section aria-label="Room map">
+      <div class="sechead">
+        <h2 id="maptitle">Room aboard</h2>
+        <div class="key"><span class="k-imm"><i></i>as built</span><span class="k-port"><i></i>changes in port</span><span class="k-sea"><i></i>changes at sea</span></div>
+      </div>
+      <div class="hull" id="hull"></div>
+      <div class="asbuilt" id="asbuilt"></div>
+      <div class="sechead"><h2 id="gtitle">Free now</h2><span class="label" id="gsub"></span></div>
+      <div class="gauges" id="gauges"></div>
+    </section>
+    <aside aria-label="Decision">
+      <div class="seg tabs" role="tablist" aria-label="Decision panel" id="tabs">
+        <button type="button" role="tab" data-tab="decision" aria-selected="true">Decision</button>
+        <button type="button" role="tab" data-tab="compare" aria-selected="false">Compare</button>
+        <button type="button" role="tab" data-tab="admit" aria-selected="false">Admission</button>
+      </div>
+      <div id="decision" class="panel-body"></div>
+    </aside>
+  </div>
+
+  <footer class="foot">
+    <span id="foot-live">Live · <b>scripted plant, A.6</b></span>
+    <span>Role views (Watch, Operate, Configure, Verify) are view filters: they hide controls and reveal sources. They are not access control.</span>
+    <span id="foot-source"></span>
+    <span class="foot-right"><a href="/" id="console-link">Console</a> · <button type="button" class="linklike" id="theme">Theme: auto</button></span>
+  </footer>
+</div>
+</body>
+</html>

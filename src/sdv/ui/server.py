@@ -15,6 +15,8 @@ Routes:
                             or &edit=G4.consumes.power_kw.peak=40 (&keep=... the last accepted edits, kept in force
                             when an edit is rejected); 422 {refused: {field, reason}} for an edit that cannot apply
     GET  /api/reference     guests, priority files, tiers and the governor's computers for the Reference view
+    GET  /room              the room map (static/room/index.html), an alternative screen on the same stream and routes
+    GET  /api/room          the ship as room: ?mission=survey&t=722 one moment; ?case=A5-survey&edit=…&keep=… the pier (sdv.ui.room)
     GET  /api/builder       what the profile and rule builder offers
     POST /api/builder/check {kind: profile|card, doc} -> {problems}
     POST /api/builder/save  {kind, doc, label} -> {path} or {problems}; a new file, never an overwrite
@@ -34,7 +36,7 @@ from fastapi import Body, FastAPI, Query, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from sdv.ui import builder, data, live, view
+from sdv.ui import builder, data, live, room, view
 
 STATIC = Path(__file__).parent / "static"
 SPEEDS = (1, 12, 60)
@@ -214,6 +216,32 @@ def create_app(inputs: data.Inputs | None = None, source: str = "live", profiles
     @app.get("/api/reference")
     def api_reference():
         return view.reference(I)
+
+    @app.get("/room")
+    def room_page():
+        return FileResponse(STATIC / "room" / "index.html", headers={"Cache-Control": "no-store"})
+
+    @app.get("/api/room")
+    def api_room(mission: str = "survey", t: int = 0, case: str | None = None, edit: list[str] = Query(default=[]),
+                 keep: list[str] = Query(default=[])):
+        if case is not None:  # the pier: a Scenario A case with the jury's edits, as /api/admit takes them
+            out = room.admission_room(I, case, parse_edits(edit), parse_edits(keep))
+            if "refused" in out:
+                return JSONResponse(out, status_code=422)
+            if "error" in out:
+                return JSONResponse(out, status_code=404)
+            return out
+        t = max(0, min(t, data.END_T_S))
+        try:
+            if ref is not None:
+                if mission not in ref.missions:
+                    raise KeyError(mission)
+                return room.room(I, ref.moment(mission, t))
+            if mission not in I.timeline:
+                raise KeyError(mission)
+            return room.room(I, I.moment(mission, t))
+        except KeyError:
+            return JSONResponse({"error": f"no run for priority file {mission}"}, status_code=404)
 
     @app.get("/api/builder")
     def api_builder():
