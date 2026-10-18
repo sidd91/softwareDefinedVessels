@@ -17,7 +17,9 @@ from sdv.ui.data import END_T_S, SCENARIO, Moment
 from sdv.ui.view import clock
 
 # Laptop inputs the screen may send (config/signals.yaml events with from: laptop), and the ones the core consumes.
-LAPTOP_INPUTS = ("priority_swap", "profile_applied", "crew_change", "deck_report", "standing_plan", "deck_sweep", "bridge_answer")
+# A safety_request is answered at once from the last tick's 200 MS table (sdv.loop.Loop.safety).
+LAPTOP_INPUTS = ("priority_swap", "profile_applied", "crew_change", "deck_report", "standing_plan", "deck_sweep", "bridge_answer",
+                 "safety_request")
 CORE_INPUTS = ("priority_swap", "profile_applied")
 
 
@@ -65,7 +67,15 @@ class Run:
         return getattr(self.loop.sim, "argos_label", "simulator")
 
     def add_input(self, inp: dict) -> int:
-        t = self.loop.add_input(inp)
+        inp = self.loop.check_input(inp)
+        if inp["type"] == "safety_request":       # answered now: its record shows at once, a re-run answers it again
+            k = len(self.loop.core.timing)
+            self.records += self.loop.safety(inp["payload"]["request"], inp["injected"])
+            for r in self.loop.core.timing[k:]:
+                self.timing[r["seq"]] = r["latency_ms"]
+            t = self.loop.tick
+        else:
+            t = self.loop.add_input(inp)
         self.laptop.setdefault(t, []).append({**inp, "t_s": t})
         return t
 
@@ -263,5 +273,10 @@ class LiveReplay:
                 return f"input {inp.get('type')!r} is not a laptop input"
             if inp["type"] == "priority_swap" and inp["payload"].get("mission") not in missions:
                 return f"no priority file {inp['payload'].get('mission')}"      # the core has no such file: refused, not stamped
-            self.run.add_input({"type": inp["type"], "injected": bool(inp.get("injected", False)), "payload": inp["payload"]})
+            try:          # off its signals.yaml contract: refused with the field named, never stamped
+                checked = self.run.loop.check_input({"type": inp["type"], "injected": bool(inp.get("injected", False)),
+                                                     "payload": inp["payload"]})
+            except ValueError as e:
+                return str(e)
+            self.run.add_input(checked)
         return None

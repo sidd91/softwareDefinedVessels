@@ -3,6 +3,7 @@
     uv run sdv admit G4 --installed G1,G2,G3 [--mission survey] [--set G4.hangar.mass_t=0.8 | --set G4.consumes.power_kw.peak=40]
     uv run sdv admit G7 --card path/G7.yaml --installed G4,G5 --mission disaster_relief     a card handed over as a file
     uv run sdv run [--mission sar] [--log-dir runs/b-sar]        Scenario B through the loop, one line per decision
+    uv run sdv run --safety 300:g3_hold_depth                    a 200 ms safety request after tick 300 (repeatable)
     uv run sdv replay runs/b-sar [--mission sar]                 the logs replayed and compared byte for byte
     uv run sdv kit plan|build|verify|install|rollback            the governor's computers and the Reference Kit
     uv run sdv demo [--port 8000] [--log-dir runs/live]          the screen on the live engine (the one demo command);
@@ -190,16 +191,42 @@ def _clock(t: float) -> str:
     return f"{int(t) // 60:02d}:{int(t) % 60:02d}"
 
 
+def _safety_requests(specs: list[str]) -> dict[int, list[str]]:
+    """--safety T:request, repeatable: the requests answered from the table of tick T, in the order given."""
+    from sdv.safety import REQUESTS
+    out: dict[int, list[str]] = {}
+    for spec in specs:
+        t, _, req = spec.partition(":")
+        if not t.strip().isdigit():
+            raise ValueError(f"safety request tick {t!r} is not a tick (0 or more)")
+        if req not in REQUESTS:
+            raise ValueError(f"no safety request {req!r} ({', '.join(REQUESTS)})")
+        out.setdefault(int(t), []).append(req)
+    return out
+
+
 def cmd_run(args) -> int:
     from pathlib import Path
 
     from sdv import loop as L
+    try:
+        safety = _safety_requests(args.safety or [])
+    except ValueError as e:
+        print(f"refused: {e}")
+        return 2
+    late = [t for t in safety if t > args.until]
+    if late:
+        print(f"refused: safety request tick {late[0]} is after the last tick {args.until}")
+        return 2
     sim = L.load_simulator(mission=args.mission, variant=args.variant)
     run = L.Loop(sim, args.mission, args.variant, inputs=L.scripted_inputs() if not args.no_script else {},
                  log_dir=Path(args.log_dir) if args.log_dir else None)
     print(f"RUN scenario_b · file {args.mission} · variant {args.variant} · simulator {sim.argos_label}")
     for out in run.ticks(until=args.until, pace=args.pace or None):
-        for r in out.records:
+        records = list(out.records)
+        for req in safety.get(out.tick, []):        # sent between ticks, as from the screen: logged with this tick
+            records += run.safety(req, injected=True)
+        for r in records:
             print(f"{_clock(r['t_s'])}  {r['kind']} {r['verdict'].upper():10} {r['sentence']}")
     run.close()
     worst = max(run.core.timing, key=lambda t: t["latency_ms"] / t["ceiling_ms"], default=None)
@@ -292,6 +319,8 @@ def main(argv: list[str] | None = None) -> int:
     r.add_argument("--pace", type=float, default=0, help="ticks per wall second (12 for the demo); 0 runs unpaced")
     r.add_argument("--log-dir", help="write the frame, input, snapshot, decision and timing logs here")
     r.add_argument("--no-script", action="store_true", help="no scripted laptop inputs (nobody answers the bridge)")
+    r.add_argument("--safety", action="append", metavar="T:request",
+                   help="a 200 ms safety request answered from tick T's table (r3_hold_landing, g3_hold_depth, g2_stop_winch, g4_return_home)")
     r.set_defaults(func=cmd_run)
     p2 = sub.add_parser("replay", help="re-run a logged run from its frame and input logs and compare")
     p2.add_argument("log_dir")

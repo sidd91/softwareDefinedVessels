@@ -19,7 +19,9 @@ Routes:
     POST /api/builder/check {kind: profile|card, doc} -> {problems}
     POST /api/builder/save  {kind, doc, label} -> {path} or {problems}; a new file, never an overwrite
     WS   /ws                ?mission=survey&t=0&speed=12&run=1; accepts {"cmd": run|hold|toggle|speed|jump|restart|mission}
-                            and, live, {"cmd": "input", "input": {type, injected, payload}} for laptop inputs
+                            and, live, {"cmd": "input", "input": {type, injected, payload}} for laptop inputs, each
+                            checked against config/signals.yaml events (a refusal names the field); a safety_request
+                            {request: r3_hold_landing|g3_hold_depth|g2_stop_winch|g4_return_home} is answered at once
 
 The run advances one ship second per tick, `speed` ticks per wall-clock second (SIM x12 is one ship minute every
 5 s). Every message is {type, tick, t_s, mission, snapshot, records, view, running, speed, end_t_s, source}.

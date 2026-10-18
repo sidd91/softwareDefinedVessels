@@ -488,9 +488,9 @@ class Core:
             return
 
     # ---------------------------------------------------------------------------------------------- 200 MS
-    def safety(self, request: str) -> tuple[list, list]:
+    def safety(self, request: str, started: float | None = None) -> tuple[list, list]:
         """Answer a safety request from the table built at the last completed tick: one lookup, no solver."""
-        started = time.perf_counter()
+        started = time.perf_counter() if started is None else started    # Loop.safety passes the request's arrival
         if request not in Sf.REQUESTS:
             raise ValueError(f"no safety request {request!r} ({', '.join(Sf.REQUESTS)})")
         if self.safety_tick is None:

@@ -10,8 +10,10 @@ log and the input log, never the simulator, and reproduces every snapshot and re
 """
 from __future__ import annotations
 
+import copy
 import importlib
 import json
+import math
 import os
 import sys
 import threading
@@ -25,12 +27,14 @@ from sdv.core import Core
 from sdv.estimator import Estimator, r1
 from sdv.loader import ROOT
 
-EVENTS = yaml.safe_load((ROOT / "config/signals.yaml").read_text())["events"]
+SIGNALS = yaml.safe_load((ROOT / "config/signals.yaml").read_text())
+EVENTS, FEEDS = SIGNALS["events"], list(SIGNALS["feeds"])
 TICKS_PER_S = 12        # demo pacing x12: a ship minute in 5 s
 
 
 def canonical(obj) -> str:
-    """The log serializer: numbers to 0.1, whole numbers as integers, sorted keys, no whitespace."""
+    """The log serializer of frames, snapshots, records and timing: numbers to 0.1, whole numbers as integers, sorted
+    keys, no whitespace. Inputs are logged exact instead."""
     def norm(x):
         if isinstance(x, bool) or x is None or isinstance(x, str):
             return x
@@ -43,6 +47,58 @@ def canonical(obj) -> str:
             return [norm(v) for v in x]
         return x
     return json.dumps(norm(obj), sort_keys=True, separators=(",", ":"))
+
+
+def exact(obj) -> str:
+    """The input log serializer: sorted keys, no whitespace, every number as it was sent. A juror's weight of 0.24 must
+    reach the standby and a replay as 0.24, not canonical's 0.2. A log line read back gives the same input."""
+    return json.dumps(obj, sort_keys=True, separators=(",", ":"))
+
+
+def _conform(field: str, want, v, guests):
+    """One payload value against its events type (config/signals.yaml): the value, a whole-number float in an integer
+    field made an integer, or ValueError naming the field."""
+    number = isinstance(v, (int, float)) and not isinstance(v, bool)
+    if number and isinstance(v, float) and math.isfinite(v) and v.is_integer() and (
+            want == "integer" or (isinstance(want, list) and all(isinstance(c, int) for c in want))):
+        v = int(v)                          # 6.0 sent for crew level 6 is the level 6
+    choices = want if isinstance(want, list) else guests if want == "guest" else FEEDS if want == "feed" else None
+    if choices is not None:
+        if any(v == c and type(v) is type(c) for c in choices):
+            return v
+        raise ValueError(f"{field} {v!r} is not one of {', '.join(map(str, choices))}")
+    ok = {"string": isinstance(v, str), "object": isinstance(v, dict), "boolean": isinstance(v, bool), "any": True,
+          "integer": number and isinstance(v, int),
+          "number": number and math.isfinite(v), "number?": v is None or (number and math.isfinite(v))}.get(want, False)
+    if not ok:                              # a type the check does not know is refused, never waved through
+        what = {"string": "text", "object": "an object", "boolean": "true or false", "integer": "a whole number",
+                "number": "a number", "number?": "a number"}.get(want, f"of type {want}")
+        raise ValueError(f"{field} {v!r} is not {what}")
+    return v
+
+
+def check_input(inp: dict, guests=()) -> dict:
+    """A laptop input against its config/signals.yaml events contract, before the simulator or the estimator sees it:
+    {type, injected, payload} as it will be stamped, or ValueError naming the field that breaks the contract."""
+    t = inp.get("type")
+    try:
+        ev = EVENTS.get(t) if isinstance(t, str) else None
+        if ev is None or "laptop" not in ev["from"]:
+            raise ValueError(f"{t} is not a laptop input")
+        if not isinstance(inp.get("payload"), dict):
+            raise ValueError("payload is not an object")
+        spec, optional, payload = ev["payload"], ev.get("optional", []), inp["payload"]
+        extra = sorted(k for k in payload if k not in spec)
+        if extra:
+            raise ValueError(f"{extra[0]} is not in the contract")
+        missing = [k for k in spec if k not in payload and k not in optional]
+        if missing:
+            raise ValueError(f"{missing[0]} is missing")
+        guests = list(guests)
+        injected = _conform("injected", "boolean", inp.get("injected", False), guests)
+        return {"type": t, "injected": injected, "payload": {k: _conform(k, spec[k], v, guests) for k, v in payload.items()}}
+    except ValueError as e:
+        raise ValueError(f"input {t!r} refused: {e}") from None
 
 
 def load_simulator(scenario="scenario_b", mission="survey", seed=0, variant="default"):
@@ -98,20 +154,28 @@ class Loop:
             log_dir.mkdir(parents=True, exist_ok=True)
             self.logs = {k: open(log_dir / f"{k}.jsonl", "w", buffering=1) for k in ("frames", "inputs", "snapshots", "decisions", "timing")}
 
+    def check_input(self, inp: dict) -> dict:
+        """The input as it will be stamped, or ValueError naming the field off its contract (check_input)."""
+        return check_input(inp, tuple(self.core.cards))
+
     def add_input(self, inp: dict) -> int:
-        """A laptop input arriving now is stamped with the next tick (the last completed tick plus one). A safety
-        request is answered at once instead (safety())."""
+        """A laptop input arriving now is checked against its contract and stamped with the next tick (the last
+        completed tick plus one), after any tick in progress. A safety request is answered at once instead (safety())."""
+        inp = self.check_input(inp)
         if inp["type"] == "safety_request":
-            self.safety(inp["payload"]["request"], inp.get("injected", False))
+            self.safety(inp["payload"]["request"], inp["injected"])
             return self.tick
-        t = self.tick + 1
-        self.inputs.setdefault(t, []).append({**inp, "t_s": t})
-        return t
+        with self.lock:
+            t = self.tick + 1
+            self.inputs.setdefault(t, []).append({**inp, "t_s": t})
+            return t
 
     def safety(self, request: str, injected: bool = False) -> list[dict]:
         """A.8 200 ms: answered between ticks from the table built at the last completed tick n, logged with n; its
-        commands join the ones decided on n and are applied in frame n + 1. A replay answers it after the decisions of n."""
+        commands join the ones decided on n and are applied in frame n + 1. A replay answers it after the decisions of n.
+        The latency counts from here, so a wait for the tick in progress is in it."""
         from sdv.safety import REQUESTS
+        started = time.perf_counter()
         if request not in REQUESTS:
             raise ValueError(f"no safety request {request!r} ({', '.join(REQUESTS)})")
         with self.lock:
@@ -120,9 +184,9 @@ class Loop:
             inp = {"t_s": self.tick, "type": "safety_request", "injected": injected, "payload": {"request": request}}
             self.inputs.setdefault(self.tick, []).append(inp)
             k = len(self.core.timing)
-            records = self._answer(inp)
+            records = self._answer(inp, started)
             if self.logs:
-                self.logs["inputs"].write(canonical(inp) + "\n")
+                self.logs["inputs"].write(exact(inp) + "\n")
                 for r in records:
                     self.logs["decisions"].write(canonical(r) + "\n")
                 for t in self.core.timing[k:]:
@@ -131,8 +195,8 @@ class Loop:
                     f.flush()
             return records
 
-    def _answer(self, inp: dict) -> list[dict]:
-        records, commands = self.core.safety(inp["payload"]["request"])
+    def _answer(self, inp: dict, started: float | None = None) -> list[dict]:
+        records, commands = self.core.safety(inp["payload"]["request"], started)
         self.commands = self.commands + commands
         if self.standby:
             s_recs, s_cmds = self.standby[1].safety(inp["payload"]["request"])
@@ -154,13 +218,19 @@ class Loop:
         to_sim = [i for i in stamped if EVENTS[i["type"]]["to"] == "simulator"]
         to_core = [i for i in stamped if EVENTS[i["type"]]["to"] == "core" and i["type"] != "safety_request"]
         replayed_safety = [i for i in stamped if i["type"] == "safety_request"]
-        frame = r1(self.sim.step(n, self.commands, to_sim))
+        # Every side reads the frame and the core inputs as the logs hold them: the frame canonical, the inputs exact.
+        line = canonical(r1(self.sim.step(n, self.commands, to_sim)))
+        frame, core_in = json.loads(line), json.loads(exact(to_core))
         snap = self.est.step(frame)
         k = len(self.core.timing)
-        records, commands = self.core.decide(snap, to_core)
+        records, commands = self.core.decide(snap, core_in)
+        if core_in:         # a swap or a profile applied at sea: run.mission names the file in force from snapshot n + 1
+            self.est.mission = self.core.mission["id"]
         if self.standby:
-            s_snap = self.standby[0].step(json.loads(canonical(frame)))
-            s_recs, s_cmds = self.standby[1].decide(s_snap, json.loads(canonical(to_core)))
+            s_snap = self.standby[0].step(json.loads(line))
+            s_recs, s_cmds = self.standby[1].decide(s_snap, copy.deepcopy(core_in))
+            if core_in:
+                self.standby[0].mission = self.standby[1].mission["id"]
             if self.standby_state == "in step":
                 diff = (first_difference([canonical(snap)], [canonical(s_snap)])
                         or first_difference([canonical(r) for r in records], [canonical(r) for r in s_recs])
@@ -173,9 +243,9 @@ class Loop:
         ms = (time.perf_counter() - t0) * 1000
         self.wall.append({"tick": n, "compute_ms": round(ms, 3)})
         if self.logs:
-            self.logs["frames"].write(canonical(frame) + "\n")
+            self.logs["frames"].write(line + "\n")
             for i in stamped:
-                self.logs["inputs"].write(canonical(i) + "\n")
+                self.logs["inputs"].write(exact(i) + "\n")
             self.logs["snapshots"].write(canonical(snap) + "\n")
             for r in records:
                 self.logs["decisions"].write(canonical(r) + "\n")

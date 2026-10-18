@@ -91,6 +91,7 @@ class Simulator:
         self.done = set()                        # applied timeline indices
         self.applied_types = []                  # (tick, type, payload) for triggers
         self.tripped = None
+        self.restart = None                      # (genset, expected_end_t_s) while a tripped genset restarts
         self.pump = None
         self.requests = copy.deepcopy(start["bridge_requests"])
         self.g3_last_msg = None
@@ -220,14 +221,28 @@ class Simulator:
             self.v["emission"] = p["emission"]
         elif t == "genset_trip":
             self.trip(p["genset"])
+        elif t == "genset_restart":
+            self.start_restart(p["genset"], p["expected_end_t_s"], tick)
         elif t == "cooling_degraded":
             self.pump = p["pump"]
+        elif t == "guest_request":
+            # signals.yaml: a guest's request reaches the core only through frame.events. The stub changes no state.
+            guess("G-guest-request", "guest_request: echoed in the frame's events only, the guest's mode and kW wait for a set_mode")
         else:
             raise NotImplementedError(t)
         events.append({"t_s": tick, "type": t, "origin": "laptop", "injected": inp["injected"], "payload": p})
 
     def trip(self, n):
-        self.tripped = n
+        self.tripped, self.restart = n, None
+
+    def start_restart(self, n, end_t_s, tick):
+        """fault_signatures.genset_restart: the relay resets and the bus is back at 60 Hz at once; the genset takes load
+        at its expected end. A restart of a genset that is not tripped changes nothing (logged)."""
+        if self.tripped != n:
+            self.log.append(f"{tick}: genset_restart {n} ignored, genset {n} is not tripped")
+            return
+        guess("G-genset-restart", "genset_restart: relay reset and 60 Hz from the event tick, the genset at 0 kW until expected_end_t_s, then both share the bus")
+        self.restart = (n, end_t_s)
 
     # ------------------------------------------------------------------ timeline (timeline_mapping, generic)
     def map_event(self, e, tick):
@@ -289,6 +304,8 @@ class Simulator:
                     self.event_rate_now.add(f"{g}.{k}")
             elif typ == "genset_trip":
                 self.trip(payload["genset"])
+            elif typ == "genset_restart":
+                self.start_restart(payload["genset"], payload["expected_end_t_s"], tick)
             elif typ == "guest_state":
                 g = payload["guest"]
                 if g == "G4" and payload["activity"] == "landed":
@@ -349,11 +366,16 @@ class Simulator:
             self.v["deck_machinery"] = True
 
         # fault signatures
+        if self.restart and tick >= self.restart[1]:
+            n = self.restart[0]
+            self.tripped = self.restart = None
+            self.v[f"genset_{n}_relay_trip"] = False
+            self.v["bus_frequency_hz"] = 60.0
         if self.tripped:
             n, o = self.tripped, 3 - self.tripped
-            self.v[f"genset_{n}_relay_trip"] = True
+            self.v[f"genset_{n}_relay_trip"] = not self.restart
             self.v[f"genset_{n}_kw"] = 0.0
-            self.v["bus_frequency_hz"] = 59.6
+            self.v["bus_frequency_hz"] = 60.0 if self.restart else 59.6
             self.v[f"genset_{o}_kw"] = round(min(A["power"]["gensets"]["rating_kw"], self.bus_load()), 1)
         else:
             self.v["genset_1_kw"] = self.v["genset_2_kw"] = round(self.bus_load() / 2, 1)
