@@ -1,5 +1,5 @@
 // The ArgOS page: one title bar, five views, the SIM bar, and the /ws stream (the live loop, or the fixture replay).
-import { esc, chip, getJSON } from './util.js';
+import { esc, chip, getJSON, paint, paintEach } from './util.js';
 import { renderOps, renderLedger } from './ops.js';
 import { renderCompare } from './compare.js';
 import { renderAdmit } from './admit.js';
@@ -29,6 +29,7 @@ const CREW_NEXT = { 14: 6, 6: 0, 0: 14 };
 
 // ------------------------------------------------------------------------------------------- title bar
 
+// One fragment per chip, for paintEach(): the crew chip is a button, and only a change of its own text may rebuild it.
 function replayChips(v) {
   const h = v.header;
   const gens = v.plant.filter(p => p.tag.startsWith('GEN')).filter(p => p.state === 'RUN').length;
@@ -43,7 +44,7 @@ function replayChips(v) {
     app.view === 'ledger' ? chip(`GEN ${gens} OF 2`) : '',
     chip(`SIM ×${esc(app.tick.speed)}`),
     h.standby ? chip(`STANDBY ${esc(h.standby)}`, h.standby === 'IN STEP' ? '' : 'alarm') : '',
-  ].join('');
+  ];
 }
 
 export function setHeader(chips, right = null, small = false) {
@@ -57,7 +58,7 @@ function paintHeader() {
   const alarms = $('alarms');
   const clock = $('clock');
   if (!cfg.sim || (app.view === 'compare' && app.header)) {
-    $('chips').innerHTML = app.header ? app.header.chips : '';
+    paint($('chips'), app.header ? app.header.chips : '');
     alarms.hidden = true;
     clock.className = 'clock' + (app.header && app.header.small ? ' small' : '');
     clock.textContent = app.header && app.header.right != null ? app.header.right : '';
@@ -66,7 +67,7 @@ function paintHeader() {
   }
   if (!app.tick) return;
   const v = app.tick.view;
-  $('chips').innerHTML = replayChips(v);
+  paintEach($('chips'), replayChips(v));
   alarms.hidden = false;
   alarms.className = 'alarm-count' + (v.header.alarms ? '' : ' none');
   alarms.textContent = `ALARMS ${v.header.alarms}`;
@@ -82,13 +83,15 @@ function simbar() {
   if (!t || !app.meta) return;
   $('sim-run').textContent = t.running ? 'HOLD' : 'RUN';
   $('sim-run').classList.toggle('on', !t.running);
-  $('sim-speed').innerHTML = '<span class="gl">PACE</span>' + app.meta.speeds.map(s =>
-    `<button type="button" data-speed="${s}" class="${s === t.speed ? 'on' : ''}">×${s}</button>`).join('');
+  // The groups go through paint(): their buttons are rebuilt only when the pace or the file changes, never on a plain
+  // tick, so a press that straddles a frame still lands on one button (0 of 12 at x12 when innerHTML ran every tick).
+  paint($('sim-speed'), '<span class="gl">PACE</span>' + app.meta.speeds.map(s =>
+    `<button type="button" data-speed="${s}" class="${s === t.speed ? 'on' : ''}" aria-pressed="${s === t.speed}">×${s}</button>`).join(''));
   const marks = (app.meta.marks[t.mission] || []).filter(m => m.t_s > 0);
-  $('sim-jump').innerHTML = '<span class="gl">JUMP</span>' + marks.map(m =>
-    `<button type="button" data-jump="${Math.max(0, m.at - 3)}" title="${esc(m.label)}">${esc(m.t.slice(3))}</button>`).join('');
-  $('sim-file').innerHTML = '<span class="gl">PRIORITY</span>' + app.meta.missions.map(m =>
-    `<button type="button" data-file="${esc(m.id)}" class="${m.id === t.mission ? 'on' : ''}">${esc(m.name)}</button>`).join('');
+  paint($('sim-jump'), '<span class="gl">JUMP</span>' + marks.map(m =>
+    `<button type="button" data-jump="${Math.max(0, m.at - 3)}" title="${esc(m.label)}">${esc(m.t.slice(3))}</button>`).join(''));
+  paint($('sim-file'), '<span class="gl">PRIORITY</span>' + app.meta.missions.map(m =>
+    `<button type="button" data-file="${esc(m.id)}" class="${m.id === t.mission ? 'on' : ''}" aria-pressed="${m.id === t.mission}">${esc(m.name)}</button>`).join(''));
   $('sim-fill').style.width = `${Math.round(100 * t.t_s / t.end_t_s)}%`;
   $('sim-source').textContent = t.source === 'live' ? `LIVE · SIM ${String(t.sim || '').toUpperCase()}` : 'REPLAY';
   if (t.refused) $('sim-note').textContent = `REFUSED · ${t.refused}`;
