@@ -20,11 +20,15 @@ uv sync
 uv run pytest
 uv run sdv admit G4 --installed G1,G2,G3 --mission survey
 uv run sdv admit G4 --installed G1,G2,G3 --set G4.hangar.mass_t=0.8
+uv run sdv admit G7 --card path/to/G7.yaml --installed G4,G5 --mission disaster_relief
 uv run sdv run --mission sar --log-dir runs/b-sar && uv run sdv replay runs/b-sar --mission sar
 ```
 
 `sdv admit` runs D1 and D2 on the real engine: verdict, binding line, every ledger line, placement, ranked
-yes-if options and the one-genset-down check, with the time taken against the 30 s ceiling. `sdv run` plays
+yes-if options and the one-genset-down check, with the time taken against the 30 s ceiling. `--card` admits a
+card handed over as a file: a schema or vocabulary problem is refused with the field named (exit 2); a card whose
+activities are not yet registered in `config/signals.yaml` is judged on its quantities, positions and relations,
+and the output says so. A bad file in `manifests/` is reported once at start and skipped, never fatal. `sdv run` plays
 Scenario B through the tick loop (simulator, estimator, decisions) and prints each decision's sentence;
 `sdv replay` re-runs the logs without the simulator and checks every snapshot and record byte for byte.
 `sdv kit` plans the governor's own computers and builds the Deployment Reference Kit ([deployment](docs/DEPLOYMENT.md)).

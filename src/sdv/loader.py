@@ -4,6 +4,11 @@ Every name a card or priority file uses is checked against config/signals.yaml (
 activity registry) and config/assumptions.yaml (positions, rules). A file that fails is refused with the file
 and the field named. try_load keeps the previous version when a reload fails, so a bad jury card or priority
 file never replaces a good one (brief: Scenario A, D1; DESIGN_FREEZE delta 2 and delta 3).
+
+load_cards never raises: a file in manifests/ that fails is left out and reported through `refused`, so one bad
+file never blocks start-up. A card handed over as a file (sdv admit --card) goes through load_card with
+allow_unregistered: with no activity registry for its id it is judged with an empty activity set, admitted on its
+quantities, positions and relations only, and the caller says so.
 """
 from __future__ import annotations
 
@@ -118,19 +123,25 @@ def _activity_ref_problem(ref: str, vocab: Vocabulary) -> str | None:
     return None
 
 
-def check_card(card: dict, vocab: Vocabulary, schema: dict) -> list[str]:
-    """Every problem with one guest card, each naming its field. Empty means the card loads."""
+def check_card(card: dict, vocab: Vocabulary, schema: dict, allow_unregistered: bool = False) -> list[str]:
+    """Every problem with one guest card, each naming its field. Empty means the card loads.
+
+    A card whose id has no activity registry in config/signals.yaml is refused, unless allow_unregistered: a jury
+    card handed over as a file is then judged with an empty activity set. Its conditions and exclusions are still
+    checked for signal names and values, but not for activity names, so admission rests on its quantities,
+    positions and relations only (D1 reads no condition; activities matter at sea, to D3 and D5)."""
     problems = _schema_problems(card, schema)
     if problems:
         return problems
     gid = card["id"]
-    acts = vocab.activities.get(gid)
-    if acts is None:
+    registered = gid in vocab.activities
+    if not registered and not allow_unregistered:
         return [f"id: {gid} has no activity registry in config/signals.yaml"]
+    acts = vocab.activities.get(gid, {})
     modes = {m["name"] for m in card["modes"]}
     for i, c in enumerate(card.get("conditions", [])):
         where = f"conditions[{i}]"
-        if c["activity"] not in acts:
+        if registered and c["activity"] not in acts:
             problems.append(f"{where}.activity: {c['activity']!r} is not a {gid} activity ({sorted(acts)})")
         for name, pred in c["requires"].items():
             sig = vocab.signals.get(name)
@@ -150,7 +161,7 @@ def check_card(card: dict, vocab: Vocabulary, schema: dict) -> list[str]:
     rel = card.get("relations", {})
     for i, ex in enumerate(rel.get("excludes", [])):
         where = f"relations.excludes[{i}]"
-        if ex["activity"] not in acts:
+        if registered and ex["activity"] not in acts:
             problems.append(f"{where}.activity: {ex['activity']!r} is not a {gid} activity")
         if p := _activity_ref_problem(ex["excludes"], vocab):
             problems.append(f"{where}.excludes: {p}")
@@ -198,22 +209,51 @@ def _schema(root: Path, rel: str) -> dict:
     return json.loads((root / rel).read_text())
 
 
-def load_card(path: Path, vocab: Vocabulary | None = None, root: Path = ROOT) -> dict:
+def load_card(path: Path, vocab: Vocabulary | None = None, root: Path = ROOT, allow_unregistered: bool = False) -> dict:
+    """One card file, or a LoadError naming the field (a file YAML cannot read is refused the same way)."""
     vocab = vocab or load_vocabulary(root)
-    card = _read(Path(path))
-    problems = check_card(card, vocab, _schema(root, "manifests/schema.json"))
+    try:
+        card = _read(Path(path))
+    except yaml.YAMLError as err:
+        mark = getattr(err, "problem_mark", None)
+        where = f" at line {mark.line + 1}, column {mark.column + 1}" if mark else ""
+        raise LoadError(path, [f"yaml: {getattr(err, 'problem', None) or ' '.join(str(err).split())}{where}"]) from None
+    problems = check_card(card, vocab, _schema(root, "manifests/schema.json"), allow_unregistered)
     if problems:
         raise LoadError(path, problems)
     return card
 
 
-def load_cards(directory: Path | None = None, vocab: Vocabulary | None = None, root: Path = ROOT) -> dict[str, dict]:
+def manifests_dir(root: Path = ROOT) -> Path:
+    return root / "manifests"
+
+
+def load_cards(directory: Path | None = None, vocab: Vocabulary | None = None, root: Path = ROOT,
+               refused: list[LoadError] | None = None) -> dict[str, dict]:
+    """Every card in manifests/ (or directory) that loads, by id. A file that fails is left out and its LoadError
+    appended to `refused` (a second file with an id already loaded too), so one bad file never blocks start-up;
+    sdv admit and sdv demo print the refusals once at start (refusal)."""
     vocab = vocab or load_vocabulary(root)
-    cards = {}
-    for path in sorted((directory or root / "manifests").glob("G*.yaml")):
-        card = load_card(path, vocab, root)
+    cards: dict[str, dict] = {}
+    seen: dict[str, Path] = {}
+    for path in sorted((directory or manifests_dir(root)).glob("G*.yaml")):
+        card, err = try_load(load_card, path, None, vocab, root)
+        if err is None and card["id"] in seen:
+            err = LoadError(path, [f"id: {card['id']} is already loaded from {seen[card['id']].name}"])
+        if err is not None:
+            if refused is not None:
+                refused.append(err)
+            continue
         cards[card["id"]] = card
+        seen[card["id"]] = path
     return cards
+
+
+def refusal(err: LoadError, root: Path = ROOT) -> str:
+    """The one line a refused file gets at start-up: the file (relative to the repo when inside it) and its first problem."""
+    path = Path(err.path)
+    shown = path.relative_to(root) if path.is_absolute() and path.is_relative_to(root) else path
+    return f"refused {shown}: {err.problems[0]}"
 
 
 def load_mission(path: Path, cards: dict[str, dict], vocab: Vocabulary | None = None, root: Path = ROOT) -> dict:

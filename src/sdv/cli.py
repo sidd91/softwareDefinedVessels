@@ -1,6 +1,7 @@
 """The sdv command.
 
     uv run sdv admit G4 --installed G1,G2,G3 [--mission survey] [--set G4.hangar.mass_t=0.8]
+    uv run sdv admit G7 --card path/G7.yaml --installed G4,G5 --mission disaster_relief     a card handed over as a file
     uv run sdv run [--mission sar] [--log-dir runs/b-sar]        Scenario B through the loop, one line per decision
     uv run sdv replay runs/b-sar [--mission sar]                 the logs replayed and compared byte for byte
     uv run sdv kit plan|build|verify|install|rollback            the governor's computers and the Reference Kit
@@ -8,7 +9,10 @@
 
 prints the D1 verdict with the binding line, every ledger line, the placement, the ranked yes-if options and the
 one-genset-down check, and how long the decision took against its 30 s ceiling. A one-number edit is applied to
-the card and the card is re-validated first; a bad edit is refused with the field named.
+the card and the card is re-validated first; a bad edit is refused with the field named. A card file (--card, or
+a path in place of the id) is loaded through the loader: a schema or vocabulary problem is refused with the field
+named (exit 2); a card whose activities are not registered in config/signals.yaml is judged on its quantities,
+positions and relations, and one line says so. A bad file in manifests/ is reported once at start and skipped.
 """
 from __future__ import annotations
 
@@ -16,6 +20,7 @@ import argparse
 import copy
 import sys
 import time
+from pathlib import Path
 
 from sdv import admission as Ad
 from sdv import loader as Ld
@@ -49,16 +54,48 @@ def apply_edit(card: dict, field: str, raw: str) -> dict:
     return card
 
 
+def _card_file(args) -> str | None:
+    """The card file to admit: --card, or the positional when it is a path rather than an id."""
+    if args.card_file:
+        return args.card_file
+    if args.card and (Path(args.card).suffix in (".yaml", ".yml") or Path(args.card).is_file()):
+        return args.card
+    return None
+
+
 def cmd_admit(args) -> int:
     A = Ld.load_assumptions()
     vocab = Ld.load_vocabulary(assumptions=A)
-    cards = Ld.load_cards(vocab=vocab)
+    refused: list[Ld.LoadError] = []
+    cards = Ld.load_cards(vocab=vocab, refused=refused)
+    for err in refused:
+        print(Ld.refusal(err))
     missions = Ld.load_missions(cards, vocab)
     if args.mission not in missions:
         print(f"refused: no priority file {args.mission!r} ({', '.join(sorted(missions))})")
         return 2
     installed = [g for g in (args.installed or "").split(",") if g]
-    for g in installed + [args.card]:
+    file, jury = _card_file(args), None
+    if file:
+        try:
+            card = Ld.load_card(Path(file), vocab, allow_unregistered=True)
+        except Ld.LoadError as err:
+            print(Ld.refusal(err))
+            return 2
+        jury = card["id"]
+        if args.card not in (None, file, jury):
+            print(f"refused: {file} is card {jury}, not {args.card}")
+            return 2
+        cards[jury] = card
+        print(f"loaded: {jury} from {file}, card validated")
+        if jury not in vocab.activities:
+            print(f"{jury} activities not registered: conditions not judged ({len(card.get('conditions', []))} on the card); "
+                  "admitted on quantities, positions and relations")
+    card_id = jury or args.card
+    if not card_id:
+        print("refused: no card given (an id such as G4, or --card path.yaml)")
+        return 2
+    for g in installed + [card_id]:
         if g not in cards:
             print(f"refused: no card {g}")
             return 2
@@ -66,19 +103,19 @@ def cmd_admit(args) -> int:
         target, _, raw = edit.partition("=")
         gid, _, fld = target.partition(".")
         edited = apply_edit(cards[gid], fld, raw)
-        problems = Ld.check_card(edited, vocab, Ld._schema(Ld.ROOT, "manifests/schema.json"))
+        problems = Ld.check_card(edited, vocab, Ld._schema(Ld.ROOT, "manifests/schema.json"), allow_unregistered=gid == jury)
         if problems:
             print(f"refused: {gid} edit {target}={raw}: {problems[0]}. Previous card kept.")
             return 2
         cards[gid] = edited
         print(f"edited: {target} = {raw}, card re-validated")
     t0 = time.perf_counter()
-    r = Ad.admit(A, cards, installed, args.card, missions[args.mission])
+    r = Ad.admit(A, cards, installed, card_id, missions[args.mission])
     ms = (time.perf_counter() - t0) * 1000
     b = r.binding
-    rec = Rec.from_admission(r, seq=0, tick=0, card_id=args.card, installed=installed, mission=missions[args.mission], cards=cards)
+    rec = Rec.from_admission(r, seq=0, tick=0, card_id=card_id, installed=installed, mission=missions[args.mission], cards=cards)
     print(rec["sentence"])
-    print(f"VERDICT {r.verdict.upper()} · {args.card} onto {', '.join(installed) or 'an empty ship'} · mission {args.mission}")
+    print(f"VERDICT {r.verdict.upper()} · {card_id} onto {', '.join(installed) or 'an empty ship'} · mission {args.mission}")
     print(f"BINDING {b.cls} {_num(b.demand)} / {_num(b.capacity)} {UNITS.get(b.unit, b.unit)}")
     print("LINES")
     for l in r.lines.values():
@@ -187,7 +224,8 @@ def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(prog="sdv", description="ArgOS resource governor")
     sub = p.add_subparsers(dest="cmd", required=True)
     a = sub.add_parser("admit", help="D1: can this card come aboard?")
-    a.add_argument("card")
+    a.add_argument("card", nargs="?", help="a loaded card's id (G4), or the path of a card file")
+    a.add_argument("--card", dest="card_file", metavar="path.yaml", help="a card handed over as a file, judged by its id")
     a.add_argument("--installed", default="")
     a.add_argument("--mission", default="survey")
     a.add_argument("--set", action="append", metavar="Gx.part.field=value")

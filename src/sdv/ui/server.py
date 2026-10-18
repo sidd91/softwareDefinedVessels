@@ -32,6 +32,7 @@ from fastapi import Body, FastAPI, Query, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
+from sdv import loader as Ld
 from sdv.ui import builder, data, live, view
 
 STATIC = Path(__file__).parent / "static"
@@ -281,7 +282,10 @@ def create_app(inputs: data.Inputs | None = None, source: str = "live", profiles
 
 def run(host: str = "127.0.0.1", port: int = 8000, source: str = "live") -> None:
     import uvicorn
-    uvicorn.run(create_app(source=source), host=host, port=port, log_level="warning")
+    I = data.Inputs()
+    for err in I.refused:              # a bad file in manifests/ is reported once here and skipped, never fatal
+        print(Ld.refusal(err), flush=True)
+    uvicorn.run(create_app(I, source=source), host=host, port=port, log_level="warning")
 
 
 def main(argv: list[str] | None = None) -> int:
