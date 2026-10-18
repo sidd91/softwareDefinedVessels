@@ -4,7 +4,8 @@
     uv run sdv run [--mission sar] [--log-dir runs/b-sar]        Scenario B through the loop, one line per decision
     uv run sdv replay runs/b-sar [--mission sar]                 the logs replayed and compared byte for byte
     uv run sdv kit plan|build|verify|install|rollback            the governor's computers and the Reference Kit
-    uv run sdv demo [--port 8000]                                the screen on the live engine (the one demo command)
+    uv run sdv demo [--port 8000] [--log-dir runs/live]          the screen on the live engine (the one demo command);
+                                                                 every run it shows is logged for sdv replay
 
 prints the D1 verdict with the binding line, every ledger line, the placement, the ranked yes-if options and the
 one-genset-down check, and how long the decision took against its 30 s ceiling. A one-number edit is applied to
@@ -223,10 +224,13 @@ def cmd_kit(args) -> int:
 
 
 def cmd_demo(args) -> int:
-    """The one demo command: the decision engine and the screen, Scenario B on the live tick loop."""
+    """The one demo command: the decision engine and the screen, Scenario B on the live tick loop. Every live run
+    the screen shows (and each re-run after a jump back or RESTART) is logged under --log-dir for `sdv replay`."""
+    from pathlib import Path
+
     from sdv.ui import server
     print(f"ArgOS screen on http://{args.host}:{args.port}/ ({args.source}); Ctrl+C stops it")
-    server.run(args.host, args.port, args.source)
+    server.run(args.host, args.port, args.source, Path(args.log_dir) if args.source == "live" else None)
     return 0
 
 
@@ -256,6 +260,8 @@ def main(argv: list[str] | None = None) -> int:
     dm.add_argument("--host", default="127.0.0.1")
     dm.add_argument("--port", type=int, default=8000)
     dm.add_argument("--source", choices=["live", "fixtures"], default="live", help="live tick loop (default) or the recorded fixtures")
+    dm.add_argument("--log-dir", default="runs/live",
+                    help="live runs are logged here, one directory per run (live-<file>-<n>), replayed with sdv replay")
     dm.set_defaults(func=cmd_demo)
     k = sub.add_parser("kit", help="the governor's computers and the Deployment Reference Kit")
     k.add_argument("action", choices=["plan", "build", "verify", "install", "rollback"])

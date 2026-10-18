@@ -28,9 +28,13 @@ def test_unknown_priority_file_is_refused(capsys):
 
 
 def test_demo_starts_the_screen_on_the_live_engine(monkeypatch, capsys):
+    from pathlib import Path
+
     from sdv.ui import server
     seen = {}
-    monkeypatch.setattr(server, "run", lambda host, port, source: seen.update(host=host, port=port, source=source))
+    monkeypatch.setattr(server, "run", lambda host, port, source, log_dir: seen.update(host=host, port=port, source=source, log_dir=log_dir))
     assert cli.main(["demo", "--port", "8123"]) == 0
-    assert seen == {"host": "127.0.0.1", "port": 8123, "source": "live"}
+    assert seen == {"host": "127.0.0.1", "port": 8123, "source": "live", "log_dir": Path("runs/live")}
     assert "http://127.0.0.1:8123/" in capsys.readouterr().out
+    assert cli.main(["demo", "--source", "fixtures", "--log-dir", "elsewhere"]) == 0
+    assert seen["source"] == "fixtures" and seen["log_dir"] is None      # the fixtures are their own log

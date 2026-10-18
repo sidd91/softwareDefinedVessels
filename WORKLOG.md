@@ -1074,3 +1074,21 @@ a forbidden recovery at 0 aboard is not reopened. Left as is: the chip 14 to 0 a
 bridge" (wait_s at 0 is 0 s), and the SIM bar's ENGINE note stays until RESTART.
 Files: src/sdv/core.py, tests/test_crew_levels.py. Tests: 1 added, full suite 1292 passed, 14-aboard records unchanged.
 Decisions: none. Conflicts: none. Requirements touched: R-009, R-011, R-012.
+### Sat 22:12 PDT · The run the jury watches is logged and replays; RESTART keeps a held swap · Claude Fable 5.1 on behalf of Siddharth Chawla (sidd91)
+
+What: `sdv demo` (live source) now logs every run and re-run the screen shows to its own directory under `--log-dir`
+(default runs/live), live-<start file>-<n>, n a counter that continues past the directories already there; the loop's
+five logs are line-buffered and closed on a jump back, RESTART, disconnect and shutdown; the server prints where the
+logs go, one line per run, and the `uv run sdv replay <dir> --mission <file>` line for the last run on shutdown. RESTART
+starts under a priority file chosen while held (the swap stamped for the next tick), and a JUMP back that drops a later
+swap writes "jump back: swap to <file>.yaml at <t> dropped" into the event log. Replay of a mid-run swap is unchanged (DEC-58).
+Files: src/sdv/loop.py, src/sdv/ui/live.py, src/sdv/ui/server.py, src/sdv/cli.py; tests/test_ui_live.py, tests/test_ui_server.py, tests/test_cli.py.
+Tests: 5 new (a logged live run replays EQUAL through `sdv replay`, the RunLogs counter, RESTART under the held file, the
+dropped-swap line, the server's start and shutdown lines; the /ws run is on disk tick by tick); 1283 pass. Screen driven
+with Playwright on :8213 through both cases; the three logged runs replay EQUAL. Branch fix/live-run-log, for a teammate to merge.
+Decisions: none. Conflicts: none. Requirements touched: R-007, R-017.
+Review (Claude Fable 5.1 for Siddharth, same branch): driven on :8403 with Playwright and a raw /ws client; 30 logged runs
+(held swap + RESTART, swap after the 19-min mark + JUMP back, crew 6/0 at 60/470/500/900 under both files, mission at
+t=0, SIGINT with a browser connected) all replay EQUAL and the LAST RUN line reaches a nohup log. One fix: a
+`priority_swap` laptop input naming an unknown file (or none) is refused as "no priority file X" instead of stamped;
+before, RESTART or a JUMP (`Run.swaps()`) or the next tick raised KeyError and the socket dropped. +1 test; 1284 pass.
