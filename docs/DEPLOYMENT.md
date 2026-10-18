@@ -23,11 +23,11 @@ and come with each guest.
 
 | Device | Where | Does |
 |---|---|---|
-| Board 1, primary | bridge | runs the governor: estimator, decisions, screen |
+| Board 1, primary | bridge | **Design:** runs the governor: estimator, decisions, screen. Today the governor runs on the laptop |
 | Board 2, standby | engine control room | runs the same governor on the same inputs in lockstep. **Design:** takes over after 3 s without heartbeat |
 | Boards 3 and 4, zone | forward equipment room, hangar | **Design:** collect their zone's edge nodes, and either can become primary |
 | Edge nodes (6) | engine control room, chilled-water plant, bridge, hangar and flight deck, stern ramp, mission bays | **Design:** local monitoring, and the latest shed table, pushed every tick |
-| SSD copies (2) | bridge, engine control room | offline backup of the kit and the run logs |
+| SSD copies (2) | bridge, engine control room | **Design:** offline backup of the kit and the run logs |
 | Printed binder | bridge | the kit on paper |
 
 Board count: 2 on any hull, plus one for each started 25 m beyond the first 25 m. That is 2 at 25 m, 4 at

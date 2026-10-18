@@ -8,8 +8,9 @@ inputs are confirmed, debounced plant signals, and unknown never means safe.
 **Built** (Sat 14:45): `src/sdv/estimator.py`, `Estimator(scenario, mission, variant).step(frame)`, the nine
 steps below. `tests/test_estimator.py` steps a labelled test double of the simulator (`tests/support/sim_stub.py`,
 built from this contract only) through Scenario B with the scripted core. Its snapshots match every fixture
-except in two places: `since_t_s`, and the wording of `substituted.rule`, which is `signals.yaml`'s where the
-fixtures paraphrase it. D3 and D4 give the same records on its snapshots as on the fixtures. `since_t_s` is the
+except in three places: `since_t_s`, the wording of `substituted.rule`, which is `signals.yaml`'s where the
+fixtures paraphrase it, and the fixtures' own free-text `notes` list, which the estimator does not emit.
+D3 and D4 give the same records on its snapshots as on the fixtures. `since_t_s` is the
 tick the value last changed (a number in transition changes every tick and settles on the end tick). The
 fixtures annotate it by hand and miss a few changes, listed in the test.
 
@@ -325,7 +326,9 @@ A.6 gives no time for a change inside a band, so 2 and 3 min are assumed); the d
 4 min); G4 is in launch and recovery from 781 and lands at 1020 (the pin); the core closes request 1 at 1021.
 Under survey only, the survey resumes on snapshot 1080 (assumed: 60 s to secure G4): noise normal at once,
 course steady and 3 kn by 1201. Neither the close nor the resume adds a record. Each command carries the seq of
-the record that started it, D5 for the close and D3 for the resume. The pump fails at 1140 and D4's mode change lands at 1142.
+the record that started it. In the core's run the close carries the D5 record's seq (2) and the resume the D3
+record's seq (1). The script's drafted seqs (`baselines.scenario_b.script`: 1 for the close, 2 for the resume)
+predate the D5 record. The pump fails at 1140 and D4's mode change lands at 1142.
 
 ## Open, for a DEC row
 
