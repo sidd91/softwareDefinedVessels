@@ -266,14 +266,35 @@ def ladder(cards: dict, modes: dict[str, str], mission: dict, for_shed: bool = F
         current[best.guest] = best.to_mode
 
 
-def steps_to_fit(steps: list[Step], load_kw: float, limit: float, throttles_only: bool = False) -> list[Step] | None:
-    """The shortest ladder prefix that brings load within limit; None if it cannot (DEC-35's throttle-only prefix when asked)."""
-    taken, load = [], load_kw
+def walk(steps: list[Step], load_kw: float, limit: float, throttles_only: bool = False,
+         loop_kw: float | None = None, loop_limit: float | None = None, loop_guests=()) -> tuple[list[Step], bool]:
+    """Walk the ladder in its order until the load is within the limit and, when a loop is given, the chilled-water load
+    within its own limit: the steps taken and whether they fit. Power and cooling are judged on their own lines (A.1,
+    A.2): a step frees electrical kW always and loop kW only when its guest is on the loop, so a step that relieves no
+    line still over (an air-cooled guest's while only the loop is over) is passed over, not taken. With throttles_only
+    the walk stops at the first shed (DEC-35's throttle-only prefix)."""
+    def fits(load, loop):
+        return load <= limit + 1e-9 and (loop_kw is None or loop <= loop_limit + 1e-9)
+
+    taken, load, loop = [], load_kw, loop_kw
     for s in steps:
-        if load <= limit + 1e-9:
-            return taken
+        if fits(load, loop):
+            return taken, True
         if throttles_only and s.shed:
             break
+        on_loop = loop is not None and s.guest in loop_guests
+        if loop is not None and load <= limit + 1e-9 and not on_loop:
+            continue    # the bus already fits and this guest is not on the loop: the step would free nothing that is over
         taken.append(s)
         load -= s.frees_kw
-    return taken if load <= limit + 1e-9 else None
+        if on_loop:
+            loop -= s.frees_kw
+    return taken, fits(load, loop)
+
+
+def steps_to_fit(steps: list[Step], load_kw: float, limit: float, throttles_only: bool = False,
+                 loop_kw: float | None = None, loop_limit: float | None = None, loop_guests=()) -> list[Step] | None:
+    """The shortest ladder prefix (walk) that brings the load within the limit, and the loop within its own when one is
+    given; None if it cannot."""
+    taken, ok = walk(steps, load_kw, limit, throttles_only, loop_kw, loop_limit, loop_guests)
+    return taken if ok else None

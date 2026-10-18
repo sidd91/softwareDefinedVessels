@@ -14,12 +14,12 @@
    "t_s": 0
   },
   "genset_1_kw": {
-   "value": 251.5,
+   "value": 252.2,
    "source": "plant",
    "t_s": 0
   },
   "genset_2_kw": {
-   "value": 251.5,
+   "value": 252.2,
    "source": "plant",
    "t_s": 0
   },
@@ -185,6 +185,31 @@
   }
  },
  "guests": {
+  "G1": {
+   "mode": {
+    "value": "full",
+    "source": "plant",
+    "t_s": 0
+   },
+   "activity": {
+    "value": "listening",
+    "source": "guest_report",
+    "t_s": 0
+   },
+   "kw_actual": {
+    "value": 1.5,
+    "source": "plant",
+    "t_s": 0
+   },
+   "data_demand": {
+    "value": {
+     "backbone_mbps": 50,
+     "satcom_mbps": 0.2
+    },
+    "source": "plant",
+    "t_s": 0
+   }
+  },
   "G3": {
    "mode": {
     "value": "standby",
@@ -296,13 +321,13 @@
    "origin": "timeline",
    "injected": false,
    "payload": {
-    "note": "3 kn over the cable route, G3 on its 40-min leg on the acoustic link, G4 airborne, G5 full",
+    "note": "3 kn over the cable route, G1 listening on the mast, G3 on its 40-min leg on the acoustic link, G4 airborne, G5 full",
     "variant": "default",
     "start": {
      "genset_1_relay_trip": false,
      "genset_2_relay_trip": false,
-     "genset_1_kw": 251.5,
-     "genset_2_kw": 251.5,
+     "genset_1_kw": 252.2,
+     "genset_2_kw": 252.2,
      "bus_frequency_hz": 60.0,
      "chw_pump_1_running": true,
      "chw_pump_2_running": true,
@@ -335,6 +360,13 @@
      "hlo_wind_kn": null,
      "standing_plan": "none",
      "last_sweep": null,
+     "G1.mode": "full",
+     "G1.activity": "listening",
+     "G1.kw_actual": 1.5,
+     "G1.data_demand": {
+      "backbone_mbps": 50,
+      "satcom_mbps": 0.2
+     },
      "G3.mode": "standby",
      "G3.activity": "surveying",
      "G3.kw_actual": 1.0,

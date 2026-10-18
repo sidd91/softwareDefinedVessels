@@ -14,7 +14,7 @@
    "t_s": 721
   },
   "genset_1_kw": {
-   "value": 353.0,
+   "value": 354.5,
    "source": "plant",
    "t_s": 721
   },
@@ -189,6 +189,31 @@
   }
  },
  "guests": {
+  "G1": {
+   "mode": {
+    "value": "full",
+    "source": "plant",
+    "t_s": 721
+   },
+   "activity": {
+    "value": "listening",
+    "source": "guest_report",
+    "t_s": 721
+   },
+   "kw_actual": {
+    "value": 1.5,
+    "source": "plant",
+    "t_s": 721
+   },
+   "data_demand": {
+    "value": {
+     "backbone_mbps": 50,
+     "satcom_mbps": 0.2
+    },
+    "source": "plant",
+    "t_s": 721
+   }
+  },
   "G3": {
    "mode": {
     "value": "standby",

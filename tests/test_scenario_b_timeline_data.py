@@ -41,12 +41,15 @@ def chilled_envelope_kw(guests):
     return total
 
 
-def test_load_out_is_the_dec32_set_and_fits_the_margin():
-    assert TL["guests"] == ["G3", "G4", "G5"]
+def test_load_out_is_the_dec63_set_and_fits_the_margin():
+    """The organisers' load-out (DEC-63): G1 on the mast beside G3, G4 and G5; G1 is air-cooled, so it is on the bus only."""
+    assert TL["guests"] == ["G1", "G3", "G4", "G5"]
     mass = sum(p["mass_t"] for g in TL["guests"] for p in CARDS[g]["placement"]["parts"])
     brief = sum(p["mass_t"] for g in ["G2", "G3", "G4", "G5"] for p in CARDS[g]["placement"]["parts"])
-    assert mass == pytest.approx(9.515) and mass <= A["mass"]["margin_t"]
+    assert mass == pytest.approx(9.56) and mass <= A["mass"]["margin_t"]
     assert brief == pytest.approx(13.015) and brief > A["mass"]["margin_t"]
+    assert CARDS["G1"]["cooling"] == "air" and CARDS["G1"]["placement"]["parts"][0]["allowed"] == ["mast_free"]
+    assert "DEC-63" in TL["provenance"]["guests"]["why"] and "hangar roof" in TL["provenance"]["guests"]["why"]
 
 
 def test_landing_beats_the_drone_deadline_with_the_seed_and_the_worst_case():
@@ -70,15 +73,17 @@ def test_timeline_events_in_order_and_landing_pinned():
 def test_minute_12_trip_holds_under_both_files():
     c = ceiling(1)
     assert c == pytest.approx(95) == A["admission"]["one_genset_down_gate"]["kw"]
-    survey = mode_kw("G3", "standby") + mode_kw("G4", "standby") + mode_kw("G5", "full")
-    sar = mode_kw("G3", "standby") + mode_kw("G4", "fast_charge") + mode_kw("G5", "full")
-    assert (survey, sar) == (pytest.approx(48), pytest.approx(81))
+    g1 = mode_kw("G1", "full")
+    survey = g1 + mode_kw("G3", "standby") + mode_kw("G4", "standby") + mode_kw("G5", "full")
+    sar = g1 + mode_kw("G3", "standby") + mode_kw("G4", "fast_charge") + mode_kw("G5", "full")
+    assert (survey, sar) == (pytest.approx(49.5), pytest.approx(82.5))
     assert survey <= c and sar <= c
+    assert (survey - g1, sar - g1) == (pytest.approx(48), pytest.approx(81)), "the loop carries 1.5 kW less: G1 is air-cooled"
 
 
 @pytest.mark.parametrize("mission,current,cost", [
-    ("survey", {"G3": "standby", "G4": "standby", "G5": "full"}, 0.0038),
-    ("sar", {"G3": "standby", "G4": "fast_charge", "G5": "full"}, 0.0189),
+    ("survey", {"G1": "full", "G3": "standby", "G4": "standby", "G5": "full"}, 0.0038),
+    ("sar", {"G1": "full", "G3": "standby", "G4": "fast_charge", "G5": "full"}, 0.0189),
 ])
 def test_minute_12_armed_first_step_is_g5_to_low_power(mission, current, cost):
     # Nothing runs at minute 12; D4 shows the step it would take first. Under survey G4 is airborne at
@@ -90,19 +95,23 @@ def test_minute_12_armed_first_step_is_g5_to_low_power(mission, current, cost):
     assert m["weights"][CARDS["G5"]["capability"]["name"]] * lost / freed == pytest.approx(cost, rel=0.02)
 
 
-@pytest.mark.parametrize("mission,guest,after", [("survey", "G4", 56), ("sar", "G5", 44)])
-def test_minute_19_cooling_fault_forces_the_ladder(mission, guest, after):
+@pytest.mark.parametrize("mission,guest,after,total_after", [("survey", "G4", 56, 57.5), ("sar", "G5", 44, 45.5)])
+def test_minute_19_cooling_fault_forces_the_ladder(mission, guest, after, total_after):
+    """Cooling is judged on the loop (the chilled-water guests) and power on the bus (every guest): the loop is 6 kW
+    over its 75 kW limit while the bus has 12.5 kW spare under its 95, so the same throttle fixes it under each file."""
     fault = fault_event()
     c = ceiling(1, fault["factor"])
     assert c == pytest.approx(75)
-    assert fault["load_modes"] == {"G3": "standby", "G4": "fast_charge", "G5": "full"}
-    load = sum(mode_kw(g, m) for g, m in fault["load_modes"].items())
-    assert load == pytest.approx(81) and load > c
+    assert fault["load_modes"] == {"G1": "full", "G3": "standby", "G4": "fast_charge", "G5": "full"}
+    loop = sum(mode_kw(g, m) for g, m in fault["load_modes"].items() if CARDS[g]["cooling"] == "chilled_water")
+    total = sum(mode_kw(g, m) for g, m in fault["load_modes"].items())
+    power_limit = A["power"]["guest_reserve_kw"]["one_genset_down"] - A["power"]["shed_headroom_kw"]
+    assert loop == pytest.approx(81) and loop > c
+    assert total == pytest.approx(82.5) and total <= power_limit
     first = first_throttle(["G4", "G5"], mission)
     assert first[0] == guest
-    after_kw = load - first[1]
-    assert after_kw == pytest.approx(after)
-    assert after_kw <= c
+    assert loop - first[1] == pytest.approx(after) and loop - first[1] <= c
+    assert total - first[1] == pytest.approx(total_after) and total - first[1] <= power_limit
 
 
 def test_fault_follows_the_landing_inside_the_fast_charge():
@@ -150,8 +159,9 @@ def test_g3_charge_start_after_the_fault(req):
 def test_closing_answer_a_standby_pump_removes_the_cooling_sheds():
     """Physical Account closing answer: with a standby pump, losing one pump no longer costs 40 %."""
     fault = fault_event()
-    load = sum(mode_kw(g, m) for g, m in fault["load_modes"].items())
+    load = sum(mode_kw(g, m) for g, m in fault["load_modes"].items() if CARDS[g]["cooling"] == "chilled_water")  # the loop's load
     today, with_pump = ceiling(1, fault["factor"]), ceiling(1)
+    assert load == pytest.approx(81)
     assert today == pytest.approx(75) and load > today  # today: a throttle at minute 19
     assert with_pump == pytest.approx(95) and load <= with_pump  # the loop stays at 133.3 kW, nothing shed
     t30 = A["envelope"]["judge_cooling_at_c"]

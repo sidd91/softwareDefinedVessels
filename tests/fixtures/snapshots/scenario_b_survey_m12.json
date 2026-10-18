@@ -8,6 +8,7 @@
   "tick": 721,
   "t_ship_s": 721,
   "installed": [
+   "G1",
    "G3",
    "G4",
    "G5"
@@ -37,7 +38,7 @@
    "since_t_s": 720
   },
   "genset_1_kw": {
-   "value": 353.0,
+   "value": 354.5,
    "source": "plant",
    "age_s": 0,
    "confidence": "measured",
@@ -384,6 +385,46 @@
   }
  },
  "guests": {
+  "G1": {
+   "mode": {
+    "value": "full",
+    "source": "plant",
+    "age_s": 0,
+    "confidence": "measured",
+    "stale": false
+   },
+   "activity": {
+    "value": "listening",
+    "source": "guest_report",
+    "age_s": 0,
+    "confidence": "reported",
+    "stale": false
+   },
+   "kw_actual": {
+    "value": 1.5,
+    "source": "plant",
+    "age_s": 0,
+    "confidence": "measured",
+    "stale": false
+   },
+   "data_demand": {
+    "value": {
+     "backbone_mbps": 50,
+     "satcom_mbps": 0.2
+    },
+    "source": "plant",
+    "age_s": 0,
+    "confidence": "measured",
+    "stale": false
+   },
+   "overdraw_pct": {
+    "value": 0.0,
+    "source": "derived",
+    "age_s": 0,
+    "confidence": "measured",
+    "stale": false
+   }
+  },
   "G3": {
    "mode": {
     "value": "standby",
@@ -779,8 +820,8 @@
  ],
  "events": [],
  "notes": [
-  "Scenario B, survey file, minute 12: genset 2 trips at 720 s (relay flag, kW to zero, the bus held at 59.6 Hz: fault_signatures.genset_trip). Relay and kW hold for 1 s, so the trip is confirmed at 721 s, this tick; D4's first shed would be applied at 722 s, inside the 725 s due time. Genset 1 carries 400 - 150 + 55 + 48 = 353 kW (fault_signatures.bus_load).",
-  "G4 is airborne at 2 kW with no reservation (DEC-40): the ledger's load is 48 kW against a 95 kW ceiling, so the trip holds with 0 steps (tests/oracles minute_12_as_decided).",
+  "Scenario B, survey file, minute 12: genset 2 trips at 720 s (relay flag, kW to zero, the bus held at 59.6 Hz: fault_signatures.genset_trip). Relay and kW hold for 1 s, so the trip is confirmed at 721 s, this tick; D4's first shed would be applied at 722 s, inside the 725 s due time. Genset 1 carries 400 - 150 + 55 + 49.5 = 354.5 kW (fault_signatures.bus_load).",
+  "G4 is airborne at 2 kW with no reservation (DEC-40): the ledger's load is 49.5 kW against the 95 kW power limit (48 kW of it on the chilled-water loop, against 128.3), so the trip holds with 0 steps (tests/oracles minute_12_as_decided).",
   "The ship reached 5 kn at 661 s (one setting inside the slow band, no band change) and the deck is being cleared (541 s to 781 s, seed 4 min); G3 has held depth since its ack at 510 s and is out of acoustic contact."
  ]
 }

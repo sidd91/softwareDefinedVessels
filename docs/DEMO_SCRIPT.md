@@ -17,11 +17,16 @@ and nothing in the demo depends on the board.
 
 ## Scenario B load-out (decided, WORKLOG DEC-32)
 
-The brief's narrative has G2, G3, G4 and G5 aboard together: 13.015 t against the 10 t mass margin, and
-Bay 2 needed twice. At the pier the governor refuses that load-out, names mass as the binding line, and
-recommends the feasible alternative G3, G4, G5 (9.515 t), which drops the ocean module. A captain can force
-a refused load-out with a logged override for extreme situations; the record keeps the binding line and
-marks the decision as overridden. The demo runs G3, G4, G5.
+Decided by DEC-63, which supersedes the G3, G4, G5 set of DEC-32: the demo runs **G1, G3, G4, G5**, the
+organisers' load-out (Software-Defined Vessel forum, thread "Scenario B loadout", 17 Oct; question by Filip
+Debef 08:22, answer by Graziano 08:55: "Use G1 + G3 + G4 + G5 for Scenario B ... G3 in Bay 1, G5 in Bay 2,
+G1 on the mast, G5's antenna on the hangar roof. The Annexes take precedence over the demo narrative").
+Mass 9.56 t of 10, stability 9.853 t-eq of 12 (G1's 45 kg on the mast counts x3, the antenna on the roof
+x1.2), the mast full at 3 of 3. G1 is air-cooled: it draws 1.5 kW on the bus and nothing on the chilled-water
+loop, so the POWER tile reads 1.5 kW above the COOLING tile from minute 0 (49.5 against 48 kW). The brief's
+narrative set G2, G3, G4, G5 (13.015 t, Bay 2 needed twice) is still refused at the pier, mass the binding
+line; a captain can force a refused load-out with a logged override for extreme situations, and the record
+keeps the binding line and marks the decision as overridden.
 
 ## Scenario B, 90 s (deep)
 
@@ -34,15 +39,15 @@ debounced, confirmed plant signals, and every record shows the raw-event and con
 
 | Clock | Ship time | What happens | Survey file | Rescue file |
 |---|---|---|---|---|
-| 00:00 | min 0 | Baseline as in the brief: 3 kn over the cable route, 24 °C water, G3 on its 40-min leg, G4 airborne, G5 full | 48 kW | 48 kW |
+| 00:00 | min 0 | Baseline as in the brief: 3 kn over the cable route, 24 °C water, G1 listening on the mast, G3 on its 40-min leg, G4 airborne, G5 full | 49.5 kW (48 on the loop) | 49.5 kW (48 on the loop) |
 | 00:10 | min 8 | G4 reports 18 % in 22 kn; G3's and G4's condition sets collide on screen | | |
 | 00:12 | min 8 | D3 decides within 2 s; hard limit first (land by min 18.2) | G4 recovers; G3 holds depth, survey paused to min 23, leg re-run: 25-27 survey minutes lost | Survey suspended, ship free to manoeuvre, G4's 35 kW reserved first; G3's leg aborted: G3 holds at sea and is recovered over the ramp only after G4 has landed (flight deck and ramp are mutually exclusive, A.3) |
 | 00:25 | min 8 | Swap to the other priority file, live (DEC-26); the Mission compare view shows the same event as two runs on one timeline, both records side by side | | |
-| 00:40 | min 12 | Genset trips, confirmed on 2 of 3 plant signals; cooling nominal: ceiling 95 kW | 48 of 95 kW, holds (G4 airborne at 2 kW) | 81 of 95 kW, holds (G4's 35 kW reserved) |
-| 00:42 | min 12 | D4 runs within 5 s: 0 steps needed, every loss "none", the whole armed ladder in order (the brief's explicit sequence, R-067) and why the brief's 105 kW case does not arise, in the record's own sentence | "Holds: 48 of 95 kW with one genset down, 0 steps, no capability lost. Armed in order: G5 full to low power, 45 to 8 kW, frees 37 kW (70 % lost), then G5 low power to off, 8 to 0 kW, frees 8 kW (30 % lost), then G4 standby to off, 2 to 0 kW, frees 2 kW (30 % lost). The envelope case does not arise: G3 charging 25 kW, G4 fast charge 35 kW and G5 full 45 kW would be 105 kW against the 95 kW limit, but G3 is holding depth in standby (1 kW) and G4 is airborne in standby (2 kW)." (G5's step at 0.0038 per kW; G4 has no charge to throttle) | "Holds: 81 of 95 kW with one genset down and G4's 35 kW reserved, 0 steps, no capability lost. Armed in order: G5 full to low power, 45 to 8 kW, frees 37 kW (70 % lost), then G5 low power to off, 8 to 0 kW, frees 8 kW (30 % lost), then G3 standby to off, 1 to 0 kW, frees 1 kW (30 % lost). The envelope case does not arise: G3 charging 25 kW, G4 fast charge 35 kW and G5 full 45 kW would be 105 kW against the 95 kW limit, but G3 is holding at sea in standby (1 kW)." (G5's step at 0.0189 per kW; the live run prints the moves without the kW ranges) |
-| 00:48 | min 12-17 | Fast-forward: G4 lands at min 17 and fast-charges | 81 of 95 kW | 81 of 95 kW |
-| 00:55 | min 19 | INJECTED EVENT, labelled: chilled-water pump 1 fails, confirmed by the plant alarm plus flow or delta-T. Loop 133.3 to 80 kW; ceiling 75 kW; cooling binds, not power | 81 against 75 | 81 against 75 |
-| 00:57 | min 19 | D4 walks the same ladder: first action within 5 s, done within 60 s | G4 charge to 10 kW: 56 of 75; G4 loses 30 % | G5 to low power: 44 of 75; G5 loses 70 % |
+| 00:40 | min 12 | Genset trips, confirmed on 2 of 3 plant signals; cooling nominal: power binds at 95 kW | 49.5 of 95 kW, holds (G4 airborne at 2 kW) | 82.5 of 95 kW, holds (G4's 35 kW reserved) |
+| 00:42 | min 12 | D4 runs within 5 s: 0 steps needed, every loss "none" (G1 included), the whole armed ladder in order (the brief's explicit sequence, R-067; G1 to off is the last 5 S step, the mission-critical 60 S guest last) and why the envelope case, 106.5 kW with G1, does not arise, in the record's own sentence | "Holds: 49.5 of 95 kW with one genset down, 0 steps, no capability lost. Armed in order: G5 full to low power, 45 to 8 kW, frees 37 kW (70 % lost), then G5 low power to off, 8 to 0 kW, frees 8 kW (30 % lost), then G4 standby to off, 2 to 0 kW, frees 2 kW (30 % lost), then G1 full to off, 1.5 to 0 kW, frees 1.5 kW (100 % lost), then G3 standby to off, 1 to 0 kW, frees 1 kW (30 % lost). The envelope case does not arise: G1 full 1.5 kW, G3 charging 25 kW, G4 fast charge 35 kW and G5 full 45 kW would be 106.5 kW against the 95 kW limit, but G3 is holding depth in standby (1 kW) and G4 is airborne in standby (2 kW)." (G5's step at 0.0038 per kW; G4 has no charge to throttle) | "Holds: 82.5 of 95 kW with one genset down and G4's 35 kW reserved, 0 steps, no capability lost. Armed in order: G5 full to low power, 45 to 8 kW, frees 37 kW (70 % lost), then G5 low power to off, 8 to 0 kW, frees 8 kW (30 % lost), then G3 standby to off, 1 to 0 kW, frees 1 kW (30 % lost), then G1 full to off, 1.5 to 0 kW, frees 1.5 kW (100 % lost), then G4 standby to off, 2 to 0 kW, frees 2 kW (30 % lost). The envelope case does not arise: G1 full 1.5 kW, G3 charging 25 kW, G4 fast charge 35 kW and G5 full 45 kW would be 106.5 kW against the 95 kW limit, but G3 is holding at sea in standby (1 kW)." (G5's step at 0.0189 per kW; the live run prints the moves without the kW ranges and the reservation) |
+| 00:48 | min 12-17 | Fast-forward: G4 lands at min 17 and fast-charges | 82.5 of 95 kW (81 on the loop) | 82.5 of 95 kW (81 on the loop) |
+| 00:55 | min 19 | INJECTED EVENT, labelled: chilled-water pump 1 fails, confirmed by the plant alarm plus flow or delta-T. Loop 133.3 to 80 kW, limit 75 kW; cooling binds on the loop's 81 kW (G3 1 + G4 35 + G5 45), not power: the bus carries 82.5 kW under its own 95 kW limit, G1's 1.5 kW air-cooled and never on the loop | loop 81 against 75 (bus 82.5 of 95) | loop 81 against 75 (bus 82.5 of 95) |
+| 00:57 | min 19 | D4 walks the same ladder: first action within 5 s, done within 60 s. "Cooling binds with one chilled-water pump down: 81 kW against the 75 kW limit ... and the load is 56 kW" reads the loop; the POWER tile shows the bus | G4 charge to 10 kW: loop 56 of 75 (bus 57.5 of 95); G4 loses 30 %, G1 nothing | G5 to low power: loop 44 of 75 (bus 45.5 of 95); G5 loses 70 %, G1 nothing |
 | 01:05 | min 24 (optional) | Genset restarts: nothing given back, cooling still binds for the voyage | 56 | 44 |
 
 The exact shed order comes from the ledger and the active priority file, not from this script. Neither
@@ -134,7 +139,7 @@ segment, so its timing lives here.
 
 ## Open questions for the team
 
-1. Decided (DEC-32): Scenario B runs G3, G4, G5; the full load-out is refused at the pier with an override available.
+1. Decided (DEC-63, after DEC-32): Scenario B runs G1, G3, G4, G5, the organisers' set; the brief's narrative set is refused at the pier with an override available.
 2. The breadth lines are settled (OPEN_QUESTIONS #13); how many to show on the day is open, and emission
    silence waits on #42.
 3. Who drives the laptop and who talks?

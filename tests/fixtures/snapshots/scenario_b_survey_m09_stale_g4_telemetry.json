@@ -8,6 +8,7 @@
   "tick": 560,
   "t_ship_s": 560,
   "installed": [
+   "G1",
    "G3",
    "G4",
    "G5"
@@ -36,14 +37,14 @@
    "stale": false
   },
   "genset_1_kw": {
-   "value": 251.5,
+   "value": 252.2,
    "source": "plant",
    "age_s": 0,
    "confidence": "measured",
    "stale": false
   },
   "genset_2_kw": {
-   "value": 251.5,
+   "value": 252.2,
    "source": "plant",
    "age_s": 0,
    "confidence": "measured",
@@ -402,6 +403,46 @@
   }
  },
  "guests": {
+  "G1": {
+   "mode": {
+    "value": "full",
+    "source": "plant",
+    "age_s": 0,
+    "confidence": "measured",
+    "stale": false
+   },
+   "activity": {
+    "value": "listening",
+    "source": "guest_report",
+    "age_s": 0,
+    "confidence": "reported",
+    "stale": false
+   },
+   "kw_actual": {
+    "value": 1.5,
+    "source": "plant",
+    "age_s": 0,
+    "confidence": "measured",
+    "stale": false
+   },
+   "data_demand": {
+    "value": {
+     "backbone_mbps": 50,
+     "satcom_mbps": 0.2
+    },
+    "source": "plant",
+    "age_s": 0,
+    "confidence": "measured",
+    "stale": false
+   },
+   "overdraw_pct": {
+    "value": 0.0,
+    "source": "derived",
+    "age_s": 0,
+    "confidence": "measured",
+    "stale": false
+   }
+  },
   "G3": {
    "mode": {
     "value": "standby",

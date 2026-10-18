@@ -24,18 +24,21 @@ def rows(d):
     return {k: val for k, val, _ in d["rows"]}
 
 
-@pytest.mark.parametrize("mission,m12,m19,step", [
-    ("survey", "48.0", "56.0", "G4 FAST CHARGE → CHARGE"),
-    ("sar", "81.0", "44.0", "G5 FULL → LOW POWER"),
+@pytest.mark.parametrize("mission,m12,m19,total19,step", [
+    ("survey", "49.5", "56.0", "57.5", "G4 FAST CHARGE → CHARGE"),
+    ("sar", "82.5", "44.0", "45.5", "G5 FULL → LOW POWER"),
 ])
-def test_live_run_matches_the_oracles(ref, mission, m12, m19, step):
+def test_live_run_matches_the_oracles(ref, mission, m12, m19, total19, step):
     v8 = view.screen(I, ref.moment(mission, 481))
     assert v8["decision"]["kind"] == "D3" and v8["decision"]["r3"]["verdict"] == "CONFIRM"
     v12 = view.screen(I, ref.moment(mission, 722))
     assert tile(v12, "POWER")["value"] == f"{m12} / 95.0 kW" and v12["decision"]["tag"] == "HOLDS"
+    assert tile(v12, "MAST")["value"] == "3 / 3" and tile(v12, "MAST")["sub"] == "2 HOST · G1 SENSOR"
     v19 = view.screen(I, ref.moment(mission, 1142))
-    assert tile(v19, "COOLING CHW")["value"] == f"{m19} / 75.0 kW"
+    assert tile(v19, "COOLING CHW")["value"] == f"{m19} / 75.0 kW"           # the loop
+    assert tile(v19, "POWER")["value"] == f"{total19} / 95.0 kW"             # the bus, G1's 1.5 kW included
     assert rows(v19["decision"])["ACTION"] == step and v19["decision"]["tag"] == "EXECUTED"
+    assert rows(v19["decision"])["DEMAND"] == "81.0 kW CHW · 82.5 kW TOTAL"
 
 
 def test_the_recheck_after_the_shed_keeps_the_shed_on_show():
@@ -48,6 +51,7 @@ def test_the_recheck_after_the_shed_keeps_the_shed_on_show():
     assert v["shed_order"]["rows"][0]["state"] == "EXECUTED"
     calc = [(x["k"], x["v"]) for x in v["ledger"]["constraint"]["rows"]]
     assert ("DEMAND G3 1 + G4 35 + G5 45", "81.0 kW") in calc and calc[-1] == ("DEMAND AFTER", "56.0 kW")
+    assert ("AIR-COOLED G1 · NOT ON THE LOOP", "1.5 kW") in calc
     assert tile(v, "RESPONSE")["sub"] == "D4 FIRST ACTION · COMPUTE"
     log = [(e["type"], e["tag"]) for e in v["log"]]
     assert ("CREW POLICY", "R3 · 14") in log and ("STATE", "R3") not in log

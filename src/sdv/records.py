@@ -92,7 +92,9 @@ def from_d4(d: dict, *, seq: int, snapshot: dict) -> dict:
         "subject": "load against the shed limit", "mission": d["mission"], "verdict": d["verdict"],
         "binding": {"class": b["class"], "label": explain.LABELS.get(b["class"], b["class"]), "capacity": b["capacity"],
                     "demand": b["demand"], "free": b["free"], "unit": b["unit"], "degraded_by": list(b["degraded_by"])},
-        "load_kw": d["load_kw"], "limit_kw": d["limit_kw"], "load_after_kw": d["load_after_kw"],
+        "load_kw": d["load_kw"], "limit_kw": d["limit_kw"], "load_after_kw": d["load_after_kw"], "free_after_kw": d["free_after_kw"],
+        "total_kw": d["total_kw"], "loop_kw": d["loop_kw"], "total_after_kw": d["total_after_kw"], "loop_after_kw": d["loop_after_kw"],
+        "power_limit_kw": d["power_limit_kw"], "heat_limit_kw": d["heat_limit_kw"],
         "steps": [_step(s) for s in d["steps"]], "armed": [_step(s) for s in d["armed"]], "losses": d["losses"],
         "queued": [_step(s) for s in d.get("queued", [])], "responses": d.get("responses", {}), "envelope": d.get("envelope", {}),
         "order_source": "computed",
@@ -123,14 +125,20 @@ def from_d5(*, seq: int, snapshot: dict, verdict: str, crew: int, deck_evidence:
 
 
 def from_restore(*, seq: int, snapshot: dict, mission: dict, guest: str, from_mode: str, to_mode: str, binding: dict,
-                 load_kw: float, load_after_kw: float, limit_kw: float, healthy_since_t_s: float | None, responses: dict) -> dict:
-    """A shed guest stepped back up once every fault has read healthy for the restore hold (A.8 30 s budget, DEC-60)."""
+                 load_kw: float, load_after_kw: float, limit_kw: float, healthy_since_t_s: float | None, responses: dict,
+                 total_kw: float, loop_kw: float, total_after_kw: float, loop_after_kw: float,
+                 power_limit_kw: float, heat_limit_kw: float, from_kw: float, to_kw: float) -> dict:
+    """A shed guest stepped back up once every fault has read healthy for the restore hold (A.8 30 s budget, DEC-60).
+    load_kw, load_after_kw and limit_kw are the binding line's (the one with the least spare after the step); the
+    electrical total and the chilled-water loop are carried beside them, as in every D4 record."""
     run = snapshot["run"]
     r = {"seq": seq, "tick": run["tick"], "t_s": run["t_ship_s"], "applies_at_tick": run["tick"] + 1, "kind": "D4",
          "subject": f"restore {guest}", "mission": mission["id"], "verdict": "restore", "binding": binding,
          "load_kw": load_kw, "limit_kw": limit_kw, "load_after_kw": load_after_kw, "free_after_kw": limit_kw - load_after_kw,
-         "steps": [{"guest": guest, "from_mode": from_mode, "to_mode": to_mode, "frees_kw": load_kw - load_after_kw,
-                    "response": "restore"}],
+         "total_kw": total_kw, "loop_kw": loop_kw, "total_after_kw": total_after_kw, "loop_after_kw": loop_after_kw,
+         "power_limit_kw": power_limit_kw, "heat_limit_kw": heat_limit_kw,
+         "steps": [{"guest": guest, "from_mode": from_mode, "to_mode": to_mode, "frees_kw": from_kw - to_kw,
+                    "from_kw": from_kw, "to_kw": to_kw, "response": "restore"}],
          "armed": [], "losses": {}, "queued": [], "responses": responses, "order_source": "computed",
          "healthy_since_t_s": healthy_since_t_s, "ceiling_ms": 30000, "inputs_hash": inputs_hash(snapshot, mission["id"])}
     return _finish(r)

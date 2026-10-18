@@ -8,6 +8,7 @@
   "tick": 1141,
   "t_ship_s": 1141,
   "installed": [
+   "G1",
    "G3",
    "G4",
    "G5"
@@ -37,7 +38,7 @@
    "since_t_s": 720
   },
   "genset_1_kw": {
-   "value": 386.0,
+   "value": 387.5,
    "source": "plant",
    "age_s": 0,
    "confidence": "measured",
@@ -391,6 +392,46 @@
   }
  },
  "guests": {
+  "G1": {
+   "mode": {
+    "value": "full",
+    "source": "plant",
+    "age_s": 0,
+    "confidence": "measured",
+    "stale": false
+   },
+   "activity": {
+    "value": "listening",
+    "source": "guest_report",
+    "age_s": 0,
+    "confidence": "reported",
+    "stale": false
+   },
+   "kw_actual": {
+    "value": 1.5,
+    "source": "plant",
+    "age_s": 0,
+    "confidence": "measured",
+    "stale": false
+   },
+   "data_demand": {
+    "value": {
+     "backbone_mbps": 50,
+     "satcom_mbps": 0.2
+    },
+    "source": "plant",
+    "age_s": 0,
+    "confidence": "measured",
+    "stale": false
+   },
+   "overdraw_pct": {
+    "value": 0.0,
+    "source": "derived",
+    "age_s": 0,
+    "confidence": "measured",
+    "stale": false
+   }
+  },
   "G3": {
    "mode": {
     "value": "standby",
@@ -811,7 +852,7 @@
  "events": [],
  "notes": [
   "Scenario B, survey file, minute 19: INJECTED fault. Chilled-water pump 1 fails at 1140 s, 2 min after G4 landed (scenario_b cooling_degraded trigger); alarm, pump stopped, low flow and high delta-T hold 1 s, confirmed at 1141 s. One pump running: cooling x0.6.",
-  "Heat 133.3 x 0.6 = 80 kW, ceiling min(100, 80) - 5 = 75 kW against the ledger's 81 kW (G3 1 + G4 35 fast charge + G5 45): cooling binds, 6 kW over (docs/EXPECTED_OUTCOMES.md, Scenario B as decided).",
+  "Heat 133.3 x 0.6 = 80 kW, a 75 kW loop limit against the 81 kW the loop carries (G3 1 + G4 35 fast charge + G5 45; G1's 1.5 kW is air-cooled on the mast and not on the loop, 82.5 kW electrical against the 95 kW power limit): cooling binds, 6 kW over (docs/EXPECTED_OUTCOMES.md, Scenario B as decided).",
   "G4 landed at 1020 s and fast-charges until 2220 s; its last battery report is still the 18 % of minute 8. The commands after securing G4 (snapshot 1080) took effect at 1081 s: the ship slows back to 3 kn and settles its course to resume the survey. The genset is still down (restart at minute 24 is optional)."
  ]
 }

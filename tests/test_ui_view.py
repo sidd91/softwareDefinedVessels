@@ -58,14 +58,19 @@ def test_records_are_released_at_their_tick():
 
 def test_minute_0_baseline():
     v = view.operations(I, "survey", 0)
-    assert tile(v, "POWER")["value"] == "48.0 / 245.0 kW"
-    assert tile(v, "COOLING CHW")["value"] == "48.0 / 128.3 kW"
-    assert tile(v, "MASS / STAB")["value"] == "9.515 / 10.000 t"
-    assert tile(v, "MASS / STAB")["sub"] == "STAB 9.763 / 12.000"
-    assert tile(v, "COMPUTE")["value"] == "8 / 102 cores"
+    assert tile(v, "POWER")["value"] == "49.5 / 245.0 kW"          # every guest, G1's air-cooled 1.5 kW included
+    assert tile(v, "COOLING CHW")["value"] == "48.0 / 128.3 kW"    # the loop: G1 is not on it
+    assert tile(v, "MASS / STAB")["value"] == "9.560 / 10.000 t"
+    assert tile(v, "MASS / STAB")["sub"] == "STAB 9.853 / 12.000"   # G1 on the mast (x3), G5's antenna on the roof (x1.2)
+    assert tile(v, "COMPUTE")["value"] == "10 / 102 cores"
     assert tile(v, "DECK")["value"] == "3 / 4" and tile(v, "MAST")["value"] == "3 / 3"
+    assert tile(v, "MAST")["sub"] == "2 HOST · G1 SENSOR" and tile(v, "MAST")["state"] == "FULL"
+    mast = next(z for z in v["mimic"]["zones"] if z["zone"] == "MAST")
+    assert (mast["guest"], mast["extra"]) == ("G1 SENSOR", "3 / 3")
+    g1 = next(g for g in v["guests"] if g["id"] == "G1")
+    assert (g1["pos"], g1["mode"], g1["kw"], g1["activity"]) == ("MAST", "FULL", "1.5", "LISTENING")
     assert v["decision"] is None and v["header"]["alarms"] == 0
-    assert v["log"][0]["type"] == "START" and "Demand 48.0 kW" in v["log"][0]["msg"]
+    assert v["log"][0]["type"] == "START" and "Demand 49.5 kW" in v["log"][0]["msg"]
 
 
 @pytest.mark.parametrize("mission,reserved", [("survey", None), ("sar", "G4 35 kW")])
@@ -83,18 +88,21 @@ def test_minute_8_right_of_way(mission, reserved):
     assert g3["pos"] == ("DEPTH" if mission == "survey" else "AT SEA")
 
 
-@pytest.mark.parametrize("mission,load", [("survey", "48.0"), ("sar", "81.0")])
-def test_minute_12_holds_with_the_armed_step(mission, load):
+@pytest.mark.parametrize("mission,load,loop", [("survey", "49.5", "48.0"), ("sar", "82.5", "81.0")])
+def test_minute_12_holds_with_the_armed_step(mission, load, loop):
     v = view.operations(I, mission, 722)
     assert tile(v, "POWER")["value"] == f"{load} / 95.0 kW"
     assert tile(v, "POWER")["state"] == "LIMITING"
+    assert tile(v, "COOLING CHW")["value"] == f"{loop} / 128.3 kW" and tile(v, "COOLING CHW")["state"] == "NORMAL"
     d = v["decision"]
     assert d["tag"] == "HOLDS"
     r = rows(d)
-    assert r["RESULT"] == f"{load} / 95.0 kW"
+    assert r["DEMAND"] == f"{load} kW" and r["RESULT"] == f"{load} / 95.0 kW"
     assert r["NEXT"] == "G5 FULL → LOW POWER · 37 kW"
-    assert r["LOSS"] == "G3 NONE · G4 NONE · G5 NONE"
+    assert r["LOSS"] == "G1 NONE · G3 NONE · G4 NONE · G5 NONE"
     assert v["shed_order"]["rows"][0]["state"] == "ARMED" and v["shed_order"]["rows"][0]["g"] == "G5"
+    ladder = [(x["g"], x["step"], x["state"]) for x in v["shed_order"]["rows"]]
+    assert ("G1", "FULL → OFF", "ARMED") in ladder and ladder[-1][2] in ("ARMED", "LAST")
     types = [(e["type"], e["tag"]) for e in v["log"][:2]]
     assert types == [("HOLD", "D4"), ("ALARM", "GEN 2")]
 
@@ -108,10 +116,12 @@ def test_minute_19_cooling_binds_and_d4_sheds(mission, after, step, guest, cap):
     chw = tile(v, "COOLING CHW")
     assert chw["value"] == f"{after} / 75.0 kW" and chw["state"] == "LIMITING" and chw["injected"]
     assert tile(v, "POWER")["state"] == "DEGRADED"
+    assert tile(v, "POWER")["value"] == f"{float(after) + 1.5:.1f} / 95.0 kW", "the bus carries the loop plus G1's air-cooled 1.5 kW"
+    assert tile(v, "POWER")["sub"] == f"USABLE {75 - float(after):.1f} kW · CHW BINDS"
     d = v["decision"]
     assert d["tag"] == "EXECUTED"
     r = rows(d)
-    assert r["LIMIT"] == "80.0 - 5.0 = 75.0 kW" and r["DEMAND"] == "81.0 kW"
+    assert r["LIMIT"] == "80.0 - 5.0 = 75.0 kW" and r["DEMAND"] == "81.0 kW CHW · 82.5 kW TOTAL"
     assert r["ACTION"] == step and r["RESULT"] == f"{after} / 75.0 kW"
     assert d["rows"][0][2] is True  # the trigger carries INJECTED
     assert next(g for g in v["guests"] if g["id"] == guest)["cap"] == cap
@@ -119,13 +129,16 @@ def test_minute_19_cooling_binds_and_d4_sheds(mission, after, step, guest, cap):
     assert calc[:5] == [("CHW CAPACITY AT 24 °C", "133.3 kW"), ("P1 TRIP · 1 OF 2 PUMPS", "× 0.60"), ("AVAILABLE", "80.0 kW"),
                         ("HEADROOM", "-5.0 kW"), ("LIMIT", "75.0 kW")]
     assert ("DEMAND G3 1 + G4 35 + G5 45", "81.0 kW") in calc and ("SHORTFALL", "6.0 kW") in calc
+    assert ("AIR-COOLED G1 · NOT ON THE LOOP", "1.5 kW") in calc
     assert calc[-1] == ("DEMAND AFTER", f"{after} kW")
+    assert v["ledger"]["constraint"]["headline"] == f"81.0 / 75.0 kW"
 
 
 def test_minute_19_before_the_command_applies_the_step_is_commanded():
     v = view.operations(I, "survey", 1141)
     assert v["decision"]["tag"] == "COMMANDED"
-    assert tile(v, "COOLING CHW")["value"] == "81.0 / 75.0 kW"
+    assert tile(v, "COOLING CHW")["value"] == "81.0 / 75.0 kW" and tile(v, "COOLING CHW")["state"] == "LIMITING"
+    assert tile(v, "POWER")["value"] == "82.5 / 95.0 kW" and tile(v, "POWER")["sub"] == "CHW 6.0 kW OVER LIMIT"
 
 
 def test_injected_marks_only_the_injected_fault():

@@ -12,7 +12,8 @@ Hand-computed by three Claude Opus 5.5 agents on behalf of Logan Walker (GhostWa
 6. **Yes-if lists:** throttling frees no mass, so each yes-if list is made of minimal removal sets. They are ranked by value lost (weight x 1.0), then fewer guests, then guest id, with mission-critical guests last.
 7. **Ladder order:** one-genset-down fixes and minute-12 ladders follow the GAMEPLAN ladder. Non-critical throttles come first, then mission-critical throttles, then sheds in the same order. Within a group: lowest cost per kW, then id. G3 charging cannot be interrupted, so it is never on the list.
 8. **SATCOM** is judged at the guests' minimums: G1 0.2 + G2 0 + G5 1 = 1.2 of 2 Mbit/s. At nominal, G5's 6 Mbit/s alone exceeds 2, which would change A3 to A5.
-9. **Scenario B minute 12:** ceiling = min(100, 133.3) - 5 = 95 kW.
+9. **Scenario B minute 12:** ceiling = min(100, 133.3) - 5 = 95 kW. Power is judged on every guest's draw against 100 - 5 and cooling on the chilled-water guests' draw against 133.3 - 5; the line with the least spare binds.
+   - G1 1.5 kW (full, air-cooled: on the bus and not on the loop) in the DEC-63 load-out (ii).
    - G2 6 kW (sampling).
    - G4 35 kW, the brief's figure. Under sar it is reserved even before landing. Under survey in the DEC-40 timeline G4 is still airborne at 2 kW with no reservation; see the last section.
    - G5 45 kW.
@@ -54,7 +55,7 @@ Hand-computed by three Claude Opus 5.5 agents on behalf of Logan Walker (GhostWa
 | Load-out | Mass vs 10 t | Stability vs 12 t-eq | Other |
 |---|---|---|---|
 | (i) G2, G3, G4, G5 | 13.015, 3.015 over (CON-12) | 13.263, 1.263 over | Bay 2 needed twice; chilled 125/120 at 30 °C |
-| (ii) G3, G4, G5 | 9.515 | 9.763 | One genset down at envelope: 105/100 |
+| (ii) G1, G3, G4, G5 (DEC-63) | 9.56 | 9.853 (G1 on the mast x3, G5's antenna on the hangar roof x1.2) | One genset down at envelope: 106.5/100 (105 of it on the loop) |
 | (iii) G2, G3, G4 | 9.99, 10 kg spare | 10.188 | Fits |
 
 ## Scenario B, minute 8 (same outcome for all three load-outs)
@@ -80,12 +81,12 @@ Hand-computed by three Claude Opus 5.5 agents on behalf of Logan Walker (GhostWa
 |---|---|---|---|---|
 | (i) L: 6/1/35/45 | 87 | none, 8 spare | No step | No step |
 | (i) B: 6/25/35/45 | 111 | 16 | G4 fast charge to charge: 25, 25, 86; the drone loses 30 % (slower recharge, later launch) | G5 full to low power: 37, 37, 74; G5 loses 70 % of coastal connectivity |
-| (ii) L: -/1/35/45 | 81 | none, 14 spare | No step | No step |
-| (ii) B: -/25/35/45 | 105 | 10 | G4 to charge: 25, 25, 80 | G5 to low power: 37, 37, 68 |
+| (ii) L: G1 1.5, -/1/35/45 | 82.5 | none, 12.5 spare | No step | No step |
+| (ii) B: G1 1.5, -/25/35/45 | 106.5 | 11.5 | G4 to charge: 25, 25, 81.5 | G5 to low power: 37, 37, 69.5 |
 | (iii) L: 6/1/35/- | 42 | none | No step | No step |
 | (iii) B: 6/25/35/- | 66 | none | No step | No step |
 
-- Draws are given as G2/G3/G4/G5 in kW. Every row takes G4 at 35 kW in both files (assumption 9). In the DEC-40 timeline survey has G4 airborne at 2 kW at minute 12, so (ii) L is 48 kW under survey; see the last section.
+- Draws are given as G2/G3/G4/G5 in kW, with G1's 1.5 kW first on load-out (ii). Every row takes G4 at 35 kW in both files (assumption 9). In the DEC-40 timeline survey has G4 airborne at 2 kW at minute 12, so (ii) L is 49.5 kW under survey; see the last section.
 - "No step" means none executes. The armed ladder is still shown; its first steps for (ii) L are in the last section.
 - Every other guest loses nothing. Survey keeps G3 whole; sar keeps G4 at 35 kW.
 - Heat passes throughout: chilled load is at most 111 kW against 128.3.
@@ -93,9 +94,9 @@ Hand-computed by three Claude Opus 5.5 agents on behalf of Logan Walker (GhostWa
 
 **Price lists** (cost per kW, then kW freed):
 - **Survey throttles:** G4 to charge 0.0024, 25; G5 low 0.0038, 37; G4 to standby 0.010, 8; G2 to standby 0.16, 5.
-- **Survey sheds:** G2 0, G5 0.0075, G4 0.03, G3 0.3 (mission-critical).
+- **Survey sheds:** G2 0, G5 0.0075, G4 0.03, G1 0.133 (1.5 kW, its only step), G3 0.3 (mission-critical).
 - **Sar throttles:** G5 low 0.0189, 37; G2 to standby 0.08, 5; G4 to charge 0.012, 25 (mission-critical); G4 to standby 0.05, 8 (mission-critical).
-- **Sar sheds:** G2 0, G5 0.0375, G3 0.06, G4 0.15 (mission-critical).
+- **Sar sheds:** G2 0, G5 0.0375, G3 0.06, G1 0.333 (1.5 kW), G4 0.15 (mission-critical).
 
 **Robustness:**
 - If G2's probe has paused because the course is free, every load is 5 kW lower and the steps are unchanged.
@@ -126,7 +127,7 @@ one-genset-down line now has three states, tested against a 95 kW gate. Checked 
 | A3, if G3 leaves | G2, G4, G5 | 100, fits but over the 95 gate | G4 charge 35 to 10 kW, 75 kW | G2 winch to sampling, 86 kW |
 | A4, either option | G1, G2, G3 or G1, G3, G5 | 46.5 or 71.5, fits | nothing needed | nothing needed |
 | A5 | G1, G2, G4, G5 | 101.5, 1.5 short | G4 charge 35 to 10 kW, 76.5 kW | G2 winch to sampling, 87.5 kW |
-| Scenario B (DEC-32) | G3, G4, G5 | 105, 5 short | G4 charge 35 to 10 kW, 80 kW | G5 to low power, 68 kW |
+| Scenario B (DEC-63) | G1, G3, G4, G5 | 106.5, 6.5 short | G4 charge 35 to 10 kW, 81.5 kW | G5 to low power, 69.5 kW |
 
 A7 (G4, G5, G6) loads 98 kW, which fits but is over the 95 gate. Disaster relief takes G4's charge 35 to 10 kW (73 kW) and keeps G6; rescue takes G6 to recirculate (84 kW). Checked by `tests/test_expected_outcomes_data.py`.
 
@@ -135,15 +136,15 @@ G3 charging cannot be interrupted, so it never earns throttle credit. Informatio
 
 ## Scenario B as decided (DEC-40)
 
-Load-out G3, G4, G5; G3 underwater on its leg; G4 lands at minute 17. Checked by `tests/test_scenario_b_timeline_data.py`.
+Load-out G1, G3, G4, G5 (DEC-63; G1 listening at 1.5 kW on the mast, air-cooled, so on the bus and never on the chilled-water loop); G3 underwater on its leg; G4 lands at minute 17. Power is judged on the bus (every guest) against 100 - 5 and cooling on the loop (G3, G4, G5) against its capacity - 5; the line with the least spare binds. Checked by `tests/test_scenario_b_timeline_data.py` and `tests/test_decisions_b.py`.
 
-| Moment | Ceiling | Survey | Rescue |
+| Moment | Limits | Survey | Rescue |
 |---|---|---|---|
-| Min 12, genset trip, cooling nominal | min(100, 133.3) - 5 = 95 kW | G3 1 + G4 2 (airborne) + G5 45 = 48, holds. Armed step 1: G5 full to low power, frees 37 kW at 0.0038 per kW; G4 has no charge to throttle | G3 1 + G4 35 (reserved) + G5 45 = 81, holds. Armed step 1: G5 full to low power, frees 37 kW at 0.0189 per kW; G4's 35 kW stays reserved |
-| Min 19, injected pump fault (x0.6), G4 fast-charging | min(100, 80) - 5 = 75 kW | 81 over; G4 35 to 10 kW, 56 | 81 over; G5 45 to 8 kW, 44 |
-| After the fault, G3 asks to start its 25 kW charge (not interruptible) | 75 kW | G3 25 + G4 10 + G5 45 = 80 over; G5 to 8 kW first, then G3 starts: 43 | G3 25 + G4 35 + G5 8 = 68, starts at once |
+| Min 12, genset trip, cooling nominal | power 100 - 5 = 95 kW binds; loop 133.3 - 5 = 128.3 | G1 1.5 + G3 1 + G4 2 (airborne) + G5 45 = 49.5 of 95, holds (loop 48). Armed step 1: G5 full to low power, frees 37 kW at 0.0038 per kW; G4 has no charge to throttle; G1 to off (1.5 kW, 100 % lost) is the last 5 S step | G1 1.5 + G3 1 + G4 35 (reserved) + G5 45 = 82.5 of 95, holds (loop 81). Armed step 1: G5 full to low power, frees 37 kW at 0.0189 per kW; G4's 35 kW stays reserved; G1 to off is the last 5 S step |
+| Min 19, injected pump fault (x0.6), G4 fast-charging | loop 80 - 5 = 75 kW binds; bus 95 | loop G3 1 + G4 35 + G5 45 = 81 over (bus 82.5 of 95); G4 35 to 10 kW, loop 56 (bus 57.5); G1 loses nothing | loop 81 over (bus 82.5 of 95); G5 45 to 8 kW, loop 44 (bus 45.5); G1 loses nothing |
+| After the fault, G3 asks to start its 25 kW charge (not interruptible) | 75 kW on the loop | loop G3 25 + G4 10 + G5 45 = 80 over; G5 to 8 kW first, then G3 starts: 43 | loop G3 25 + G4 35 + G5 8 = 68, starts at once |
 
-At minute 8 under rescue, G3's leg is aborted and G3 holds at sea; it is recovered over the ramp only after G4 has landed (A.3), so at minute 12 it draws 1 kW under both files. The design freeze's section 4 fallback sentence does not apply as written: its 81 kW is rescue's load (survey is 48), G3 makes no charge request at minute 12, and under survey G4 has no charge to throttle, so the first armed step in both files is G5 to low power.
+At minute 8 under rescue, G3's leg is aborted and G3 holds at sea; it is recovered over the ramp only after G4 has landed (A.3), so at minute 12 it draws 1 kW under both files. The design freeze's section 4 fallback sentence does not apply as written: its 81 kW was rescue's load before G1 came aboard (now 82.5 on the bus; survey is 49.5), G3 makes no charge request at minute 12, and under survey G4 has no charge to throttle, so the first armed step in both files is G5 to low power.
 
 The fault is tied to the event "G4 landed and fast-charging" plus 2 minutes, so it always falls inside G4's
 20-minute fast charge (minutes 17 to 37). Restore order once cooling recovers is left to the engine build (T-tasks in BUILD_PLAN).

@@ -92,7 +92,7 @@
     },
     "binding": {
       "$ref": "#/$defs/line",
-      "description": "The line that bound: the most over, or for a yes the tightest ship-wide line. For D4, the class that sets the shed limit (capacity is that class's capacity now; limit_kw is capacity minus headroom)"
+      "description": "The line that bound: the most over, or for a yes the tightest ship-wide line. For D4, the line with the least spare (power on every guest's draw, cooling on the chilled-water guests' draw), so the line that is over; capacity is that line's capacity now and limit_kw is capacity minus headroom"
     },
     "also_failing": {
       "type": "array",
@@ -225,19 +225,43 @@
     },
     "load_kw": {
       "type": "number",
-      "description": "D4: committed load before any step"
+      "description": "D4: committed load on the binding line before any step (total_kw when power binds, loop_kw when cooling binds)"
     },
     "limit_kw": {
       "type": "number",
-      "description": "D4: the shed limit, min(power, cooling) minus headroom"
+      "description": "D4: the binding line's shed limit, its capacity minus headroom (power_limit_kw or heat_limit_kw)"
     },
     "load_after_kw": {
       "type": "number",
-      "description": "D4: load after the steps taken"
+      "description": "D4: the binding line's load after the steps taken"
     },
     "free_after_kw": {
       "type": "number",
       "description": "D4: limit_kw minus load_after_kw"
+    },
+    "total_kw": {
+      "type": "number",
+      "description": "D4: the whole electrical load before any step, every guest's committed draw (A.1), judged against power_limit_kw"
+    },
+    "loop_kw": {
+      "type": "number",
+      "description": "D4: the chilled-water load before any step, the committed draw of the guests cooled by the loop (A.2); an air-cooled guest is not on it"
+    },
+    "total_after_kw": {
+      "type": "number",
+      "description": "D4: total_kw after the steps taken; every step frees electrical kW"
+    },
+    "loop_after_kw": {
+      "type": "number",
+      "description": "D4: loop_kw after the steps taken; a step frees loop kW only when its guest is on the loop"
+    },
+    "power_limit_kw": {
+      "type": "number",
+      "description": "D4: the guest reserve now minus the shed headroom; the ladder walks until total_kw is within it"
+    },
+    "heat_limit_kw": {
+      "type": "number",
+      "description": "D4: the chilled-water capacity now minus the shed headroom; the ladder walks until loop_kw is within it"
     },
     "steps": {
       "type": "array",
@@ -414,6 +438,13 @@
           "envelope_kw": {
             "type": "number",
             "description": "Its envelope draw, the sustained worst case admission judged it at (A.1, ledger.envelope_kw)"
+          },
+          "cooling": {
+            "enum": [
+              "chilled_water",
+              "air"
+            ],
+            "description": "How the guest is cooled: on the loop it counts against cooling, air-cooled it counts against power only"
           }
         }
       },
@@ -646,6 +677,12 @@
           "load_kw",
           "limit_kw",
           "load_after_kw",
+          "total_kw",
+          "loop_kw",
+          "total_after_kw",
+          "loop_after_kw",
+          "power_limit_kw",
+          "heat_limit_kw",
           "steps",
           "armed",
           "losses",

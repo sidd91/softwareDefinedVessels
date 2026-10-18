@@ -55,7 +55,7 @@ def must_contain(r: dict) -> list[str]:
         out += [E.n(r["load_kw"]), f"{E.n(r['limit_kw'])} kW"]
         if v == "hold":
             out += [f"{len(r['steps'])} steps"] + [f"{E.n(a['frees_kw'])} kW" for a in r["armed"]] + [a["guest"] for a in r["armed"]]
-            env = r.get("envelope") or {}
+            env = {g: e for g, e in (r.get("envelope") or {}).items() if E.on_line(r, e)}   # the binding line's guests only
             total = sum(e["envelope_kw"] for e in env.values())
             if env and total > r["limit_kw"] > r["load_kw"]:
                 out += [f"{E.n(total)} kW"] + [f"{g} {E.mode(e['envelope_mode'])} {E.n(e['envelope_kw'])} kW" for g, e in env.items()]
@@ -102,10 +102,10 @@ def test_operator_style(name):
     s = r["sentence"]
     assert s == E.sentence(r)
     # A D4 hold carries the brief's explicit minute-12 sequence (R-067): its whole armed ladder in order and why the
-    # envelope set does not arise, a third sentence and up to 540 characters.
+    # envelope set does not arise, a third sentence and up to 700 characters (five armed steps with G1 aboard, DEC-63).
     long_form = r["kind"] == "D4" and r["verdict"] == "hold" and bool(r.get("envelope"))
     assert 1 <= sentences(s) <= (3 if long_form else 2), s
-    assert ";" not in s and "—" not in s and len(s) <= (540 if long_form else 240), s
+    assert ";" not in s and "—" not in s and len(s) <= (700 if long_form else 240), s
     assert not DEMO_WORDS.search(s), s
     assert not re.search(r"\?|None|null|True|False", s), s
     if r["verdict"] != "card-rejected":
@@ -170,19 +170,21 @@ def test_d3_puts_the_hard_limit_before_the_cost_to_the_loser():
 def test_d4_minute_12_holds_with_0_steps_and_the_armed_step():
     """The brief's must-have (R-067): the explicit minute-12 sequence. A hold lists its whole armed ladder in order, each
     step with its move, the kW freed and the capability lost, and says why the envelope set (every guest at its envelope
-    draw, 105 kW) does not arise, naming the guests drawing less than their envelope and what they are doing."""
-    for f, load in (("survey", 48), ("sar", 81)):
+    draw, 106.5 kW with G1) does not arise, naming the guests drawing less than their envelope and what they are doing."""
+    for f, load, last in (("survey", 49.5, "G3"), ("sar", 82.5, "G4")):
         r = FIXTURES[f"d4_m12_{f}"]
         s = r["sentence"]
         assert s.startswith(f"Holds: {load} of 95 kW with one genset down") and "0 steps" in s
         steps = [f"{a['guest']} {E.mode(a['from_mode'])} to {E.mode(a['to_mode'])}, {E.n(a['from_kw'])} to {E.n(a['to_kw'])} kW, "
                  f"frees {E.n(a['frees_kw'])} kW ({E.n(a['capability_lost_pct'])} % lost)" for a in r["armed"]]
-        assert len(steps) == 3 and steps[0] == "G5 full to low power, 45 to 8 kW, frees 37 kW (70 % lost)"
+        assert len(steps) == 5 and steps[0] == "G5 full to low power, 45 to 8 kW, frees 37 kW (70 % lost)"
+        assert steps[3] == "G1 full to off, 1.5 to 0 kW, frees 1.5 kW (100 % lost)", "G1's shed is the last 5 S step"
+        assert steps[4].startswith(f"{last} standby to off"), "the mission-critical 60 S guest goes last (DEC-60)"
         assert f". Armed in order: {', then '.join(steps)}. " in s
         total = sum(e["envelope_kw"] for e in r["envelope"].values())
-        assert total == 105 > r["limit_kw"] == 95 > r["load_kw"] == load
-        assert ("The envelope case does not arise: G3 charging 25 kW, G4 fast charge 35 kW and G5 full 45 kW would be 105 kW "
-                "against the 95 kW limit, but G3 is holding ") in s
+        assert total == 106.5 > r["limit_kw"] == 95 > r["load_kw"] == load
+        assert ("The envelope case does not arise: G1 full 1.5 kW, G3 charging 25 kW, G4 fast charge 35 kW and G5 full 45 kW "
+                "would be 106.5 kW against the 95 kW limit, but G3 is holding ") in s
     assert FIXTURES["d4_m12_survey"]["sentence"].endswith("but G3 is holding depth in standby (1 kW) and G4 is airborne in standby (2 kW).")
     assert FIXTURES["d4_m12_sar"]["sentence"].endswith("against the 95 kW limit, but G3 is holding at sea in standby (1 kW).")
 
@@ -191,8 +193,8 @@ def test_the_envelope_clause_follows_the_numbers():
     """No envelope clause once every guest at its envelope draw would fit the limit; the guests named are the ones drawing
     less than their envelope, with what they report doing."""
     r = copy.deepcopy(FIXTURES["d4_m12_survey"])
-    r.update(limit_kw=110, free_after_kw=62)
-    assert "envelope" not in E.sentence(r) and E.sentence(r).endswith("then G4 standby to off, 2 to 0 kW, frees 2 kW (30 % lost).")
+    r.update(limit_kw=110, free_after_kw=60.5)
+    assert "envelope" not in E.sentence(r) and E.sentence(r).endswith("then G3 standby to off, 1 to 0 kW, frees 1 kW (30 % lost).")
     r = copy.deepcopy(FIXTURES["d4_m12_survey"])
     r["envelope"]["G4"].update(mode="charge", kw=10, activity="landed")
     assert E.sentence(r).endswith("but G3 is holding depth in standby (1 kW) and G4 is landed in charge (10 kW).")
@@ -200,12 +202,24 @@ def test_the_envelope_clause_follows_the_numbers():
     assert E.sentence(r).endswith("but G3 is in standby (1 kW) and G4 is landed in charge (10 kW).")
 
 
+def test_the_envelope_clause_on_the_cooling_line_counts_the_loop_only():
+    """When cooling binds, the envelope set is the chilled-water guests' (105 kW, the brief's sum): G1's air-cooled 1.5 kW is
+    on the bus and is neither summed nor named; on the power line every guest counts (106.5 kW)."""
+    r = copy.deepcopy(FIXTURES["d4_m12_survey"])
+    assert "G1 full 1.5 kW, G3 charging 25 kW" in E.sentence(r) and "would be 106.5 kW against the 95 kW limit" in E.sentence(r)
+    r["binding"].update(**{"class": "heat", "label": "Cooling", "capacity": 80, "demand": 56, "free": 24})
+    r.update(load_kw=56, limit_kw=75, load_after_kw=56, free_after_kw=19)
+    s = E.sentence(r)
+    assert "The envelope case does not arise: G3 charging 25 kW, G4 fast charge 35 kW and G5 full 45 kW would be 105 kW against the 75 kW limit" in s
+    assert "G1 full 1.5 kW" not in s
+
+
 def test_d4_minute_19_names_kw_freed_capability_lost_and_every_guest():
     s = FIXTURES["d4_m19_survey"]["sentence"]
     assert "81 kW against the 75 kW limit" in s and "G4 fast charge to charge, 35 to 10 kW, frees 25 kW" in s
-    assert "the load is 56 kW: G4 loses 30 %, G3 and G5 nothing." in s
+    assert "the load is 56 kW: G4 loses 30 %, G1, G3 and G5 nothing." in s     # the loop's figures: G1's 1.5 kW is on the bus
     s = FIXTURES["d4_m19_sar"]["sentence"]
-    assert "G5 full to low power, 45 to 8 kW, frees 37 kW and the load is 44 kW: G5 loses 70 %, G3 and G4 nothing." in s
+    assert "G5 full to low power, 45 to 8 kW, frees 37 kW and the load is 44 kW: G5 loses 70 %, G1, G3 and G4 nothing." in s
 
 
 def test_d4_unconfirmed_sheds_nothing_and_says_why():

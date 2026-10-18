@@ -401,18 +401,27 @@ class Core:
             up = names[names.index(cur) - 1]
             before = d["draws"][g]
             after = Lg.committed_kw(self.cards, g, up, self.reservations.get(g, 0.0))
-            load_after = d["load_kw"] - before + after
-            if load_after > d["limit_kw"] + 1e-9:
+            # Both lines must take the step back up: the bus always, the chilled-water loop only if the guest is on it.
+            total_after = d["total_kw"] - before + after
+            loop_after = d["loop_kw"] - before + after if g in d["on_loop"] else d["loop_kw"]
+            if total_after > d["power_limit_kw"] + 1e-9 or loop_after > d["heat_limit_kw"] + 1e-9:
                 return
             if up == orig:
                 del self.shed_from[g]
             healthy = max((f["healthy_since_t_s"] for f in snap["faults"] if f.get("healthy_since_t_s") is not None), default=None)
-            b = d["binding"]
-            binding = {"class": b["class"], "label": Rec.explain.LABELS.get(b["class"], b["class"]), "capacity": b["capacity"],
-                       "demand": load_after, "free": b["capacity"] - load_after, "unit": "kW", "degraded_by": list(b["degraded_by"])}
+            # The line with the least spare after the restore names the record, as the shed's binding line does.
+            heat_binds = d["heat_limit_kw"] - loop_after <= d["power_limit_kw"] - total_after
+            cls = "heat" if heat_binds else "power"
+            cap = d["capacities"][cls]
+            load_now, load_after, limit = ((d["loop_kw"], loop_after, d["heat_limit_kw"]) if heat_binds
+                                           else (d["total_kw"], total_after, d["power_limit_kw"]))
+            binding = {"class": cls, "label": Rec.explain.LABELS.get(cls, cls), "capacity": cap["capacity"],
+                       "demand": load_after, "free": cap["capacity"] - load_after, "unit": "kW", "degraded_by": list(cap["degraded_by"])}
             r = Rec.from_restore(seq=self._take_seq(), snapshot=snap, mission=self.mission, guest=g, from_mode=cur, to_mode=up,
-                                 binding=binding, load_kw=d["load_kw"], load_after_kw=load_after, limit_kw=d["limit_kw"],
-                                 healthy_since_t_s=healthy, responses=d.get("responses", {}))
+                                 binding=binding, load_kw=load_now, load_after_kw=load_after, limit_kw=limit,
+                                 healthy_since_t_s=healthy, responses=d.get("responses", {}),
+                                 total_kw=d["total_kw"], loop_kw=d["loop_kw"], total_after_kw=total_after, loop_after_kw=loop_after,
+                                 power_limit_kw=d["power_limit_kw"], heat_limit_kw=d["heat_limit_kw"], from_kw=before, to_kw=after)
             self.commanded[g] = up
             out.append(self._record(r, started, [{"kind": "set_mode", "args": {"guest": g, "mode": up}}], cmds))
             return

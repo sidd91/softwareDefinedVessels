@@ -258,10 +258,17 @@ def _ladder(r: dict) -> str:
     return " Armed in order: " + ", then ".join(steps) + "."
 
 
+def on_line(r: dict, e: dict) -> bool:
+    """Whether a guest's draw counts on the record's binding line: every guest on power, the chilled-water guests on
+    cooling (an air-cooled guest draws on the bus, not on the loop)."""
+    return (r.get("binding") or {}).get("class") != "heat" or e.get("cooling", "chilled_water") == "chilled_water"
+
+
 def _envelope(r: dict) -> str:
-    """Why the envelope set does not arise: every guest at its envelope draw would be over the limit while the load now
-    is under it, and the guests drawing less than their envelope are named with what they are doing."""
-    env = r.get("envelope") or {}
+    """Why the envelope set does not arise: every guest on the binding line at its envelope draw would be over that
+    line's limit while the load now is under it, and the guests drawing less than their envelope are named with what
+    they are doing."""
+    env = {g: e for g, e in (r.get("envelope") or {}).items() if on_line(r, e)}
     total = sum(e["envelope_kw"] for e in env.values())
     if not env or not (total > r["limit_kw"] > r["load_kw"]):
         return ""

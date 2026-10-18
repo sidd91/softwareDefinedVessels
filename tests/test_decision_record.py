@@ -36,8 +36,8 @@ ORACLE_A = {f"d1_{c['case']}_{c['file']}": c for c in ORACLE["scenario_a"]}
 B_MOMENTS = [f"{d}_{m}_{f}" for d, m in (("d3", "m08"), ("d4", "m12"), ("d4", "m19")) for f in ("survey", "sar")]
 
 # Minute 19 is not in the oracle file; these rows are docs/EXPECTED_OUTCOMES.md "Scenario B as decided", min 19.
-M19 = {"survey": {"guest": "G4", "from_kw": 35, "to_kw": 10, "load_after_kw": 56},
-       "sar": {"guest": "G5", "from_kw": 45, "to_kw": 8, "load_after_kw": 44}}
+M19 = {"survey": {"guest": "G4", "from_kw": 35, "to_kw": 10, "load_after_kw": 56, "total_after_kw": 57.5},
+       "sar": {"guest": "G5", "from_kw": 45, "to_kw": 8, "load_after_kw": 44, "total_after_kw": 45.5}}
 
 
 def close(a, b):
@@ -186,6 +186,7 @@ def test_minute_12_fixture_is_the_oracle(f):
     r, o = FIXTURES[f"d4_m12_{f}"], ORACLE["scenario_b"]["minute_12_as_decided"]["by_file"][f]
     assert (r["kind"], r["verdict"]) == ("D4", "hold")
     assert (r["load_kw"], r["limit_kw"], r["load_after_kw"], r["free_after_kw"]) == (o["load_kw"], ORACLE["scenario_b"]["ceiling"]["kw"], o["load_kw"], o["spare_kw"])
+    assert (r["total_kw"], r["loop_kw"]) == (o["load_kw"], o["loop_kw"]), "power binds on every guest; the loop is 1.5 kW lighter (G1 air-cooled)"
     assert len(r["steps"]) == o["steps_taken"] == 0
     first = r["armed"][0]
     assert {k: first[k] for k in o["armed_first"]} == o["armed_first"]
@@ -205,14 +206,20 @@ def test_minute_19_fixture_is_the_expected_outcome(f):
     [s] = r["steps"]
     assert (s["guest"], s["from_kw"], s["to_kw"], s["frees_kw"]) == (want["guest"], want["from_kw"], want["to_kw"], want["from_kw"] - want["to_kw"])
     assert r["load_after_kw"] == s["load_after_kw"] == want["load_after_kw"]
+    assert (r["loop_kw"], r["total_kw"], r["loop_after_kw"], r["total_after_kw"]) == (81, 82.5, want["load_after_kw"], want["total_after_kw"])
+    assert (r["heat_limit_kw"], r["power_limit_kw"]) == (75, 95), "cooling binds on the loop while the bus is under its own limit"
     assert (r["trigger"], r["injected"], r["raw_event_t_s"], r["confirmed_t_s"]) == ("cooling_degraded", True, 1140, 1141)
 
 
 @pytest.mark.parametrize("name", sorted(n for n, r in FIXTURES.items() if r["kind"] == "D4"))
 def test_d4_steps_and_losses_agree(name):
     r = FIXTURES[name]
-    assert close(r["load_after_kw"], r["load_kw"] - sum(s["frees_kw"] for s in r["steps"]))
+    on_line = lambda g: r["binding"]["class"] != "heat" or r.get("envelope", {}).get(g, {}).get("cooling", "chilled_water") == "chilled_water"
+    assert close(r["load_after_kw"], r["load_kw"] - sum(s["frees_kw"] for s in r["steps"] if on_line(s["guest"])))
+    assert close(r["total_after_kw"], r["total_kw"] - sum(s["frees_kw"] for s in r["steps"]))
+    assert close(r["loop_after_kw"], r["loop_kw"] - sum(s["frees_kw"] for s in r["steps"] if r["envelope"][s["guest"]]["cooling"] == "chilled_water"))
     assert close(r["free_after_kw"], r["limit_kw"] - r["load_after_kw"])
+    assert (r["load_kw"], r["limit_kw"]) == ((r["loop_kw"], r["heat_limit_kw"]) if r["binding"]["class"] == "heat" else (r["total_kw"], r["power_limit_kw"]))
     if r["verdict"] == "shed":
         assert r["load_after_kw"] <= r["limit_kw"] < r["load_kw"]
     for s in r["steps"] + r["armed"]:
@@ -284,6 +291,7 @@ def test_the_engine_and_the_fixture_agree_on_what_decided_it(name):
             {k: f["cost_to_loser"][k] for k in ("guest", "minutes_lost", "open_ended", "leg", "holds")}
     if f["kind"] == "D4":
         assert (e["load_kw"], e["limit_kw"], e["load_after_kw"]) == (f["load_kw"], f["limit_kw"], f["load_after_kw"])
+        assert (e["total_kw"], e["loop_kw"], e["total_after_kw"], e["loop_after_kw"]) == (f["total_kw"], f["loop_kw"], f["total_after_kw"], f["loop_after_kw"])
         assert _steps(e["steps"]) == _steps(f["steps"])
         assert _steps(e["armed"][:1]) == _steps(f["armed"][:1]) and e["armed"][0]["cost_per_kw"] == f["armed"][0]["cost_per_kw"]
         for k in ("trigger", "injected", "raw_event_t_s", "confirmed_t_s", "first_shed_due_t_s"):

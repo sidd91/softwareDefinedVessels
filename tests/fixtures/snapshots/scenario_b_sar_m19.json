@@ -8,6 +8,7 @@
   "tick": 1141,
   "t_ship_s": 1141,
   "installed": [
+   "G1",
    "G3",
    "G4",
    "G5"
@@ -37,7 +38,7 @@
    "since_t_s": 720
   },
   "genset_1_kw": {
-   "value": 386.0,
+   "value": 387.5,
    "source": "plant",
    "age_s": 0,
    "confidence": "measured",
@@ -379,6 +380,46 @@
   }
  },
  "guests": {
+  "G1": {
+   "mode": {
+    "value": "full",
+    "source": "plant",
+    "age_s": 0,
+    "confidence": "measured",
+    "stale": false
+   },
+   "activity": {
+    "value": "listening",
+    "source": "guest_report",
+    "age_s": 0,
+    "confidence": "reported",
+    "stale": false
+   },
+   "kw_actual": {
+    "value": 1.5,
+    "source": "plant",
+    "age_s": 0,
+    "confidence": "measured",
+    "stale": false
+   },
+   "data_demand": {
+    "value": {
+     "backbone_mbps": 50,
+     "satcom_mbps": 0.2
+    },
+    "source": "plant",
+    "age_s": 0,
+    "confidence": "measured",
+    "stale": false
+   },
+   "overdraw_pct": {
+    "value": 0.0,
+    "source": "derived",
+    "age_s": 0,
+    "confidence": "measured",
+    "stale": false
+   }
+  },
   "G3": {
    "mode": {
     "value": "standby",
@@ -799,6 +840,6 @@
  "events": [],
  "notes": [
   "Scenario B, sar file, minute 19: the injected pump fault as in the survey run. G3 still holds at sea, to be recovered over the ramp once the flight deck is done; the ship stays at 5 kn with its course free.",
-  "Ledger 81 kW against a 75 kW ceiling; D4's commands from this snapshot are applied at 1142 s: sar takes G5 to 8 kW (44 kW), per scenario_b provenance."
+  "The loop carries 81 kW against a 75 kW limit (82.5 kW electrical against 95); D4's commands from this snapshot are applied at 1142 s: sar takes G5 to 8 kW (loop 44 kW, 45.5 kW electrical), per scenario_b provenance."
  ]
 }
