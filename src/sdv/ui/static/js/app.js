@@ -21,6 +21,7 @@ export const app = {
   tick: null,          // the latest /ws message: {tick, t_s, mission, snapshot, records, view, running, speed}
   ws: null,
   header: null,        // chips and clock set by a view that owns the title bar (admission, reference)
+  errors: [],          // engine errors the server reported on the stream ({type: "error"}), newest first, for the event log
   send(msg) { if (this.ws && this.ws.readyState === 1) this.ws.send(JSON.stringify(msg)); },
 };
 
@@ -96,7 +97,7 @@ function simbar() {
 
 function wireSimbar() {
   $('sim-run').addEventListener('click', () => app.send({ cmd: 'toggle' }));
-  $('sim-restart').addEventListener('click', () => app.send({ cmd: 'restart' }));
+  $('sim-restart').addEventListener('click', () => { app.errors = []; $('sim-note').textContent = ''; app.send({ cmd: 'restart' }); });
   $('chips').addEventListener('click', e => {
     const b = e.target.closest('button[data-crew]');
     if (b) app.send({ cmd: 'input', input: { type: 'crew_change', injected: false, payload: { crew_aboard: Number(b.dataset.crew) } } });
@@ -125,13 +126,36 @@ function connect(attempt = 0) {
   app.ws = ws;
   ws.onopen = () => { attempt = 0; link(true); };
   ws.onmessage = e => {
-    app.tick = JSON.parse(e.data);
+    const m = JSON.parse(e.data);
+    if (m.type === 'error') {
+      engineError(m);
+      return;
+    }
+    app.tick = m;
     render();
   };
   ws.onclose = () => {
     link(false);
     setTimeout(() => connect(attempt + 1), Math.min(5000, 500 * 2 ** attempt));
   };
+}
+
+// An error frame: the engine failed on a tick or a command, the server held the run at that tick and kept the
+// socket. One line in the event log and the SIM bar note, built from the frame; the run is not restarted.
+function engineError(m) {
+  const t = Math.max(0, Math.round(m.t_s || 0));
+  const hh = String(Math.floor(t / 3600)).padStart(2, '0');
+  const mm = String(Math.floor((t % 3600) / 60)).padStart(2, '0');
+  const ss = String(t % 60).padStart(2, '0');
+  app.errors.unshift({ t: `${hh}:${mm}:${ss}`, type: 'ALARM', tag: 'ENGINE', msg: `Run held at ${hh}:${mm}:${ss}. ${m.message}`, injected: false });
+  if (app.tick) app.tick.running = false;
+  $('sim-note').textContent = `ENGINE · ${m.message}`;
+  render();
+}
+
+// The event log with the engine errors on top of the rows the server built.
+function withErrors(v) {
+  return app.errors.length ? { ...v, log: [...app.errors, ...v.log] } : v;
 }
 
 function link(up) {
@@ -144,7 +168,7 @@ function link(up) {
 
 function render() {
   const v = app.tick && app.tick.view;
-  if (v && app.view === 'ops') renderOps($('view-ops'), v);
+  if (v && app.view === 'ops') renderOps($('view-ops'), withErrors(v));
   if (v && app.view === 'ledger') renderLedger($('view-ledger'), v);
   if (app.view === 'compare') renderCompare($('view-compare'));
   if (app.view === 'build') builderTick($('view-build'));

@@ -97,7 +97,8 @@ class Simulator:
         self.g3_link_since = None
         self.g3_outbox = []                      # (arrive_tick, fields, data_demand)
         self.event_rate_now = set()              # event-rate signals that report this tick
-        self.log = []                            # simulator log (skips, mismatches)
+        self.log = []                            # simulator log (skips, mismatches, refused commands, ignored inputs)
+        self.refused = []                        # commands the ship could not carry out: {t_s, kind, args, why}
 
     # ------------------------------------------------------------------ helpers
     def card_kw(self, g, mode):
@@ -146,10 +147,25 @@ class Simulator:
                 self.v["noise"] = a["noise"]
         elif k == "clear_deck":
             z = f"deck_{a['zone']}"
-            if self.v["crew_aboard"] != 14:
-                raise NotImplementedError("transition_drafts.deck_clear covers 14 aboard only")
-            d = TD["deck_clear"]
-            self.tr[z] = Lin(self.v[z], "clear", tick, d["expected_s"], d["latest_s"])
+            crew = self.v["crew_aboard"]
+            rng = A["ship_state"]["deck"]["clear_min"].get(crew)
+            if rng is None:
+                # A.6: nobody aboard can clear a deck (ship_state.deck.clear_min is null at 0). The command is refused,
+                # not raised: the deck stays as it is, the frame carries no transition, and the refusal is kept with the
+                # tick (the frame contract has no slot for it; the core's D5 record states the refusal to the operator).
+                why = f"{crew} aboard cannot clear a deck (ship_state.deck.clear_min)"
+                self.refused.append({"t_s": tick, "kind": k, "args": a, "why": why})
+                self.log.append(f"{tick}: clear_deck {a['zone']} refused, {why}")
+            else:
+                d = TD["deck_clear"]                   # drafted for 14 aboard: the scenario pin (4 min) and A.6's slow end (5)
+                exp, latest = d["expected_s"], d["latest_s"]
+                if not (60 * rng[0] <= exp <= 60 * rng[1]):
+                    # The draft is outside this crew level's A.6 range (6 aboard: 8-12 min) and no scenario pins it.
+                    # Expected is the middle of the range, where the 14-aboard pin sits in its 3-5; latest is the slow
+                    # end, as the draft takes it. Both from assumptions ship_state.deck.clear_min.
+                    guess("G-deck-clear-crew", f"clear_deck at {crew} aboard: no scenario pin, expected is the middle of A.6's {rng[0]}-{rng[1]} min and latest the slow end")
+                    exp, latest = 60 * (rng[0] + rng[1]) / 2, 60 * rng[1]
+                self.tr[z] = Lin(self.v[z], "clear", tick, exp, latest)
         elif k == "guest_command":
             g, act = a["guest"], a["action"]
             assert g == "G3"
@@ -177,6 +193,11 @@ class Simulator:
         assert EVREG[t]["to"] == "simulator", t
         if t == "bridge_answer":
             r = self.request(p["request_seq"])
+            if r is None:
+                # No such request is open (asked at another crew level, never asked, or already closed): the answer is
+                # ignored, not raised. It is not applied, so it is not echoed in the frame; the simulator log says why.
+                self.log.append(f"{tick}: bridge_answer to request {p['request_seq']} ignored, no such request is open")
+                return
             r["state"], r["answered_t_s"] = p["answer"], tick      # the entry carries its own answer time
         elif t == "feed_drop":
             self.drops[p["feed"]] = p.get("until_t_s")

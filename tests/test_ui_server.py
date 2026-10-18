@@ -149,6 +149,24 @@ def test_ws_streams_a_scenario_b_replay(live):
         assert swapped["view"]["decision"]["rows"][3] == ["ACTION", "G5 FULL → LOW POWER", False]
 
 
+def test_an_engine_error_is_an_error_frame_and_the_socket_and_the_run_survive(live, monkeypatch):
+    """A tick that raises is reported on the stream and holds the run where it failed; the socket stays up and takes
+    the next command, so the screen never reconnects into a silent restart."""
+    def boom(self):
+        raise ValueError("clear_deck at 0 aboard")
+    monkeypatch.setattr(server.Replay, "advance", boom)
+    with connect(f"ws://{live}/ws?mission=survey&t=100&speed=60") as ws:
+        first = json.loads(ws.recv(timeout=5))
+        assert first["type"] == "tick" and first["running"]
+        err = json.loads(ws.recv(timeout=5))
+        assert err == {"type": "error", "tick": 100, "t_s": 100, "message": "ValueError: clear_deck at 0 aboard"}
+        held = json.loads(ws.recv(timeout=5))
+        assert (held["type"], held["t_s"], held["running"]) == ("tick", 100, False)
+        ws.send(json.dumps({"cmd": "jump", "t": 300}))
+        jumped = json.loads(ws.recv(timeout=5))
+        assert (jumped["type"], jumped["t_s"], jumped["running"]) == ("tick", 300, False)
+
+
 def test_ws_streams_the_live_loop_and_takes_laptop_inputs(loop_server):
     base, _ = loop_server
     with connect(f"ws://{base}/ws?mission=sar&t=1138&speed=60") as ws:

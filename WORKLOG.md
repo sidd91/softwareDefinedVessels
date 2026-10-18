@@ -1049,3 +1049,28 @@ Playwright on 8401 through 24 edits. One fix on the branch: typing a figure's ow
 the request but not from the kept set, so the next request still sent it as keep= and the panel showed the withdrawn
 card's verdict (peak 50 then 35 back kept the 96.5 kW throttle step; pre-existing in wire() on main for mass edits).
 admit.js now withdraws it from both; the verdict follows the figure on the next Enter.
+### Sat 22:15 PDT · Crew chip at 6 and 0 aboard refused honestly, never a crash · Claude Fable 5.1 on behalf of Siddharth Chawla (sidd91)
+
+Branch fix/crew-chip-guards for a teammate to merge. On main the Operations crew chip 14 to 6 or 0 around minute 8-9 raised in
+the test double (a bridge answer with no open request, clear_deck at a level it did not know), the /ws loop let the socket
+die and the page reconnected into a silent restart at 14 aboard; `sdv run --variant crew0` crashed the same way. Now the
+double ignores and logs the stray answer, clears in A.6's 8-12 min at 6 and refuses clearing at 0; the core says "forbidden"
+at 0 (deck state in the evidence) and "not now" at 6 with the fixture's line, deck clearing lead 15 min against 8 min, 7 min
+over; the screen turns an engine exception into an error frame, holds the run and shows one ALARM · ENGINE row.
+Files: src/sdv/core.py, src/sdv/records.py, src/sdv/ui/server.py, src/sdv/ui/static/js/app.js, tests/support/sim_stub.py,
+tests/test_crew_levels.py (new), tests/test_ui_server.py. Tests: 13 added, full suite 1291 passed, no existing test changed.
+Decisions: none. Conflicts: none. Requirements touched: R-009, R-011, R-012.
+
+### Sat 22:40 PDT · Review of fix/crew-chip-guards: the not-now's window at 6 aboard is kept · Claude Fable 5.1 on behalf of Siddharth Chawla (sidd91)
+
+Independent review of the entry above: diff read line by line, the full suite, `sdv run` at every variant and file, every
+/api route, /ws with the chip at 6 and 0 aboard at ticks 60, 470, 500 and 900 under both priority files, and the Operations
+screen in Chromium (chip, JUMP, HOLD, RESTART, priority file, an error frame on the page's own socket): no crash, no
+reconnect, every sentence from the record's fields. One gap fixed here: the not-now at 6 aboard named "the landing officer
+reports the zone clear" as its window, but a clear report after it changed nothing, the recovery stayed held and G4 never
+landed. core.py `_short_release`, on the `_hold_release` pattern: a clear report newer than the not-now clears the recovery,
+"the landing officer reported the zone clear at minute N" (the words a lifted landing hold uses), deck work at the A.6 pace;
+a forbidden recovery at 0 aboard is not reopened. Left as is: the chip 14 to 0 after the ask says "held: no answer from the
+bridge" (wait_s at 0 is 0 s), and the SIM bar's ENGINE note stays until RESTART.
+Files: src/sdv/core.py, tests/test_crew_levels.py. Tests: 1 added, full suite 1292 passed, 14-aboard records unchanged.
+Decisions: none. Conflicts: none. Requirements touched: R-009, R-011, R-012.
