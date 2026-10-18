@@ -1,6 +1,6 @@
 # ArgOS demo guide (operations screen)
 
-One person drives and speaks. Total about 2 minutes. The screen is the operations screen at http://127.0.0.1:8000/.
+One person drives and speaks. The run takes 2 minutes at most. The screen is the operations screen at http://127.0.0.1:8000/.
 Click each button once. A pause of up to a second after a click is normal.
 
 ## Setup, 30 minutes before
@@ -19,32 +19,23 @@ Click each button once. A pause of up to a second after a click is normal.
 
 Use only one browser tab. A second tab runs its own separate copy of the demo.
 
-## The run
+## The run: 2 minutes, hard stop
 
 The bottom bar has the buttons: HOLD, PACE, JUMP (G4 LOW BATT, GEN 2 TRIP, CHW P1 TRIP), RESTART, PRIORITY SURVEY / RESCUE.
 Decisions appear in the panel on the right. Its first line says what was decided. Its last two rows, PRIORITY and
-CREW RULE, show the rules in force.
+CREW RULE, show the rules in force. Keep each line short and move on. You do not need to wait for the clock.
 
-| Step | Do | Point at | Say |
+| By | Do | Point at | Say |
 |---|---|---|---|
-| 1 | Ask the jury: "Should this ship put rescue first, or the survey first?" Click RESCUE or SURVEY in the bottom bar | Top left: MISSION RESCUE (or SURVEY) | "You chose rescue. Same software, different priorities." |
-| 2 | Click RESTART | The eight boxes under the ship drawing | "A 60-metre ship carrying a drone, an underwater robot, a radio sensor and a communications unit. These boxes are its budget: power, cooling, deck, weight and more." |
-| 3 | Click G4 LOW BATT (jumps to minute 8) | The right panel, first line, then LAND BY | "Minute 8. The drone is down to 18 % battery and must land within 12 minutes. The robot needs the ship slow and steady, the drone needs it moving. ArgOS lands the drone first, and it decided in under a thousandth of a second." |
-| 4 | When you finish talking, click GEN 2 TRIP (minute 12) | The POWER box (amber), then the SHED ORDER list | "Minute 12. One generator cuts out. Everything still fits on the other one, so nothing is turned off. The list shows what would be turned down first if needed." |
-| 5 | When you finish talking, click CHW P1 TRIP (minute 19) | INJECTED on the right panel, then the COOLING box | "Minute 19. We break a cooling pump on purpose. The equipment now needs more cooling than is left, so ArgOS turns one thing down. The rules allow 5 seconds. It took under a millisecond." |
-| 6 | Nothing. The clock stops at T+00:20:00 | The right panel | "Three problems in 20 minutes. Each time ArgOS decided at once and wrote down why." |
-| 7 | Click DEMO COMPARE (last in the top menu). It shows the same minute the run is on | The two columns side by side | "Same ship, same failure, two priorities. Survey slows the drone's charging. Rescue protects the drone and turns the communications unit down instead." |
+| 0:10 | Ask: "Rescue first, or survey first?" Click their pick (RESCUE or SURVEY), then RESTART | Top left: MISSION RESCUE (or SURVEY) | "Same software, your priorities." |
+| 0:30 | Click G4 LOW BATT | The right panel, first line | "Minute 8. The drone is low on battery and must land. The robot needs the ship slow, the drone needs it moving. ArgOS lands the drone first, in under a millisecond." |
+| 0:50 | Click GEN 2 TRIP | The POWER box | "Minute 12. A generator cuts out. Everything still fits on the other one, so nothing is turned off." |
+| 1:15 | Click CHW P1 TRIP | INJECTED in the right panel, then the COOLING box | "Minute 19. We break a cooling pump on purpose. ArgOS turns one thing down within the 5-second rule, and says why." |
+| 1:40 | Click DEMO COMPARE (last in the top menu) | The two columns | "Same failure, two priorities, two different answers. Survey slows the drone's charging. Rescue protects the drone." |
+| 2:00 | Stop | | "That is ArgOS." |
 
-What changes with the jury's choice:
-
-| Moment | If RESCUE | If SURVEY |
-|---|---|---|
-| Minute 8 | "The robot's survey is cancelled, and power is kept free to charge the drone." | "The robot waits underwater and loses about 25 minutes of survey." |
-| Minute 12 | "82.5 of 95 kW in use, 12.5 spare." | "49.5 of 95 kW in use, 45.5 spare." |
-| Minute 19 | "The communications unit drops to low power." | "The drone charges more slowly." |
-
-Optional, drop it if time is short: "With fewer people aboard, the same rules change. At 6 aboard the drone only lands
-under a plan agreed in advance, and with nobody aboard the deck must already be checked clear."
+If you are running long, skip the GEN 2 TRIP step. If the jury picked SURVEY at minute 8, say "the robot waits
+underwater" instead of anything about rescue.
 
 ## If something goes wrong
 
