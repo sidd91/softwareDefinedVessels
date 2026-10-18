@@ -149,6 +149,6 @@ Every path: [docs/REPOSITORY_MAP.md](docs/REPOSITORY_MAP.md); every requirement 
 ## Declarations and licence
 
 AI and software, with licences and origins: [docs/SOFTWARE_LOG.md](docs/SOFTWARE_LOG.md). Claude (Anthropic) is the
-coding and research assistant, under the organisers' authorised AI list [Logan: paste the Day-0 list URL/title/date or
-the organiser's written confirmation]; no model from a China-based company is used. Only open-source third-party code
+coding and research assistant; the Day-0 authorised-AI-list citation is still an open item in the software log;
+no model from a China-based company is used. Only open-source third-party code
 or our own; licence [MIT](LICENSE), copyright Logan Walker and Siddharth Chawla.
