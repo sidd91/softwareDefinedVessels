@@ -1232,3 +1232,21 @@ Files: README.md, docs/SCENARIO_C_MEMO.md, docs/pdf/README.pdf, docs/pdf/SCENARI
 suite 1476 passed before and after the edits. Page counts: README Letter 3 / A4 3, memo 2 / 2, account 1 / 1 (unchanged bytes).
 Open: docs/DEMO_SCRIPT.md (+03 row) plans a live "zone not clear, held within 200 ms" segment, but no screen control issues a
 safety request; the run-sheet branch owns that line. Decisions: none. Conflicts: none. Requirements touched: none.
+
+### Sun 00:25 PDT · Freeze candidate tagged `submission` · Claude Fable 5.1 on behalf of Siddharth Chawla (sidd91)
+
+main 62935a5 is tagged `submission`. It carries, on top of Logan's 918478a: the rubric audit (docs/AUDIT_MAIN.md),
+the minute-12 sentence with the whole armed ladder and the envelope clause (DEC-61), the Physical Account tracer,
+D1 binding on all eight classes, jury edits of any card number with refusal by field (CLI exit 2, API 422), the crew chip
+safe at 14/6/0 with honest held/forbidden records, every screen run logged and replayable, a jury card admitted from a
+file and a bad file skipped at start-up, SIM-bar clicks landing at x12, the organisers' Scenario B load-out G1+G3+G4+G5
+with D4 judging the bus and the loop separately (DEC-63), the run sheet and T-30 checklist restated for this commit, the
+plant badge LIVE · SCRIPTED PLANT · A.6, and the README/memo/Physical Account truth pass with the PDFs rebuilt at
+3/2/1 pages. Full suite 1485 passed. Every branch had an engineer and an independent reviewer; main was fast-forwarded
+only to green integration branches. Not on main by decision: ui/room-map (the /room screen, 1503 tests on the branch,
+console files byte-identical), kept for the team to choose a screen at rehearsal.
+Open before 10:00 PDT, for the humans: repository visibility for the jury; the authorised-AI-list citation placeholder in
+README and docs/SOFTWARE_LOG.md; rehearsal on the laptop with the checklist in docs/DEMO_SCRIPT.md; re-point the tag if
+main moves (`git tag -f -a submission <commit> && git push -f origin submission`).
+Decisions: none new. Conflicts: none open besides the submission route. Requirements touched: R-016, R-552.
+
