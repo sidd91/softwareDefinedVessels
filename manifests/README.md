@@ -47,5 +47,15 @@ shows an assembly of two parts.
 uv run pytest
 ```
 
-Planned: a `sdv validate manifests/G7.yaml` command that names the exact field that is missing or
-wrong, so a guest's author can fix it without reading the schema.
+To check a new file before it goes into `manifests/`, admit it from where it is:
+
+```bash
+uv run sdv admit --card path/to/G7.yaml --installed G4,G5 --mission disaster_relief
+```
+
+A missing or wrong field is named (`refused path/to/G7.yaml: placement.parts[0].mass_t: 'abc' is not of
+type 'number'`, exit code 2), and so is a path that cannot be read (`refused path/to/G7.yaml: file: No such
+file or directory`). With no activity registered yet for its id, the card is judged on its quantities,
+positions and relations and the output says `activities not registered: conditions not judged`. A file in
+`manifests/` that fails is reported once at start-up (`refused manifests/G7.yaml: <field>: <problem>`) and
+skipped; the other cards load.
