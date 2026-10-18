@@ -21,16 +21,16 @@ Use only one browser tab. A second tab runs its own separate copy of the demo.
 
 ## The run
 
-The bottom bar has the buttons: HOLD, PACE, JUMP 08 / 12 / 19, RESTART, PRIORITY SURVEY / RESCUE.
+The bottom bar has the buttons: HOLD, PACE, JUMP (G4 LOW BATT, GEN 2 TRIP, CHW P1 TRIP), RESTART, PRIORITY SURVEY / RESCUE.
 Decisions appear in the panel on the right. Its first line says what was decided.
 
 | Step | Do | Point at | Say |
 |---|---|---|---|
 | 1 | Ask the jury: "Should this ship put rescue first, or the survey first?" Click RESCUE or SURVEY in the bottom bar | Top left: MISSION RESCUE (or SURVEY) | "You chose rescue. Same software, different priorities." |
 | 2 | Click RESTART | The eight boxes under the ship drawing | "A 60-metre ship carrying a drone, an underwater robot, a radio sensor and a communications unit. These boxes are its budget: power, cooling, deck, weight and more." |
-| 3 | Click JUMP 08 | The right panel, first line, then LAND BY | "Minute 8. The drone is down to 18 % battery and must land within 12 minutes. The robot needs the ship slow and steady, the drone needs it moving. ArgOS lands the drone first, and it decided in under a thousandth of a second." |
-| 4 | When you finish talking, click JUMP 12 | The POWER box (amber), then the SHED ORDER list | "Minute 12. One generator cuts out. Everything still fits on the other one, so nothing is turned off. The list shows what would be turned down first if needed." |
-| 5 | When you finish talking, click JUMP 19 | INJECTED on the right panel, then the COOLING box | "Minute 19. We break a cooling pump on purpose. The equipment now needs more cooling than is left, so ArgOS turns one thing down. The rules allow 5 seconds. It took under a millisecond." |
+| 3 | Click G4 LOW BATT (jumps to minute 8) | The right panel, first line, then LAND BY | "Minute 8. The drone is down to 18 % battery and must land within 12 minutes. The robot needs the ship slow and steady, the drone needs it moving. ArgOS lands the drone first, and it decided in under a thousandth of a second." |
+| 4 | When you finish talking, click GEN 2 TRIP (minute 12) | The POWER box (amber), then the SHED ORDER list | "Minute 12. One generator cuts out. Everything still fits on the other one, so nothing is turned off. The list shows what would be turned down first if needed." |
+| 5 | When you finish talking, click CHW P1 TRIP (minute 19) | INJECTED on the right panel, then the COOLING box | "Minute 19. We break a cooling pump on purpose. The equipment now needs more cooling than is left, so ArgOS turns one thing down. The rules allow 5 seconds. It took under a millisecond." |
 | 6 | Nothing. The clock stops at T+00:20:00 | The right panel | "Three problems in 20 minutes. Each time ArgOS decided at once and wrote down why." |
 | 7 | Click MISSION COMPARE (top menu). On the timeline click 00:19 | The two columns side by side | "Same ship, same failure, two priorities. Survey slows the drone's charging. Rescue protects the drone and turns the communications unit down instead." |
 
