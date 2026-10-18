@@ -949,3 +949,14 @@ stopped, the globe session was stopped before it changed anything (globe on hold
 Decisions: none new. Conflicts: Siddharth's feat/ship-state-fsm carries his weather support (fbe59a5) and a second
 governor (9a99dc7), neither on main, for the team sync. Deferrals: DEC-60's two calls (5 S guests may be switched
 off before a 60 S guest is throttled; discretionary tiers folded into shed_order) to Logan's team.
+
+### Sat 22:04 PDT · Physical Account "Used in" sees the engine's reads · Claude Fable 5.1 on behalf of Siddharth Chawla (sidd91)
+
+The Physical Account's "Used in" column said "test" on most rows and "not yet" on 13 keys because the tracer rooted only
+variables assigned from the literal file name, blind to the engine's A parameter, self.A and I.A. tools/physical_account.py now
+seeds those names in src modules (shadowed while rebound to something else; a read must be a path in the YAML), follows self./I.
+aliases, walks the directories when git lists nothing, and shows a key's status when nothing reads it: 12 design statements carry
+`status: documented only`, five keys got trace patterns, no number or reason changed; ten rows moved to code, none says "not yet".
+Files: tools/physical_account.py, config/assumptions.yaml, docs/PHYSICAL_ACCOUNT.md, docs/PHYSICAL_ACCOUNT_DETAIL.md,
+tests/test_physical_account_tracer.py (13 tests); 1291 pass. PDFs not rebuilt (this box cannot). Branch fix/physical-account-tracer, to merge.
+Decisions: none. Conflicts: none. Requirements touched: none.
