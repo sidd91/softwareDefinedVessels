@@ -21,7 +21,7 @@ from sdv import admission as Ad
 from sdv import loader as Ld
 from sdv import records as Rec
 
-UNITS = {"t": "t", "t_eq": "t-eq", "kW": "kW", "kg": "kg", "m2": "m²"}
+UNITS = {"t": "t", "t_eq": "t-eq", "kW": "kW", "kg": "kg", "m2": "m²", "Mbit/s": "Mbit/s", "cores": "cores"}
 
 
 def _num(x: float) -> str:
@@ -83,7 +83,7 @@ def cmd_admit(args) -> int:
     print("LINES")
     for l in r.lines.values():
         state = "OVER" if l.over else "ok"
-        print(f"  {l.cls:18} {_num(l.demand):>9} / {_num(l.capacity):<7} {UNITS.get(l.unit, l.unit):5} {state}")
+        print(f"  {l.cls:18} {_num(l.demand):>9} / {_num(l.capacity):<7} {UNITS.get(l.unit, l.unit):6} {state}")
     print("PLACEMENT " + ", ".join(f"{k} {v or 'none'}" for k, v in r.placement.items()))
     g = r.genset
     print(f"ONE GENSET DOWN load {_num(g.load_kw)} / reserve {_num(g.reserve_kw)} kW, gate {_num(g.gate_kw)} kW: {g.state.replace('_', ' ')}")

@@ -360,7 +360,7 @@
     "sentence": {
       "type": "string",
       "minLength": 1,
-      "description": "The one or two sentences built from this record's fields by src/sdv/explain.py"
+      "description": "The one or two sentences built from this record's fields by src/sdv/explain.py; a D4 hold adds a third for its armed ladder and the envelope case"
     },
     "queued": {
       "type": "array",
@@ -379,6 +379,45 @@
         ]
       },
       "description": "D4: each guest's response class under the active profile (200 MS, 5 S, 60 S; A.8, DEC-60)"
+    },
+    "envelope": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "mode",
+          "kw",
+          "envelope_mode",
+          "envelope_kw"
+        ],
+        "properties": {
+          "mode": {
+            "type": "string",
+            "description": "The guest's mode now"
+          },
+          "kw": {
+            "type": "number",
+            "description": "Its committed draw now: the larger of its mode, a reservation and a fresh reading"
+          },
+          "activity": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "What the guest reports doing, from the snapshot (holding_depth, airborne, transmitting)"
+          },
+          "envelope_mode": {
+            "type": "string",
+            "description": "The mode of its envelope draw (ledger.envelope_mode)"
+          },
+          "envelope_kw": {
+            "type": "number",
+            "description": "Its envelope draw, the sustained worst case admission judged it at (A.1, ledger.envelope_kw)"
+          }
+        }
+      },
+      "description": "D4: each guest now against its envelope draw, keyed by guest; a hold's sentence says why the envelope set, every guest at its envelope draw, does not arise (R-067)"
     },
     "full_sequence_due_t_s": {
       "type": [
@@ -802,7 +841,7 @@
       "properties": {
         "class": {
           "type": "string",
-          "description": "mass, stability, power, heat, line_port, line_stbd, mast_mass, mast_area, mast_air_cooling, flight_deck_drone, placement, at_sea_lift, r3_lead, ..."
+          "description": "mass, stability, power, heat, line_port, line_stbd, satcom, los_radio, backbone, compute, mast_mass, mast_area, mast_air_cooling, flight_deck_drone, placement, at_sea_lift, r3_lead, ..."
         },
         "label": {
           "type": "string",
@@ -820,7 +859,7 @@
         },
         "unit": {
           "type": "string",
-          "description": "t, t_eq, kW, kg, m2, halves, min"
+          "description": "t, t_eq, kW, kg, m2, Mbit/s, cores, halves, min"
         },
         "degraded_by": {
           "type": "array",

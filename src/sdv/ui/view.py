@@ -989,7 +989,8 @@ def admit(I: Inputs, case_id: str = "A1-survey", edits: dict[str, str] | None = 
               "field": f"{card_id}.{p['name']}.mass_t", "base": next(q for q in I.cards[card_id]["placement"]["parts"] if q["name"] == p["name"])["mass_t"]}
              for p in card["placement"]["parts"]]
     over = {l.cls for l in adm.over}
-    order = ["mass", "stability", "power", "heat", "line_port", "line_stbd", "mast_mass", "mast_area", "mast_air_cooling", "flight_deck_drone"]
+    order = ["mass", "stability", "power", "heat", "line_port", "line_stbd", "satcom", "los_radio", "backbone", "compute",
+             "mast_mass", "mast_area", "mast_air_cooling", "flight_deck_drone"]
     unit = {"t": "t", "t_eq": "t-eq", "kW": "kW", "kg": "kg", "m2": "m²"}
     label = {"heat": "CHW AT 30 °C", "line_port": "LINE PORT", "line_stbd": "LINE STBD", "mast_mass": "MAST SLOT MASS",
              "mast_area": "MAST SLOT AREA", "mast_air_cooling": "MAST AIR COOLING", "flight_deck_drone": "HANGAR DRONE"}

@@ -1,16 +1,20 @@
 """The one sentence per decision, built from the record's own fields (brief: explainability from the binding
 constraint; no canned strings). Operator style: one or two short sentences, the binding numbers first with their
-units, no semicolons, nothing about the demo itself. The words below are vocabulary for names in the record (line
-classes, units, modes, positions); every number comes from the record.
+units, no semicolons, nothing about the demo itself. A D4 hold adds a third sentence: its whole armed ladder in
+order and why the envelope set does not arise (the brief's explicit minute-12 sequence, R-067). The words below are
+vocabulary for names in the record (line classes, units, modes, positions, activities); every number comes from
+the record.
 """
 from __future__ import annotations
 
 LABELS = {"mass": "Mass", "stability": "Stability", "power": "Power", "heat": "Cooling", "line_port": "Port mission line",
           "line_stbd": "Starboard mission line", "mast_mass": "Mast slot weight", "mast_area": "Mast slot area",
           "mast_air_cooling": "Mast air cooling", "flight_deck_drone": "Hangar drone weight", "placement": "Placement",
-          "at_sea_lift": "At-sea lift", "r3_lead": "Deck clearing lead"}
-UNITS = {"t": "t", "t_eq": "t-eq", "kW": "kW", "kg": "kg", "m2": "m²", "kn": "kn", "min": "min", "h": "h", "halves": "halves"}
-SINGULAR = {"halves": "half"}
+          "at_sea_lift": "At-sea lift", "r3_lead": "Deck clearing lead", "satcom": "SATCOM", "los_radio": "Line-of-sight radio",
+          "backbone": "Backbone", "compute": "Compute"}
+UNITS = {"t": "t", "t_eq": "t-eq", "kW": "kW", "kg": "kg", "m2": "m²", "kn": "kn", "min": "min", "h": "h", "halves": "halves",
+         "Mbit/s": "Mbit/s", "cores": "cores"}
+SINGULAR = {"halves": "half", "cores": "core"}
 MODE_WORDS = {"fast_charge": "fast charge", "low_power": "low power"}
 POSITIONS = {"bay1": "Bay 1", "bay1_half": "half of Bay 1", "bay2": "Bay 2", "flight_deck": "the flight deck",
              "mast_free": "the free mast slot", "hangar_roof": "the hangar roof", "stern_ramp": "the stern ramp"}
@@ -21,6 +25,8 @@ OPS = {"<": "below", "<=": "at or below", ">": "above", ">=": "at or above"}
 ACTIONS = {"land_or_ditch": "land", "land": "land"}
 WINS = {"launch_recovery": "recovers first"}
 ACTIVITY_NOUNS = {"surveying": "survey"}
+ACTIVITIES = {"holding_depth": "holding depth", "holding_at_sea": "holding at sea", "launch_recovery": "launching or recovering",
+              "on_cradle": "on its cradle", "probe": "probing", "winch": "on the winch", "production": "producing", "start": "starting"}
 WAITS = {"depth": "holds depth", "at_sea": "holds at sea"}
 
 
@@ -235,6 +241,37 @@ def _armed(r: dict) -> str:
     return f" First armed step: {_move(a)}, frees {n(a['frees_kw'])} kW."
 
 
+def _ladder(r: dict) -> str:
+    """A hold's whole armed ladder in its order, each step with its move, the kW it frees and the capability it costs."""
+    steps = []
+    for a in r.get("armed") or []:
+        step = f"{_move(a)}, frees {n(a['frees_kw'])} kW"
+        if a.get("capability_lost_pct"):
+            step += f" ({n(a['capability_lost_pct'])} % lost)"
+        steps.append(step)
+    if not steps:
+        return ""
+    return " Armed in order: " + ", then ".join(steps) + "."
+
+
+def _envelope(r: dict) -> str:
+    """Why the envelope set does not arise: every guest at its envelope draw would be over the limit while the load now
+    is under it, and the guests drawing less than their envelope are named with what they are doing."""
+    env = r.get("envelope") or {}
+    total = sum(e["envelope_kw"] for e in env.values())
+    if not env or not (total > r["limit_kw"] > r["load_kw"]):
+        return ""
+    at = _and([f"{g} {mode(e['envelope_mode'])} {n(e['envelope_kw'])} kW" for g, e in env.items()])
+    now = []
+    for g, e in env.items():
+        if e["kw"] < e["envelope_kw"]:
+            act = e.get("activity")
+            doing = f" {ACTIVITIES.get(act, act.replace('_', ' '))}" if act and act != "none" else ""
+            now.append(f"{g} is{doing} in {mode(e['mode'])} ({n(e['kw'])} kW)")
+    return (f" The envelope case does not arise: {at} would be {n(total)} kW against the {n(r['limit_kw'])} kW limit, "
+            f"but {_and(now)}.")
+
+
 def _queued(r: dict) -> str:
     q = r.get("queued") or []
     if not q:
@@ -259,7 +296,7 @@ def d4(r: dict) -> str:
         with_res = f" and {_and(reserved)}" if reserved else ""
         if r["verdict"] == "hold":
             lost = ", no capability lost" if r.get("losses") else ""
-            return f"Holds: {load} of {limit} kW{_cause(r)}{with_res}, {len(r['steps'])} steps{lost}." + _armed(r)
+            return f"Holds: {load} of {limit} kW{_cause(r)}{with_res}, {len(r['steps'])} steps{lost}." + _ladder(r) + _envelope(r)
         why = f" ({r['unconfirmed_because']})" if r.get("unconfirmed_because") else ""
         return f"Not shed: {load} kW against the {limit} kW limit is not confirmed{why}." + _armed(r)
     label = _label(r["binding"])
