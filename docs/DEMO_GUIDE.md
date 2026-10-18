@@ -22,7 +22,8 @@ Use only one browser tab. A second tab runs its own separate copy of the demo.
 ## The run
 
 The bottom bar has the buttons: HOLD, PACE, JUMP (G4 LOW BATT, GEN 2 TRIP, CHW P1 TRIP), RESTART, PRIORITY SURVEY / RESCUE.
-Decisions appear in the panel on the right. Its first line says what was decided.
+Decisions appear in the panel on the right. Its first line says what was decided. Its last two rows, PRIORITY and
+CREW RULE, show the rules in force.
 
 | Step | Do | Point at | Say |
 |---|---|---|---|
@@ -32,7 +33,7 @@ Decisions appear in the panel on the right. Its first line says what was decided
 | 4 | When you finish talking, click GEN 2 TRIP (minute 12) | The POWER box (amber), then the SHED ORDER list | "Minute 12. One generator cuts out. Everything still fits on the other one, so nothing is turned off. The list shows what would be turned down first if needed." |
 | 5 | When you finish talking, click CHW P1 TRIP (minute 19) | INJECTED on the right panel, then the COOLING box | "Minute 19. We break a cooling pump on purpose. The equipment now needs more cooling than is left, so ArgOS turns one thing down. The rules allow 5 seconds. It took under a millisecond." |
 | 6 | Nothing. The clock stops at T+00:20:00 | The right panel | "Three problems in 20 minutes. Each time ArgOS decided at once and wrote down why." |
-| 7 | Click MISSION COMPARE (top menu). On the timeline click 00:19 | The two columns side by side | "Same ship, same failure, two priorities. Survey slows the drone's charging. Rescue protects the drone and turns the communications unit down instead." |
+| 7 | Click DEMO COMPARE (last in the top menu). It shows the same minute the run is on | The two columns side by side | "Same ship, same failure, two priorities. Survey slows the drone's charging. Rescue protects the drone and turns the communications unit down instead." |
 
 What changes with the jury's choice:
 

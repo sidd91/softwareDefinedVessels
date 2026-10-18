@@ -151,8 +151,9 @@ def test_injected_marks_only_the_injected_fault():
 
 def test_every_decision_reaches_the_log_with_its_sentence():
     v = view.operations(I, "sar", data.END_T_S)
-    logged = [e["msg"] for e in v["log"] if e.get("seq") is not None]
-    assert sorted(logged) == sorted(r["sentence"] for r in I.records["sar"])
+    rows = [e for e in v["log"] if e.get("seq") is not None]
+    assert sorted(e["full"] for e in rows) == sorted(r["sentence"] for r in I.records["sar"])
+    assert all(e["full"].startswith(e["msg"].rstrip(".")) for e in rows)   # the row shows the headline, the full sentence is kept
 
 
 @pytest.mark.parametrize("mission", ["survey", "sar"])

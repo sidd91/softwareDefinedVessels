@@ -9,7 +9,7 @@ import { renderBuilder, builderTick } from './builder.js';
 const VIEWS = {
   ops: { sub: 'RESOURCE GOVERNOR · MRV-60', sim: true },
   ledger: { sub: 'CONSTRAINT LEDGER · MRV-60', sim: true },
-  compare: { sub: 'MISSION COMPARE · MRV-60', sim: true },
+  compare: { sub: 'DEMO COMPARE · MRV-60', sim: true },
   admit: { sub: 'ADMISSION · MRV-60', sim: false },
   build: { sub: 'PROFILE BUILDER · MRV-60', sim: true },
   ref: { sub: 'REFERENCE · MRV-60', sim: false },

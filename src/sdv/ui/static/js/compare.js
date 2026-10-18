@@ -1,4 +1,4 @@
-// Mission compare: the same inputs under two priority files, side by side on one timeline.
+// Demo compare: the same inputs under two priority files, side by side, at the minute the bottom bar's run is on.
 import { esc, chip, meter, panel, paint, getJSON } from './util.js';
 import { app, setHeader } from './app.js';
 import { recordRows, conflictTable } from './ops.js';
@@ -17,7 +17,7 @@ function followed() {
 }
 
 export function renderCompare(root) {
-  const t = state.pinned ?? followed();
+  const t = followed();
   if (!root.__wired) {
     root.addEventListener('click', e => {
       const b = e.target.closest('button[data-t], button[data-follow]');
@@ -38,7 +38,7 @@ export function renderCompare(root) {
     return;
   }
   header(d);
-  paint(root, timeline(t) + `<div class="row">${d.files.map(f => ship(f, d.ships[f])).join('')}</div>` + difference(d));
+  paint(root, `<div class="row">${d.files.map(f => ship(f, d.ships[f])).join('')}</div>` + difference(d));
 }
 
 function header(d) {
