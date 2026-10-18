@@ -7,10 +7,15 @@ inputs are confirmed, debounced plant signals, and unknown never means safe.
 
 **Built** (Sat 14:45): `src/sdv/estimator.py`, `Estimator(scenario, mission, variant).step(frame)`, the nine
 steps below. `tests/test_estimator.py` steps a labelled test double of the simulator (`tests/support/sim_stub.py`,
-built from this contract only) through Scenario B with the scripted core and reproduces every snapshot fixture;
-D3 and D4 give the same records on its snapshots as on the fixtures. `since_t_s` is the tick the value last
-changed (a number in transition changes every tick and settles on the end tick); the fixtures' hand annotations
-miss a few changes, listed in the test.
+built from this contract only) through Scenario B with the scripted core. Its snapshots match every fixture
+except in two places: `since_t_s`, and the wording of `substituted.rule`, which is `signals.yaml`'s where the
+fixtures paraphrase it. D3 and D4 give the same records on its snapshots as on the fixtures. `since_t_s` is the
+tick the value last changed (a number in transition changes every tick and settles on the end tick). The
+fixtures annotate it by hand and miss a few changes, listed in the test.
+
+**Not built yet**, each marked "Not built" below: the restart transition on `gensets_online`, the decision
+watchdog and `timed_out`, and the landing officer's report as a substitution stage. In this document "logged",
+said of the estimator, means a line in its in-memory log (`Estimator.log`). The run's five logs do not hold it.
 
 **`config/signals.yaml` is the only authority** for signal names, types, feeds, fallbacks, derivations,
 activities, event payloads, the `sim.step` arguments, the drafted fault signatures and transition times, the
@@ -22,7 +27,7 @@ repeat the tables. The other files are derived from it or checked against it:
 | `config/frame.schema.json` | what the simulator hands the estimator each tick (`argos-frame/1`), plus `$defs.command` and `$defs.input`, the two `sim.step` argument lists; generated |
 | `config/snapshot.schema.json` | what the estimator hands the core each tick (`argos-snapshot/2`); generated |
 | `tools/gen_snapshot_schema.py` | `signals.yaml` to both schemas; `--check` fails if either is out of date |
-| `tools/build_snapshot_fixtures.py` | builds the Scenario B fixtures from `baselines.scenario_b` and compact specs; holds `canonical()`, the log serializer |
+| `tools/build_snapshot_fixtures.py` | builds the Scenario B fixtures from `baselines.scenario_b` and compact specs, and keeps the `canonical()` the fixture tests use. Run logs use `sdv.loop.canonical` |
 | `tests/fixtures/frames/`, `tests/fixtures/snapshots/` | one frame and the snapshot it produces, per fixture |
 | `tests/test_snapshot_contract.py` | the schemas and fixtures equal the generators' output; every derived value recomputed from config and checked against the oracles |
 
@@ -43,7 +48,7 @@ recovers, and `ramp` while G3 launches or recovers.
 cooling state, the acoustic link, heading freedom, deck machinery permitted, flight-deck use, the deck latch,
 G4's land-by deadline, over-draw, mode end times and the capacity of each live class. For `ramp` and
 `deck_machinery` it reads the simulator's value and the running activities' `effects`, takes the worse of the
-two and logs a mismatch, so a simulator value that forgets an activity can only make the field more cautious.
+two and logs a mismatch (in memory), so a simulator value that forgets an activity can only make the field more cautious.
 
 **Commands are Siddharth's to define** (contract 5). `signals.yaml` `commands` holds the drafts the core and
 the fixtures use until he settles them. The estimator sends none.
@@ -73,8 +78,10 @@ frame = sim.step(tick: int, commands: list, inputs: list) -> dict   # one argos-
   Each reading is `{value, source, t_s}`, plus `transition` while a change is under way and `reported_t_s`.
 - **Transitions.** During a change the simulator reports the instantaneous value each tick, linear from the
   start value to `transition.to` over `[started_t_s, expected_end_t_s]`. An enum keeps its old value until the
-  end tick. `latest_end_t_s` is the slow end of the A.6 range. A genset restart puts a transition on
-  `gensets_online` from the restart event.
+  end tick. `latest_end_t_s` is the slow end of the A.6 range. **Not built:** the restart transition on
+  `gensets_online`. The estimator refuses a simulator reading of `gensets_online`, its own output, and derives
+  it from the confirmed trips with no transition. A restarted genset counts again once its own votes read false
+  and its fault clears after the 60 s healthy hold.
 - **Commands** (`step.commands`, typed by `$defs.command`). Every command from every decision run on snapshot
   n − 1, in record order, each `{seq, kind, args}` with `seq` the decision record that sent it. The drafted
   kinds: `set_mode`, `ship_state` (course, speed, noise, carried out with the transition times),
@@ -85,7 +92,8 @@ frame = sim.step(tick: int, commands: list, inputs: list) -> dict   # one argos-
   injected faults and over-consumption, feed drops, crew changes, deck reports and sweeps, bridge answers,
   standing plans, emission changes, guest requests. These go **only to the core**, which handles and logs them
   at tick n and never passes them on: card presented, card edited, priority swap, an edited profile applied at sea and safety requests (the
-  answer is a command applied at n + 1). The simulator applies an input on its own tick: a crew answer becomes
+  answer is a command applied at n + 1). The core does not handle card edited yet: the loop logs it and hands
+  it to the core, which ignores it. The simulator applies an input on its own tick: a crew answer becomes
   a laptop-feed signal, an injected fault becomes its fault signature, a `feed_drop {feed, until_t_s}` leaves
   that feed's signals out. The estimator never fakes a drop. Laptop signals are state: the simulator
   re-emits them every tick.
@@ -99,7 +107,8 @@ frame = sim.step(tick: int, commands: list, inputs: list) -> dict   # one argos-
   The answer is the laptop input `bridge_answer {request_seq, answer}`: the simulator sets `state` and
   `answered_t_s` to the input's tick. In a scripted run the input script sends it at `asked_t_s +
   seed_pins.confirm_min` (540). The core sends `bridge_close {request_seq}` once the decision has closed (R3:
-  G4 landed, snapshot 1020), and the entry leaves the list at 1021. A pending request older than its crew
+  G4 landed, snapshot 1020), and the entry leaves the list at 1021. The close adds no record: it carries the seq
+  of the D5 record that asked. A pending request older than its crew
   level's `wait_s` counts as no.
 - **Scenario constants.** The water column (`layered_water`) is a run constant, `run.constants`, confidence
   `assumed`, never stale. Seawater temperature and sea state are hourly readings with their real age: in
@@ -167,8 +176,9 @@ for n = 0, 1, 2, …:
   720 s confirms at 721 s and the first shed lands at 722 s, inside 725 s. The 60 s full sequence counts the
   same way. Separately, in wall time, each decision's compute is checked against its ceiling (200 ms, 2 s, 5 s,
   30 s) and against one tick period when paced. The two are never added together.
-- **Watchdog.** When `decision_watchdog` cuts a decision off at its wall ceiling, the record says
-  `timed_out: true` and the input log keeps the outcome, so a replay applies it instead of re-timing.
+- **Watchdog. Not built.** `decision_watchdog` in `assumptions.yaml` is documented only. No decision is cut
+  off at its wall ceiling, and no code sets `timed_out` (the record schema has the field). The design: the
+  record says `timed_out: true` and the input log keeps the outcome, so a replay applies it instead of re-timing.
 
 ## Each tick, in order
 
@@ -193,10 +203,12 @@ for n = 0, 1, 2, …:
      counts as one genset down for D1 and the armed ladder, and sheds nothing.
    - **Two stages** for `speed_kn`, `wind_kn` and `wind_from_deg`: the last value, substituted, for a 30 s
      grace, then the fallback value. A null `speed_kn` or `wind_from_deg` fails every numeric condition.
-   - **Unknown never means safe, even against a hard limit.** While G4 is below 20 %, D5 asks the landing
-     officer for wind and deck; a fresh report (`hlo_wind_kn`, `hlo_deck_report`) replaces the stale value,
-     stage `crew_report`, and the record names it. At 0 aboard the closure stands and the record states the
-     cost to G4.
+   - **Unknown never means safe, even against a hard limit.** A closure from a fallback stands.
+     **Not built:** the `crew_report` stage. The design: while G4 is below 20 %, D5 asks the landing officer
+     for wind and deck, and a fresh report replaces the stale value. Today the estimator never puts the
+     landing officer's report in place of a stale wind or deck value, and the core does not read
+     `hlo_wind_kn`. What is built: the core takes a fresh `hlo_deck_report` of clear as R3's deck evidence. One
+     newer than a landing hold lifts the hold, and one newer than a crew-level not-now clears the recovery.
    - **Lifting.** A fallback lifts on the first fresh frame of its feed: the field's `stale` and `substituted`
      end on the same tick, and the feed's `stale` with them. There is no lift window. A flapping feed can flip
      D1's limits tick by tick, but it sheds nothing, because D4 never acts on a substituted value.
@@ -208,8 +220,9 @@ for n = 0, 1, 2, …:
    subject only while that subject has one of its own votes, so the healthy pump at minute 19 holds no fault.
    `raw_event_t_s` is the first tick one of the subject's own votes is true. `confirmed_t_s` is the first tick
    t on which the vote count meets the rule on every tick of `[t − 1, t]`. A genset trip needs 2 of 3 votes;
-   cooling needs the pump alarm or a stopped pump, plus low flow or high delta-T. A vote that drops sooner
-   cancels the pending fault (logged). A pending fault whose votes go stale is **held**, state `held_stale`,
+   cooling needs the pump alarm or a stopped pump, plus low flow or high delta-T. A pending fault is cancelled
+   (logged) only when all of the subject's own votes read false. While one own vote still holds it stays
+   pending, and it confirms once the rule is met again on every tick of `[t − 1, t]`. A pending fault whose votes go stale is **held**, state `held_stale`,
    and confirms if the feed returns showing it still true; meanwhile the ladder stays armed and the record
    says the fault is unconfirmed because the feed is stale. A recovered genset or pump must read healthy 60 s
    before any guest is restored.
@@ -236,7 +249,7 @@ for n = 0, 1, 2, …:
 
 **Confidence and age of a derived field.** It is computed this tick: `age_s` 0. Its confidence is
 `substituted` if any of its `inputs` is, `confirmed` if it is a confirm-rule output while a fault of that rule
-is confirmed, and otherwise the weakest of its inputs; with only config behind it, `assumed`. A raw field's
+is confirmed or restoring, and otherwise the weakest of its inputs; with only config behind it, `assumed`. A raw field's
 confidence comes from its source: plant `measured`; guest, crew, laptop and public data `reported`; scenario
 `assumed`. The levels, weakest first: `substituted`, `assumed`, `reported`, `measured`, `confirmed`. The
 ARCHITECTURE working tree dropped confidence from contract 4; this contract keeps it (open item 2).
@@ -268,12 +281,12 @@ Unknown fields are refused. Who reads each field is its `read_by` in `signals.ya
 1. Every frame is written to a **frame log** (JSONL), and every laptop input to the **input log**. Estimator
    and core replay read those two logs, so a replay never needs the simulator. Re-running the simulator with
    the same seed and checking it reproduces the frame log is a separate check, Siddharth's.
-2. Every log line is written with `canonical()` (`tools/build_snapshot_fixtures.py`): numbers rounded to 0.1
-   (kW, s, kn, °C, Hz, %), a whole number written as an integer so 18 and 18.0 give the same bytes, sorted
-   keys, no whitespace. The fixture files are pretty-printed for review instead; the tests compare parsed
-   objects and check that `canonical()` is stable on every fixture. The fixtures hold rounded values (371.9,
+2. Every run-log line is written with `sdv.loop.canonical`: numbers rounded to 0.1 (kW, s, kn, °C, Hz, %), a
+   whole number written as an integer so 18 and 18.0 give the same bytes, sorted keys, no whitespace. The
+   fixture files are pretty-printed for review instead. The tests compare parsed objects, and check that the
+   `canonical()` in `tools/build_snapshot_fixtures.py` is stable on every fixture. The fixtures hold rounded values (371.9,
    1091.9) and the tests compare them exactly.
-3. A timed-out decision replays its logged outcome. A safety request replays after the decisions of the tick it
+3. A timed-out decision would replay its logged outcome (not built: nothing times out yet). A safety request replays after the decisions of the tick it
    was logged with.
 4. A replay therefore reproduces every snapshot and every record byte for byte; only the timing log differs. The
    replay check compares the canonical snapshots and decision log and reports the first field that differs.
@@ -311,7 +324,8 @@ over 2 min (latest 3), inside the slow band, so there is no A.6 band change (EXP
 A.6 gives no time for a change inside a band, so 2 and 3 min are assumed); the deck clears by 781 (seed
 4 min); G4 is in launch and recovery from 781 and lands at 1020 (the pin); the core closes request 1 at 1021.
 Under survey only, the survey resumes on snapshot 1080 (assumed: 60 s to secure G4): noise normal at once,
-course steady and 3 kn by 1201. The pump fails at 1140 and D4's mode change lands at 1142.
+course steady and 3 kn by 1201. Neither the close nor the resume adds a record. Each command carries the seq of
+the record that started it, D5 for the close and D3 for the resume. The pump fails at 1140 and D4's mode change lands at 1142.
 
 ## Open, for a DEC row
 

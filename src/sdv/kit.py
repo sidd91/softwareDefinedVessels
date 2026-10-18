@@ -82,6 +82,15 @@ def _modes_table(card: dict) -> str:
     return "\n".join(rows)
 
 
+def _n(x) -> str:
+    """A config number as text: 1, 60, 0.2."""
+    return f"{x:g}"
+
+
+def _restore_hold_s(signals: dict) -> str:
+    return _n(signals["confirm_rules"]["restore"]["healthy_hold_s"])
+
+
 def _pred(v) -> str:
     if isinstance(v, dict):
         lo, hi = v.get("min"), v.get("max")
@@ -130,13 +139,16 @@ def guest_page(card: dict, A: dict, signals: dict, missions: dict, cards: dict) 
         lines.append(f"| {gid} OVER-DRAW | metered kW above the mode's declared kW by more than {d['threshold_pct']} % for {d['hold_s']} s | "
                      "the guest's own load; the ledger counts the metered kW until it falls back |")
     shed = sorted(card["modes"], key=lambda m: -m["power_kw"])
+    rt = A["response_time_s"]
+    tag = lambda cls: Lg.response_tag(A, cls)
     lines += ["", "## FAQ", "",
               f"**Why did ArgOS move {gid} to a lower mode?** The ship was over its power or cooling limit. ArgOS steps "
-              f"guests down by response class: 5 S guests give power in the first action, within 5 s; mission-critical "
-              f"60 S guests only if still needed, one step per second, within 60 s; 200 MS guests never. {gid}'s steps: " + " to ".join(m["name"] for m in shed) + ".",
+              f"guests down by response class: {tag('shed_first_action')} guests give power in the first action, within "
+              f"{_n(rt['shed_first_action'])} s; mission-critical {tag('shed_full_sequence')} guests only if still needed, one step per second, "
+              f"within {_n(rt['shed_full_sequence'])} s; {tag('safety_command')} guests never. {gid}'s steps: " + " to ".join(m["name"] for m in shed) + ".",
               "",
               f"**Can {gid} be restored by hand?** Yes, from its own controls. ArgOS will step it down again while the limit binds; "
-              "a recovered genset or pump must read healthy for 60 s before ArgOS restores any guest.",
+              f"a recovered genset or pump must read healthy for {_restore_hold_s(signals)} s before ArgOS restores any guest.",
               "", f"**What if {gid}'s feed is lost?** ArgOS keeps a conservative value, marks it STALE and never sheds on it.", "",
               "## Vendor documents (required at admission)", ""]
     vend = ROOT / "docs/kit/vendor" / gid
@@ -149,16 +161,22 @@ def guest_page(card: dict, A: dict, signals: dict, missions: dict, cards: dict) 
 def runbook(A: dict, signals: dict) -> str:
     g = A["governor"]
     rt = A["response_time_s"]
+    trip = signals["confirm_rules"]["genset_trip"]
+    restart = A["power"]["gensets"]["restart_min"]
+    wait = next(s for s in signals["signals"] if s["name"] == "bridge_requests")["wait_s"]["by_crew"]
+    full = max(wait)
     lines = ["# ArgOS runbook", "",
              f"{governor_boards(A)} governor boards ({', '.join(g['roles'])}); edge nodes at {', '.join(g['edge_nodes']['sites']).replace('_', ' ')}.",
              "", "| Event | ArgOS does | Crew does |", "|---|---|---|",
-             f"| Genset trip | confirms on 2 of 3 votes in 1 s, first step within {rt['shed_first_action']} s, full plan within {rt['shed_full_sequence']} s | check the PMS; restart takes 5 to 15 min |",
-             "| Chilled-water pump fault | confirms on alarm or stop plus low flow or high delta-T; steps guests to the cooling limit | restore the pump; ArgOS restores guests 60 s after it reads healthy |",
+             f"| Genset trip | confirms on {trip['needed']} of {len(trip['votes'])} votes in {_n(trip['hold_s'])} s, first step within {rt['shed_first_action']} s, "
+             f"full plan within {rt['shed_full_sequence']} s | check the PMS; restart takes {_n(restart[0])} to {_n(restart[1])} min |",
+             "| Chilled-water pump fault | confirms on alarm or stop plus low flow or high delta-T; steps guests to the cooling limit | "
+             f"restore the pump; ArgOS restores guests {_restore_hold_s(signals)} s after it reads healthy |",
              "| A feed goes STALE | holds a conservative value, tightens admission, arms the ladder, never sheds on it | check the named feed; the value returns on its first fresh reading |",
-             "| Bridge request unanswered | counts as no after its wait (60 s at 14 aboard) | answer on the bridge panel |",
-             f"| Primary board lost | the standby, already in step, takes over after {g['takeover_after_s']} s without heartbeat | replace the board at port; any board can be primary |",
-             "| Standby out of step | alarm: the two boards decided differently on the same inputs | keep the primary; the logs show the first field that differs |",
-             "| Every board lost | each edge node keeps its last shed table; guests hold their modes | restart a board from the SSD copy |",
+             f"| Bridge request unanswered | counts as no after its wait ({_n(wait[full])} s at {full} aboard) | answer on the bridge panel |",
+             f"| Primary board lost | design, not built: the standby, already in step, takes over after {g['takeover_after_s']} s without heartbeat | replace the board at port; any board can be primary |",
+             "| Standby out of step | alarm: the two boards decided differently on the same inputs | keep the primary. The tick output names the first field that differs |",
+             "| Every board lost | design, not built: each edge node keeps its last shed table; guests hold their modes | restart a board from the SSD copy |",
              "| Profile refused | keeps the previous profile and names the field | fix the field in the builder and apply again |", ""]
     return "\n".join(lines)
 

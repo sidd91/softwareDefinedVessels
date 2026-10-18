@@ -18,7 +18,7 @@ in what order, when the ship loses a generator or a cooling pump.
 Inside each class: slow down before switching off, then the profile's shed order, then the least mission value
 lost per kW freed. The order of the classes is fixed in code. Which guest sits in which class is the profile's.
 
-## The decisions every record is tagged with
+## The time limit of each decision
 
 | Tag | Decision | Limit |
 |---|---|---|
@@ -31,22 +31,31 @@ lost per kW freed. The order of the classes is fixed in code. Which guest sits i
 **Restore (30 S).** Once every fault has read healthy for 60 s, ArgOS steps the last guest it shed back up,
 one step per decision, only if the load still fits under the limit.
 
-## Status words
+## What the records carry, and what the screen shows
 
-On screen today: the class tags (200 MS, 5 S, 60 S, 30 S) on every guest and every shed-order row, the
-response-class form in the profile builder, and the Reference page. The words below are in every decision record
-(due ticks, queued steps) and in each tick's safety table. The screen does not show them yet.
+**Due ticks.** Every D4 record carries `first_shed_due_t_s` and `full_sequence_due_t_s`: 5 s and 60 s after the
+fault's raw event, or after the load went over the limit when that came after the fault confirmed. Each step
+carries its own `due_t_s`. Steps still to come after this second are in `queued`, each with its due tick.
 
-| Word | Means |
+**Safety commands.** Each tick's safety table gives every safety command one state and a reason:
+
+| State | Means |
 |---|---|
-| MET | applied by its due tick, and computed inside its limit |
-| MISSED | applied after its due tick, or computed slower than its limit |
-| DUE | a fault is open and the step is not yet applied, with its due tick |
-| QUEUED | a 60 S step that will go next second if a fresh reading shows it is still needed |
-| READY | a safety command that would go out now if asked |
-| NOT NEEDED | a safety command with nothing to do now; the reason is named |
-| CANNOT | a safety command that is impossible now (for example, G3's acoustic link is down); the reason and the crew's action are named |
-| SENT | a safety command answered, its latency shown against 200 ms |
+| `ready` | it would go out now if asked |
+| `not_needed` | nothing to do now, for example G2's winch is not running |
+| `cannot` | impossible now, for example G3's acoustic link is down. The reason names the crew's action |
 
-The two clocks are kept apart: ship time says whether a step was applied by its due tick; wall time (the timing
+An answered request is a record of kind `safety`. A ready command is answered with verdict `sent`. Otherwise the
+verdict is the state, `not_needed` or `cannot`, with its reason. The timing log keeps every record's decision time
+against its limit (`latency_ms`, `ceiling_ms`).
+
+**Not computed yet: MET and MISSED.** Nothing yet compares the tick a step was applied with its due tick, or a
+decision's time with its limit, to give a verdict word.
+
+**On screen today: the class tags only.** 200 MS, 5 S and 60 S beside each guest in the guest list and on each
+shed-order row (30 S on a restore step), in the response-class form of the profile builder, and on the Reference
+page. The one due time on screen is in a D4 sentence with a queued step, which names the minute the next step
+is due. The screen shows no safety state, and no control on it sends a safety request.
+
+The two clocks are kept apart: ship time says whether a step was applied by its due tick. Wall time (the timing
 log) says whether the computation fitted its limit. They are never added together.

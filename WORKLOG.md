@@ -1092,3 +1092,31 @@ Review (Claude Fable 5.1 for Siddharth, same branch): driven on :8403 with Playw
 t=0, SIGINT with a browser connected) all replay EQUAL and the LAST RUN line reaches a nohup log. One fix: a
 `priority_swap` laptop input naming an unknown file (or none) is refused as "no priority file X" instead of stamped;
 before, RESTART or a JUMP (`Run.swaps()`) or the next tick raised KeyError and the socket dropped. +1 test; 1284 pass.
+
+### Sat 23:18 PDT · Review fixes to this session's docs, kit text from config, on docs/review-fixes · Claude Opus 5.5 on behalf of Logan Walker (GhostWalka)
+
+A review of the docs this session wrote found claims the code does not back. Each one was checked against
+origin/main (6a91f5d) by grep or by running it, then fixed. RESPONSE_TIME: MET and MISSED are not computed yet;
+records carry due ticks (first_shed_due_t_s, full_sequence_due_t_s, each step's due_t_s) and queued steps; the
+safety table states ready, not_needed or cannot, and an answered request is a record with verdict sent; the
+screen shows the class tags only, plus the due minute in a D4 sentence with a queued step, and no safety state.
+STATE_ESTIMATION: marked not built the restart transition on gensets_online (the estimator refuses a simulator
+reading of it), the decision watchdog and timed_out, and the landing officer's crew_report stage (the core does not
+read hlo_wind_kn); a pending fault cancels only when all of its subject's own votes read false; fixtures match
+except since_t_s and the substituted.rule wording; "logged" is the estimator's in-memory log; run logs use
+sdv.loop.canonical; the core ignores card_edited; bridge_close and the survey resume add no record; derived
+"confirmed" covers restoring. Crew answer expiry is not on main, so step 4 is unchanged. DEPLOYMENT: the kit covers
+every card in manifests/ (vendor manuals listed as required), the build is not filtered by D1 or D2 yet, the
+heartbeat, the 3 s takeover, zone boards, the edge shed-table push and page regeneration at sea are marked Design,
+the standby state is in the tick output and on the screen, not in the five logs, and "tier" is now "weight and
+response class". NICE_TO_HAVE: status refreshed, the VENTUNO Q is the primary board (DEC-56), a Built since list
+(builder, restore, standby in lockstep), the failover-by-replay and restore rows dropped, globe rows kept.
+src/sdv/kit.py, text only: the runbook and FAQ numbers are formatted from config (confirm_rules, restart_min, the
+bridge wait_s, restore healthy_hold_s, the class tags), same output at today's config; two runbook rows say
+"design, not built", and the out-of-step row names the tick output instead of the logs.
+Files: docs/RESPONSE_TIME.md, docs/STATE_ESTIMATION.md, docs/DEPLOYMENT.md, docs/NICE_TO_HAVE.md, src/sdv/kit.py, WORKLOG.md.
+Tests: tests/test_kit.py and tests/test_requirements_trace.py 18 passed; full suite 1457 passed; no test changed.
+Decisions: none. Conflicts: README calls the VENTUNO Q an instrument only, against DEC-56; the screen's STANDBY OUT
+OF STEP chip does not name the differing field, while the Reference page says it does. Both are Siddharth's files,
+left to him. Deferrals: README notes for Siddharth (VENTUNO Q role, data credits if the deployment map merges,
+tools/deploy_map in REPOSITORY_MAP); the crew answer expiry text waits for fix/review-ours to reach main.
