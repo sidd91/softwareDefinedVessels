@@ -142,7 +142,7 @@ def test_a_priority_swap_input_to_an_unknown_file_is_refused_not_stamped():
     def swap(payload):
         return {"cmd": "input", "input": {"type": "priority_swap", "payload": payload}}
 
-    assert lr.command(swap({})) == "no priority file None"
+    assert lr.command(swap({})) == "no such priority file is loaded"     # no name to quote (was "no priority file None")
     assert lr.command(swap({"mission": "fishing"})) == "no priority file fishing"
     assert lr.run.swaps() == [] and lr.run.laptop == {}
     lr.command({"cmd": "restart"})                                  # nothing pending and nothing to trip over

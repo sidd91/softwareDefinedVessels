@@ -1,7 +1,8 @@
 """Cross-cluster leftovers after the four handoff fix branches (Sun 01:45): hostile profiles and numbers at sea are
 refused in plain words and never crash the loop, the operations screen says what the core refused, the CLI never
-echoes a huge edit back, the safety row type is upper case, and D4 acts on an over-limit that fresh values alone
-prove and dates a delayed first action from the steps that landed, not from a feed coming back."""
+echoes a huge edit back, the safety row type is upper case, and D4 acts on an over-limit whose only stand-in is a kW
+beside a fresh mode (a guest whose mode is a stand-in leaves its line unconfirmed, as before) and dates a delayed first
+action from the steps that landed, not from a feed coming back."""
 import copy
 import json
 import re
@@ -56,6 +57,10 @@ def same_everywhere(outs, log_dir: Path, mission="survey") -> bool:
 
 def profile(base="survey", **fields) -> dict:
     return dict(copy.deepcopy(MISSIONS[base]), id=f"{base}_jury", **fields)
+
+
+def mission_problems(m: dict) -> list[str]:
+    return Ld.check_mission(m, CARDS, Ld.load_vocabulary(assumptions=A), Ld._schema(Ld.ROOT, "config/missions/schema.json"))
 
 
 def rows(run_: live.Run, tag: str) -> list[dict]:
@@ -209,6 +214,37 @@ def test_the_screen_refuses_a_huge_number_without_an_error_frame():
     assert lr.run.laptop == {}
 
 
+DOOR = [
+    ({"cmd": "input", "input": {"type": "priority_swap", "payload": {"mission": {"id": "sar"}}}}, "no such priority file is loaded"),
+    ({"cmd": "input", "input": {"type": "priority_swap", "payload": {"mission": "x: y; z"}}}, "no such priority file is loaded"),
+    ({"cmd": "input", "input": {"type": "priority_swap", "payload": {"mission": 10 ** 400}}}, "no such priority file is loaded"),
+    ({"cmd": "input", "input": {"type": "priority_swap", "payload": {"mission": "x" * 300}}}, "no such priority file is loaded"),
+    ({"cmd": "mission", "value": {"id": "sar"}}, "no such priority file is loaded"),
+    ({"cmd": "mission", "value": "x: y; z"}, "no such priority file is loaded"),
+    ({"cmd": "mission", "value": 10 ** 400}, "no such priority file is loaded"),
+    ({"cmd": "input", "input": {"type": {"a": 1}, "payload": {}}}, "input refused: the type given is not a laptop input"),
+    ({"cmd": "input", "input": {"type": "x: y; z", "payload": {}}}, "input refused: the type given is not a laptop input"),
+    ({"cmd": "input", "input": {"type": 10 ** 5000, "payload": {}}}, "input refused: the type given is not a laptop input"),
+    ({"cmd": "input", "input": "deck_report"}, "input refused: the type given is not a laptop input"),
+]
+
+
+@pytest.mark.parametrize("msg,said", DOOR, ids=[f"{m['cmd']}-{i}" for i, (m, _) in enumerate(DOOR)])
+def test_the_screen_door_never_quotes_an_object_or_hostile_value_back(msg, said):
+    """Repair round. Two door checks in LiveReplay.command run before the input check and quoted the raw value: a dict
+    repr, a semicolon and colons, or 401 digits on the SIM bar. They say what is wrong in plain words instead."""
+    lr = live.LiveReplay("survey", 100, running=False)
+    assert lr.command(msg) == said and plain(said) and lr.run.laptop == {}
+
+
+def test_the_screen_door_still_names_a_plain_type_or_file():
+    lr = live.LiveReplay("survey", 100, running=False)
+    assert lr.command({"cmd": "mission", "value": "fishing"}) == "no priority file fishing"
+    assert lr.command({"cmd": "input", "input": {"type": "guest_report", "payload": {}}}) == "input 'guest_report' is not a laptop input"
+    assert lr.command({"cmd": "input", "input": {"type": "deck_report", "payload": [1]}}) == \
+        "input 'deck_report' refused: payload is not an object"
+
+
 # ------------------------------------------------------------------------------------------------ 4 the PROFILE row
 
 def test_a_refused_profile_row_names_the_field_in_one_plain_sentence():
@@ -231,6 +267,30 @@ def test_two_profiles_in_one_tick_each_get_their_own_row():
     msgs = sorted(e["msg"] for e in rows(r, "PROFILE"))
     assert msgs == ["Profile sar_tiers applied at sea and in force.",
                     "Profile sar_tiers refused: weights.sar_air (2 is greater than the maximum of 1). sar_tiers kept."]
+
+
+def test_a_shed_order_rank_of_0_is_refused_in_plain_words():
+    """Repair round. jsonschema's "0 should not be valid under {'const': 0}" reached the row with braces."""
+    bad = profile(shed_order={"sar_air": 0})
+    assert mission_problems(bad) == ["shed_order.sar_air: a rank cannot be 0"]
+    r = live.Run("survey", {300: [inp(300, "profile_applied", profile=bad)]})
+    r.advance_to(301)
+    [row] = rows(r, "PROFILE")
+    assert row["msg"] == "Profile survey_jury refused: shed_order.sar_air (a rank cannot be 0). survey kept." and plain(row["msg"])
+
+
+@pytest.mark.parametrize("field", ["weights", "shed_order", "confirm"])
+def test_a_long_field_name_is_cut_in_the_profile_row(field):
+    """Repair round. A weights key of 5000 letters made a row of 5192 characters: the field path was quoted whole, and
+    a confirm rule's name is said again in its problem. Each long word is cut to 40 characters."""
+    key = "a" * 5000
+    value = {"weights": 0.5, "shed_order": 1, "confirm": {"14": "confirm"}}[field]
+    bad = profile(**{field: dict(MISSIONS["survey"].get(field) or {}, **{key: value})})
+    r = live.Run("survey", {300: [inp(300, "profile_applied", profile=bad)]})
+    r.advance_to(301)
+    [row] = rows(r, "PROFILE")
+    assert row["refused"] and len(row["msg"]) < 300 and "a" * 41 not in row["msg"] and plain(row["msg"])
+    assert row["msg"].startswith(f"Profile survey_jury refused: {(field + '.' + key)[:37]}... (")
 
 
 # ------------------------------------------------------------------------------------------------ 5 a refused swap
@@ -261,6 +321,21 @@ def test_a_swap_to_a_hostile_name_is_refused_without_quoting_it():
     [row] = rows(r, "PRIORITY")
     assert row["msg"] == "Priority swap refused: no such priority file is loaded. survey kept." and plain(row["msg"])
     assert r.loop.core.rejected[0]["problems"] == ["no priority file of that name is loaded"]
+
+
+def test_a_swap_in_force_to_a_long_profile_id_never_reads_none():
+    """Repair round. A schema-valid profile id of 44 characters is no PLAIN_ID: its swap read "Priority file None.yaml
+    in force." and the next row in the tick said "None kept." The core's file is named only when plain."""
+    long_id = "survey_profile_for_the_jury_trial_number_one"
+    r = live.Run("survey", {300: [inp(300, "profile_applied", profile=profile() | {"id": long_id})],
+                            320: [inp(320, "priority_swap", mission="survey"), inp(320, "priority_swap", mission=long_id),
+                                  inp(320, "priority_swap", mission="fishing")]})
+    r.advance_to(321)
+    assert r.loop.core.mission["id"] == long_id
+    msgs = [e["msg"] for e in rows(r, "PROFILE") + rows(r, "PRIORITY")]
+    assert sorted(msgs) == ["Priority file survey.yaml in force.", "Priority swap in force.", "Profile applied at sea and in force.",
+                            "Swap to fishing.yaml refused: no such priority file is loaded. The file in force is kept."]
+    assert all("None" not in m and plain(m) for m in msgs)
 
 
 # ------------------------------------------------------------------------------------------------ 6 a huge digit edit
@@ -295,6 +370,27 @@ def test_the_cli_never_echoes_a_long_edit_back(capsys):
     assert cli.main(["admit", "G4", "--installed", "G1,G2,G3", "--set", f"G4.drone.mass_t={raw}"]) == 2
     out = capsys.readouterr().out
     assert "9" * 21 not in out and "the number given is above 1000000" in out
+
+
+@pytest.mark.parametrize("raw,value", [("0" * 5000, 0), ("0" * 4400 + "1", 1), ("-" + "0" * 4400 + "1_0", -10),
+                                       ("+" + "0" * 4999 + "7", 7)], ids=["zeros", "padded one", "padded minus ten", "plus"])
+def test_a_zero_padded_edit_past_the_digit_limit_is_its_value(raw, value):
+    """Repair round. Every digit-only edit past 4300 characters read as the largest float, so 0000...1 was refused as
+    "above 1000000". Its sign, underscores and leading zeros do not count."""
+    assert cli._number("drone.mass_t", raw) == value and type(cli._number("drone.mass_t", raw)) is int
+    assert view.admit(I, "A1-survey", {"G4.drone.mass_t": raw})["sentence"] == \
+        view.admit(I, "A1-survey", {"G4.drone.mass_t": str(value)})["sentence"]
+
+
+def test_a_huge_negative_edit_reads_below_the_smallest_number(capsys):
+    """Repair round. A negative 5000-digit edit, and any number below -1000000 in a file, read "above 1000000"."""
+    assert cli.main(["admit", "G4", "--installed", "G1,G2,G3", "--set", "G4.drone.mass_t=-" + "9" * 5000]) == 2
+    out = capsys.readouterr().out
+    assert "the number given is below -1000000, the smallest number a file may carry" in out and "above" not in out
+    assert view.admit(I, "A1-survey", {"G4.drone.mass_t": "-2000000"})["sentence"] == \
+        "Card rejected: G4.drone.mass_t (-2000000 is below -1000000, the smallest number a file may carry)."
+    prof = profile("sar", shed_order={"sar_air": -(10 ** 400)})
+    assert mission_problems(prof) == ["shed_order.sar_air: the number given is below -1000000, the smallest number a file may carry"]
 
 
 # ------------------------------------------------------------------------------------------------ 7 the SAFETY row
@@ -335,8 +431,8 @@ def test_a_kw_stand_in_with_a_fresh_mode_does_not_hold_back_a_certain_shed(kw):
 
 
 def test_a_line_over_only_on_stand_in_values_stays_unconfirmed():
-    """G4 already at charge, G3's mode missing: on G3's highest-draw stand-in the loop reads 80 against 75, on fresh
-    values alone 56. Only the stand-in makes it over, so D4 arms the ladder and takes no step."""
+    """G4 already at charge, G3's mode missing: on G3's highest-draw stand-in the loop reads 80 against 75. A mode
+    stand-in leaves the line unconfirmed, so D4 arms the ladder and takes no step."""
     s = copy.deepcopy(M19)
     s["guests"]["G4"]["mode"]["value"], s["guests"]["G4"]["kw_actual"]["value"] = "charge", 10.0
     s["guests"]["G3"]["mode"] = {"value": None, "source": "plant", "age_s": None, "confidence": "assumed", "stale": False}
@@ -345,14 +441,40 @@ def test_a_line_over_only_on_stand_in_values_stays_unconfirmed():
     assert d["verdict"] == "unconfirmed" and d["steps"] == [] and d["armed"] and d["unconfirmed_because"] == "reading missing"
 
 
-def test_a_certain_shed_takes_no_step_for_a_guest_whose_mode_is_a_stand_in():
-    """G5's mode is a substituted stand-in while the loop is over on fresh values alone (G3 1, G4 35 and G5's fresh
-    45 kW, 81 against 75): D4 sheds, and never from G5's unknown mode."""
+MODE_STAND_INS = [
+    ("sar", "G5", {"confidence": "substituted"}, "feed stale"),
+    ("survey", "G5", {"confidence": "substituted", "stale": True}, "feed stale"),
+    ("survey", "G4", {"confidence": "substituted"}, "feed stale"),
+    ("survey", "G4", {"stale": True}, "feed stale"),
+    ("survey", "G4", {"value": None, "confidence": "assumed"}, "reading missing"),
+    ("survey", "G3", {"value": None, "confidence": "assumed"}, "reading missing"),
+    ("survey", "G4", {"value": "warp"}, "reading missing"),
+]
+
+
+@pytest.mark.parametrize("mission,guest,mode,because", MODE_STAND_INS,
+                         ids=[f"{m}-{g}-{'-'.join(f'{k}={v}' for k, v in x.items())}" for m, g, x, _ in MODE_STAND_INS])
+def test_a_guest_whose_mode_is_a_stand_in_leaves_its_line_unconfirmed_as_before(mission, guest, mode, because):
+    """Repair round. The certain path also took a line whose guest had a stand-in mode, and walked the ladder without
+    that guest: on sar with G5's mode substituted it switched G3 off (1 kW) and queued the mission-critical G4, while
+    the cheapest 5 S guest G5 kept its full draw. A mode stand-in leaves the line unconfirmed, as 3a79d98 does: the
+    ladder armed, no step, nothing queued, the reason in the record."""
     s = copy.deepcopy(M19)
-    s["guests"]["G5"]["mode"].update(confidence="substituted", stale=True)
+    s["guests"][guest]["mode"].update(mode)
+    d = D4.shed(CARDS, MISSIONS[mission], s)
+    assert d["verdict"] == "unconfirmed" and d["steps"] == [] and d["queued"] == [] and d["armed"]
+    assert d["unconfirmed_because"] == because and d["load_kw"] > d["limit_kw"]
+
+
+def test_a_mode_stand_in_off_the_binding_line_does_not_hold_back_a_certain_shed():
+    """G1 is air cooled, on the bus and never on the loop: its substituted mode leaves only the power line unconfirmed.
+    The loop, every mode on it fresh and G5's kW stale, is over for certain and is shed as on fresh readings."""
+    s = copy.deepcopy(M19)
+    s["guests"]["G1"]["mode"].update(confidence="substituted")
+    s["guests"]["G5"]["kw_actual"].update(stale=True)
     d = D4.shed(CARDS, MISSIONS["survey"], s)
-    assert d["verdict"] == "shed" and [st["guest"] for st in d["steps"]] == ["G4"]
-    assert all(st["guest"] != "G5" for st in d["steps"] + d["queued"])
+    assert d["binding"]["class"] == "heat" and steps(d) == steps(D4.shed(CARDS, MISSIONS["survey"], M19))
+    assert "unconfirmed_because" not in d
 
 
 def test_a_stand_in_capacity_still_holds_back_even_a_line_over_on_fresh_draws():

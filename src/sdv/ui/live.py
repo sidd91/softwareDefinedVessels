@@ -31,13 +31,33 @@ def _name(x) -> str | None:
     return x if isinstance(x, str) and PLAIN_ID.match(x) else None
 
 
+def _no_file(mission) -> str:
+    """A swap the screen refuses at the door: the name quoted only when it is a plain file name."""
+    return f"no priority file {mission}" if _name(mission) else "no such priority file is loaded"
+
+
+def _kept(mission_id: str) -> str:
+    """The file in force after a refusal, named when its id is a plain name (an id may be any length)."""
+    return f"{mission_id} kept." if _name(mission_id) else "The file in force is kept."
+
+
+SHOWN_MAX = 40      # a field path or a word longer than this is cut in a row, as sdv admit cuts a long edit
+
+
+def _cut(text: str) -> str:
+    return re.sub(r"\S{%d,}" % (SHOWN_MAX + 1), lambda m: m.group()[:SHOWN_MAX - 3] + "...", text)
+
+
 def _refusal(what: str, problem: str, kept: str) -> str:
     """A refused profile as one plain sentence, the field named as the Admission screen names it:
-    "Profile jury_a refused: confirm.r3 (automatic is not a section of named fields). survey kept." """
+    "Profile jury_a refused: confirm.r3 (automatic is not a section of named fields). survey kept."
+    A long field path or word is cut, and a problem that still carries braces is told as a form the field refuses."""
     field, sep, _ = problem.partition(": ")
     said = re.sub(r"'([^']*)'", r"\1", Ld.in_words(problem))
+    if any(c in said for c in "{}"):
+        said = "is not in a form this field allows"
     where = f"{field} ({said})" if sep and re.fullmatch(r"[\w.\[\]]+", field) else said
-    return f"{what} refused: {where}. {kept} kept."
+    return f"{what} refused: {_cut(where)}. {_kept(kept)}"
 
 
 def _log_key(s: dict) -> tuple:
@@ -138,9 +158,10 @@ class Run:
                 name = _name(payload.get("mission"))
                 if refused:
                     what = f"Swap to {name}.yaml" if name else "Priority swap"
-                    msg = f"{what} refused: no such priority file is loaded. {kept} kept."
-                else:
-                    msg, kept = f"Priority file {name}.yaml in force.", name
+                    msg = f"{what} refused: no such priority file is loaded. {_kept(kept)}"
+                else:   # in force: the name is a loaded file's id, schema-valid but of any length
+                    kept = payload["mission"]
+                    msg = f"Priority file {name}.yaml in force." if name else "Priority swap in force."
                 tag = "PRIORITY"
             else:
                 prof = payload.get("profile")
@@ -148,7 +169,8 @@ class Run:
                     name = _name(prof.get("id")) if isinstance(prof, dict) else None
                     msg = _refusal(f"Profile {name}" if name else "Profile", refused["problems"][0], kept)
                 else:
-                    msg, kept = f"Profile {prof['id']} applied at sea and in force.", prof["id"]
+                    kept, name = prof["id"], _name(prof["id"])
+                    msg = f"Profile {name} applied at sea and in force." if name else "Profile applied at sea and in force."
                 tag = "PROFILE"
             self.inputs_log.append({"t_s": n, "type": "STATE", "tag": tag, "msg": msg, "injected": False,
                                     "refused": bool(refused)})
@@ -295,17 +317,21 @@ class LiveReplay:
             self.running = True
         elif cmd == "mission":
             if msg.get("value") not in missions:
-                return f"no priority file {msg.get('value')}"
+                return _no_file(msg.get("value"))
             if self.t_s == 0:
                 self._rerun(0, msg["value"], keep_inputs=False)
             else:
                 self.run.add_input({"type": "priority_swap", "injected": False, "payload": {"mission": msg["value"]}})
         elif cmd == "input":
-            inp = msg.get("input") or {}
-            if inp.get("type") not in LAPTOP_INPUTS or not isinstance(inp.get("payload"), dict):
-                return f"input {inp.get('type')!r} is not a laptop input"
-            if inp["type"] == "priority_swap" and inp["payload"].get("mission") not in missions:
-                return f"no priority file {inp['payload'].get('mission')}"      # the core has no such file: refused, not stamped
+            inp = msg.get("input") if isinstance(msg.get("input"), dict) else {}
+            t = inp.get("type")
+            if t not in LAPTOP_INPUTS:      # quoted back only when it is a plain name, as the input check does
+                return f"input {t!r} is not a laptop input" if isinstance(t, str) and L._quoted(t) \
+                    else "input refused: the type given is not a laptop input"
+            if not isinstance(inp.get("payload"), dict):
+                return f"input {t!r} refused: payload is not an object"
+            if t == "priority_swap" and inp["payload"].get("mission") not in missions:
+                return _no_file(inp["payload"].get("mission"))      # the core has no such file: refused, not stamped
             try:          # off its signals.yaml contract: refused with the field named, never stamped
                 checked = self.run.loop.check_input({"type": inp["type"], "injected": bool(inp.get("injected", False)),
                                                      "payload": inp["payload"]})

@@ -7,13 +7,13 @@ binds is the one with the least spare: a line that is over always names the reco
 minute 12), and the ladder walks until both lines fit, passing over a step that relieves no line still over (switching
 G1 off while only the loop is over would cost its capability for nothing). Load is the ledger's committed draw per guest (the larger of its
 mode, a reservation from the decision log and a fresh reading). D4 never acts on a substituted value
-(docs/STATE_ESTIMATION.md, fallback_policy.d4): it acts only on an over-commitment the fresh readings prove, on a
-fresh capacity. A guest's draw from fresh values alone is a lower bound (its fresh mode without a stale kW, or only a
-reservation and a fresh kW when its mode is a stand-in), so a line over on those is over for certain and is shed, never
-from a guest whose mode is a stand-in. A line over only because of a stand-in (a stale or substituted capacity, or a
-guest's mode or kW stale, substituted or missing) arms the ladder and the record says the load is unconfirmed, and the
-ladder walks no step for it. Only the line that binds can hold D4 back: cooling over on fresh chilled-water data is shed while
-the bus figure is a stand-in.
+(docs/STATE_ESTIMATION.md, fallback_policy.d4): it acts only on a line over on fresh readings, its capacity and every
+draw counted on it. A line over on a stand-in (a stale or substituted capacity, a guest's mode or kW stale, substituted
+or missing) arms the ladder and the record says the load is unconfirmed, and the ladder walks no step for it. One
+stand-in does not hold D4 back: a guest's kW beside its fresh mode. The draw then counts the mode's kW, a lower bound,
+so a line over with every mode on it fresh is over for certain and is shed. A guest whose mode is a stand-in leaves its
+line unconfirmed. Only the line that binds can hold D4 back: cooling over on fresh chilled-water data is shed while the
+bus figure is a stand-in.
 
 The record also carries every guest's envelope draw beside its draw now (envelope), so a hold can say why the envelope
 set, every guest at its sustained worst case, does not arise (the brief's explicit minute-12 sequence, R-067).
@@ -61,12 +61,9 @@ def shed(cards: dict, mission: dict, snap: dict, reservations: dict[str, float] 
     on_loop = [g for g in guests if cards[g]["cooling"] == "chilled_water"]
     total = sum(draws.values())
     loop = sum(draws[g] for g in on_loop)
-    # What the fresh values alone prove each guest draws, a lower bound: a guest whose mode is a fresh reading counts
-    # its committed draw without a stale kW (the mode's kW, a reservation, a fresh kW). A guest whose mode is a stand-in
-    # counts only a reservation and a fresh kW. A line over on these is over for certain.
+    # A guest whose mode is a fresh reading of one of its card's modes: its draw leaves a stale kW out (the mode's kW, a
+    # reservation, a fresh kW), a lower bound of what it commits.
     known = {g for g, b in guests.items() if _fresh(b["mode"]) and modes[g] == b["mode"]["value"]}
-    sure = {g: draws[g] if g in known else max(reservations.get(g, 0.0), kw_actual.get(g) or 0.0) for g in guests}
-    sure_total, sure_loop = sum(sure.values()), sum(sure[g] for g in on_loop)
     cap = {k: v["value"] for k, v in snap["capacity"].items()}
     headroom = A["power"]["shed_headroom_kw"]
     power_limit, heat_limit = cap["power"]["capacity"] - headroom, cap["heat"]["capacity"] - headroom
@@ -85,10 +82,12 @@ def shed(cards: dict, mission: dict, snap: dict, reservations: dict[str, float] 
             why[cls] = "fault held while its votes are stale"
         else:
             why[cls] = None
-    # A line over on a stand-in is still acted on when the fresh values alone put it over: its capacity a fresh
-    # reading and no fault on it held while its votes are stale. Over solely on stand-in values, it waits.
-    sure_spare = {"heat": heat_limit - sure_loop, "power": power_limit - sure_total}
-    certain = {cls: _fresh(snap["capacity"][cls]) and cls not in held and sure_spare[cls] < -1e-9 for cls in spare}
+    # A line over while its only stand-ins are kW readings beside fresh modes is over for certain and acted on: every
+    # guest on it known, its capacity a fresh reading, no fault on it held while its votes are stale. A guest whose
+    # mode is a stand-in, or a stand-in capacity, leaves the line unconfirmed and it waits.
+    counted = {"heat": set(on_loop), "power": set(guests)}
+    certain = {cls: over_on[cls] and counted[cls] <= known and _fresh(snap["capacity"][cls]) and cls not in held
+               for cls in spare}
     acting = [cls for cls in spare if over_on[cls] and (why[cls] is None or certain[cls])]
     # The binding line is the one with the least spare: a line that is over always names the record and, with both
     # over, the more over does. Equal spare binds on cooling, as the shed ceiling min(power, heat) reads it. When D4
@@ -123,14 +122,12 @@ def shed(cards: dict, mission: dict, snap: dict, reservations: dict[str, float] 
     record["first_shed_due_t_s"], record["full_sequence_due_t_s"] = first_due, full_due
     over = over_on["power"] or over_on["heat"]
     # the relieving steps in ladder order, the whole ladder when it cannot fit (the record then shows what is still over).
-    # A line on a stand-in has no limit in the walk, so no step is taken for it. A line over for certain walks on what
-    # the fresh values prove, and a guest whose mode is a stand-in is never stepped from it. With every reading fresh,
-    # the proven figures are the loads and every guest is known.
+    # A line on a stand-in has no limit in the walk, so no step is taken for it. A line over for certain walks on its
+    # load, every draw on it a lower bound from a fresh mode.
     no_limit = float("inf")
     walks = (lambda cls: why[cls] is None or certain[cls])
-    needed = Lg.walk([s for s in steps if s.guest in known], sure_total, power_limit if walks("power") else no_limit,
-                     loop_kw=sure_loop, loop_limit=heat_limit if walks("heat") else no_limit,
-                     loop_guests=on_loop)[0] if acting else []
+    needed = Lg.walk(steps, total, power_limit if walks("power") else no_limit, loop_kw=loop,
+                     loop_limit=heat_limit if walks("heat") else no_limit, loop_guests=on_loop)[0] if acting else []
     # A.8 as priorities: the 5 S steps go together as the first action; a 60 S step goes alone, and the next one
     # only on a later tick, after a fresh reading shows it is still needed (ARCHITECTURE: rechecked after each step).
     first = [s for s in needed if s.response == "shed_first_action"]

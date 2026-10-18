@@ -66,9 +66,15 @@ def _number(field: str, raw: str) -> int | float:
         value = float(raw) if any(c in raw for c in ".eE") else int(raw)
     except ValueError:
         if _DIGITS.match(raw):
-            # a whole number past Python's digit limit (4300 digits): far above the largest a card may carry, so the
-            # loader refuses it as it refuses a 400-digit one, never "not a number"
-            return -sys.float_info.max if raw.strip().startswith("-") else sys.float_info.max
+            # a whole number past Python's digit limit (4300 digits). Its sign, underscores and leading zeros do not
+            # count: 0000...1 is 1. What is still past the limit is far beyond the largest a card may carry, so the
+            # loader refuses it as it refuses a 400-digit one (above or below), never "not a number"
+            text = raw.strip()
+            negative = text.startswith("-")
+            digits = text.lstrip("+-").replace("_", "").lstrip("0") or "0"
+            if len(digits) <= sys.get_int_max_str_digits():
+                return -int(digits) if negative else int(digits)
+            return -sys.float_info.max if negative else sys.float_info.max
         raise EditError(field, f"{said} is not a number") from None
     if value != value or value in (float("inf"), float("-inf")):
         raise EditError(field, f"{said} is not a finite number")
