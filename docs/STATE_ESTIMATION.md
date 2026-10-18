@@ -33,7 +33,7 @@ variables and their transition times (`transition_drafts`), so it reports their 
 way. It emits raw fault signals, not verdicts, following `fault_signatures`: a genset trip at tick t sets the
 relay flag, drops that genset to 0 kW, holds the bus at 59.6 Hz and puts the other genset at its share of the
 bus load, capped at its rating (`fault_signatures.bus_load`: hotel 400 kW less the 150 kW trip shed, plus 55 kW
-auxiliaries, plus the guests' metered kW; 353 kW at minute 12, 386 kW at minute 19, never above 450). The
+auxiliaries, plus the guests' metered kW; 354.5 kW at minute 12, 387.5 kW at minute 19, never above 450). The
 estimator confirms at t + 1 on two votes. A pump fault sets the alarm, stops the pump, drops flow to 50 %,
 warms the supply to 8.5 °C and opens delta-T to 9 °C. It applies the core's commands and the laptop inputs,
 and reports the result in later frames. It must set `deck_machinery` while G2 winches or G4 launches or
@@ -254,7 +254,8 @@ Unknown fields are refused. Who reads each field is its `read_by` in `signals.ya
 - **Committed, free and reservations.** These are ledger lines (contract 8). The ledger takes, per guest, the
   larger of its mode's declared kW, the kW the core reserves for it (from the decision log:
   `{Gx: {mode, kw, since_t_s}}`) and its fresh `kw_actual`. Under sar at minute 12 that is G4 at max(2, 35):
-  1 + 35 + 45 = 81 kW against 95, 14 spare, as the oracle says. Demand on a link that is 0 by rule is
+  1.5 + 1 + 35 + 45 = 82.5 kW against 95, 12.5 spare, as the oracle says; the chilled-water loop carries 81 of it
+  (G1 is air-cooled), judged on its own line. Demand on a link that is 0 by rule is
   buffered, with free 0 and no margin computed. Over-consumption shows as `Gx.overdraw_pct`; above 5 % for 10 s
   (assumed) it raises `guest_overconsumption`.
 - **Static classes**: backbone, compute cores, mass, bay units, high slots, flight deck and stability come from
@@ -294,13 +295,13 @@ free to the ledger only; and `feed_drop`'s payload to `{feed, until_t_s}`.
 
 | Fixture | Shows |
 |---|---|
-| `survey_m00` | the start, every reading the baseline's `start`; no battery report yet, land-by 1448 s from endurance, `assumed` |
+| `survey_m00` | the start, every reading the baseline's `start` (G1 listening on the mast at 1.5 kW, DEC-63); no battery report yet, land-by 1448 s from endurance, `assumed` |
 | `survey_m08` | G4 reports 18 %: crossing 371.9 s, land-by 1091.9 s (minute 18.2) |
 | `survey_m08_crew0` | the `crew0` variant: deck latched clear at the last sweep, R3 automatic |
 | `survey_m09_stale_g4_telemetry` | injected drop: telemetry 15 s old, battery stale with its feed, land-by kept and named |
 | `survey_m10_stale_genset_feed` | injected drop: power management feed 4 s old, one genset down for D1 only, nothing shed; G4's 120 s old report still fresh |
-| `survey_m12`, `sar_m12` | trip at 720 s confirmed at 721 s; the ledger gives 48 of 95 kW (survey) and 81 of 95 kW (sar, with the reservation) |
-| `survey_m19`, `sar_m19` | injected pump fault: heat 80 kW, ceiling 75 kW against 81 kW; G3 631 s silent but not stale |
+| `survey_m12`, `sar_m12` | trip at 720 s confirmed at 721 s; the ledger gives 49.5 of 95 kW (survey) and 82.5 of 95 kW (sar, with the reservation), 48 and 81 of it on the loop |
+| `survey_m19`, `sar_m19` | injected pump fault: heat 80 kW, a 75 kW loop limit against the loop's 81 kW (82.5 kW on the bus, G1's 1.5 air-cooled); G3 631 s silent but not stale |
 
 **The script after minute 8** is `baselines.scenario_b.script`: the commands by the snapshot they are decided
 on, the inputs by tick, and the outcomes. The decisions are the core's; the times are pins, drafts or

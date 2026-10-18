@@ -11,18 +11,24 @@
   "binding": {
     "class": "heat",
     "label": "Cooling",
-    "capacity": 80,
+    "capacity": 80.0,
     "demand": 81,
-    "free": -1,
+    "free": -1.0,
     "unit": "kW",
     "degraded_by": [
       "cooling degraded: chilled-water pump 1 failed, one of two running (x0.6)"
     ]
   },
   "load_kw": 81,
-  "limit_kw": 75,
+  "limit_kw": 75.0,
   "load_after_kw": 56,
-  "free_after_kw": 19,
+  "free_after_kw": 19.0,
+  "total_kw": 82.5,
+  "loop_kw": 81,
+  "total_after_kw": 57.5,
+  "loop_after_kw": 56,
+  "power_limit_kw": 95,
+  "heat_limit_kw": 75.0,
   "steps": [
     {
       "guest": "G4",
@@ -36,7 +42,8 @@
       "capability_lost_pct": 30.0,
       "mission_critical": false,
       "shed": false,
-      "response": "shed_first_action"
+      "response": "shed_first_action",
+      "due_t_s": 1145
     }
   ],
   "armed": [
@@ -51,7 +58,8 @@
       "capability_lost_pct": 70.0,
       "mission_critical": false,
       "shed": false,
-      "response": "shed_first_action"
+      "response": "shed_first_action",
+      "due_t_s": 1145
     },
     {
       "guest": "G4",
@@ -64,11 +72,74 @@
       "capability_lost_pct": 40.0,
       "mission_critical": false,
       "shed": false,
-      "response": "shed_first_action"
+      "response": "shed_first_action",
+      "due_t_s": 1145
+    },
+    {
+      "guest": "G5",
+      "from_mode": "low_power",
+      "to_mode": "off",
+      "frees_kw": 8,
+      "from_kw": 8,
+      "to_kw": 0,
+      "cost_per_kw": 0.0075,
+      "capability_lost_pct": 30.0,
+      "mission_critical": false,
+      "shed": true,
+      "response": "shed_first_action",
+      "due_t_s": 1145
+    },
+    {
+      "guest": "G4",
+      "from_mode": "standby",
+      "to_mode": "off",
+      "frees_kw": 2,
+      "from_kw": 2,
+      "to_kw": 0,
+      "cost_per_kw": 0.03,
+      "capability_lost_pct": 30.0,
+      "mission_critical": false,
+      "shed": true,
+      "response": "shed_first_action",
+      "due_t_s": 1145
+    },
+    {
+      "guest": "G1",
+      "from_mode": "full",
+      "to_mode": "off",
+      "frees_kw": 1.5,
+      "from_kw": 1.5,
+      "to_kw": 0,
+      "cost_per_kw": 0.1333,
+      "capability_lost_pct": 100.0,
+      "mission_critical": false,
+      "shed": true,
+      "response": "shed_first_action",
+      "due_t_s": 1145
+    },
+    {
+      "guest": "G3",
+      "from_mode": "standby",
+      "to_mode": "off",
+      "frees_kw": 1,
+      "from_kw": 1,
+      "to_kw": 0,
+      "cost_per_kw": 0.3,
+      "capability_lost_pct": 30.0,
+      "mission_critical": true,
+      "shed": true,
+      "response": "shed_full_sequence",
+      "due_t_s": 1200
     }
   ],
   "order_source": "computed",
   "losses": {
+    "G1": {
+      "mode_before": "full",
+      "mode_after": "full",
+      "capability_before": 1.0,
+      "capability_after": 1.0
+    },
     "G3": {
       "mode_before": "standby",
       "mode_after": "standby",
@@ -88,11 +159,45 @@
       "capability_after": 1.0
     }
   },
+  "envelope": {
+    "G1": {
+      "mode": "full",
+      "kw": 1.5,
+      "activity": "listening",
+      "envelope_mode": "full",
+      "envelope_kw": 1.5,
+      "cooling": "air"
+    },
+    "G3": {
+      "mode": "standby",
+      "kw": 1,
+      "activity": "holding_depth",
+      "envelope_mode": "charging",
+      "envelope_kw": 25,
+      "cooling": "chilled_water"
+    },
+    "G4": {
+      "mode": "fast_charge",
+      "kw": 35,
+      "activity": "landed",
+      "envelope_mode": "fast_charge",
+      "envelope_kw": 35,
+      "cooling": "chilled_water"
+    },
+    "G5": {
+      "mode": "full",
+      "kw": 45,
+      "activity": "transmitting",
+      "envelope_mode": "full",
+      "envelope_kw": 45,
+      "cooling": "chilled_water"
+    }
+  },
   "trigger": "cooling_degraded",
   "injected": true,
   "raw_event_t_s": 1140,
   "confirmed_t_s": 1141,
   "first_shed_due_t_s": 1145,
-  "inputs_hash": "53af9c98530cae8f",
-  "sentence": "Cooling binds with one chilled-water pump down: 81 kW against the 75 kW limit. G4 fast charge to charge, 35 to 10 kW, frees 25 kW and the load is 56 kW: G4 loses 30 %, G3 and G5 nothing."
+  "inputs_hash": "c2c98ddce5f8930b",
+  "sentence": "Cooling binds with one chilled-water pump down: 81 kW against the 75 kW limit. G4 fast charge to charge, 35 to 10 kW, frees 25 kW and the load is 56 kW: G4 loses 30 %, G1, G3 and G5 nothing."
 }

@@ -133,11 +133,12 @@ alternatives come out directly, in milliseconds.
   file, the [account](docs/PHYSICAL_ACCOUNT.md) (from [config/assumptions.yaml](config/assumptions.yaml) and the cards) and
   the [memo](docs/SCENARIO_C_MEMO.md); `tools/build_pdfs.py` builds each PDF and checks its limit.
 - **Live demo, 90 s of Scenario B, then Scenario A with the jury's card:** [storyboard](docs/DEMO_SCRIPT.md),
-  planned. Scenario B runs G3, G4 and G5 (DEC-32). Minute 8: D3 decides between the drone (G4) and the
-  seabed vehicle (G3) under both priority files. Minute 12: a genset trips; the load (48 kW survey, 81 kW
-  rescue) holds under the 95 kW ceiling, and D4 shows both armed ladders, each starting with the comms node
-  (G5) to low power, with no step needed. Minute 19: a labelled, injected pump fault makes cooling bind (81
-  against 75 kW); D4 slows G4's charge to 10 kW (survey file) or takes G5 to 8 kW (rescue file) (DEC-40).
+  planned. Scenario B runs G1, G3, G4 and G5, the organisers' load-out (DEC-63; G1 air-cooled on the mast, on the
+  bus and not on the chilled-water loop). Minute 8: D3 decides between the drone (G4) and the
+  seabed vehicle (G3) under both priority files. Minute 12: a genset trips; the load (49.5 kW survey, 82.5 kW
+  rescue) holds under the 95 kW power limit, and D4 shows both armed ladders, each starting with the comms node
+  (G5) to low power, with no step needed. Minute 19: a labelled, injected pump fault makes cooling bind on the
+  loop (81 against 75 kW, the bus at 82.5 of 95); D4 slows G4's charge to 10 kW (survey file) or takes G5 to 8 kW (rescue file) (DEC-40).
 
 ## Repository map
 

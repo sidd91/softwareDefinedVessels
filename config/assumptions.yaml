@@ -339,9 +339,9 @@ account:
     - row: Mass / stability
       what: Scenario B set
       keys: [scenario_b.guests]
-      value: "G3, G4, G5, {{calc.mass_b}} t; brief's G2-G5 ({{calc.mass_b_brief}} t of {{mass.margin_t}}) refused"
-      why: "override logged (DEC-32)"
-      trace: ['\["G3", "G4", "G5"\]']
+      value: "G1, G3, G4, G5, {{calc.mass_b}} t; G1 air-cooled on the mast; brief's G2-G5 ({{calc.mass_b_brief}} t of {{mass.margin_t}}) refused"
+      why: "organisers' answer (DEC-63)"
+      trace: ['\["G1", "G3", "G4", "G5"\]']
     - row: Data links
       what: rates judged
       keys: [admission.data_rates_judged_at, data.satcom_envelope_mbps]

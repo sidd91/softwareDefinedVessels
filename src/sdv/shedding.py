@@ -1,9 +1,14 @@
-"""D4 degradation and shedding on one snapshot: hold, or walk the precomputed ladder until load is within the limit.
+"""D4 degradation and shedding on one snapshot: hold, or walk the precomputed ladder until the load is within both limits.
 
-The limit is the snapshot's shed_ceiling_kw: min(power reserve, cooling capacity) - 5 kW headroom. Load is the
-ledger's committed draw per guest (the larger of its mode, a reservation from the decision log and a fresh
-reading). D4 never acts on a substituted value (docs/STATE_ESTIMATION.md, fallback_policy): when a feed behind the
-over-commitment is stale, the ladder stays armed and the record says the fault is unconfirmed.
+Power and cooling are judged on their own lines (A.1, A.2): every guest's committed draw against the guest reserve less
+the 5 kW headroom, and the chilled-water guests' draw against the loop's capacity less the headroom. An air-cooled
+guest (G1 on the mast) counts on the bus and never on the loop, so with it aboard the two loads differ. The line that
+binds is the one with the least spare: a line that is over always names the record (cooling at minute 19, power at
+minute 12), and the ladder walks until both lines fit, passing over a step that relieves no line still over (switching
+G1 off while only the loop is over would cost its capability for nothing). Load is the ledger's committed draw per guest (the larger of its
+mode, a reservation from the decision log and a fresh reading). D4 never acts on a substituted value
+(docs/STATE_ESTIMATION.md, fallback_policy): when a feed behind the over-commitment is stale, the ladder stays armed and
+the record says the fault is unconfirmed.
 
 The record also carries every guest's envelope draw beside its draw now (envelope), so a hold can say why the envelope
 set, every guest at its sustained worst case, does not arise (the brief's explicit minute-12 sequence, R-067).
@@ -30,11 +35,16 @@ def shed(cards: dict, mission: dict, snap: dict, reservations: dict[str, float] 
     modes = {g: b["mode"]["value"] for g, b in guests.items()}
     kw_actual = {g: b["kw_actual"]["value"] for g, b in guests.items() if _fresh(b["kw_actual"])}
     draws = {g: Lg.committed_kw(cards, g, modes[g], reservations.get(g, 0.0), kw_actual.get(g)) for g in guests}
-    load = sum(draws.values())
+    on_loop = [g for g in guests if cards[g]["cooling"] == "chilled_water"]
+    total = sum(draws.values())
+    loop = sum(draws[g] for g in on_loop)
     cap = {k: v["value"] for k, v in snap["capacity"].items()}
-    power, heat = cap["power"]["capacity"], cap["heat"]["capacity"]
-    limit = cap["shed_ceiling_kw"]
-    binding_cls, binding_cap = ("heat", heat) if heat <= power else ("power", power)
+    headroom = A["power"]["shed_headroom_kw"]
+    power_limit, heat_limit = cap["power"]["capacity"] - headroom, cap["heat"]["capacity"] - headroom
+    # The binding line is the one with the least spare: a line that is over always names the record and, with both
+    # over, the more over does. Equal spare binds on cooling, as the shed ceiling min(power, heat) reads it.
+    binding_cls = "heat" if heat_limit - loop <= power_limit - total else "power"
+    load, limit = (loop, heat_limit) if binding_cls == "heat" else (total, power_limit)
     steps = Lg.ladder(cards, modes, mission, for_shed=True)
     confirmed = [f for f in snap.get("faults", []) if f["state"] == "confirmed"]
     unconfirmed = [f for f in snap.get("faults", []) if f["state"] == "held_stale"]
@@ -42,11 +52,14 @@ def shed(cards: dict, mission: dict, snap: dict, reservations: dict[str, float] 
     record = {
         "kind": "D4", "tick": snap["run"]["tick"], "t_s": snap["run"]["t_ship_s"], "applies_at_tick": snap["run"]["tick"] + 1,
         "mission": mission["id"], "load_kw": load, "limit_kw": limit, "draws": draws,
-        "binding": {"class": binding_cls, "capacity": binding_cap, "demand": load, "free": binding_cap - load, "unit": "kW",
-                    "degraded_by": cap[binding_cls]["degraded_by"]},
+        "total_kw": total, "loop_kw": loop, "power_limit_kw": power_limit, "heat_limit_kw": heat_limit,
+        "on_loop": on_loop, "capacities": {cls: cap[cls] for cls in ("power", "heat")},
+        "binding": {"class": binding_cls, "capacity": cap[binding_cls]["capacity"], "demand": load,
+                    "free": cap[binding_cls]["capacity"] - load, "unit": "kW", "degraded_by": cap[binding_cls]["degraded_by"]},
         "steps": [], "armed": [], "losses": {},
         "envelope": {g: {"mode": modes[g], "kw": draws[g], "activity": guests[g].get("activity", {}).get("value"),
-                         "envelope_mode": Lg.envelope_mode(A, cards[g]), "envelope_kw": Lg.envelope_kw(A, cards[g])} for g in guests},
+                         "envelope_mode": Lg.envelope_mode(A, cards[g]), "envelope_kw": Lg.envelope_kw(A, cards[g]),
+                         "cooling": cards[g]["cooling"]} for g in guests},
     }
     if confirmed:
         newest = max(confirmed, key=lambda f: f["confirmed_t_s"])
@@ -60,11 +73,10 @@ def shed(cards: dict, mission: dict, snap: dict, reservations: dict[str, float] 
     else:
         first_due, full_due = onset + RT["shed_first_action"], onset + RT["shed_full_sequence"]
     record["first_shed_due_t_s"], record["full_sequence_due_t_s"] = first_due, full_due
-    over = load > limit + 1e-9
+    over = total > power_limit + 1e-9 or loop > heat_limit + 1e-9
     acts = over and not unconfirmed and not stale_inputs
-    needed = Lg.steps_to_fit(steps, load, limit) if acts else []
-    if over and needed is None:
-        needed = steps  # every step there is; the record shows what is still over
+    # the relieving steps in ladder order, the whole ladder when it cannot fit (the record then shows what is still over)
+    needed = Lg.walk(steps, total, power_limit, loop_kw=loop, loop_limit=heat_limit, loop_guests=on_loop)[0] if acts else []
     # A.8 as priorities: the 5 S steps go together as the first action; a 60 S step goes alone, and the next one
     # only on a later tick, after a fresh reading shows it is still needed (ARCHITECTURE: rechecked after each step).
     first = [s for s in needed if s.response == "shed_first_action"]
@@ -77,10 +89,11 @@ def shed(cards: dict, mission: dict, snap: dict, reservations: dict[str, float] 
     now = {k: (first_due if onset == t else full_due) for k in due}
     record["steps"] = [_step(s, now) for s in taken]
     record["queued"] = [_step(s, due) for s in queued]
-    rest = steps[len(taken):]
-    record["armed"] = [_step(s, due) for s in rest[:3]]
+    record["armed"] = [_step(s, due) for s in steps if s not in taken]   # the whole armed ladder, in its order (DEC-61)
     record["responses"] = {g: Lg.response_of(cards, g, mission) for g in guests}
-    after = load - sum(s.frees_kw for s in taken)
+    record["total_after_kw"] = total - sum(s.frees_kw for s in taken)
+    record["loop_after_kw"] = loop - sum(s.frees_kw for s in taken if s.guest in on_loop)
+    after = record["loop_after_kw"] if binding_cls == "heat" else record["total_after_kw"]
     record["load_after_kw"] = after
     record["free_after_kw"] = limit - after
     for g in guests:

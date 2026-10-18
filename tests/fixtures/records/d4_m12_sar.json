@@ -12,8 +12,8 @@
     "class": "power",
     "label": "Power",
     "capacity": 100,
-    "demand": 81,
-    "free": 19,
+    "demand": 82.5,
+    "free": 17.5,
     "unit": "kW",
     "degraded_by": [
       "one genset down: genset_2 tripped, confirmed at 721 s"
@@ -22,10 +22,16 @@
   "reserved": {
     "G4": 35
   },
-  "load_kw": 81,
+  "load_kw": 82.5,
   "limit_kw": 95,
-  "load_after_kw": 81,
-  "free_after_kw": 14,
+  "load_after_kw": 82.5,
+  "free_after_kw": 12.5,
+  "total_kw": 82.5,
+  "loop_kw": 81,
+  "total_after_kw": 82.5,
+  "loop_after_kw": 81,
+  "power_limit_kw": 95,
+  "heat_limit_kw": 128.3,
   "steps": [],
   "armed": [
     {
@@ -69,10 +75,44 @@
       "shed": true,
       "response": "shed_first_action",
       "due_t_s": 725
+    },
+    {
+      "guest": "G1",
+      "from_mode": "full",
+      "to_mode": "off",
+      "frees_kw": 1.5,
+      "from_kw": 1.5,
+      "to_kw": 0,
+      "cost_per_kw": 0.3333,
+      "capability_lost_pct": 100.0,
+      "mission_critical": false,
+      "shed": true,
+      "response": "shed_first_action",
+      "due_t_s": 725
+    },
+    {
+      "guest": "G4",
+      "from_mode": "standby",
+      "to_mode": "off",
+      "frees_kw": 2,
+      "from_kw": 2,
+      "to_kw": 0,
+      "cost_per_kw": 0.15,
+      "capability_lost_pct": 30.0,
+      "mission_critical": true,
+      "shed": true,
+      "response": "shed_full_sequence",
+      "due_t_s": 780
     }
   ],
   "order_source": "computed",
   "losses": {
+    "G1": {
+      "mode_before": "full",
+      "mode_after": "full",
+      "capability_before": 1.0,
+      "capability_after": 1.0
+    },
     "G3": {
       "mode_before": "standby",
       "mode_after": "standby",
@@ -93,26 +133,37 @@
     }
   },
   "envelope": {
+    "G1": {
+      "mode": "full",
+      "kw": 1.5,
+      "activity": "listening",
+      "envelope_mode": "full",
+      "envelope_kw": 1.5,
+      "cooling": "air"
+    },
     "G3": {
       "mode": "standby",
       "kw": 1,
       "activity": "holding_at_sea",
       "envelope_mode": "charging",
-      "envelope_kw": 25
+      "envelope_kw": 25,
+      "cooling": "chilled_water"
     },
     "G4": {
       "mode": "standby",
       "kw": 35,
       "activity": "airborne",
       "envelope_mode": "fast_charge",
-      "envelope_kw": 35
+      "envelope_kw": 35,
+      "cooling": "chilled_water"
     },
     "G5": {
       "mode": "full",
       "kw": 45,
       "activity": "transmitting",
       "envelope_mode": "full",
-      "envelope_kw": 45
+      "envelope_kw": 45,
+      "cooling": "chilled_water"
     }
   },
   "trigger": "genset_trip",
@@ -120,6 +171,6 @@
   "raw_event_t_s": 720,
   "confirmed_t_s": 721,
   "first_shed_due_t_s": 725,
-  "inputs_hash": "5ea5db553bf16c52",
-  "sentence": "Holds: 81 of 95 kW with one genset down and G4's 35 kW reserved, 0 steps, no capability lost. Armed in order: G5 full to low power, 45 to 8 kW, frees 37 kW (70 % lost), then G5 low power to off, 8 to 0 kW, frees 8 kW (30 % lost), then G3 standby to off, 1 to 0 kW, frees 1 kW (30 % lost). The envelope case does not arise: G3 charging 25 kW, G4 fast charge 35 kW and G5 full 45 kW would be 105 kW against the 95 kW limit, but G3 is holding at sea in standby (1 kW)."
+  "inputs_hash": "31b13e6bc846a140",
+  "sentence": "Holds: 82.5 of 95 kW with one genset down and G4's 35 kW reserved, 0 steps, no capability lost. Armed in order: G5 full to low power, 45 to 8 kW, frees 37 kW (70 % lost), then G5 low power to off, 8 to 0 kW, frees 8 kW (30 % lost), then G3 standby to off, 1 to 0 kW, frees 1 kW (30 % lost), then G1 full to off, 1.5 to 0 kW, frees 1.5 kW (100 % lost), then G4 standby to off, 2 to 0 kW, frees 2 kW (30 % lost). The envelope case does not arise: G1 full 1.5 kW, G3 charging 25 kW, G4 fast charge 35 kW and G5 full 45 kW would be 106.5 kW against the 95 kW limit, but G3 is holding at sea in standby (1 kW)."
 }

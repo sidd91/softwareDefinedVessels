@@ -101,6 +101,7 @@ Deadline: **Sun 2026-10-18 10:00 PDT**.
 | DEC-60 | Sat 15:38 | Degradation priorities are the brief's A.8 response classes (replaces DEC-59's four tiers, per Logan): 200 MS (card safety_critical or profile response.safety_command) is never shed and is acted on only by stop, hold or secure from a safety table rebuilt every tick and answered on arrival; 5 S (the default) gives power in the first action, applied within 5 s of the fault; 60 S (mission_critical) gives power only after every 5 S step, one step per tick after a fresh reading, within 60 s; restoring a shed guest is a 30 S decision once every fault is healthy for 60 s; D3 and D5 carry 2 S. D4 runs every 5 S step before any 60 S step (throttle before shed inside each class); D1's one-genset-down check keeps throttles first (DEC-35). Discretionary tiers become shed_order ranks. Two calls for Logan's team: 5 S guests may be switched off before a 60 S guest is throttled (sar minute-19 armed ladder now G5 off, not G4 slower), and the tier folding | Logan (thresholds as tags); design by Claude as core owner, two calls to confirm | Claude for Logan |
 | DEC-61 | Sat 21:40 | Scenario B minute 12 (DEC-51, freeze F4): the DEC-40 timeline stands. The minute-12 D4 record states the full armed ladder in declared order and why the brief's 105 kW set does not arise (G3 at sea on its own battery, G4 airborne); the minute-19 pump fault, labelled injected, runs that ladder live. No new timeline variant before the demo (req R-067) | Siddharth | Claude Fable 5.1 for Siddharth |
 | DEC-62 | Sat 21:40 | Rubric audit of main accepted as the work list (`docs/AUDIT_MAIN.md`): must-have gaps first (power-edit crash, minute-12 sentence, crew-chip crash guards, data/compute admission lines, Physical Account tracer), then README truth pass and PDFs; everything else declared as a limitation. `feat/ship-state-fsm` is never merged wholesale: plant and environment are ported behind main's simulator interface, engines, records and UI stay main's (req R-016, R-064 to R-067, R-069) | Siddharth | Claude Fable 5.1 for Siddharth |
+| DEC-63 | Sat 23:32 | Scenario B load-out is G1 + G3 + G4 + G5 (9.56 t): the organisers' forum answer of 17 Oct ('Scenario B loadout' thread, Software-Defined Vessel forum; question by Filip Debef 08:22, answer by Graziano 08:55: 'Use G1 + G3 + G4 + G5 for Scenario B ... G3 in Bay 1, G5 in Bay 2, G1 on the mast, G5's antenna on the hangar roof. The Annexes take precedence over the demo narrative.'). Supersedes the G3, G4, G5 set of DEC-32; the refusal of G2-G5 at the pier stands. Settles CON-18 for Scenario B: the antenna is on the hangar roof (req R-066, R-067) | Siddharth | Claude Fable 5.1 for Siddharth |
 
 ## Conflicts and risks to watch
 
@@ -123,7 +124,7 @@ Deadline: **Sun 2026-10-18 10:00 PDT**.
 | CON-15 | Sat 11:15 | Node B runs SSH on the shared venue Wi-Fi with the default login from the workshop slide; anyone at the event can log in and use sudo | Open: Logan to change the password (`adb shell -t passwd`) | Claude for Logan |
 | CON-16 | Sat 11:15 | Venue Wi-Fi heartbeats have a long tail (95th percentile 96 ms, max 116 ms, 3 of 100 over 100 ms) against 100 ms heartbeats; USB holds 6.5 ms (req R-458) | Open: team to set failover timeouts per path; numbers in docs/NODE_B_BOARD.md | Claude for Logan |
 | CON-17 | Sat 11:24 | Whole-plan review: schedule rated red. The DEC-33 hold has run past its hour with no engine code; BUILD_PLAN milestones are missed and stale against DEC-35 to DEC-40, with no sleep block (extends CON-10) | Open: Logan to decide on lifting the hold; the review recommends now | Claude for Logan |
-| CON-18 | Sat 11:24 | D2 placement: the test fixtures put G5's antenna on the last free mast slot although the hangar roof is allowed, which blocks G1 and contradicts our declared D2 objective and the brief's "free mast slot" story for that set | Open: the team writes the D2 rule before T2 | Claude for Logan |
+| CON-18 | Sat 11:24 | D2 placement: the test fixtures put G5's antenna on the last free mast slot although the hangar roof is allowed, which blocks G1 and contradicts our declared D2 objective and the brief's "free mast slot" story for that set | Settled for Scenario B by DEC-63: G1 takes the free mast slot and G5's antenna goes on the hangar roof, as D2 places them (tests/oracles load-out ii carries the placement, stability 9.853 t-eq); the general D2 objective stays open | Claude for Logan |
 | CON-19 | Sat 11:50 | Two designs for the same core: Siddharth's handoff (protobuf, CP-SAT, policy compiler) and this branch. Building both wastes the day (CON-07) | Open: settle `docs/DESIGN_FREEZE.md` F1-F6 together, then split work | Claude Fable 5.1 for Siddharth |
 | CON-20 | Sat 12:04 | Resolution after DEC-44: CON-19 (two designs) closed, one design frozen; CON-01 (natural-language rules) and CON-02 (3D) closed, both cut; CON-04 (NPU runtime) closed, NPU cut; CON-11 (camera snapshot fields) closed, cameras cut; CON-16 (Wi-Fi heartbeat tail) off the demo path while failover is cut. CON-07 (work split) stays open until F6 | Closed except CON-07 | Claude for Logan |
 | CON-21 | Sat 12:09 | Resolution of CON-07 (work split): settled by DEC-47. Remaining interface risk: the snapshot schema (ours) and the command set (Siddharth's) must agree before either side builds on them | Open until the snapshot contract is published | Claude for Logan |
@@ -1126,6 +1127,47 @@ progress), fix/scenario-b-loadout-g1 (DEC-63, in progress), docs/readme-truth (i
 its own branch and is not merged: the team picks a screen at rehearsal (Siddharth, Sat 23:08).
 Decisions: none new. Conflicts: none. Requirements touched: none directly.
 
+### Sat 23:32 PDT · Scenario B runs the organisers' load-out, G1 + G3 + G4 + G5; D4 judges power and cooling on their own lines · Claude Fable 5.1 on behalf of Siddharth Chawla (sidd91)
+
+What: the organisers answered the 'Scenario B loadout' thread (17 Oct, Graziano 08:55: G1 + G3 + G4 + G5, G3 Bay 1, G5 Bay 2, G1 on the mast, G5's antenna on
+the hangar roof), so config/scenarios/scenario_b.yaml carries G1 (passive radio sensor, 45 kg on the free mast slot, 1.5 kW full or off, air-cooled, SATCOM
+0.2 Mbit/s) and D2 places the set as they said. D4 (src/sdv/shedding.py, ledger.walk) now judges power on every guest's draw against reserve - 5 kW and
+cooling on the chilled-water guests' draw against the loop capacity - 5 kW, binds on the line with the least spare, walks the ladder until both fit and passes
+over a step that relieves no line still over (switching the air-cooled G1 off while only the loop is over would cost its capability for nothing); the record
+carries total_kw, loop_kw, their after values and both limits beside the binding line's load_kw / limit_kw, each envelope entry says how the guest is cooled,
+and the hold sentence lists the whole armed ladder (G1 to off is the last 5 S step). The screen reads the bus on POWER and the loop on COOLING, names both on
+the DEMAND row when they differ (81.0 kW CHW · 82.5 kW TOTAL), shows the air-cooled draw off the loop in the constraint drill-down and names the mast occupant.
+Numbers before -> after: mass 9.515 -> 9.56 t, stability 9.763 -> 9.853 t-eq (G1 x3 on 0.045 t, the antenna now x1.2 on the roof; the task's 9.898 kept both
+on the mast, the engine wins), mast 3 of 3 (G1 SENSOR); minute 0 power 48 -> 49.5 kW with the loop at 48; minute 8 unchanged; minute 12 hold 48 -> 49.5 (survey)
+and 81 -> 82.5 (rescue) of 95, spare 47 -> 45.5 and 14 -> 12.5, envelope clause 105 -> 106.5 kW; minute 19 cooling binds on the loop's 81 against 75 while the
+bus is at 82.5 of 95, same first step under each file, loop after 56 / 44 (bus 57.5 / 45.5); one-genset-down gate 105 -> 106.5 of 100, 6.5 short, same throttles;
+bus-load readings 251.5 -> 252.2, 353 -> 354.5, 386 -> 387.5 kW. DATA LINKS reads 6.2 of 6.0 Mbit/s REDUCED from minute 0 (G5 6 + G1 0.2 at nominal against the
+6 Mbit/s live SATCOM; admission judges the minimums, 1.2 of 2, DEC-38).
+Files: config/scenarios/scenario_b.yaml, config/signals.yaml (baselines, bus load), config/assumptions.yaml (account row), config/decision_record.schema.json,
+src/sdv/{ledger,shedding,records,core,explain}.py, src/sdv/ui/view.py, src/sdv/ui/static/js/reference.js, tools/{build_snapshot_fixtures,physical_account}.py,
+tests/fixtures/{snapshots,frames}/*.json and tests/fixtures/records/d4_m12_*.json, d4_m19_*.json (regenerated from the engine), expected_sentences.yaml,
+tests/oracles/expected_outcomes.yaml, docs/{DEMO_SCRIPT,EXPECTED_OUTCOMES,STATE_ESTIMATION,PHYSICAL_ACCOUNT,PHYSICAL_ACCOUNT_DETAIL}.md, README.md.
+Tests: 1480 pass on the branch merged with origin/main 09acbf7 (1471 there, 9 new: the two-line walk, the step passed over, the old set without G1 deciding as
+before, the minute-19 oracle block), 1485 once 4c4f93c (fix/simbar-clicks, 5 tests) is merged in too; sdv run and replay under both files REPLAY EQUAL; sdv demo on :8231 serves /api/state at t=745 and t=1145 with the new
+fields, MAST 3 of 3, POWER the bus, COOLING the loop, the mimic with G1 SENSOR on the mast. Left as they are: GAMEPLAN, ARCHITECTURE:177, DESIGN_FREEZE,
+OPEN_QUESTIONS #4, ORGANIZER_MESSAGE, DEMO_READINESS and docs/requirements.yaml still quote the DEC-32 set and 48 / 81 kW (history); the PDFs were not rebuilt.
+Branch fix/scenario-b-loadout-g1, pushed for a teammate to merge.
+Decisions: DEC-63. Conflicts: CON-18 settled for Scenario B. Requirements touched: R-066, R-067.
+Review (Claude Fable 5.1, independent, on this branch, Sat 23:50 PDT): diff read against the task; suite 1485 green before and after the
+review's own edits; `sdv run` under both files prints minute 8 byte-identical to origin/main, minute 12 HOLD 49.5 / 82.5 of 95 with G1 full to
+off as the last 5 S armed step and the 106.5 kW envelope clause, minute 19 cooling binds 81 against 75 with the same first steps and the loop
+at 56 / 44 after (bus 57.5 / 45.5), G1 'nothing' in the losses; both replays EQUAL. Every figure recomputed by hand from the cards and
+assumptions: mass 9.56 t, stability 9.853 t-eq (the task's 9.898 counted the antenna on the mast too, which the 60 kg / 0.6 m2 slot cannot
+take), loop 48 / 81 against the bus 49.5 / 82.5, gate 106.5 of 100 with 81.5 / 69.5 after the throttles, bus-load readings 252.2 / 354.5 /
+387.5. The schema rejects unknown fields at the top level, in a step and in an envelope entry and validates all 20 record fixtures and the 12
+live records; `sdv demo` on :8431 at t=745 and 1145 under both files reads POWER on the bus, COOLING on the loop, DEMAND '81.0 kW CHW ·
+82.5 kW TOTAL', MAST '3 / 3 · 2 HOST · G1 SENSOR' and G1 SENSOR in the mimic's MAST zone; ops view at 19:05 under rescue screenshotted with
+Playwright; the branch merges clean (fast-forward on 4c4f93c). Fixed here: GAMEPLAN.md, docs/ARCHITECTURE.md and docs/OPEN_QUESTIONS.md still
+stated the DEC-32 set and 48 / 81 kW; docs/PHYSICAL_ACCOUNT_DETAIL.md regenerated (one 'Used in' line had moved with the main merge). Left as
+history, reported: docs/requirements.yaml status notes, DESIGN_FREEZE row 5, BUILD_PLAN T6, ORGANIZER_MESSAGE and the design comps still quote
+DEC-32; the two merge commits carry no Co-Authored-By trailer; DATA LINKS reads 6.2 / 6.0 Mbit/s REDUCED from minute 0 under the organisers'
+set (a line for the presenter, not a defect).
+
 ### Sat 22:58 PDT · SIM-bar clicks land at x12 (fix/simbar-clicks, for a teammate to merge) · Claude Fable 5.1 on behalf of Siddharth Chawla (sidd91)
 What: the rehearsal's cross-cutting Red. app.js rebuilt #sim-speed, #sim-jump, #sim-file and #chips by innerHTML on every /ws frame, so a press that straddled a frame (any ordinary 80-150 ms click at x12) never fired; the groups now go through util.paint() and the chips through a new util.paintEach() (one slot per chip, so the crew button outlives its neighbours' ticks); PACE and PRIORITY carry aria-pressed; HOLD/RUN, RESTART and the view tabs were already static markup.
 Files: src/sdv/ui/static/js/app.js, src/sdv/ui/static/js/util.js, tests/test_ui_static.py (new, 5 tests).
@@ -1137,3 +1179,14 @@ What: a second page, /room, in the approved mock's minimal language, strictly ad
 Files: src/sdv/ui/room.py, src/sdv/ui/static/room/{index.html,room.css,room.js}, tests/test_ui_room.py (new); src/sdv/ui/server.py (+2 routes, import, 2 doc lines). origin/main merged in (fix-packs 3a/3b) before the push.
 Tests: 18 new (route and page served, console page untouched, per-cell free numbers for the Scenario B snapshots under both files and for case A5, edits reaching the pier cells, a 422 refusal, an unplaced part named, paint discipline, no external resource but Google Fonts); full suite 1494 passed. Driven on :8241 with Playwright (1600x1000 and 1280x800, light and dark): Rescue + RESTART, JUMP 08 to 08:40, 12 to 12:40, 19 to 19:40, Survey at 19:40, Compare at 00:08, Admission with hangar 0.85 to 0.8, peak 35 to 50, then "abc" refused; power, cooling, mass and the sentence equal /api/state at every held tick and the console held at 19:40; no horizontal scroll at 1280; no JS errors. Open with `uv run sdv demo` then http://127.0.0.1:8000/room; each browser tab has its own run, as for the console.
 Decisions: none (UI stays on ui/room-map until the team picks a screen). Conflicts: none. Requirements touched: R-146.
+### Sun 00:10 PDT · Run sheet restated for the frozen main; plant badge relabelled · Claude Fable 5.1 on behalf of Siddharth Chawla (sidd91)
+
+docs/DEMO_SCRIPT.md: the presenter rules that read "until X is merged" are restated in the present tense for
+origin/main 7b9a804 (SIM-bar clicks land, any card number edits or is refused by field, a jury file admits on the CLI,
+the crew chip is safe, RESTART honours a pending swap), the Scenario C status and checklist counts updated (1485 tests),
+and the "is the plant real" answer reworded. docs/DEMO_READINESS.md: one status line saying every branch in its table is
+on main and the submission route is the only open Red. src/sdv/loop.py and src/sdv/ui/static/js/app.js: the SIM-bar
+badge reads LIVE · SCRIPTED PLANT · A.6 instead of LIVE · SIM TEST DOUBLE (audit gap #8; the plant is still
+tests/support/sim_stub.py, swappable through SDV_SIM). UI, loop, CLI and requirements-trace tests pass.
+Decisions: none. Conflicts: none. Requirements touched: R-146 (screen wording), R-212 (run sheet).
+

@@ -255,6 +255,8 @@ def test_a_shed_guest_is_restored_once_every_fault_is_healthy():
     r = next(r for r in recs if r["verdict"] == "restore")
     assert not list(RECORD.iter_errors(r))
     assert (r["steps"][0]["from_mode"], r["steps"][0]["to_mode"], r["load_after_kw"]) == ("charge", "fast_charge", 81)
+    # cooling has the least spare after the step, so it names the record: the loop 56 to 81 of 128.3, the bus 57.5 to 82.5 of 245
+    assert (r["binding"]["class"], r["loop_kw"], r["loop_after_kw"], r["total_kw"], r["total_after_kw"]) == ("heat", 56, 81, 57.5, 82.5)
     assert cmds == [{"seq": r["seq"], "kind": "set_mode", "args": {"guest": "G4", "mode": "fast_charge"}}]
     assert r["sentence"] == "Restored G4 from charge to fast charge: every fault healthy since minute 23.3. Load 81 of 128.3 kW."
     assert core.timing[-1]["ceiling_ms"] == 30000 and core.shed_from == {}
@@ -264,6 +266,7 @@ def test_no_restore_while_it_would_not_fit():
     core = Core("survey")
     core.decide(SNAP["scenario_b_survey_m19"])
     tight = recovered(SNAP["scenario_b_survey_m19"], 1460)
+    tight["capacity"]["heat"]["value"]["capacity"] = 80.0       # the loop's own line binds the restore, not the scalar ceiling
     tight["capacity"]["shed_ceiling_kw"]["value"] = 75.0
     recs, _ = core.decide(tight)
     assert not [r for r in recs if r["verdict"] == "restore"] and core.shed_from == {"G4": "fast_charge"}

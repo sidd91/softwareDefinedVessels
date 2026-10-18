@@ -126,7 +126,8 @@ def derived():
         "gate": min(r_one, cool(t30)) - head,
         "ceiling_b": min(r_one, cool(sw_b)) - head, "ceiling_b_deg": min(r_one, cool(sw_b) * deg) - head,
         "gate_30": min(r_cruise, cool(t30)) - head, "gate_30_deg": min(r_cruise, cool(t30) * deg) - head,
-        "load_19": sum(mode_kw(g, m) for g, m in fault["load_modes"].items()),
+        # the load the pump fault is judged on: the chilled-water guests' draw, the loop's line (an air-cooled guest is not on it)
+        "load_19": sum(mode_kw(g, m) for g, m in fault["load_modes"].items() if CARDS[g]["cooling"] == "chilled_water"),
         "chilled_b": chilled_kw(b["guests"]), "chilled_a5": chilled_kw(ACC["closing"]["a5_guests"]),
         "pump_saves_30": cool(t30) * (1 - deg),
         "battery_usable_30": min(r_one + battery, cool(t30)) - head - (min(r_one, cool(t30)) - head),

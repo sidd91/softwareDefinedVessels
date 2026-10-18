@@ -212,7 +212,7 @@ def test_unknown_and_out_of_range_readings_are_refused():
     est.step(frames[0])
     s = est.step(frames[1])
     assert any("not_a_signal" in m for m in est.log) and any("genset_1_kw" in m for m in est.log)
-    assert s["plant"]["genset_1_kw"]["value"] == 251.5 and s["plant"]["genset_1_kw"]["age_s"] == 1
+    assert s["plant"]["genset_1_kw"]["value"] == 252.2 and s["plant"]["genset_1_kw"]["age_s"] == 1
 
 
 def test_recovery_window_effects_carry_their_holders():

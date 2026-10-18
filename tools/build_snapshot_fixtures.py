@@ -106,13 +106,13 @@ FAULT_RULE_STATES = {"confirmed", "restoring"}
 
 
 class Spec:
-    def __init__(self, name, tick, mission="survey"):
+    def __init__(self, name, tick, mission="survey", installed=("G1", "G3", "G4", "G5")):
         self.name, self.tick, self.mission = name, tick, mission
         self.variant = "default"
         self.raw, self.derived = {}, {}
         self.faults, self.events, self.notes = [], [], []
         self.drops = {}
-        self.installed = ["G3", "G4", "G5"]
+        self.installed = list(installed)    # the scenario's guests, in its order (config/scenarios/scenario_b.yaml)
         self.constants = {"layered_water": False}
 
     def copy(self, name, tick=None, mission=None):
@@ -276,10 +276,10 @@ def speed_line(t, t0, v0, v1, t_end, t_latest):
              tr={"to": v1, "started_t_s": t0, "expected_end_t_s": t_end, "latest_end_t_s": t_latest})
 
 
-def base(A, S, SIG) -> Spec:
+def base(A, S, SIG, installed) -> Spec:
     """Minute 0: every raw reading is baselines.scenario_b.start."""
     B = S["baselines"]["scenario_b"]
-    s = Spec("scenario_b_survey_m00", 0)
+    s = Spec("scenario_b_survey_m00", 0, installed=installed)
     heat = round(160 - (40 / 18) * (24 - 12), 1)
     for name, v in B["start"].items():
         rate = SIG[name]["rate"]
@@ -292,10 +292,10 @@ def base(A, S, SIG) -> Spec:
         "gensets_online": D(2), "tripped_genset": D("none"), "cooling_state": D("nominal"),
         "speed_band": D("slow"), "heading_free": D(False), "deck_machinery_permitted": D(False), "flight_deck_ops": D("free"),
         "acoustic_link_up": D(True, since=0), "acoustic_kbps": D(3.0), "deck_latched_clear": D(False),
-        "G3.overdraw_pct": D(0.0), "G3.mode_ends_t_s": D(None),
-        "G4.overdraw_pct": D(0.0), "G4.mode_ends_t_s": D(None), "G4.airborne_since_t_s": D(-3952),
+        **{f"{g}.overdraw_pct": D(0.0) for g in installed},    # every guest draws its mode's figure at the start
+        "G3.mode_ends_t_s": D(None),
+        "G4.mode_ends_t_s": D(None), "G4.airborne_since_t_s": D(-3952),
         "G4.battery_crossing_t_s": D(None), "G4.land_by_t_s": D(-3952 + 90 * 60),
-        "G5.overdraw_pct": D(0.0),
         "power": D(cap(250, "kW")), "port_line": D(cap(150, "kW")), "stbd_line": D(cap(150, "kW")),
         "heat": D(cap(heat, "kW")), "satcom": D(cap(6.0, "Mbit/s")), "los_radio": D(cap(20.0, "Mbit/s")),
         "acoustic": D(cap(3.0, "kbit/s")), "shed_ceiling_kw": D(round(min(250, heat) - 5, 1)),
@@ -389,13 +389,13 @@ def specs(root: Path = ROOT) -> list[Spec]:
     drain = A["rules"]["r3"]["drain_pct_min"]
     out = []
 
-    m0 = base(A, S, SIG)
+    m0 = base(A, S, SIG, TL["guests"])
     m0.events = [{"t_s": 0, "type": "baseline", "origin": "timeline", "injected": False, "payload": {
         "note": TL["events"][0]["note"], "variant": "default", "start": copy.deepcopy(B["start"])}}]
     m0.notes = [
-        "Scenario B, survey file, minute 0: 3 kn over the cable route, G3 on its 40-min leg on the acoustic link, G4 airborne at 2 kW, G5 full.",
+        "Scenario B, survey file, minute 0: 3 kn over the cable route, G1 listening on the mast at 1.5 kW (air-cooled, on the bus and not on the chilled-water loop), G3 on its 40-min leg on the acoustic link, G4 airborne at 2 kW, G5 full (DEC-63 load-out).",
         "G4 has sent no battery report yet (one report, at minute 8, as in the brief), so battery_pct is null and its land-by is the endurance bound: launched -3952 s + 90 min = 1448 s, confidence assumed.",
-        "Every reading is the baseline's start (signals.yaml baselines.scenario_b), echoed in the baseline event: seed 0, sea state 4, wind 18 kn from 300 deg rising to 22 kn by minute 8, SATCOM 6 Mbit/s, G4 launched at -3952 s, each genset at (400 + 55 + 48) / 2 = 251.5 kW (fault_signatures.bus_load).",
+        "Every reading is the baseline's start (signals.yaml baselines.scenario_b), echoed in the baseline event: seed 0, sea state 4, wind 18 kn from 300 deg rising to 22 kn by minute 8, SATCOM 6 Mbit/s, G4 launched at -3952 s, each genset at (400 + 55 + 49.5) / 2 = 252.2 kW (fault_signatures.bus_load).",
         "The flight deck starts occupied; the seed clears it in 4 min after the minute-8 confirmation (seed_pins.deck_clear_min).",
     ]
     out.append(m0)
@@ -475,8 +475,8 @@ def specs(root: Path = ROOT) -> list[Spec]:
     drift(m12, S)
     tripped(m12, A)
     m12.notes = [
-        "Scenario B, survey file, minute 12: genset 2 trips at 720 s (relay flag, kW to zero, the bus held at 59.6 Hz: fault_signatures.genset_trip). Relay and kW hold for 1 s, so the trip is confirmed at 721 s, this tick; D4's first shed would be applied at 722 s, inside the 725 s due time. Genset 1 carries 400 - 150 + 55 + 48 = 353 kW (fault_signatures.bus_load).",
-        "G4 is airborne at 2 kW with no reservation (DEC-40): the ledger's load is 48 kW against a 95 kW ceiling, so the trip holds with 0 steps (tests/oracles minute_12_as_decided).",
+        "Scenario B, survey file, minute 12: genset 2 trips at 720 s (relay flag, kW to zero, the bus held at 59.6 Hz: fault_signatures.genset_trip). Relay and kW hold for 1 s, so the trip is confirmed at 721 s, this tick; D4's first shed would be applied at 722 s, inside the 725 s due time. Genset 1 carries 400 - 150 + 55 + 49.5 = 354.5 kW (fault_signatures.bus_load).",
+        "G4 is airborne at 2 kW with no reservation (DEC-40): the ledger's load is 49.5 kW against the 95 kW power limit (48 kW of it on the chilled-water loop, against 128.3), so the trip holds with 0 steps (tests/oracles minute_12_as_decided).",
         "The ship reached 5 kn at 661 s (one setting inside the slow band, no band change) and the deck is being cleared (541 s to 781 s, seed 4 min); G3 has held depth since its ack at 510 s and is out of acoustic contact.",
     ]
     out.append(m12)
@@ -496,7 +496,7 @@ def specs(root: Path = ROOT) -> list[Spec]:
     m19.derived["acoustic"] = D(cap(0.0, "kbit/s", ["acoustic link down: course free (settling to steady), noise normal"], zero=True), since=541)
     m19.notes = [
         "Scenario B, survey file, minute 19: INJECTED fault. Chilled-water pump 1 fails at 1140 s, 2 min after G4 landed (scenario_b cooling_degraded trigger); alarm, pump stopped, low flow and high delta-T hold 1 s, confirmed at 1141 s. One pump running: cooling x0.6.",
-        "Heat 133.3 x 0.6 = 80 kW, ceiling min(100, 80) - 5 = 75 kW against the ledger's 81 kW (G3 1 + G4 35 fast charge + G5 45): cooling binds, 6 kW over (docs/EXPECTED_OUTCOMES.md, Scenario B as decided).",
+        "Heat 133.3 x 0.6 = 80 kW, a 75 kW loop limit against the 81 kW the loop carries (G3 1 + G4 35 fast charge + G5 45; G1's 1.5 kW is air-cooled on the mast and not on the loop, 82.5 kW electrical against the 95 kW power limit): cooling binds, 6 kW over (docs/EXPECTED_OUTCOMES.md, Scenario B as decided).",
         "G4 landed at 1020 s and fast-charges until 2220 s; its last battery report is still the 18 % of minute 8. The commands after securing G4 (snapshot 1080) took effect at 1081 s: the ship slows back to 3 kn and settles its course to resume the survey. The genset is still down (restart at minute 24 is optional).",
     ]
     out.append(m19)
@@ -506,7 +506,7 @@ def specs(root: Path = ROOT) -> list[Spec]:
     tripped(sar12, A)
     sar12.notes = [
         "Scenario B, sar file, minute 12: the ship state is the survey run's; G3's leg was aborted at minute 8 and it holds at sea (acked at 510 s).",
-        "G4 is airborne at 2 kW. Its 35 kW fast charge is reserved from minute 8 (DEC-40); the reservation is in the decision log, not the snapshot, and the ledger counts max(2, 35) = 35: 1 + 35 + 45 = 81 kW against 95, 14 spare, 0 steps (tests/oracles minute_12_as_decided.sar).",
+        "G4 is airborne at 2 kW. Its 35 kW fast charge is reserved from minute 8 (DEC-40); the reservation is in the decision log, not the snapshot, and the ledger counts max(2, 35) = 35: 1.5 + 1 + 35 + 45 = 82.5 kW against the 95 kW power limit, 12.5 spare (81 kW on the loop against 128.3), 0 steps (tests/oracles minute_12_as_decided.sar).",
     ]
     out.append(sar12)
 
@@ -517,7 +517,7 @@ def specs(root: Path = ROOT) -> list[Spec]:
     cooling(sar19)
     sar19.notes = [
         "Scenario B, sar file, minute 19: the injected pump fault as in the survey run. G3 still holds at sea, to be recovered over the ramp once the flight deck is done; the ship stays at 5 kn with its course free.",
-        "Ledger 81 kW against a 75 kW ceiling; D4's commands from this snapshot are applied at 1142 s: sar takes G5 to 8 kW (44 kW), per scenario_b provenance.",
+        "The loop carries 81 kW against a 75 kW limit (82.5 kW electrical against 95); D4's commands from this snapshot are applied at 1142 s: sar takes G5 to 8 kW (loop 44 kW, 45.5 kW electrical), per scenario_b provenance.",
     ]
     out.append(sar19)
     return out

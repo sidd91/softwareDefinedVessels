@@ -52,6 +52,7 @@ def first_throttle(guests, mission):
 CASES = [  # set, as-loaded kW, {mission: (first guest, load after)} or None when nothing is needed
     (["G1", "G2", "G3", "G4"], 81.5, None),
     (["G3", "G4", "G5"], 105, {"survey": ("G4", 80), "sar": ("G5", 68)}),
+    (["G1", "G3", "G4", "G5"], 106.5, {"survey": ("G4", 81.5), "sar": ("G5", 69.5)}),   # Scenario B (DEC-63)
     (["G2", "G4", "G5"], 100, {"survey": ("G4", 75), "sar": ("G2", 86)}),
     (["G1", "G2", "G3"], 46.5, None),
     (["G1", "G3", "G5"], 71.5, None),

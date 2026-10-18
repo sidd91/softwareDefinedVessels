@@ -13,11 +13,11 @@ Every number we rely on beyond Annex A and B, every Annex value we changed, and 
 <tr><td>Heat rejection</td><td>loop, seawater</td><td>-40 % = 1 of 2 pumps; chillers essential; scan 0.1 °C steps to 35 °C</td><td>cooling survives a trip</td><td>test, documented only</td></tr>
 <tr><td>Positions</td><td>hull, roof, ramp</td><td>60 m hull; roof holds G5's antenna (60 kg); ramp craft up to 7 m</td><td>roof clears drones</td><td>card, code</td></tr>
 <tr><td>Mass / stability</td><td>G4 hangar</td><td>850 kg, not Annex B's 900 kg</td><td>organizer fix (DEC-22)</td><td>card, test</td></tr>
-<tr><td></td><td>Scenario B set</td><td>G3, G4, G5, 9.515 t; brief's G2-G5 (13.015 t of 10) refused</td><td>override logged (DEC-32)</td><td>test</td></tr>
-<tr><td>Data links</td><td>rates judged</td><td>guests' minimum rates, nominal gap shown as degraded; SATCOM at its 2 Mbit/s floor; floors G3 acoustic 1 kbit/s, G5 SATCOM 1 Mbit/s</td><td>admission rule (DEC-38)</td><td>card, test, documented only</td></tr>
-<tr><td></td><td>LOS radio</td><td>top rate 20 Mbit/s, G4 kept within 20 km (A.5 reach 20-40 km)</td><td>unverified; range is ours</td><td>code, test, documented only</td></tr>
+<tr><td></td><td>Scenario B set</td><td>G1, G3, G4, G5, 9.56 t; G1 air-cooled on the mast; brief's G2-G5 (13.015 t of 10) refused</td><td>organisers' answer (DEC-63)</td><td>test</td></tr>
+<tr><td>Data links</td><td>rates judged</td><td>guests' minimum rates, nominal gap shown as degraded; SATCOM at its 2 Mbit/s floor; floors G3 acoustic 1 kbit/s, G5 SATCOM 1 Mbit/s</td><td>admission rule (DEC-38)</td><td>card, code, test, documented only</td></tr>
+<tr><td></td><td>LOS radio</td><td>top rate 20 Mbit/s, G4 kept within 20 km (A.5 reach 20-40 km)</td><td>unverified; range is ours</td><td>code, test</td></tr>
 <tr><td></td><td>acoustic link</td><td>up only while course steady, noise quiet, no deck machinery; lost at once; 60 s per message; Scenario B water not layered</td><td>A.5's rule, safe end</td><td>code, test, documented only</td></tr>
-<tr><td>State transitions</td><td>R3 lead time</td><td>confirm 1 min at 14, 3 at 6; clear deck 5 at 14, 12 at 6</td><td>A.6 slow end, worst case</td><td>test</td></tr>
+<tr><td>State transitions</td><td>R3 lead time</td><td>confirm 1 min at 14, 3 at 6; clear deck 5 at 14, 12 at 6</td><td>A.6 slow end, worst case</td><td>code, test</td></tr>
 <tr><td></td><td>Scenario B seed</td><td>confirm 1, clear 4, approach 4 min: G4 lands at minute 17</td><td>replayable, inside A.6</td><td>test</td></tr>
 <tr><td>Compute / response time</td><td>fault entry</td><td>trip on 2 of 3 signals, pump on alarm plus flow or delta-T, held 1 s; restore after 60 s; a feed silent 3 s falls to its conservative value</td><td>one reading never sheds</td><td>code, test</td></tr>
 <tr><td></td><td>timeout, safety</td><td>on a miss: admit no, hold, run the ready ladder; safety by table lookup</td><td>no solver on 200 ms</td><td>code, documented only</td></tr>

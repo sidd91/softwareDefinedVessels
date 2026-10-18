@@ -50,8 +50,8 @@ GUEST_ID = re.compile(r"^G\d$")
 CONTRACT_6_EVENTS = {"baseline", "card_presented", "card_edited", "priority_swap", "genset_trip", "genset_restart",
                      "cooling_degraded", "guest_report", "guest_state", "guest_overconsumption", "crew_change",
                      "deck_report", "emission_change", "feed_drop"}
-# Scenario B placement (DEC-32): which mission line feeds each guest's draw.
-PLACEMENT = {"G3": "bay1", "G4": "flight_deck", "G5": "bay2"}
+# Scenario B placement (DEC-63): which mission line feeds each guest's draw; G1 on the free mast slot, G5's antenna on the roof.
+PLACEMENT = {"G1": "mast_free", "G3": "bay1", "G4": "flight_deck", "G5": "bay2"}
 # The sar reservation (DEC-40), as the decision log would hold it: the oracle's minute-8 reserved_kw.
 BASE = SIGNALS_FILE["baselines"]["scenario_b"]
 SAR_RESERVATIONS = {"G4": {"mode": "fast_charge", "kw": ORACLE["scenario_b"]["minute_8"]["by_file"]["sar"]["reserved_kw"], "since_t_s": 480}}
@@ -750,8 +750,9 @@ def test_ledger_survey_minute_12_holds_with_g4_airborne_at_2_kw():
     o = ORACLE["scenario_b"]["minute_12_as_decided"]["by_file"]["survey"]
     assert {g: b["mode"]["value"] for g, b in s["guests"].items()} == o["modes"] and o["reserved"] == []
     L = ledger(s)
-    assert L["power"]["committed"] == o["load_kw"] == 48
-    assert s["capacity"]["shed_ceiling_kw"]["value"] - L["power"]["committed"] == o["spare_kw"] == 47
+    assert L["power"]["committed"] == o["load_kw"] == 49.5
+    assert L["heat"]["committed"] == o["loop_kw"] == 48, "G1's 1.5 kW is air-cooled: on the bus, not on the loop"
+    assert s["capacity"]["shed_ceiling_kw"]["value"] - L["power"]["committed"] == o["spare_kw"] == 45.5
 
 
 def test_ledger_sar_minute_12_counts_the_reservation():
@@ -762,10 +763,11 @@ def test_ledger_sar_minute_12_counts_the_reservation():
     assert s["guests"]["G3"]["activity"]["value"] == "holding_at_sea" and s["guests"]["G3"]["leg_state"]["value"] == "aborted"
     assert SAR_RESERVATIONS["G4"]["kw"] == mode_kw("G4", o["modes"]["G4"]) == 35
     L = ledger(s, SAR_RESERVATIONS)
-    assert L["power"]["committed"] == o["load_kw"] == 81, "max(declared 2, reserved 35) per guest, not 2 + 35"
+    assert L["power"]["committed"] == o["load_kw"] == 82.5, "max(declared 2, reserved 35) per guest, not 2 + 35"
+    assert L["heat"]["committed"] == o["loop_kw"] == 81
     assert s["capacity"]["shed_ceiling_kw"]["value"] == ORACLE["scenario_b"]["ceiling"]["kw"] == 95
-    assert s["capacity"]["shed_ceiling_kw"]["value"] - L["power"]["committed"] == o["spare_kw"] == 14
-    assert ledger(s)["power"]["committed"] == 48, "without the decision log the snapshot alone gives the survey load"
+    assert s["capacity"]["shed_ceiling_kw"]["value"] - L["power"]["committed"] == o["spare_kw"] == 12.5
+    assert ledger(s)["power"]["committed"] == 49.5, "without the decision log the snapshot alone gives the survey load"
 
 
 @pytest.mark.parametrize("name", ["scenario_b_survey_m19", "scenario_b_sar_m19"])
@@ -775,13 +777,14 @@ def test_ledger_minute_19_cooling_binds(name):
     res = SAR_RESERVATIONS if s["run"]["mission"] == "sar" else None
     L = ledger(s, res)
     assert {g: b["mode"]["value"] for g, b in s["guests"].items()} == ev["load_modes"]
-    assert L["power"]["committed"] == L["heat"]["committed"] == 81
+    assert L["heat"]["committed"] == 81, "the loop: G3 1 + G4 35 + G5 45"
+    assert L["power"]["committed"] == 82.5, "the bus: the loop plus G1's air-cooled 1.5 kW"
     assert s["capacity"]["heat"]["value"]["capacity"] == pytest.approx(heat_capacity(24, ev["factor"]), abs=0.05) == 80.0
     assert s["capacity"]["shed_ceiling_kw"]["value"] == 75.0
     if s["run"]["mission"] == "sar":
         m = re.search(r"sar takes G5 to (\d+) kW \((\d+) kW\)", TL["provenance"]["events.cooling_degraded"]["why"])
         assert mode_kw("G5", "low_power") == int(m.group(1))
-        assert L["power"]["committed"] - mode_kw("G5", "full") + mode_kw("G5", "low_power") == int(m.group(2)) == 44
+        assert L["heat"]["committed"] - mode_kw("G5", "full") + mode_kw("G5", "low_power") == int(m.group(2)) == 44
 
 
 @pytest.mark.parametrize("name", sorted(FIXTURES))
@@ -800,9 +803,9 @@ def test_ledger_buffers_demand_on_a_link_that_is_zero_by_rule(name):
 def test_the_ledger_counts_a_fresh_overdraw():
     s = json.loads(json.dumps(survey(12)))
     s["guests"]["G5"]["kw_actual"]["value"] = 51.8          # 15 % over its 45 kW (DEMO_SCRIPT)
-    assert ledger(s)["power"]["committed"] == pytest.approx(48 - 45 + 51.8)
+    assert ledger(s)["power"]["committed"] == pytest.approx(49.5 - 45 + 51.8)
     s["guests"]["G5"]["kw_actual"]["stale"] = True
-    assert ledger(s)["power"]["committed"] == 48, "a stale meter never raises committed: D4 does not act on it"
+    assert ledger(s)["power"]["committed"] == 49.5, "a stale meter never raises committed: D4 does not act on it"
 
 
 # ------------------------------------------------------------------------------ Scenario B, minute by minute
@@ -813,6 +816,8 @@ def test_minute_0_matches_the_timeline():
     assert s["ship_state"]["speed_kn"]["value"] == 3.0
     assert s["guests"]["G3"]["activity"]["value"] == "surveying" and s["links"]["acoustic_link_up"]["value"]
     assert s["guests"]["G4"]["activity"]["value"] == "airborne" and s["guests"]["G5"]["mode"]["value"] == "full"
+    assert s["guests"]["G1"]["activity"]["value"] == "listening" and s["guests"]["G1"]["kw_actual"]["value"] == 1.5
+    assert CARDS["G1"]["cooling"] == "air", "G1 draws on the bus and never on the chilled-water loop"
     b = s["guests"]["G4"]["battery_pct"]
     assert b["value"] is None and b["age_s"] is None and not b["stale"], "no battery report before minute 8"
     lb = s["guests"]["G4"]["land_by_t_s"]

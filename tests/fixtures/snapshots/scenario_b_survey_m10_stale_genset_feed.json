@@ -8,6 +8,7 @@
   "tick": 600,
   "t_ship_s": 600,
   "installed": [
+   "G1",
    "G3",
    "G4",
    "G5"
@@ -48,26 +49,26 @@
    }
   },
   "genset_1_kw": {
-   "value": 251.5,
+   "value": 252.2,
    "source": "plant",
    "age_s": 4,
    "confidence": "substituted",
    "stale": true,
    "substituted": {
-    "last_value": 251.5,
+    "last_value": 252.2,
     "last_good_t_s": 596,
     "rule": "casts no vote; a pending trip is held; gensets_online falls back instead",
     "stage": "bound"
    }
   },
   "genset_2_kw": {
-   "value": 251.5,
+   "value": 252.2,
    "source": "plant",
    "age_s": 4,
    "confidence": "substituted",
    "stale": true,
    "substituted": {
-    "last_value": 251.5,
+    "last_value": 252.2,
     "last_good_t_s": 596,
     "rule": "casts no vote; a pending trip is held; gensets_online falls back instead",
     "stage": "bound"
@@ -427,6 +428,46 @@
   }
  },
  "guests": {
+  "G1": {
+   "mode": {
+    "value": "full",
+    "source": "plant",
+    "age_s": 0,
+    "confidence": "measured",
+    "stale": false
+   },
+   "activity": {
+    "value": "listening",
+    "source": "guest_report",
+    "age_s": 0,
+    "confidence": "reported",
+    "stale": false
+   },
+   "kw_actual": {
+    "value": 1.5,
+    "source": "plant",
+    "age_s": 0,
+    "confidence": "measured",
+    "stale": false
+   },
+   "data_demand": {
+    "value": {
+     "backbone_mbps": 50,
+     "satcom_mbps": 0.2
+    },
+    "source": "plant",
+    "age_s": 0,
+    "confidence": "measured",
+    "stale": false
+   },
+   "overdraw_pct": {
+    "value": 0.0,
+    "source": "derived",
+    "age_s": 0,
+    "confidence": "measured",
+    "stale": false
+   }
+  },
   "G3": {
    "mode": {
     "value": "standby",

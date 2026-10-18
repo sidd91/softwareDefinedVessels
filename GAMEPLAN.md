@@ -205,7 +205,7 @@ directly. No solver (freeze delta 6).
 Containerised desalination unit: Bay 2 preferred or half Bay 1; 2.8 t; 18 kW continuous, 4 kW
 low-power (recirculate); 2 Mbit/s telemetry; two people to start; high for disaster relief, low
 elsewhere; not safety-critical. It is not in Scenario B (the brief's G2 to G5 load-out is over the mass
-margin and refused at the pier; we run G3, G4, G5, DEC-32), so it sheds first only in runs that carry it;
+margin and refused at the pier; we run the organisers' G1, G3, G4, G5, DEC-63), so it sheds first only in runs that carry it;
 it mirrors the organisers' own slide. Alternative if we want a mast story instead: flat-panel SATCOM
 terminal (competes with G1/G5 for the one free mast slot, excluded in emission silence).
 
@@ -292,7 +292,7 @@ Scenario C memo.
 
 ## Demo script: 90 s of Scenario B, then Scenario A with the jury's card
 
-The storyboard is [docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md). Scenario B runs G3, G4 and G5 (DEC-32) on
+The storyboard is [docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md). Scenario B runs G1, G3, G4 and G5 (DEC-63, the organisers' load-out) on
 the DEC-40 timeline with the jury's priority file: D3 at minute 8; minute 12 holds with both armed
 ladders shown; the INJECTED pump fault at minute 19 runs the ladder. Then Scenario A with the jury's
 card and one number changed, in Admission review. Then the Scenario C segment (R3 at 14, 6 and 0

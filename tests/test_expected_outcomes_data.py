@@ -602,13 +602,13 @@ def test_heat_passes_at_minute_12():
 
 def test_three_loadouts_as_in_the_doc():
     assert [lo["id"] for lo in B["loadouts"]] == ["i", "ii", "iii"]
-    assert [lo["guests"] for lo in B["loadouts"]] == [["G2", "G3", "G4", "G5"], ["G3", "G4", "G5"], ["G2", "G3", "G4"]]
+    assert [lo["guests"] for lo in B["loadouts"]] == [["G2", "G3", "G4", "G5"], ["G1", "G3", "G4", "G5"], ["G2", "G3", "G4"]]
 
 
 @pytest.mark.parametrize("lo", B["loadouts"], ids=lambda lo: lo["id"])
 def test_loadout_mass_and_stability_recompute(lo):
     m = mass_t(CARDS, lo["guests"])
-    s = stability_t_eq(CARDS, lo["guests"])
+    s = stability_t_eq(CARDS, lo["guests"], lo.get("placement"))   # (ii): G1 takes the mast, so G5's antenna is on the roof
     assert lo["mass_t"] == pytest.approx(m, abs=EPS)
     assert lo["stability_t_eq"] == pytest.approx(s, abs=EPS)
     if "mass_over_t" in lo:
@@ -790,6 +790,28 @@ def test_minute_12_armed_first_step_is_g5_under_both_files_at_different_prices()
     assert (survey["cost_per_kw"], sar["cost_per_kw"]) == (0.0038, 0.0189)
     # Under survey G4 is in standby, the lowest mode that keeps capability, so it has nothing to throttle.
     assert first_step_down("G4", "standby")["to_mode"] == "off"
+
+
+# ---------------------------------------------------------------- Scenario B: minute 19 as decided (DEC-40, DEC-63)
+
+
+@pytest.mark.parametrize("file_id", ["survey", "sar"])
+def test_minute_19_as_decided_judges_the_loop_and_the_bus_on_their_own_lines(file_id):
+    m19 = B["minute_19_as_decided"]
+    row = m19["by_file"][file_id]
+    assert m19["heat_limit_kw"] == pytest.approx(heat_capacity_kw(B["seawater_c"]) * A["heat"]["degraded_factor"] - HEADROOM)
+    assert m19["power_limit_kw"] == pytest.approx(RESERVE_ONE_SET - HEADROOM) == B["ceiling"]["kw"]
+    loop = sum(mode(g, m)["power_kw"] for g, m in row["modes"].items() if CARDS[g]["cooling"] == "chilled_water")
+    total = sum(mode(g, m)["power_kw"] for g, m in row["modes"].items())
+    assert (row["loop_kw"], row["total_kw"]) == (loop, total) and total - loop == mode("G1", "full")["power_kw"]
+    assert loop > m19["heat_limit_kw"] and total <= m19["power_limit_kw"], "cooling binds on the loop while the bus has spare"
+    step = row["step"]
+    assert step["frees_kw"] == step_frees_kw(step) and CARDS[step["guest"]]["cooling"] == "chilled_water"
+    assert row["loop_after_kw"] == loop - step["frees_kw"] <= m19["heat_limit_kw"]
+    assert row["total_after_kw"] == total - step["frees_kw"] <= m19["power_limit_kw"]
+    price = B["price_lists"][file_id]
+    first = next(s for s in price["throttles"] if row["modes"].get(s["guest"]) == s["from_mode"])
+    assert (first["guest"], first["to_mode"]) == (step["guest"], step["to_mode"])
 
 
 # ---------------------------------------------------------------- Scenario B: minute 8

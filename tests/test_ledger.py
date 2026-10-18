@@ -47,30 +47,62 @@ def test_brief_checks():
 
 
 def minute(m, file_id):
-    """Scenario B guest modes and conditions at minutes 12 and 19 (docs/EXPECTED_OUTCOMES.md, DEC-40)."""
-    modes = {"G3": "standby", "G4": "standby" if m == 12 else "fast_charge", "G5": "full"}
+    """Scenario B guest modes and conditions at minutes 12 and 19 (docs/EXPECTED_OUTCOMES.md, DEC-40, DEC-63): G1
+    listening at 1.5 kW on the mast, air-cooled, so it is on the power line and not on the chilled-water loop."""
+    modes = {"G1": "full", "G3": "standby", "G4": "standby" if m == 12 else "fast_charge", "G5": "full"}
     reserved = {"G4": 35} if (file_id == "sar" and m == 12) else {}
     return modes, dict(gensets_online=1, seawater_c=24, cooling_degraded=(m == 19), reservations=reserved)
 
 
-@pytest.mark.parametrize("m,file_id,limit,load", [(12, "survey", 95, 48), (12, "sar", 95, 81), (19, "survey", 75, 81), (19, "sar", 75, 81)])
-def test_scenario_b_limit_and_load(m, file_id, limit, load):
+def headroom():
+    return A["power"]["shed_headroom_kw"]
+
+
+@pytest.mark.parametrize("m,file_id,limit,load,loop", [(12, "survey", 95, 49.5, 48), (12, "sar", 95, 82.5, 81),
+                                                        (19, "survey", 75, 82.5, 81), (19, "sar", 75, 82.5, 81)])
+def test_scenario_b_limit_and_load(m, file_id, limit, load, loop):
     modes, cond = minute(m, file_id)
     lines = Lg.operating_lines(A, CARDS, modes, **cond)
     assert Lg.limit_kw(A, lines["power"], lines["heat"]) == pytest.approx(limit)
     assert lines["power"].demand == pytest.approx(load)
+    assert lines["heat"].demand == pytest.approx(loop), "the loop carries the chilled-water guests only"
+    assert "G1" in lines["power"].contributors and "G1" not in lines["heat"].contributors
     assert ("chilled-water pump" in lines["heat"].degraded_by) == (m == 19)
 
 
-@pytest.mark.parametrize("file_id,guest,to_mode,price,after", [("survey", "G4", "charge", 0.0024, 56), ("sar", "G5", "low_power", 0.0189, 44)])
-def test_minute_19_first_step_and_load_after(file_id, guest, to_mode, price, after):
+def chilled(modes):
+    return [g for g in modes if CARDS[g]["cooling"] == "chilled_water"]
+
+
+@pytest.mark.parametrize("file_id,guest,to_mode,price,after,total_after", [("survey", "G4", "charge", 0.0024, 56, 57.5),
+                                                                          ("sar", "G5", "low_power", 0.0189, 44, 45.5)])
+def test_minute_19_first_step_and_load_after(file_id, guest, to_mode, price, after, total_after):
     modes, cond = minute(19, file_id)
     lines = Lg.operating_lines(A, CARDS, modes, **cond)
     steps = Lg.ladder(CARDS, modes, MISSIONS[file_id])
-    taken = Lg.steps_to_fit(steps, lines["power"].demand, Lg.limit_kw(A, lines["power"], lines["heat"]))
+    taken = Lg.steps_to_fit(steps, lines["power"].demand, lines["power"].capacity - headroom(),
+                            loop_kw=lines["heat"].demand, loop_limit=lines["heat"].capacity - headroom(), loop_guests=chilled(modes))
     assert [(s.guest, s.to_mode) for s in taken] == [(guest, to_mode)]
     assert taken[0].price == pytest.approx(price, abs=1e-4)
-    assert lines["power"].demand - taken[0].frees_kw == pytest.approx(after)
+    assert lines["heat"].demand - taken[0].frees_kw == pytest.approx(after)
+    assert lines["power"].demand - taken[0].frees_kw == pytest.approx(total_after)
+
+
+def test_a_step_off_the_loop_frees_no_loop_kw():
+    """An air-cooled guest's step helps the bus, never the cooling line: with only G1's step on offer the loop stays over."""
+    modes, cond = minute(19, "survey")
+    lines = Lg.operating_lines(A, CARDS, modes, **cond)
+    g1_only = [s for s in Lg.ladder(CARDS, modes, MISSIONS["survey"], for_shed=True) if s.guest == "G1"]
+    assert [(s.from_mode, s.to_mode, s.frees_kw) for s in g1_only] == [("full", "off", 1.5)]
+    two_lines = dict(loop_kw=lines["heat"].demand, loop_limit=lines["heat"].capacity - headroom(), loop_guests=chilled(modes))
+    assert Lg.steps_to_fit(g1_only, lines["power"].demand, lines["power"].capacity - headroom(), **two_lines) is None
+    assert Lg.walk(g1_only, lines["power"].demand, lines["power"].capacity - headroom(), **two_lines) == ([], False), "passed over, not taken"
+    g4 = next(s for s in Lg.ladder(CARDS, modes, MISSIONS["survey"], for_shed=True) if s.guest == "G4")
+    taken = Lg.steps_to_fit(g1_only + [g4], lines["power"].demand, lines["power"].capacity - headroom(), **two_lines)
+    assert taken == [g4], "the walk skips G1's step and takes the first one that relieves the loop"
+    assert Lg.steps_to_fit(g1_only, 96.5, 95) == [g1_only[0]], "on the bus alone the same step closes a 1.5 kW gap"
+    assert Lg.steps_to_fit(g1_only + [g4], 96.5, 95, loop_kw=81, loop_limit=128.3, loop_guests=chilled(modes)) == [g1_only[0]], \
+        "with only the bus over G1's step is taken: it is the first that relieves the line that is over"
 
 
 @pytest.mark.parametrize("file_id", ["survey", "sar"])
@@ -78,7 +110,8 @@ def test_minute_12_holds_and_arms_g5_first(file_id):
     modes, cond = minute(12, file_id)
     lines = Lg.operating_lines(A, CARDS, modes, **cond)
     steps = Lg.ladder(CARDS, modes, MISSIONS[file_id])
-    assert Lg.steps_to_fit(steps, lines["power"].demand, Lg.limit_kw(A, lines["power"], lines["heat"])) == []
+    assert Lg.steps_to_fit(steps, lines["power"].demand, lines["power"].capacity - headroom(),
+                           loop_kw=lines["heat"].demand, loop_limit=lines["heat"].capacity - headroom(), loop_guests=chilled(modes)) == []
     assert (steps[0].guest, steps[0].to_mode) == ("G5", "low_power")
 
 
@@ -106,7 +139,8 @@ def test_declared_shed_order_overrides_the_price():
 
 
 GATE = [(["G3", "G4", "G5"], {"survey": ("G4", 80), "sar": ("G5", 68)}), (["G2", "G4", "G5"], {"survey": ("G4", 75), "sar": ("G2", 86)}),
-        (["G1", "G2", "G4", "G5"], {"survey": ("G4", 76.5), "sar": ("G2", 87.5)})]
+        (["G1", "G2", "G4", "G5"], {"survey": ("G4", 76.5), "sar": ("G2", 87.5)}),
+        (["G1", "G3", "G4", "G5"], {"survey": ("G4", 81.5), "sar": ("G5", 69.5)})]   # Scenario B (DEC-63): 106.5 kW, 6.5 short
 
 
 @pytest.mark.parametrize("guests,expected", GATE, ids=["-".join(g) for g, _ in GATE])

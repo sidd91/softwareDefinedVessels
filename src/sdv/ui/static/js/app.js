@@ -94,7 +94,7 @@ function simbar() {
   paint($('sim-file'), '<span class="gl">PRIORITY</span>' + app.meta.missions.map(m =>
     `<button type="button" data-file="${esc(m.id)}" class="${m.id === t.mission ? 'on' : ''}" aria-pressed="${m.id === t.mission}">${esc(m.name)}</button>`).join(''));
   $('sim-fill').style.width = `${Math.round(100 * t.t_s / t.end_t_s)}%`;
-  $('sim-source').textContent = t.source === 'live' ? `LIVE · SIM ${String(t.sim || '').toUpperCase()}` : 'REPLAY';
+  $('sim-source').textContent = t.source === 'live' ? `LIVE · ${String(t.sim || '').toUpperCase()}` : 'REPLAY';
   if (t.refused) $('sim-note').textContent = `REFUSED · ${t.refused}`;
 }
 

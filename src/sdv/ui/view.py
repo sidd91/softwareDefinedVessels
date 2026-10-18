@@ -23,6 +23,7 @@ SHORT = {"G1": "RF SENSOR", "G2": "OCEAN MODULE", "G3": "SEABED VEH", "G4": "UAV
 SLOTS = {"bay1": "BAY 1", "bay1_half": "BAY 1 HALF", "bay2": "BAY 2", "flight_deck": "FD", "mast_free": "MAST",
          "hangar_roof": "HANGAR ROOF", "stern_ramp": "RAMP", None: "--"}
 SUBJECTS = {"genset_1": "GEN 1", "genset_2": "GEN 2", "chw_pump_1": "CHW P1", "chw_pump_2": "CHW P2"}
+PART_SHORT = {"antenna": "ANT"}
 ACTIVITY_POS = {"surveying": "DEPTH", "holding_depth": "DEPTH", "holding_at_sea": "AT SEA", "airborne": "AIR", "recovering": "AIR"}
 HOLDS = {"depth": "holding_depth", "at_sea": "holding_at_sea"}
 CLASS_NAMES = {"heat": "COOLING CHW", "power": "POWER"}
@@ -208,6 +209,12 @@ def _placement(I: Inputs, guests: list[str]) -> dict:
     return cache[key]
 
 
+def _mast_label(placement: dict) -> str:
+    """The guest parts on the free mast slot as the tiles name them: G1 SENSOR, or G5 ANT when the antenna has it."""
+    on_mast = sorted(k for k, slot in placement.items() if slot == "mast_free")
+    return " ".join(f"{k.split('.')[0]} {words(PART_SHORT.get(k.split('.')[1], k.split('.')[1]))}" for k in on_mast)
+
+
 def _pos(I: Inputs, g: str, s: dict, placement: dict) -> str:
     if s["activity"] in ACTIVITY_POS:
         return ACTIVITY_POS[s["activity"]]
@@ -266,8 +273,7 @@ def mimic(I: Inputs, m: Moment, gs: dict, hot: set) -> dict:
         zones.append({"zone": label, "guest": f"{g} {SHORT.get(g, '')}".strip(), "mode": _mode_line(g, s), "extra": extra,
                       "hot": g in hot})
     mast_used = len(I.A["positions"]["mast_occupied"]) + len(by_slot.get("mast_free", []))
-    mast_guests = " ".join(sorted({k.split(".")[0] + " ANT" for k in by_slot.get("mast_free", [])}))
-    zones.append({"zone": "MAST", "guest": mast_guests or "FREE", "mode": f"{len(I.A['positions']['mast_occupied'])} HOST + "
+    zones.append({"zone": "MAST", "guest": _mast_label(placement) or "FREE", "mode": f"{len(I.A['positions']['mast_occupied'])} HOST + "
                   f"{len(by_slot.get('mast_free', []))}", "extra": f"{mast_used} / 3", "hot": False})
     ramp = snap["ship_state"]["ramp"]["value"]
     return {"ramp": words(ramp), "zones": zones}
@@ -402,7 +408,7 @@ def tiles(I: Inputs, m: Moment, gs: dict, pl: dict) -> list[dict]:
     if pumps < 2:
         chw_sub = "P1 TRIP · 1 OF 2 PUMPS" if not p["chw_pump_1_running"]["value"] else "P2 TRIP · 1 OF 2 PUMPS"
     if pl["binds"] == "heat" and pl["power_cap"] > pl["heat_cap"] and pl["heat_degraded"]:
-        usable = pl["ceiling"] - pl["load"]
+        usable = pl["heat_limit"] - pl["chilled"]     # what the loop still takes: cooling binds on the chilled-water draw
         power_sub = f"USABLE {f1(usable)} kW · CHW BINDS" if usable >= 0 else f"CHW {f1(-usable)} kW OVER LIMIT"
     elif tripped:
         power_sub = f"{' '.join(tripped)} TRIP · {pl['power_cap']:.0f} kW"
@@ -426,7 +432,7 @@ def tiles(I: Inputs, m: Moment, gs: dict, pl: dict) -> list[dict]:
          "state": _status("power", pl), **bar(pl["load"], pl["power_cap"], pl["power_limit"])},
         {"name": "DECK", "value": f"{deck_used} / {deck_total}", "sub": " · ".join(deck_names) or "ALL FREE",
          "state": "FULL" if deck_used >= deck_total else "NORMAL", **bar(deck_used, deck_total)},
-        {"name": "MAST", "value": f"{mast_host + mast_free} / 3", "sub": f"{mast_host} HOST" + (" · G5 ANT" if mast_free else ""),
+        {"name": "MAST", "value": f"{mast_host + mast_free} / 3", "sub": f"{mast_host} HOST" + (f" · {_mast_label(_placement(I, guests))}" if mast_free else ""),
          "state": "FULL" if mast_host + mast_free >= 3 else "NORMAL", **bar(mast_host + mast_free, 3)},
         {"name": "MASS / STAB", "value": f"{f3(mass.demand)} / {f3(mass.capacity)} t", "sub": f"STAB {f3(stab.demand)} / {f3(stab.capacity)}",
          "state": "OVER" if mass.over or stab.over else ("NEAR LIMIT" if mass.free < 0.1 * mass.capacity else "NORMAL"),
@@ -472,7 +478,7 @@ def ledger_rows(I: Inputs, m: Moment, gs: dict, pl: dict) -> list[dict]:
     rows += [
         ("DECK", f"{deck_total} POS", f"{deck_total} POS", " · ".join(deck_names), f"{deck_total - deck_used}",
          "FULL" if deck_used >= deck_total else "NORMAL"),
-        ("MAST", "3 POS", "3 POS", f"{len(I.A['positions']['mast_occupied'])} HOST" + (" · G5 ANT" if mast_free else ""),
+        ("MAST", "3 POS", "3 POS", f"{len(I.A['positions']['mast_occupied'])} HOST" + (f" · {_mast_label(placement)}" if mast_free else ""),
          f"{3 - len(I.A['positions']['mast_occupied']) - mast_free}", "FULL" if len(I.A["positions"]["mast_occupied"]) + mast_free >= 3 else "NORMAL"),
         ("MASS", f"{f3(mass.capacity)} t", f"{f3(mass.capacity)} t", f"{f3(mass.demand)} t", f"{f3(mass.free)} t",
          "OVER" if mass.over else ("NEAR LIMIT" if mass.free < 0.1 * mass.capacity else "NORMAL")),
@@ -579,9 +585,12 @@ def decision(I: Inputs, m: Moment, gs: dict, pl: dict) -> dict | None:
         trig, injected = _trigger(r, snap)
         cap = b["capacity"]
         out["title"] = f"LOAD MANAGEMENT · {cls} LIMIT"
+        demand = f"{f1(r['load_kw'])} kW"
+        if b["class"] == "heat" and abs(r.get("total_kw", r["load_kw"]) - r["load_kw"]) > 0.05:
+            demand = f"{f1(r['load_kw'])} kW CHW · {f1(r['total_kw'])} kW TOTAL"    # an air-cooled guest draws on the bus, not the loop
         out["rows"] = [("TRIGGER", trig, injected),
                        ("LIMIT", f"{f1(cap)} - {f1(cap - r['limit_kw'])} = {f1(r['limit_kw'])} kW", False),
-                       ("DEMAND", f"{f1(r['load_kw'])} kW", False)]
+                       ("DEMAND", demand, False)]
         if r["verdict"] == "shed":
             out["tag"] = "EXECUTED" if applied else "COMMANDED"
             out["tone"] = "shed"
@@ -781,19 +790,30 @@ def constraint(I: Inputs, m: Moment, gs: dict, pl: dict) -> dict:
         title = "POWER"
     rows.append(("HEADROOM", f"-{f1(pl['headroom'])} kW", 0, False))
     rows.append(("LIMIT", f"{f1(pl['ceiling'])} kW", 1, False))
+    on_line = (lambda g: I.cards[g]["cooling"] == "chilled_water") if cls == "heat" else (lambda g: True)
+
+    def demand_rows(draws: dict) -> list:
+        """The line's demand, guest by guest; on the cooling line the air-cooled draw is named off the loop."""
+        on = {g: v for g, v in draws.items() if on_line(g)}
+        out = [("DEMAND " + " + ".join(f"{g} {kw(v)}" for g, v in on.items()), f"{f1(sum(on.values()))} kW", 0, False)]
+        off = {g: v for g, v in draws.items() if g not in on}
+        if off:
+            out.append(("AIR-COOLED " + " + ".join(off) + " · NOT ON THE LOOP", f"{f1(sum(off.values()))} kW", 0, False))
+        return out
+
+    now = pl["chilled"] if cls == "heat" else pl["load"]
     if shed:
         before, after = shed["load_kw"], shed["load_after_kw"]
-        draws = _draws_before(I, shed, m)
-        rows.append(("DEMAND " + " + ".join(f"{g} {kw(v)}" for g, v in draws.items()), f"{f1(before)} kW", 0, False))
+        rows += demand_rows(_draws_before(I, shed, m))
         rows.append(("SHORTFALL", f"{f1(before - shed['limit_kw'])} kW", 2, False))
         for st in shed["steps"]:
             rows.append((f"{st['guest']} {words(st['from_mode'])} → {words(st['to_mode'])}", f"-{f1(st['frees_kw'])} kW", 0, False))
         rows.append(("DEMAND AFTER", f"{f1(after)} kW", 1, False))
-        if abs(pl["load"] - after) > 0.05 and m.t_s >= shed.get("applies_at_tick", shed["tick"] + 1):
-            rows.append(("DEMAND NOW", f"{f1(pl['load'])} kW", 1, False))
+        if abs(now - after) > 0.05 and m.t_s >= shed.get("applies_at_tick", shed["tick"] + 1):
+            rows.append(("DEMAND NOW", f"{f1(now)} kW", 1, False))
     else:
-        before = pl["load"]
-        rows.append(("DEMAND " + " + ".join(f"{g} {kw(x['kw'])}" for g, x in gs.items()), f"{f1(before)} kW", 0, False))
+        before = now
+        rows += demand_rows({g: x["kw"] for g, x in gs.items()})
         rows.append(("SPARE", f"{f1(pl['ceiling'] - before)} kW", 1, False))
     action = None
     if shed:

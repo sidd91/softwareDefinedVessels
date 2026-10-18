@@ -569,11 +569,12 @@ scenario_b:
   # "Heat passes throughout: chilled load is at most 111 kW against 128.3."
   heat_check: {max_chilled_kw: 111, capacity_kw: 128.3}
 
-  # Draw sets at minute 12. Both share G2 sampling (6), G4 fast charge (35) and G5 full (45).
-  # Set L: G3 on its own battery (standby, 1 kW). Set B: G3 charging (25 kW), the brief's 105 kW sum.
+  # Draw sets at minute 12. Both share G1 full (1.5, air-cooled, on the bus and not on the loop), G2 sampling (6),
+  # G4 fast charge (35) and G5 full (45).
+  # Set L: G3 on its own battery (standby, 1 kW). Set B: G3 charging (25 kW), the brief's 105 kW sum (106.5 with G1).
   draw_set_modes:
-    L: {G2: sampling, G3: standby, G4: fast_charge, G5: full}
-    B: {G2: sampling, G3: charging, G4: fast_charge, G5: full}
+    L: {G1: full, G2: sampling, G3: standby, G4: fast_charge, G5: full}
+    B: {G1: full, G2: sampling, G3: charging, G4: fast_charge, G5: full}
 
   loadouts:
     - id: i
@@ -601,27 +602,36 @@ scenario_b:
             sar:
               - {guest: G5, from_mode: full, to_mode: low_power, frees_kw: 37, cumulative_kw: 37, load_after_kw: 74, capability_lost_pct: 70}
 
+    # The organisers' load-out (DEC-63): G1 on the free mast slot, so G5's antenna goes on the hangar roof (x1.2).
     - id: ii
-      guests: [G3, G4, G5]
-      mass_t: 9.515
-      stability_t_eq: 9.763
-      one_genset_down_envelope: {load_kw: 105, reserve_kw: 100}
+      guests: [G1, G3, G4, G5]
+      mass_t: 9.56
+      stability_t_eq: 9.853
+      placement:
+        G1.sensor: mast_free
+        G3.cradle: bay1
+        G3.vehicle: bay1
+        G4.drone: flight_deck
+        G4.hangar: flight_deck
+        G5.node: bay2
+        G5.antenna: hangar_roof
+      one_genset_down_envelope: {load_kw: 106.5, reserve_kw: 100}
       minute_12:
         L:
-          draws: {G3: 1, G4: 35, G5: 45}
-          load_kw: 81
+          draws: {G1: 1.5, G3: 1, G4: 35, G5: 45}
+          load_kw: 82.5
           short_kw: 0
-          spare_kw: 14
+          spare_kw: 12.5
           ladder: {survey: [], sar: []}
         B:
-          draws: {G3: 25, G4: 35, G5: 45}
-          load_kw: 105
-          short_kw: 10
+          draws: {G1: 1.5, G3: 25, G4: 35, G5: 45}
+          load_kw: 106.5
+          short_kw: 11.5
           ladder:
             survey:
-              - {guest: G4, from_mode: fast_charge, to_mode: charge, frees_kw: 25, cumulative_kw: 25, load_after_kw: 80}
+              - {guest: G4, from_mode: fast_charge, to_mode: charge, frees_kw: 25, cumulative_kw: 25, load_after_kw: 81.5}
             sar:
-              - {guest: G5, from_mode: full, to_mode: low_power, frees_kw: 37, cumulative_kw: 37, load_after_kw: 68}
+              - {guest: G5, from_mode: full, to_mode: low_power, frees_kw: 37, cumulative_kw: 37, load_after_kw: 69.5}
 
     - id: iii
       guests: [G2, G3, G4]
@@ -644,6 +654,7 @@ scenario_b:
   # non-critical throttles, mission-critical throttles, then sheds in the same order.
   # They hold every step down from the minute-12 modes of either draw set; which steps apply depends on the
   # modes at the moment (see minute_12_as_decided). G3 charging cannot be interrupted, so it never appears.
+  # G1 has no throttle (full or off), so its only step is a shed: weight x 1.0 / 1.5 kW.
   price_lists:
     survey:
       throttles:
@@ -655,6 +666,7 @@ scenario_b:
         - {guest: G2, from_mode: standby, to_mode: "off", cost_per_kw: 0}
         - {guest: G5, from_mode: low_power, to_mode: "off", cost_per_kw: 0.0075}
         - {guest: G4, from_mode: standby, to_mode: "off", cost_per_kw: 0.03}
+        - {guest: G1, from_mode: full, to_mode: "off", cost_per_kw: 0.133, frees_kw: 1.5}
         - {guest: G3, from_mode: standby, to_mode: "off", cost_per_kw: 0.3, mission_critical: true}
     sar:
       throttles:
@@ -666,6 +678,7 @@ scenario_b:
         - {guest: G2, from_mode: standby, to_mode: "off", cost_per_kw: 0}
         - {guest: G5, from_mode: low_power, to_mode: "off", cost_per_kw: 0.0375}
         - {guest: G3, from_mode: standby, to_mode: "off", cost_per_kw: 0.06}
+        - {guest: G1, from_mode: full, to_mode: "off", cost_per_kw: 0.333, frees_kw: 1.5}
         - {guest: G4, from_mode: standby, to_mode: "off", cost_per_kw: 0.15, mission_critical: true}
 
   robustness:
@@ -679,27 +692,51 @@ scenario_b:
       load_kw: 78
       sheds: false
 
-  # Minute 12 in the run as decided (DEC-40): load-out ii, G3 holding on its own battery under both files.
-  # Under survey G4 is still airborne at 2 kW, with no charge to throttle; under sar its 35 kW fast charge
-  # is reserved from minute 8. The trip holds under both, so D4 takes no step and shows the armed ladder:
-  # its first step is G5 to low power under both files, priced by each file's weights.
+  # Minute 12 in the run as decided (DEC-40, load-out ii of DEC-63): G3 holding on its own battery under both
+  # files, G1 listening at its 1.5 kW. Under survey G4 is still airborne at 2 kW, with no charge to throttle;
+  # under sar its 35 kW fast charge is reserved from minute 8. The trip holds under both (power binds: the loop
+  # carries 1.5 kW less, 48 and 81 kW, against 128.3), so D4 takes no step and shows the armed ladder: its first
+  # step is G5 to low power under both files, priced by each file's weights; G1 to off is the last 5 S step.
   minute_12_as_decided:
     loadout: ii
     by_file:
       survey:
-        modes: {G3: standby, G4: standby, G5: full}
+        modes: {G1: full, G3: standby, G4: standby, G5: full}
         reserved: []
-        load_kw: 48
-        spare_kw: 47
+        load_kw: 49.5
+        loop_kw: 48
+        spare_kw: 45.5
         steps_taken: 0
         armed_first: {guest: G5, from_mode: full, to_mode: low_power, frees_kw: 37, cost_per_kw: 0.0038, capability_lost_pct: 70}
       sar:
-        modes: {G3: standby, G4: fast_charge, G5: full}
+        modes: {G1: full, G3: standby, G4: fast_charge, G5: full}
         reserved: [G4]
-        load_kw: 81
-        spare_kw: 14
+        load_kw: 82.5
+        loop_kw: 81
+        spare_kw: 12.5
         steps_taken: 0
         armed_first: {guest: G5, from_mode: full, to_mode: low_power, frees_kw: 37, cost_per_kw: 0.0189, capability_lost_pct: 70}
+
+  # Minute 19 in the run as decided (DEC-40): the injected pump fault, loop 133.3 x 0.6 = 80 kW, limit 75 kW. Cooling is
+  # judged on the chilled-water guests' draw and power on every guest's: G1's 1.5 kW is on the bus, not the loop.
+  minute_19_as_decided:
+    heat_limit_kw: 75
+    power_limit_kw: 95
+    by_file:
+      survey:
+        modes: {G1: full, G3: standby, G4: fast_charge, G5: full}
+        loop_kw: 81
+        total_kw: 82.5
+        step: {guest: G4, from_mode: fast_charge, to_mode: charge, frees_kw: 25}
+        loop_after_kw: 56
+        total_after_kw: 57.5
+      sar:
+        modes: {G1: full, G3: standby, G4: fast_charge, G5: full}
+        loop_kw: 81
+        total_kw: 82.5
+        step: {guest: G5, from_mode: full, to_mode: low_power, frees_kw: 37}
+        loop_after_kw: 44
+        total_after_kw: 45.5
 
   minute_8:
     same_for_all_loadouts: true

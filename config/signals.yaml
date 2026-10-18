@@ -112,8 +112,8 @@ confirm_rules:
 # owns the signatures; these are the drafts both sides build against until a DEC row settles them.
 fault_signatures:
   bus_load:
-    rule: "bus_load_kw = hotel_kw + ship_aux_kw + the sum of every installed guest's kw_actual, where hotel_kw is power.hotel_kw.committed (400) less power.hotel_shed_on_trip_kw (150) while a genset is tripped. Both gensets online: each reads bus_load_kw / 2. One tripped: the other reads min(power.gensets.rating_kw, bus_load_kw), so a reading never exceeds 450 kW (the schema maximum); Scenario B peaks at 386 kW, inside the 405 kW load limit. Propulsion is out of model scope (assumptions power.guest_reserve_kw_by_speed)."
-    scenario_b_kw: {both_online: 251.5, tripped_g4_airborne: 353.0, tripped_g4_fast_charge: 386.0}
+    rule: "bus_load_kw = hotel_kw + ship_aux_kw + the sum of every installed guest's kw_actual, where hotel_kw is power.hotel_kw.committed (400) less power.hotel_shed_on_trip_kw (150) while a genset is tripped. Both gensets online: each reads bus_load_kw / 2. One tripped: the other reads min(power.gensets.rating_kw, bus_load_kw), so a reading never exceeds 450 kW (the schema maximum); Scenario B peaks at 387.5 kW, inside the 405 kW load limit. Propulsion is out of model scope (assumptions power.guest_reserve_kw_by_speed)."
+    scenario_b_kw: {both_online: 252.2, tripped_g4_airborne: 354.5, tripped_g4_fast_charge: 387.5}
     provenance: "config/assumptions.yaml power.hotel_kw.committed, power.ship_aux_kw, power.hotel_shed_on_trip_kw, power.gensets (the plant check that gives the brief's 100 kW with one genset)"
   genset_trip:
     from_tick: "the event tick t (ceil(60 x t_min))"
@@ -296,7 +296,7 @@ commands:
 # Readings in `scenario_sourced` carry source scenario. `series` are waypoints a value moves along linearly
 # between, held after the last; the 1 Hz value is rounded to 0.1. Not in Scenario B's file, so all assumed
 # (pending_moves) except what the scenario states (seawater_c 24, situation at_sea, 3 kn, G3 surveying,
-# G4 airborne, G5 full).
+# G1 listening on the mast, G4 airborne, G5 full).
 baselines:
   scenario_b:
     seed: 0
@@ -304,8 +304,8 @@ baselines:
     start:
       genset_1_relay_trip: false
       genset_2_relay_trip: false
-      genset_1_kw: 251.5
-      genset_2_kw: 251.5
+      genset_1_kw: 252.2
+      genset_2_kw: 252.2
       bus_frequency_hz: 60.0
       chw_pump_1_running: true
       chw_pump_2_running: true
@@ -338,6 +338,10 @@ baselines:
       hlo_wind_kn: null
       standing_plan: none
       last_sweep: null
+      G1.mode: full
+      G1.activity: listening
+      G1.kw_actual: 1.5
+      G1.data_demand: {backbone_mbps: 50, satcom_mbps: 0.2}
       G3.mode: standby
       G3.activity: surveying
       G3.kw_actual: 1.0
@@ -363,7 +367,7 @@ baselines:
       crew0: {why: "DEMO_SCRIPT Scenario C segment: nobody aboard; the departing crew swept the deck clear at -4200 s, before G4's launch at -3952 s, and no deck activity since",
               start: {crew_aboard: 0, people_available: 0, last_sweep: {t_s: -4200, result: clear}, deck_activity_since_sweep: false, deck_flight_deck: clear}}
     why:
-      genset_kw: "fault_signatures.bus_load: (400 + 55 + 48) / 2"
+      genset_kw: "fault_signatures.bus_load: (400 + 55 + 49.5) / 2, G1's 1.5 kW on the mast included"
       chw: "assumed: a nominal 7 C supply and 12 C return (confirm_rules.cooling_degraded provenance)"
       sea_state_wind_satcom: "assumed: Scenario B gives no sea state, wind or SATCOM rate; sea state 4, wind 18 kn from 300 deg rising to 22 kn by minute 8, SATCOM 6 of 2-8 Mbit/s"
       G4.launched_t_s: "dated back from 18 % at minute 8 at rules.r3.drain_pct_min: 480 - 82 / 1.11 x 60 = -3952 s"

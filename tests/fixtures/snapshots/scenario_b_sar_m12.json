@@ -8,6 +8,7 @@
   "tick": 721,
   "t_ship_s": 721,
   "installed": [
+   "G1",
    "G3",
    "G4",
    "G5"
@@ -37,7 +38,7 @@
    "since_t_s": 720
   },
   "genset_1_kw": {
-   "value": 353.0,
+   "value": 354.5,
    "source": "plant",
    "age_s": 0,
    "confidence": "measured",
@@ -384,6 +385,46 @@
   }
  },
  "guests": {
+  "G1": {
+   "mode": {
+    "value": "full",
+    "source": "plant",
+    "age_s": 0,
+    "confidence": "measured",
+    "stale": false
+   },
+   "activity": {
+    "value": "listening",
+    "source": "guest_report",
+    "age_s": 0,
+    "confidence": "reported",
+    "stale": false
+   },
+   "kw_actual": {
+    "value": 1.5,
+    "source": "plant",
+    "age_s": 0,
+    "confidence": "measured",
+    "stale": false
+   },
+   "data_demand": {
+    "value": {
+     "backbone_mbps": 50,
+     "satcom_mbps": 0.2
+    },
+    "source": "plant",
+    "age_s": 0,
+    "confidence": "measured",
+    "stale": false
+   },
+   "overdraw_pct": {
+    "value": 0.0,
+    "source": "derived",
+    "age_s": 0,
+    "confidence": "measured",
+    "stale": false
+   }
+  },
   "G3": {
    "mode": {
     "value": "standby",
@@ -780,6 +821,6 @@
  "events": [],
  "notes": [
   "Scenario B, sar file, minute 12: the ship state is the survey run's; G3's leg was aborted at minute 8 and it holds at sea (acked at 510 s).",
-  "G4 is airborne at 2 kW. Its 35 kW fast charge is reserved from minute 8 (DEC-40); the reservation is in the decision log, not the snapshot, and the ledger counts max(2, 35) = 35: 1 + 35 + 45 = 81 kW against 95, 14 spare, 0 steps (tests/oracles minute_12_as_decided.sar)."
+  "G4 is airborne at 2 kW. Its 35 kW fast charge is reserved from minute 8 (DEC-40); the reservation is in the decision log, not the snapshot, and the ledger counts max(2, 35) = 35: 1.5 + 1 + 35 + 45 = 82.5 kW against the 95 kW power limit, 12.5 spare (81 kW on the loop against 128.3), 0 steps (tests/oracles minute_12_as_decided.sar)."
  ]
 }
