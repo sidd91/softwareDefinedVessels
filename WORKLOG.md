@@ -949,3 +949,19 @@ stopped, the globe session was stopped before it changed anything (globe on hold
 Decisions: none new. Conflicts: Siddharth's feat/ship-state-fsm carries his weather support (fbe59a5) and a second
 governor (9a99dc7), neither on main, for the team sync. Deferrals: DEC-60's two calls (5 S guests may be switched
 off before a 60 S guest is throttled; discretionary tiers folded into shed_order) to Logan's team.
+
+### Sat 22:12 PDT · Jury edits to any card number decide or refuse, never crash (fix/jury-power-edit, to merge) · Claude Fable 5.1 on behalf of Siddharth Chawla (sidd91)
+
+What: a jury edit to a power number crashed D1 on main (`--set G4.consumes.power_kw.peak=50` raised StopIteration
+in ledger.envelope_mode, /api/admit answered 500 with the stale verdict kept, a mass edit leaving a part unplaced
+crashed records._line(None), modes.0.power_kw could not be addressed). Now envelope_mode falls back to the lowest
+mode covering the draw (else the top) and the one-genset step is priced from the actual draw; apply_edit takes
+dotted paths with list indices and mode names, and a nominal, peak or min edit moves the ladder rung that drew the
+old value (src/sdv/cli.py LADDER_RUNGS); an unplaced part binds as a "placement" line and an unfixable one-genset
+load as "genset_gate"; an unknown field or non-number is EditError: CLI exit 2, API 422 {refused: {field, reason}},
+previous verdict untouched; the screen offers NOMINAL and PEAK kW inputs and shows the refusal on the card.
+Files: src/sdv/{ledger,admission,cli,explain}.py, src/sdv/ui/{view,server}.py, src/sdv/ui/static/js/admit.js,
+README.md (one example line), tests/test_jury_edits.py (new). Oracle tests unchanged.
+Tests: 123 new (the +20 % sweep over every consumes.* number and part mass of G1-G6 under survey and sar, ladder and
+refusal rules, CLI, view, API through uvicorn); full suite 1401 passed; screen driven with Playwright on port 8211.
+Decisions: none. Conflicts: none. Requirements touched: none (serves R-152, R-153, R-208; rows not edited).
