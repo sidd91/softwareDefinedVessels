@@ -10,6 +10,7 @@ from datetime import datetime
 from pathlib import Path
 
 import pytest
+import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools" / "deploy_map"))
@@ -196,13 +197,14 @@ def test_the_route_warns_that_one_pump_down_cannot_carry_the_load_out():
 
 def test_a_mission_critical_guest_outside_the_load_out_says_so():
     by_id = {p["id"]: {x["guest"]: x for x in p["mission_critical"]} for p in D["profiles"]}
-    assert not by_id["patrol"]["G1"]["in_load_out"] and not by_id["disaster_relief"]["G6"]["in_load_out"]
+    assert D["load_out"] == yaml.safe_load((ROOT / "config/scenarios/scenario_b.yaml").read_text())["guests"]
+    assert by_id["patrol"]["G1"]["in_load_out"] and not by_id["disaster_relief"]["G6"]["in_load_out"]
     assert by_id["disaster_relief"]["G5"]["in_load_out"] and by_id["disaster_relief"]["G5"]["activities"] == []
     cards = {re.search(r"<h3>(.*?)</h3>", c).group(1): c for c in PAGE.split("<div class='card'>")[1:]}
     relief, patrol, sar = cards["DISASTER RELIEF"], cards["PATROL"], cards["SEARCH AND RESCUE"]
     assert re.search(r"<b>G6</b> <span class='muted'>NOT IN LOAD-OUT</span>", relief)
     assert re.search(r"<b>G5</b> <span class='muted'>NOT WEATHER-GATED</span>", relief)
-    assert re.search(r"<b>G1</b> <span class='muted'>NOT IN LOAD-OUT</span>", patrol)
+    assert not re.search(r"<b>G1</b> <span class='muted'>NOT IN LOAD-OUT</span>", patrol)
     assert "NOT IN LOAD-OUT" not in sar and "% OPEN" in sar
 
 

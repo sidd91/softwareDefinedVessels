@@ -18,7 +18,7 @@ Labels:
 | (on branch fix/review-ours, not on main yet) | Logan's estimator, kit and safety hardening, `58aa013` |
 | (on branch feat/deployment-map, not on main yet) | Logan's offline weather map, `b1926e3` |
 | (on branch docs/review-fixes, not on main yet) | Logan's doc corrections, `893914a` |
-| (changes when fix/scenario-b-loadout-g1 merges: X) | Siddharth's organisers' load-out, G1, G3, G4, G5, measured on `c5c7f1d`. Main moved to `7b9a804` at 23:53, after this check. That commit carries the branch with the same code, so from `7b9a804` on, X is the value on main |
+| (now, since the load-out reached main at 7b9a804: X) | Siddharth's organisers' load-out, G1, G3, G4, G5, measured on `c5c7f1d`. Main moved to `7b9a804` at 23:53, after this check. That commit carries the branch with the same code, so from `7b9a804` on, X is the value on main |
 
 ## 0. Headline numbers for the deck
 
@@ -35,7 +35,7 @@ Labels:
 | 1476 | tests on main, all pass (F-60) |
 | 15 and 8 | hostile cards and priority files, each refused with the field named (F-64) |
 | 35 kg | over the 10 t margin in Scenario A, A1: YES-IF, then YES at 0.8 t (F-22, F-37) |
-| 105 kW | the brief's minute-12 set against 95 kW, does not arise (F-49) (changes when fix/scenario-b-loadout-g1 merges: 106.5 kW) |
+| 105 kW | the brief's minute-12 set against 95 kW, does not arise (F-49) (now, since the load-out reached main at 7b9a804: 106.5 kW) |
 | 81 against 75 kW | minute 19, cooling binds, one step sheds (F-50, F-52) |
 | 4 | governor boards on 60 m: 2 + ceil((60 - 25) / 25) (F-71, F-72) |
 | 30 files, 0.27 MB | Reference Kit on every device, checksums verified (F-77) |
@@ -192,18 +192,18 @@ The jury's one-number edit (all A1's set unless named):
 
 | ID | Moment | Survey file | Rescue file (sar) | Verified by | When |
 |---|---|---|---|---|---|
-| F-108 | Load-out | G3, G4, G5: 9.515 t, stability 9.763 t-eq (changes when fix/scenario-b-loadout-g1 merges: G1, G3, G4, G5, 9.56 t, stability 9.853 t-eq, G1 air-cooled on the mast). The brief's G2 to G5 is 13.015 t (F-26) | same | C8 `run.installed`, `sdv admit G3 --installed G4,G5`, C4 | 23:43, 23:58 |
+| F-108 | Load-out | G3, G4, G5: 9.515 t, stability 9.763 t-eq (now, since the load-out reached main at 7b9a804: G1, G3, G4, G5, 9.56 t, stability 9.853 t-eq, G1 air-cooled on the mast). The brief's G2 to G5 is 13.015 t (F-26) | same | C8 `run.installed`, `sdv admit G3 --installed G4,G5`, C4 | 23:43, 23:58 |
 | F-43 | Min 8, D3 | G4 recovers first: below 20 % it must land within 12 min, by minute 18.2 | same | C5, C7 | 23:42, 23:44 |
 | F-44 | Min 8, cost to the loser | G3 holds depth, loses 25 to 27 survey minutes | G3's leg aborted, at least 25 to 27 minutes, no resume time. G4's 35 kW charge reserved | C5, C7 | 23:42, 23:44 |
 | F-45 | Min 8, D5 at 14 aboard | bridge asked to confirm, cleared at minute 9 | same | C5, C7 | 23:42, 23:44 |
 | F-46 | G4 lands | tick 1020, minute 17.0, 1.2 min inside 18.2 | same | C8, also on C7 | 23:43 |
-| F-47 | Min 12, genset trip (raw 720 s, confirmed 721 s) | holds: 48 of 95 kW, 0 steps (changes when fix/scenario-b-loadout-g1 merges: 49.5 of 95 on the bus, 48 on the loop) | holds: 81 of 95 kW, 0 steps (changes when fix/scenario-b-loadout-g1 merges: 82.5 of 95, 81 on the loop) | C5, C7 | 23:42, 23:44 |
+| F-47 | Min 12, genset trip (raw 720 s, confirmed 721 s) | holds: 48 of 95 kW, 0 steps (now, since the load-out reached main at 7b9a804: 49.5 of 95 on the bus, 48 on the loop) | holds: 81 of 95 kW, 0 steps (now, since the load-out reached main at 7b9a804: 82.5 of 95, 81 on the loop) | C5, C7 | 23:42, 23:44 |
 | F-48 | Min 12, first armed step | G5 full to low power, frees 37 kW | same | C5, C7 | 23:42, 23:44 |
-| F-49 | Min 12 sentence | the full armed order, and "the envelope case does not arise": 105 kW against 95 (changes when fix/scenario-b-loadout-g1 merges: 106.5 kW with G1 full 1.5 kW, and the ladder adds G1 full to off, frees 1.5 kW, 100 % lost) | same | C5, C7 | 23:42, 23:44 |
+| F-49 | Min 12 sentence | the full armed order, and "the envelope case does not arise": 105 kW against 95 (now, since the load-out reached main at 7b9a804: 106.5 kW with G1 full 1.5 kW, and the ladder adds G1 full to off, frees 1.5 kW, 100 % lost) | same | C5, C7 | 23:42, 23:44 |
 | F-50 | Min 19, injected pump fault | cooling binds, 81 kW against 75. G4 fast charge to charge, 56 kW. G4 loses 30 % | cooling binds, 81 against 75. G5 to low power, 44 kW. G5 loses 70 % | C5, C7 (same steps and results on the branch, plus "G1 ... nothing") | 23:42, 23:44 |
 | F-51 | Min 19 timing | raw 1140 s, confirmed 1141, applied 1142. Due 1145 (5 s) and 1200 (60 s) | same | C8 | 23:43 |
-| F-52 | Min 19, two limits at once | power 100 kW (genset still down), cooling 80 kW (pump down). One limit: min(100, 80) minus 5 = 75 kW, against 81 kW (changes when fix/scenario-b-loadout-g1 merges: each line on its own, power limit 95 against the bus at 82.5, cooling limit 75 against the loop at 81, so cooling binds) | same | C8, tick 1141 | 23:43 |
-| F-53 | Min 19 with no pump loss | limit stays 95 kW against 81 kW: nothing shed (changes when fix/scenario-b-loadout-g1 merges: bus 82.5 of 95, loop 81 of 128.3, nothing shed) | same | from F-47, F-50, C8 capacity at tick 721 | 23:43 |
+| F-52 | Min 19, two limits at once | power 100 kW (genset still down), cooling 80 kW (pump down). One limit: min(100, 80) minus 5 = 75 kW, against 81 kW (now, since the load-out reached main at 7b9a804: each line on its own, power limit 95 against the bus at 82.5, cooling limit 75 against the loop at 81, so cooling binds) | same | C8, tick 1141 | 23:43 |
+| F-53 | Min 19 with no pump loss | limit stays 95 kW against 81 kW: nothing shed (now, since the load-out reached main at 7b9a804: bus 82.5 of 95, loop 81 of 128.3, nothing shed) | same | from F-47, F-50, C8 capacity at tick 721 | 23:43 |
 | F-54 | Decisions per run | 6 records: D3, D5 x 2, D4 x 3 (hold 12:01, shed 19:01, hold 19:02) | same | C6, C7 | 23:42, 23:44 |
 
 ## 6. Replay, determinism and the standby
@@ -223,7 +223,7 @@ The jury's one-number edit (all A1's set unless named):
 | ID | Fact | Value | Verified by | When |
 |---|---|---|---|---|
 | F-60 | Test suite on main `4c4f93c` | 1476 tests, all pass. This branch: 1492 passed in 510.96 s, which is main's 1476 plus the 16 map tests from `5f09b6c`. The other test files equal main's | C13, C14 | 23:39 to 23:49 |
-| F-61 | Test suite on fix/scenario-b-loadout-g1 | 1485 collected, main's 1476 plus 9 (changes when fix/scenario-b-loadout-g1 merges: 1485 on main). Siddharth's review logs 1485 green | C14, its WORKLOG | 23:58 |
+| F-61 | Test suite on fix/scenario-b-loadout-g1 | 1485 collected, main's 1476 plus 9 (now, since the load-out reached main at 7b9a804: 1485 on main). Siddharth's review logs 1485 green | C14, its WORKLOG | 23:58 |
 | F-62 | Known flaky test | `tests/test_ui_server.py::test_ws_streams_the_live_loop_and_takes_laptop_inputs` fails in some full runs and passes alone (docs/HANDOFF_SIDDHARTH.md, on branch fix/review-ours, not on main yet). It passed in C13 | C13 | 23:47 |
 | F-63 | Tests for tonight's fixes: jury edits, jury card file, crew levels | 150, all in the 1476 | C14 | 23:58 |
 | F-64 | Hostile inputs in `tests/test_loader.py` | 15 cards, 8 priority files, each refused with the field named | C14 | 23:58 |

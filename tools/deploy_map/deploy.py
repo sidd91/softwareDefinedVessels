@@ -35,6 +35,7 @@ from sdv import loader as Ld  # noqa: E402
 
 DATA = HERE / "data"
 CFG = yaml.safe_load((HERE / "config.yaml").read_text())
+CFG["load_out"] = yaml.safe_load((ROOT / CFG["load_out_from"]).read_text())["guests"]   # the scenario's own list, never a copy
 KM_PER_DEG = 111.32
 VARS = ("seawater_c", "wave_m", "wind_kn", "gust_kn")
 

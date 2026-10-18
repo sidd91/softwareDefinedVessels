@@ -80,7 +80,7 @@ flowchart LR
 | 5 | D1 admission | `src/sdv/admission.py` | a verdict that holds at the envelope and one genset down. Yes-if by least value lost |
 | 6 | D2 placement | `src/sdv/placement.py` | every installed part placed, fewest moves, preferred positions first |
 | 7 | D3 right of way | `src/sdv/arbitration.py` | hard limits first, then the priority file's weights. The loser's cost stated |
-| 8 | D4 shedding | `src/sdv/shedding.py` | by response class, slow down before switching off, least mission value lost per kW (changes when fix/scenario-b-loadout-g1 merges: power and cooling judged on their own lines) |
+| 8 | D4 shedding | `src/sdv/shedding.py` | by response class, slow down before switching off, least mission value lost per kW (now, since the load-out reached main at 7b9a804: power and cooling judged on their own lines) |
 | 9 | D5 crew rule, safety table | `src/sdv/core.py`, `src/sdv/safety.py` | who decides at 14, 6 and 0 aboard. Stop, hold, secure answered by lookup (F-20). No screen control sends one (X-27) |
 | 10 | Records and sentences | `src/sdv/records.py`, `src/sdv/explain.py` | one sentence from the binding numbers. No canned strings |
 | 11 | Loop, logs, replay, standby | `src/sdv/loop.py` | same inputs, same decisions: replay equal (F-55), standby in step (F-56), every screen run logged (F-109) |

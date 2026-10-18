@@ -82,7 +82,7 @@ Terms used below:
 
 **15. Why does minute 12 shed nothing?**
 - The load fits: 48 kW on the survey file, 81 kW on the rescue file, under 95 (F-47). The armed ladder is shown.
-- The minute-19 pump fault, labelled injected, sheds live (F-50) (changes when fix/scenario-b-loadout-g1 merges: 49.5 and 82.5 kW).
+- The minute-19 pump fault, labelled injected, sheds live (F-50) (now, since the load-out reached main at 7b9a804: 49.5 and 82.5 kW).
 
 ## Engine and evidence
 
