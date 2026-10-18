@@ -41,8 +41,23 @@ def r1(x):
     return x
 
 
+def _canon(x):
+    """The log serializer's form (sdv.loop.canonical): numbers to 0.1, whole numbers as integers, so a value read
+    live (35.0) and the same value read back from a log (35) compare equal and since_t_s never diverges."""
+    if isinstance(x, bool) or x is None or isinstance(x, str):
+        return x
+    if isinstance(x, (int, float)):
+        v = round(float(x), 1)
+        return int(v) if v.is_integer() else v
+    if isinstance(x, dict):
+        return {k: _canon(v) for k, v in x.items()}
+    if isinstance(x, (list, tuple)):
+        return [_canon(v) for v in x]
+    return x
+
+
 def _key(v) -> str:
-    return json.dumps(r1(v), sort_keys=True)
+    return json.dumps(_canon(v), sort_keys=True)
 
 
 def _num(x: float) -> str:
@@ -81,6 +96,10 @@ class Estimator:
         if v is None:
             return bool(sig.get("nullable")) or sig.get("type") in ("sweep",) or sig["name"].startswith("hlo_")
         t = sig.get("type")
+        if "values" in sig and v not in sig["values"]:
+            return False                      # a crew level of 10, a mode the card does not have
+        if t == "integer" and (isinstance(v, bool) or not isinstance(v, (int, float)) or not float(v).is_integer()):
+            return False
         if t in ("number", "integer", "ship_time"):
             if isinstance(v, bool) or not isinstance(v, (int, float)):
                 return False
@@ -160,7 +179,13 @@ class Estimator:
         srcs = sig["source"] if isinstance(sig["source"], list) else [sig["source"]]
         r = self.last.get(name)
         if r is None:
-            return {"value": None, "source": srcs[0], "age_s": None, "confidence": "assumed", "stale": False}
+            if sig["rate"] == "event" or not self.drops.get(sig["feed"]):
+                return {"value": None, "source": srcs[0], "age_s": None, "confidence": "assumed", "stale": False}
+            # never heard because its feed was dropped from the start: unknown never means safe, take the fallback
+            value, stage = self._fallback_value(sig, None, None)
+            return {"value": value, "source": srcs[0], "age_s": None, "confidence": "substituted", "stale": True,
+                    "substituted": {"last_value": None, "last_good_t_s": None,
+                                    "rule": sig["fallback"].get("rule", "the fallback value"), "stage": stage}}
         age = self.tick - r["t_s"]
         feed = self.S["feeds"][sig["feed"]]
         if sig["rate"] == "event":
@@ -504,7 +529,28 @@ class Estimator:
     # ---------------------------------------------------------------------------------------------- since
     def _changed(self, name: str, value) -> bool:
         prev = self.seen.get(name)
-        return prev is not None and json.loads(prev[0])[0] != r1(value)
+        return prev is not None and json.loads(prev[0])[0] != _canon(value)
+
+    def _expire(self, F: dict) -> None:
+        """Crew answers do not last (signals.yaml expires_after_s, counted from reported_t_s): a clear deck report,
+        the landing officer's wind and a standing plan lapse to their fallbacks; a standing plan is also void once
+        the crew level changes after it was approved."""
+        crew_changed_at = self.tick if self._changed("crew_aboard", F["crew_aboard"]["value"]) else \
+            self.seen.get("crew_aboard", (None, None))[1]
+        for name in ("hlo_deck_report", "hlo_wind_kn", "standing_plan"):
+            sig, f = self.SIG[name], F.get(name)
+            rep, life = (f or {}).get("reported_t_s"), sig.get("expires_after_s")
+            if not f or f["stale"] or rep is None or f["value"] in (None, "none", "not_clear"):
+                continue
+            why = None
+            if life is not None and self.tick - rep > life:
+                why = f"expired: the report is older than {life} s"
+            if name == "standing_plan" and crew_changed_at is not None and crew_changed_at > rep:
+                why = "void: the crew level changed after the plan was approved"
+            if why:
+                f["substituted"] = {"last_value": copy.deepcopy(f["value"]), "last_good_t_s": rep, "rule": why, "stage": "bound"}
+                f["value"] = copy.deepcopy(sig["fallback"]["value"])
+                f["confidence"] = "substituted"
 
     def _since(self, F: dict) -> None:
         """since_t_s is the tick the value last changed. A number moving through a transition changes every tick,
@@ -543,6 +589,7 @@ class Estimator:
         feeds = self._feeds(False)                                   # 2-3, G3's feed once the link is known
         raw = [n for n in self.names if self.SIG[n]["producer"] != "estimator"]
         F = {n: self._raw(n, feeds) for n in raw}                    # 4
+        self._expire(F)
         self._merge_effects(F)
         self._link(F)
         feeds["g3_acoustic"] = self._feeds(self._up)["g3_acoustic"]

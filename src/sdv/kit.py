@@ -128,14 +128,14 @@ def guest_page(card: dict, A: dict, signals: dict, missions: dict, cards: dict) 
     if over:
         d = signals["derivations"]["overdraw"]
         lines.append(f"| {gid} OVER-DRAW | metered kW above the mode's declared kW by more than {d['threshold_pct']} % for {d['hold_s']} s | "
-                     "the guest's own load; the ledger counts the metered kW until it falls back |")
+                     "the guest's own load. The ledger counts the metered kW until it falls back |")
     shed = sorted(card["modes"], key=lambda m: -m["power_kw"])
     lines += ["", "## FAQ", "",
               f"**Why did ArgOS move {gid} to a lower mode?** The ship was over its power or cooling limit. ArgOS steps "
-              f"guests down by response class: 5 S guests give power in the first action, within 5 s; mission-critical "
-              f"60 S guests only if still needed, one step per second, within 60 s; 200 MS guests never. {gid}'s steps: " + " to ".join(m["name"] for m in shed) + ".",
+              f"guests down by response class. 5 S guests give power in the first action, within 5 s. Mission-critical "
+              f"60 S guests only if still needed, one step per second, within 60 s. 200 MS guests never. {gid}'s steps: " + " to ".join(m["name"] for m in shed) + ".",
               "",
-              f"**Can {gid} be restored by hand?** Yes, from its own controls. ArgOS will step it down again while the limit binds; "
+              f"**Can {gid} be restored by hand?** Yes, from its own controls. ArgOS will step it down again while the limit binds. "
               "a recovered genset or pump must read healthy for 60 s before ArgOS restores any guest.",
               "", f"**What if {gid}'s feed is lost?** ArgOS keeps a conservative value, marks it STALE and never sheds on it.", "",
               "## Vendor documents (required at admission)", ""]
@@ -150,15 +150,15 @@ def runbook(A: dict, signals: dict) -> str:
     g = A["governor"]
     rt = A["response_time_s"]
     lines = ["# ArgOS runbook", "",
-             f"{governor_boards(A)} governor boards ({', '.join(g['roles'])}); edge nodes at {', '.join(g['edge_nodes']['sites']).replace('_', ' ')}.",
+             f"{governor_boards(A)} governor boards ({', '.join(g['roles'])}). Edge nodes at {', '.join(g['edge_nodes']['sites']).replace('_', ' ')}.",
              "", "| Event | ArgOS does | Crew does |", "|---|---|---|",
-             f"| Genset trip | confirms on 2 of 3 votes in 1 s, first step within {rt['shed_first_action']} s, full plan within {rt['shed_full_sequence']} s | check the PMS; restart takes 5 to 15 min |",
-             "| Chilled-water pump fault | confirms on alarm or stop plus low flow or high delta-T; steps guests to the cooling limit | restore the pump; ArgOS restores guests 60 s after it reads healthy |",
-             "| A feed goes STALE | holds a conservative value, tightens admission, arms the ladder, never sheds on it | check the named feed; the value returns on its first fresh reading |",
+             f"| Genset trip | confirms on 2 of 3 votes in 1 s, first step within {rt['shed_first_action']} s, full plan within {rt['shed_full_sequence']} s | check the PMS. A restart takes 5 to 15 min |",
+             "| Chilled-water pump fault | confirms on alarm or stop plus low flow or high delta-T, then steps guests to the cooling limit | restore the pump. ArgOS restores guests 60 s after it reads healthy |",
+             "| A feed goes STALE | holds a conservative value, tightens admission, arms the ladder, never sheds on it | check the named feed. The value returns on its first fresh reading |",
              "| Bridge request unanswered | counts as no after its wait (60 s at 14 aboard) | answer on the bridge panel |",
-             f"| Primary board lost | the standby, already in step, takes over after {g['takeover_after_s']} s without heartbeat | replace the board at port; any board can be primary |",
-             "| Standby out of step | alarm: the two boards decided differently on the same inputs | keep the primary; the logs show the first field that differs |",
-             "| Every board lost | each edge node keeps its last shed table; guests hold their modes | restart a board from the SSD copy |",
+             f"| Primary board lost | the standby, already in step, takes over after {g['takeover_after_s']} s without heartbeat | replace the board at port. Any board can be primary |",
+             "| Standby out of step | alarm: the two boards decided differently on the same inputs | keep the primary. The logs show the first field that differs |",
+             "| Every board lost | each edge node keeps its last shed table, and guests hold their modes | restart a board from the SSD copy |",
              "| Profile refused | keeps the previous profile and names the field | fix the field in the builder and apply again |", ""]
     return "\n".join(lines)
 
@@ -182,6 +182,10 @@ def build(out: Path) -> dict:
     missions = Ld.load_missions(cards, vocab)
     signals = yaml.safe_load((ROOT / "config/signals.yaml").read_text())
     if out.exists():
+        manifest = out / "manifest.json"
+        is_kit = manifest.exists() and json.loads(manifest.read_text()).get("kit") == "argos-kit/1"
+        if any(out.iterdir()) and not is_kit:
+            raise ValueError(f"{out} holds files and is not a kit: refusing to replace it")
         shutil.rmtree(out)
     files: dict[str, list[str]] = {}
     every = ["all"]
@@ -259,13 +263,20 @@ def install(kit: Path, root: Path) -> dict:
     active = cur.resolve().name if cur.is_symlink() else None
     idle = "slot_b" if active == "slot_a" else "slot_a"
     target = root / idle
+    staging = root / "staging"
+    if staging.exists():
+        shutil.rmtree(staging)
+    shutil.copytree(kit, staging)
+    try:
+        problems = verify(staging)
+    except (FileNotFoundError, json.JSONDecodeError, KeyError) as e:
+        problems = [f"no readable manifest: {type(e).__name__}"]
+    if problems:
+        shutil.rmtree(staging)                       # both slots untouched: the rollback stays possible
+        return {"installed": False, "kept": active, "problems": problems}
     if target.exists():
         shutil.rmtree(target)
-    shutil.copytree(kit, target)
-    problems = verify(target)
-    if problems:
-        shutil.rmtree(target)
-        return {"installed": False, "kept": active, "problems": problems}
+    os.replace(staging, target)
     tmp = root / "current.new"
     if tmp.is_symlink() or tmp.exists():
         tmp.unlink()
