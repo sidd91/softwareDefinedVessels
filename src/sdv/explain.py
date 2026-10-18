@@ -8,9 +8,10 @@ from __future__ import annotations
 LABELS = {"mass": "Mass", "stability": "Stability", "power": "Power", "heat": "Cooling", "line_port": "Port mission line",
           "line_stbd": "Starboard mission line", "mast_mass": "Mast slot weight", "mast_area": "Mast slot area",
           "mast_air_cooling": "Mast air cooling", "flight_deck_drone": "Hangar drone weight", "placement": "Placement",
-          "at_sea_lift": "At-sea lift", "r3_lead": "Deck clearing lead"}
-UNITS = {"t": "t", "t_eq": "t-eq", "kW": "kW", "kg": "kg", "m2": "m²", "kn": "kn", "min": "min", "h": "h", "halves": "halves"}
-SINGULAR = {"halves": "half"}
+          "genset_gate": "One-genset-down gate", "at_sea_lift": "At-sea lift", "r3_lead": "Deck clearing lead"}
+UNITS = {"t": "t", "t_eq": "t-eq", "kW": "kW", "kg": "kg", "m2": "m²", "kn": "kn", "min": "min", "h": "h", "halves": "halves",
+         "positions": "positions"}
+SINGULAR = {"halves": "half", "positions": "position"}
 MODE_WORDS = {"fast_charge": "fast charge", "low_power": "low power"}
 POSITIONS = {"bay1": "Bay 1", "bay1_half": "half of Bay 1", "bay2": "Bay 2", "flight_deck": "the flight deck",
              "mast_free": "the free mast slot", "hangar_roof": "the hangar roof", "stern_ramp": "the stern ramp"}
@@ -136,6 +137,10 @@ def d1(r: dict) -> str:
     if v == "not-now":
         return f"Not now: {label[0].lower() + label[1:]}, {_line(b)}, {_over(b)}. " + _window(r["next_window"], "come aboard")
     head = f"{label} binds: {_line(b)}, {_over(b)}."
+    unplaced = [_part(k) for k, pos in (r.get("placement") or {}).items() if pos is None]
+    if b["class"] == "placement" and unplaced:  # the parts no position takes, as the D2 sentence reads
+        head = (f"{_and(unplaced)} {'has' if len(unplaced) == 1 else 'have'} no position: {qty(b['demand'], b['unit'])} needed "
+                f"and {qty(b['capacity'], b['unit'])} are free.")
     if v == "yes-if":
         o = r["options"][0]
         return head + f" Yes if {_condition(o)}, mission value lost {n(o['value_lost'])}."

@@ -52,8 +52,14 @@ def envelope_kw(A: dict, card: dict) -> float:
 
 
 def envelope_mode(A: dict, card: dict) -> str:
+    """The mode a guest holds at its envelope draw: the mode drawing exactly that; when a jury edit has moved the
+    draw off the ladder, the lowest mode that still covers it, else the top of the ladder."""
     draw = envelope_kw(A, card)
-    return next(m["name"] for m in card["modes"] if abs(m["power_kw"] - draw) < 1e-9)
+    exact = [m for m in card["modes"] if abs(m["power_kw"] - draw) < 1e-9]
+    if exact:
+        return exact[0]["name"]
+    covering = [m for m in card["modes"] if m["power_kw"] >= draw]
+    return (min(covering, key=lambda m: m["power_kw"]) if covering else max(card["modes"], key=lambda m: m["power_kw"]))["name"]
 
 
 def slot_of(part: dict, gid: str, placement: dict | None) -> str:
@@ -209,8 +215,9 @@ def _shed_rank(mission: dict, capability: str) -> tuple:
     return (0, r) if r > 0 else (2, r)
 
 
-def next_step(cards: dict, gid: str, mode: str, mission: dict) -> Step | None:
-    """One guest's next step down its mode ladder; None if the mode cannot be interrupted, is off, or the guest is 200 MS (safety_command)."""
+def next_step(cards: dict, gid: str, mode: str, mission: dict, draw_kw: float | None = None) -> Step | None:
+    """One guest's next step down its mode ladder; None if the mode cannot be interrupted, is off, or the guest is 200 MS (safety_command).
+    draw_kw is the guest's actual draw when it is not the mode's own figure (an edited envelope), so the kW freed is what the load loses."""
     card = cards[gid]
     response = response_of(cards, gid, mission)
     if response == "safety_command":
@@ -221,7 +228,7 @@ def next_step(cards: dict, gid: str, mode: str, mission: dict) -> Step | None:
     if i + 1 == len(ordered) or ordered[i].get("interruptible", True) is False:
         return None
     a, b = ordered[i], ordered[i + 1]
-    frees = a["power_kw"] - b["power_kw"]
+    frees = (a["power_kw"] if draw_kw is None else draw_kw) - b["power_kw"]
     if frees <= 0:
         return None
     lost = a["capability_retained"] - b["capability_retained"]

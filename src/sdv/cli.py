@@ -1,6 +1,6 @@
 """The sdv command.
 
-    uv run sdv admit G4 --installed G1,G2,G3 [--mission survey] [--set G4.hangar.mass_t=0.8]
+    uv run sdv admit G4 --installed G1,G2,G3 [--mission survey] [--set G4.hangar.mass_t=0.8 | --set G4.consumes.power_kw.peak=40]
     uv run sdv run [--mission sar] [--log-dir runs/b-sar]        Scenario B through the loop, one line per decision
     uv run sdv replay runs/b-sar [--mission sar]                 the logs replayed and compared byte for byte
     uv run sdv kit plan|build|verify|install|rollback            the governor's computers and the Reference Kit
@@ -28,24 +28,64 @@ def _num(x: float) -> str:
     return f"{x:.3f}".rstrip("0").rstrip(".") if abs(x - round(x)) > 1e-9 else f"{int(round(x))}"
 
 
-def apply_edit(card: dict, field: str, raw: str) -> dict:
-    """field is part.attr (for example hangar.mass_t) or a top-level dotted path on the card."""
-    card = copy.deepcopy(card)
-    value: object = raw
+class EditError(ValueError):
+    """A jury edit that cannot be applied at all (no such field, not a number): the field as typed and the reason.
+    A schema problem with the edited card is not this; that is a card-rejected decision."""
+
+    def __init__(self, field: str, reason: str):
+        self.field, self.reason = field, reason
+        super().__init__(f"{field}: {reason}")
+
+
+# The power figures a card declares are the rungs of its mode ladder (G4: nominal 10, peak 35 and min 2 kW are the
+# charge, fast_charge and standby modes). Editing one moves the rung that drew the old value with it, so the ladder
+# follows the card: the envelope draw stays on a mode and the one-genset-down check throttles down a step the card has.
+LADDER_RUNGS = ("nominal", "peak", "min")
+
+
+def _number(field: str, raw: str) -> int | float:
     try:
         value = float(raw) if any(c in raw for c in ".eE") else int(raw)
     except ValueError:
-        pass
-    head, _, rest = field.partition(".")
-    part = next((p for p in card["placement"]["parts"] if p["name"] == head), None)
-    if part is not None and rest:
-        part[rest] = value
-        return card
-    node = card
+        raise EditError(field, f"{raw!r} is not a number") from None
+    if value != value or value in (float("inf"), float("-inf")):
+        raise EditError(field, f"{raw!r} is not a finite number")
+    return value
+
+
+def _child(node, key: str, field: str):
+    """One step down a dotted path: a dict by key, a list by index (modes.0) or by the item's name (modes.full)."""
+    if isinstance(node, list):
+        if key.isdigit() and int(key) < len(node):
+            return node[int(key)]
+        named = [x for x in node if isinstance(x, dict) and x.get("name") == key]
+        if named:
+            return named[0]
+    elif isinstance(node, dict) and key in node:
+        return node[key]
+    raise EditError(field, f"no field {field} on the card")
+
+
+def apply_edit(card: dict, field: str, raw: str) -> dict:
+    """One number on a copy of the card. field is part.attr (hangar.mass_t) or a dotted path with list indices or
+    names (consumes.power_kw.peak, modes.0.power_kw, modes.full.power_kw, placement.parts.hangar.mass_t). The field
+    must exist and hold a number, and raw must be one; otherwise EditError names the field and the reason."""
+    card = copy.deepcopy(card)
+    value = _number(field, raw)
     keys = field.split(".")
-    for k in keys[:-1]:
-        node = node[k]
-    node[keys[-1]] = value
+    part = next((p for p in card["placement"]["parts"] if p["name"] == keys[0]), None)
+    node = part if part is not None and len(keys) > 1 else card
+    for k in (keys[1:-1] if node is part else keys[:-1]):
+        node = _child(node, k, field)
+    key = keys[-1]
+    old = _child(node, key, field)
+    if isinstance(old, bool) or not isinstance(old, (int, float)):
+        raise EditError(field, f"{field} is not a number on the card")
+    node[int(key) if isinstance(node, list) else key] = value
+    if node is card["consumes"]["power_kw"] and key in LADDER_RUNGS:
+        for m in card["modes"]:  # the ladder follows the card (LADDER_RUNGS)
+            if abs(m["power_kw"] - old) < 1e-9:
+                m["power_kw"] = value
     return card
 
 
@@ -65,7 +105,14 @@ def cmd_admit(args) -> int:
     for edit in args.set or []:
         target, _, raw = edit.partition("=")
         gid, _, fld = target.partition(".")
-        edited = apply_edit(cards[gid], fld, raw)
+        if gid not in cards:
+            print(f"refused: edit {target}={raw}: no card {gid}. Previous card kept.")
+            return 2
+        try:
+            edited = apply_edit(cards[gid], fld, raw)
+        except EditError as e:
+            print(f"refused: {gid} edit {target}={raw}: {e.reason}. Previous card kept.")
+            return 2
         problems = Ld.check_card(edited, vocab, Ld._schema(Ld.ROOT, "manifests/schema.json"))
         if problems:
             print(f"refused: {gid} edit {target}={raw}: {problems[0]}. Previous card kept.")

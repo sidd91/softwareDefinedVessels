@@ -929,16 +929,23 @@ def _card_facts(I: Inputs, card: dict) -> list[tuple[str, str]]:
             ("DATA", " · ".join(data) or "--"), ("HARD LIMIT", " · ".join(hard) or "NONE")]
 
 
-def _apply(cards: dict, I: Inputs, schema: dict, target: str, raw) -> tuple[dict | None, str | None]:
-    """One jury edit on a copy of the cards, re-validated; (cards, None) or (None, problem)."""
-    from sdv.cli import apply_edit
+def _rung(card: dict, kw_: float) -> str:
+    """The mode ladder rung a declared power figure sits on (G4's 35 kW peak is FAST CHARGE), or -- when none does."""
+    return next((words(m["name"]) for m in card["modes"] if abs(m["power_kw"] - kw_) < 1e-9), "--")
+
+
+def _apply(cards: dict, I: Inputs, schema: dict, target: str, raw) -> tuple[dict | None, object]:
+    """One jury edit on a copy of the cards, re-validated: (cards, None); (None, problem) when the schema refuses the
+    edited card, a card-rejected decision; (None, EditError) when the edit cannot be applied at all (no such card or
+    field, not a number), a refusal of the request that leaves the previous verdict standing."""
+    from sdv.cli import EditError, apply_edit
     gid, _, fld = target.partition(".")
     if gid not in cards:
-        return None, f"no card {gid}"
+        return None, EditError(target, f"no card {gid}")
     try:
         edited = apply_edit(cards[gid], fld, str(raw))
-    except (KeyError, IndexError, TypeError):
-        return None, f"no field {fld}"
+    except EditError as e:
+        return None, EditError(target, e.reason)
     problems = Ld.check_card(edited, I.vocab, schema)
     if problems:
         return None, problems[0]
@@ -967,6 +974,8 @@ def admit(I: Inputs, case_id: str = "A1-survey", edits: dict[str, str] | None = 
     applied = {}
     for target, raw in edits.items():
         nxt, problem = _apply(cards, I, schema, target, raw)
+        if isinstance(problem, Exception):  # not a decision: the request is refused and the last verdict stands
+            return {"refused": {"field": problem.field, "reason": problem.reason}}
         if problem:
             rejected = {"field": target, "problem": problem}
             break
@@ -988,11 +997,16 @@ def admit(I: Inputs, case_id: str = "A1-survey", edits: dict[str, str] | None = 
     parts = [{"name": p["name"], "mass_t": p["mass_t"], "pos": SLOTS.get(adm.placement.get(f"{card_id}.{p['name']}"), "--"),
               "field": f"{card_id}.{p['name']}.mass_t", "base": next(q for q in I.cards[card_id]["placement"]["parts"] if q["name"] == p["name"])["mass_t"]}
              for p in card["placement"]["parts"]]
+    draw, base_draw = card["consumes"]["power_kw"], I.cards[card_id]["consumes"]["power_kw"]
+    power = [{"name": k, "label": "NOMINAL" if k == "nominal" else f"PEAK {draw.get('peak_duration_s', 0) // 60:.0f} MIN", "kw": draw[k],
+              "mode": _rung(card, draw[k]), "field": f"{card_id}.consumes.power_kw.{k}", "base": base_draw[k]}
+             for k in ("nominal", "peak") if k in base_draw]
     over = {l.cls for l in adm.over}
     order = ["mass", "stability", "power", "heat", "line_port", "line_stbd", "mast_mass", "mast_area", "mast_air_cooling", "flight_deck_drone"]
-    unit = {"t": "t", "t_eq": "t-eq", "kW": "kW", "kg": "kg", "m2": "m²"}
+    unit = {"t": "t", "t_eq": "t-eq", "kW": "kW", "kg": "kg", "m2": "m²", "positions": "positions"}
     label = {"heat": "CHW AT 30 °C", "line_port": "LINE PORT", "line_stbd": "LINE STBD", "mast_mass": "MAST SLOT MASS",
-             "mast_area": "MAST SLOT AREA", "mast_air_cooling": "MAST AIR COOLING", "flight_deck_drone": "HANGAR DRONE"}
+             "mast_area": "MAST SLOT AREA", "mast_air_cooling": "MAST AIR COOLING", "flight_deck_drone": "HANGAR DRONE",
+             "genset_gate": "1 GENSET GATE"}
     lines = []
     for cls in order:
         if cls not in adm.lines:
@@ -1029,7 +1043,7 @@ def admit(I: Inputs, case_id: str = "A1-survey", edits: dict[str, str] | None = 
         "case": {"id": case_id, "label": next(c["label"] for c in cases(I) if c["id"] == case_id), "installed": installed, "card": card_id,
                  "mission": mission_name(case["file"]), "file": case["file"], "card_name": card["name"].upper()},
         "cases": cases(I),
-        "parts": parts, "facts": [{"k": k, "v": v} for k, v in _card_facts(I, card)],
+        "parts": parts, "power": power, "facts": [{"k": k, "v": v} for k, v in _card_facts(I, card)],
         "edits": applied, "rejected": rejected,
         "verdict": verdict, "verdict_raw": "card-rejected" if rejected else adm.verdict,
         "binding": "SCHEMA" if rejected else binding,

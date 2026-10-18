@@ -11,7 +11,8 @@ Routes:
     GET  /api/state         one moment: ?mission=survey&t=1142 -> {tick, t_s, mission, snapshot, records, view}
     GET  /api/compare       both priority files at one moment: ?t=1142
     GET  /api/admit         D1 on a Scenario A case with the jury's edits: ?case=A1-survey&edit=G4.hangar.mass_t=0.9
-                            (&keep=... the last accepted edits, kept in force when an edit is rejected)
+                            or &edit=G4.consumes.power_kw.peak=40 (&keep=... the last accepted edits, kept in force
+                            when an edit is rejected); 422 {refused: {field, reason}} for an edit that cannot apply
     GET  /api/reference     guests, priority files, tiers and the governor's computers for the Reference view
     GET  /api/builder       what the profile and rule builder offers
     POST /api/builder/check {kind: profile|card, doc} -> {problems}
@@ -197,7 +198,10 @@ def create_app(inputs: data.Inputs | None = None, source: str = "live", profiles
 
     @app.get("/api/admit")
     def api_admit(case: str = "A1-survey", edit: list[str] = Query(default=[]), keep: list[str] = Query(default=[])):
-        return view.admit(I, case, parse_edits(edit), parse_edits(keep))
+        out = view.admit(I, case, parse_edits(edit), parse_edits(keep))
+        if "refused" in out:  # an edit that cannot be applied: {refused: {field, reason}}, the last verdict stands
+            return JSONResponse(out, status_code=422)
+        return out
 
     @app.get("/api/reference")
     def api_reference():

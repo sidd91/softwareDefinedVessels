@@ -68,11 +68,13 @@ def tipping_point_c(A: dict, chilled_kw: float) -> float | None:
 
 
 def genset_check(A: dict, cards: dict, guests: list[str], mission: dict) -> GensetCheck:
-    load = sum(Lg.envelope_kw(A, cards[g]) for g in guests)
+    draws = {g: Lg.envelope_kw(A, cards[g]) for g in guests}
+    load = sum(draws.values())
     reserve = A["power"]["guest_reserve_kw"]["one_genset_down"]
     gate = min(reserve, Lg.heat_capacity_kw(A, A["envelope"]["judge_cooling_at_c"])) - A["power"]["shed_headroom_kw"]
     modes = {g: Lg.envelope_mode(A, cards[g]) for g in guests}
-    first = [s for s in (Lg.next_step(cards, g, m, mission) for g, m in modes.items()) if s]
+    # each step is priced from the guest's envelope draw, which an edited card can hold between two rungs
+    first = [s for s in (Lg.next_step(cards, g, m, mission, draws[g]) for g, m in modes.items()) if s]
     first.sort(key=lambda s: s.order_key)
     check = GensetCheck(load, reserve, gate, load <= reserve + 1e-9, "fits")
     if load <= gate + 1e-9:
@@ -90,11 +92,27 @@ def genset_check(A: dict, cards: dict, guests: list[str], mission: dict) -> Gens
     return check
 
 
+def placement_line(cards: dict, unplaced: list[str]) -> Lg.Line:
+    """The ledger line for parts no position takes (a mass edit can push a part out of every bay it is allowed in):
+    one position needed per unplaced part that does not ride on another unplaced part, none offered, and the
+    positions tried as the causes, so the record carries the part and its slots rather than a crash."""
+    tried = {}
+    for key in unplaced:
+        gid, name = key.split(".")
+        part = next(p for p in cards[gid]["placement"]["parts"] if p["name"] == name)
+        tried[key] = (part, list(dict.fromkeys(part["preferred"] + part["allowed"])))
+    needed = [k for k, (p, _) in tried.items() if f"{k.split('.')[0]}.{p.get('part_of')}" not in tried]
+    return Lg.Line("placement", "positions", 0, len(needed), {k: slots for k, (_, slots) in tried.items()},
+                   tuple(f"{k}: {', '.join(slots)} tried" for k, (_, slots) in tried.items()))
+
+
 def _evaluate(A, cards, guests, mission, current):
     placement = place(A, cards, guests, current)
     lines = Lg.admission_lines(A, cards, guests, placement)
     unplaced = [k for k, v in placement.items() if v is None]
     over = sorted((l for l in lines.values() if l.over), key=lambda l: l.margin)
+    if unplaced:
+        over.append(placement_line(cards, unplaced))  # after every line with a number: those bind first
     return placement, lines, unplaced, over
 
 
@@ -132,5 +150,7 @@ def admit(A: dict, cards: dict, installed: list[str], card_id: str, mission: dic
                                   moves({k: v for k, v in current.items() if k.split(".")[0] in kept}, p2),
                                   g2, tipping_point_c(A, l2["heat"].demand)))
     options.sort(key=lambda o: (o.mission_critical, round(o.value_lost, 9), len(o.remove), o.remove))
-    binding = over[0] if over else None
+    # every line holds yet the ship fails one genset down (an edited draw no throttle can bring under the gate):
+    # the gate itself is the binding line, load against gate, so the record and its sentence carry the numbers
+    binding = over[0] if over else Lg.Line("genset_gate", "kW", genset.gate_kw, genset.load_kw)
     return Admission("yes-if" if options else "no", binding, over, lines, placement, unplaced, genset, tip, options)
