@@ -1001,7 +1001,7 @@ def admit(I: Inputs, case_id: str = "A1-survey", edits: dict[str, str] | None = 
         if isinstance(problem, Exception):  # not a decision: the request is refused and the last verdict stands
             return {"refused": {"field": problem.field, "reason": problem.reason}}
         if problem:
-            rejected = {"field": target, "problem": problem}
+            rejected = {"field": target, "problem": Ld.in_words(problem)}
             break
         cards = nxt
         applied[target] = raw
