@@ -264,3 +264,12 @@ def test_kit_manifests_that_are_not_argos_kits_are_refused_without_a_traceback(t
 def test_kit_pages_built_from_the_signals_carry_no_semicolons(kit):
     pages = [kit / "governor/RUNBOOK.md", kit / "INDEX.md", *sorted((kit / "guests").glob("*.md"))]
     assert all(";" not in p.read_text() for p in pages), [p.name for p in pages if ";" in p.read_text()]
+
+
+def test_a_forbidden_recovery_at_0_aboard_is_not_said_to_run_on_the_latched_deck():
+    """The hold's answer at 0 aboard must not contradict a D5 that forbade the recovery."""
+    snap = copy.deepcopy(SNAP["scenario_b_survey_m00"])
+    snap["crew"]["crew_aboard"]["value"] = 0
+    snap["guests"]["G4"]["activity"]["value"] = "airborne"
+    row = Sf.table(CARDS, snap, [], {"state": "forbidden"}, False)["r3_hold_landing"]
+    assert row["state"] == "not_needed" and "forbidden" in row["reason"] and "latched" not in row["reason"]

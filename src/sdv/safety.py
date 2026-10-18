@@ -82,12 +82,12 @@ def table(cards: dict, snap: dict, decided: list[dict], r3: dict | None, g3_hold
         out["r3_hold_landing"] = _row("r3_hold_landing", "not_needed", f"G4 is {_words(g4)}, not flying")
     elif landing_hold is not None:
         out["r3_hold_landing"] = _row("r3_hold_landing", "not_needed", "the landing is already held")
+    elif state in ("held", "forbidden"):                # before the 0-aboard line: a forbidden recovery runs on nothing
+        out["r3_hold_landing"] = _row("r3_hold_landing", "not_needed", f"G4's recovery is already {state}")
     elif crew == 0:
         out["r3_hold_landing"] = _row("r3_hold_landing", "cannot", "nobody aboard can lift a hold, so recovery runs on the deck latched clear")
     elif g4 == "launch_recovery" or (r3 and r3.get("cleared_cmds")):
         out["r3_hold_landing"] = _row("r3_hold_landing", "cannot", "the deck is already being cleared for G4, so the landing officer waves G4 off by radio")
-    elif state in ("held", "forbidden"):
-        out["r3_hold_landing"] = _row("r3_hold_landing", "not_needed", f"G4's recovery is already {state}")
     else:
         out["r3_hold_landing"] = _row("r3_hold_landing", "ready", "deck work for G4 waits for the landing officer to report the zone clear",
                                       effect="hold")
