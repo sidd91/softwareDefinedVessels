@@ -1148,7 +1148,7 @@ src/sdv/{ledger,shedding,records,core,explain}.py, src/sdv/ui/view.py, src/sdv/u
 tests/fixtures/{snapshots,frames}/*.json and tests/fixtures/records/d4_m12_*.json, d4_m19_*.json (regenerated from the engine), expected_sentences.yaml,
 tests/oracles/expected_outcomes.yaml, docs/{DEMO_SCRIPT,EXPECTED_OUTCOMES,STATE_ESTIMATION,PHYSICAL_ACCOUNT,PHYSICAL_ACCOUNT_DETAIL}.md, README.md.
 Tests: 1480 pass on the branch merged with origin/main 09acbf7 (1471 there, 9 new: the two-line walk, the step passed over, the old set without G1 deciding as
-before, the minute-19 oracle block); sdv run and replay under both files REPLAY EQUAL; sdv demo on :8231 serves /api/state at t=745 and t=1145 with the new
+before, the minute-19 oracle block), 1485 once 4c4f93c (fix/simbar-clicks, 5 tests) is merged in too; sdv run and replay under both files REPLAY EQUAL; sdv demo on :8231 serves /api/state at t=745 and t=1145 with the new
 fields, MAST 3 of 3, POWER the bus, COOLING the loop, the mimic with G1 SENSOR on the mast. Left as they are: GAMEPLAN, ARCHITECTURE:177, DESIGN_FREEZE,
 OPEN_QUESTIONS #4, ORGANIZER_MESSAGE, DEMO_READINESS and docs/requirements.yaml still quote the DEC-32 set and 48 / 81 kW (history); the PDFs were not rebuilt.
 Branch fix/scenario-b-loadout-g1, pushed for a teammate to merge.
