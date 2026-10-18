@@ -4,13 +4,17 @@ The limit is the snapshot's shed_ceiling_kw: min(power reserve, cooling capacity
 ledger's committed draw per guest (the larger of its mode, a reservation from the decision log and a fresh
 reading). D4 never acts on a substituted value (docs/STATE_ESTIMATION.md, fallback_policy): when a feed behind the
 over-commitment is stale, the ladder stays armed and the record says the fault is unconfirmed.
+
+The record also carries every guest's envelope draw beside its draw now (envelope), so a hold can say why the envelope
+set, every guest at its sustained worst case, does not arise (the brief's explicit minute-12 sequence, R-067).
 """
 from __future__ import annotations
 
 from sdv import ledger as Lg
 from sdv import loader as Ld
 
-RT = Ld.load_assumptions()["response_time_s"]
+A = Ld.load_assumptions()
+RT = A["response_time_s"]
 
 
 def _fresh(field: dict) -> bool:
@@ -41,6 +45,8 @@ def shed(cards: dict, mission: dict, snap: dict, reservations: dict[str, float] 
         "binding": {"class": binding_cls, "capacity": binding_cap, "demand": load, "free": binding_cap - load, "unit": "kW",
                     "degraded_by": cap[binding_cls]["degraded_by"]},
         "steps": [], "armed": [], "losses": {},
+        "envelope": {g: {"mode": modes[g], "kw": draws[g], "activity": guests[g].get("activity", {}).get("value"),
+                         "envelope_mode": Lg.envelope_mode(A, cards[g]), "envelope_kw": Lg.envelope_kw(A, cards[g])} for g in guests},
     }
     if confirmed:
         newest = max(confirmed, key=lambda f: f["confirmed_t_s"])

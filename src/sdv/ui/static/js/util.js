@@ -52,3 +52,20 @@ export function paint(el, html) {
     el.__last = html;
   }
 }
+
+// Render a row of single-element fragments, each into its own slot and only when that fragment changed, so a button in
+// one slot (the crew chip) outlives the ticks that move the text of its neighbours. Empty fragments take no slot.
+export function paintEach(el, parts) {
+  const items = parts.filter(Boolean);
+  while (el.children.length > items.length) el.lastElementChild.remove();
+  items.forEach((html, i) => {
+    const slot = el.children[i];
+    if (slot && slot.__last === html) return;
+    const tpl = document.createElement('template');
+    tpl.innerHTML = html;
+    const node = tpl.content.firstElementChild;
+    node.__last = html;
+    if (slot) slot.replaceWith(node); else el.append(node);
+  });
+  el.__last = undefined; // a later paint() of the whole element must not skip its first repaint
+}

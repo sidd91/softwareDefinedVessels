@@ -65,6 +65,13 @@ def test_minute_12_holds_with_the_armed_step(snap, file_id, reserved, load):
     assert first["cost_per_kw"] == pytest.approx(arm["cost_per_kw"], abs=1e-4)
     assert first["capability_lost_pct"] == arm["capability_lost_pct"]
     assert r["raw_event_t_s"] == 720 and r["confirmed_t_s"] == 721
+    # Every guest now against its envelope draw (R-067): the envelope set is the oracle's draw set B on load-out ii, 105 kW.
+    env, ii = r["envelope"], next(l for l in O["loadouts"] if l["id"] == "ii")
+    assert {g: e["envelope_mode"] for g, e in env.items()} == {g: m for g, m in O["draw_set_modes"]["B"].items() if g in env}
+    assert {g: e["envelope_kw"] for g, e in env.items()} == ii["minute_12"]["B"]["draws"]
+    assert sum(e["envelope_kw"] for e in env.values()) == ii["one_genset_down_envelope"]["load_kw"] > r["limit_kw"] > r["load_kw"]
+    assert {g: (e["mode"], e["kw"]) for g, e in env.items()} == {g: (SNAP[snap]["guests"][g]["mode"]["value"], r["draws"][g]) for g in env}
+    assert {g: e["activity"] for g, e in env.items()} == {g: SNAP[snap]["guests"][g]["activity"]["value"] for g in env}
 
 
 @pytest.mark.parametrize("snap,file_id,guest,to_mode,after,kept", [

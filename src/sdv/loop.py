@@ -94,9 +94,9 @@ class Loop:
         self.commands: list = []
         self.wall: list[dict] = []
         self.logs = None
-        if log_dir is not None:
+        if log_dir is not None:     # line-buffered: every tick is on disk when it is written, whatever ends the run
             log_dir.mkdir(parents=True, exist_ok=True)
-            self.logs = {k: open(log_dir / f"{k}.jsonl", "w") for k in ("frames", "inputs", "snapshots", "decisions", "timing")}
+            self.logs = {k: open(log_dir / f"{k}.jsonl", "w", buffering=1) for k in ("frames", "inputs", "snapshots", "decisions", "timing")}
 
     def add_input(self, inp: dict) -> int:
         """A laptop input arriving now is stamped with the next tick (the last completed tick plus one). A safety
@@ -204,6 +204,7 @@ class Loop:
         if self.logs:
             for f in self.logs.values():
                 f.close()
+            self.logs = None
 
 
 class _Replay:

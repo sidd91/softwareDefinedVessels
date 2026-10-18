@@ -94,7 +94,7 @@ def from_d4(d: dict, *, seq: int, snapshot: dict) -> dict:
                     "demand": b["demand"], "free": b["free"], "unit": b["unit"], "degraded_by": list(b["degraded_by"])},
         "load_kw": d["load_kw"], "limit_kw": d["limit_kw"], "load_after_kw": d["load_after_kw"],
         "steps": [_step(s) for s in d["steps"]], "armed": [_step(s) for s in d["armed"]], "losses": d["losses"],
-        "queued": [_step(s) for s in d.get("queued", [])], "responses": d.get("responses", {}),
+        "queued": [_step(s) for s in d.get("queued", [])], "responses": d.get("responses", {}), "envelope": d.get("envelope", {}),
         "order_source": "computed",
         "raw_event_t_s": d.get("raw_event_t_s"), "confirmed_t_s": d.get("confirmed_t_s"), "first_shed_due_t_s": d.get("first_shed_due_t_s"),
         "full_sequence_due_t_s": d.get("full_sequence_due_t_s"),
@@ -106,13 +106,19 @@ def from_d4(d: dict, *, seq: int, snapshot: dict) -> dict:
     return _finish(r)
 
 
-def from_d5(*, seq: int, snapshot: dict, verdict: str, crew: int, deck_evidence: str, deadline_t_s: float | None, mission: dict) -> dict:
-    """Rule R3 at the crew level aboard (docs/SCENARIO_C_MEMO.md): who clears G4's recovery, and on what evidence."""
+def from_d5(*, seq: int, snapshot: dict, verdict: str, crew: int, deck_evidence: str, deadline_t_s: float | None, mission: dict,
+            binding: dict | None = None, next_window: dict | None = None) -> dict:
+    """Rule R3 at the crew level aboard (docs/SCENARIO_C_MEMO.md): who clears G4's recovery, and on what evidence. A
+    not-now also carries the line that bound (the deck clearing lead) and the window that lifts it."""
     run = snapshot["run"]
     r = {"seq": seq, "tick": run["tick"], "t_s": run["t_ship_s"], "applies_at_tick": run["tick"] + 1, "kind": "D5",
          "subject": "G4 recovery under rule R3", "mission": mission["id"], "verdict": verdict, "rule": "R3",
          "crew_aboard": crew, "deck_evidence": deck_evidence, "deadline_t_s": deadline_t_s,
          "inputs_hash": inputs_hash(snapshot, mission["id"])}
+    if binding is not None:
+        r["binding"] = binding
+    if next_window is not None:
+        r["next_window"] = next_window
     return _finish(r)
 
 

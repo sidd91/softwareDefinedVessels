@@ -99,6 +99,8 @@ Deadline: **Sun 2026-10-18 10:00 PDT**.
 | DEC-58 | Sat 14:51 | Mission profiles can be changed at sea (priority swap, or an edited profile from the builder); every change is a logged input, so a replay reproduces it | Logan | Claude for Logan |
 | DEC-59 | Sat 14:51 | Graceful degradation follows criticality tiers inside the profile: vessel-safety critical is never shed, mission-critical goes last, the rest in between by mission loss per kW freed. Tier names and their ordering are Claude's proposal, for Logan to confirm | Logan; tiers by Claude | Claude for Logan |
 | DEC-60 | Sat 15:38 | Degradation priorities are the brief's A.8 response classes (replaces DEC-59's four tiers, per Logan): 200 MS (card safety_critical or profile response.safety_command) is never shed and is acted on only by stop, hold or secure from a safety table rebuilt every tick and answered on arrival; 5 S (the default) gives power in the first action, applied within 5 s of the fault; 60 S (mission_critical) gives power only after every 5 S step, one step per tick after a fresh reading, within 60 s; restoring a shed guest is a 30 S decision once every fault is healthy for 60 s; D3 and D5 carry 2 S. D4 runs every 5 S step before any 60 S step (throttle before shed inside each class); D1's one-genset-down check keeps throttles first (DEC-35). Discretionary tiers become shed_order ranks. Two calls for Logan's team: 5 S guests may be switched off before a 60 S guest is throttled (sar minute-19 armed ladder now G5 off, not G4 slower), and the tier folding | Logan (thresholds as tags); design by Claude as core owner, two calls to confirm | Claude for Logan |
+| DEC-61 | Sat 21:40 | Scenario B minute 12 (DEC-51, freeze F4): the DEC-40 timeline stands. The minute-12 D4 record states the full armed ladder in declared order and why the brief's 105 kW set does not arise (G3 at sea on its own battery, G4 airborne); the minute-19 pump fault, labelled injected, runs that ladder live. No new timeline variant before the demo (req R-067) | Siddharth | Claude Fable 5.1 for Siddharth |
+| DEC-62 | Sat 21:40 | Rubric audit of main accepted as the work list (`docs/AUDIT_MAIN.md`): must-have gaps first (power-edit crash, minute-12 sentence, crew-chip crash guards, data/compute admission lines, Physical Account tracer), then README truth pass and PDFs; everything else declared as a limitation. `feat/ship-state-fsm` is never merged wholesale: plant and environment are ported behind main's simulator interface, engines, records and UI stay main's (req R-016, R-064 to R-067, R-069) | Siddharth | Claude Fable 5.1 for Siddharth |
 
 ## Conflicts and risks to watch
 
@@ -949,3 +951,183 @@ stopped, the globe session was stopped before it changed anything (globe on hold
 Decisions: none new. Conflicts: Siddharth's feat/ship-state-fsm carries his weather support (fbe59a5) and a second
 governor (9a99dc7), neither on main, for the team sync. Deferrals: DEC-60's two calls (5 S guests may be switched
 off before a 60 S guest is throttled; discretionary tiers folded into shed_order) to Logan's team.
+
+### Sat 21:40 PDT · Rubric audit of main, minute 12 decided, work split for the night · Claude Fable 5.1 on behalf of Siddharth Chawla (sidd91)
+
+Main at 7cd080b was audited against the brief with six rubric auditors, two independent refuters per finding and a
+cross-check against `feat/ship-state-fsm`; 46 findings survived, written up with file:line evidence, a merge
+direction per subsystem and an ordered plan in `docs/AUDIT_MAIN.md`. Headlines: every must-have has a working core
+and 1263 tests pass from a fresh copy; the must-have risks are a jury edit to a power number crashing D1 (CLI and
+/api/admit), minute 12 holding with no stated reason, crew 6/0 on the screen killing the socket, D1 binding on only
+six of eight classes (no data-link or compute line), and the Physical Account's "Used in" column saying test / not
+yet for keys the engine reads. Siddharth decided minute 12 (DEC-61) and accepted the audit as the work list (DEC-62).
+Siddharth's track takes, on branch `audit/main-gaps` off main: the minute-12 sentence (#2), the Physical Account
+tracer (#4), the data/compute admission lines transcribed from his branch (#6) and the plant relabel (#8); Logan's
+track keeps the power-edit crash (#1), crew-chip guards (#5) and the README/PDF pass (#3). RAG: not before the
+deadline; offline and advisory only if ever (audit §5).
+Decisions: DEC-61, DEC-62 (Siddharth). Conflicts: CON-07's residue is closed by DEC-62's merge direction. Deferrals:
+none. Requirements touched: none yet (R-067 once #2 lands). Next: #2, #4, #6 on `audit/main-gaps`, small commits,
+pushed as they pass.
+### Sat 22:03 PDT · Minute 12: the hold sentence carries the whole armed ladder and the envelope case · Claude Fable 5.1 on behalf of Siddharth Chawla (sidd91)
+
+What: the minute-12 D4 hold said only "0 steps" and the first armed step; the must-have reads "min-12 explicit shedding sequence" (R-067).
+shed() now records each guest's draw now beside its envelope draw (`envelope`), carried by from_d4 and the schema; the hold sentence
+lists the whole armed ladder in order (move, kW freed, capability lost) and why the envelope set does not arise (105 kW against the 95 kW limit, but G3 holding depth at 1 kW and G4 airborne at 2 kW).
+Files: src/sdv/{shedding,records,explain}.py, config/decision_record.schema.json, tests/fixtures/records/d4_m12_{survey,sar}.json (regenerated from the engine; sar's ladder as DEC-60 orders it), expected_sentences.yaml, tests/test_{explain,decisions_b}.py, docs/DEMO_SCRIPT.md.
+Tests: 1279 pass; the ops view renders it at t=745. Branch fix/minute-12-sentence (88a9915), pushed for a teammate to merge.
+Decisions: none. Conflicts: none. Requirements touched: R-067, R-196.
+
+### Sat 22:18 PDT · Review of fix/minute-12-sentence: the ladder is stated in its order, "priced" dropped · Claude Fable 5.1 on behalf of Siddharth Chawla (sidd91)
+
+What: independent review of 88a9915 and ade4ec4 against the minute-12 task: the diff line by line, the full suite, `sdv admit` and `sdv run` under both
+files, `sdv demo` on port 8300 (/api/state at t=745 and t=1145 for both files, /api/compare), the envelope field against the engine on the pinned
+snapshots (equal), DEMO_SCRIPT's quotes against the fixtures (verbatim). One defect fixed on the branch (0b28495): the hold sentence said "Armed in
+priced order", but D4 orders the ladder by response class, then throttle before shed, then shed_order rank, then price (ledger.Step.shed_key, DEC-60);
+the minute-19 post-shed hold under rescue reads G5 low power to off (0.0375 per kW), G3 standby to off (0.06), G4 fast charge to charge (0.012), and
+under survey it puts G4 charge to standby ahead of the cheaper G5 low power to off, so the record's own cost_per_kw contradicted the word. The
+sentence now says "Armed in order:". The decision this branch implements is DEC-61 (Siddharth, Sat 21:40, on branch audit/main-gaps, not yet on
+main), which the previous entry could not see; it asks for the ladder in its declared order, which the sentence states.
+Files: src/sdv/explain.py, tests/fixtures/records/d4_m12_{survey,sar}.json, tests/fixtures/records/expected_sentences.yaml, tests/test_explain.py, docs/DEMO_SCRIPT.md.
+Tests: 1279 pass before and after the fix. Left for the owner: docs/requirements.yaml's R-067 row still describes minute 12 by its first armed step
+and lists D4 as missing (stale before this branch); the decision log writes cost_per_kw rounded (0, 0.1), so the order was checked against the
+engine's prices; the 19 px .why paragraph now carries about 450 characters live at minute 12, not checked on a screen here.
+Decisions: none new (implements DEC-61). Conflicts: none. Requirements touched: R-067, R-034 (docs/requirements.yaml not edited).
+### Sat 22:04 PDT · Physical Account "Used in" sees the engine's reads · Claude Fable 5.1 on behalf of Siddharth Chawla (sidd91)
+
+The Physical Account's "Used in" column said "test" on most rows and "not yet" on 23 keys because the tracer rooted only
+variables assigned from the literal file name, blind to the engine's A parameter, self.A and I.A. tools/physical_account.py now
+seeds those names in src modules (shadowed while rebound to something else; a read must be a path in the YAML), follows self./I.
+aliases, walks the directories when git lists nothing, and shows a key's status when nothing reads it: 12 design statements carry
+`status: documented only`, five keys got trace patterns, no number or reason changed; eleven rows moved to code, none says "not yet".
+Files: tools/physical_account.py, config/assumptions.yaml, docs/PHYSICAL_ACCOUNT.md, docs/PHYSICAL_ACCOUNT_DETAIL.md,
+tests/test_physical_account_tracer.py (13 tests); 1291 pass. PDFs not rebuilt (this box cannot). Branch fix/physical-account-tracer, to merge.
+Decisions: none. Conflicts: none. Requirements touched: none.
+
+### Sat 22:14 PDT · Review of fix/physical-account-tracer · Claude Fable 5.1 on behalf of Siddharth Chawla (sidd91)
+
+Reviewed the diff above against its task and tried to break it: 1291 pass; `sdv admit`, `sdv run --mission survey` and
+`--mission sar` and the seven demo routes on :8301 answer as before; main's and the branch's assumptions.yaml parse identical
+except the status and trace fields; each of the 56 src/ references the tracer gained is a real read of A, self.A, I.A or an
+alias of one (by, b, g, r3, trip), and nothing it found on main was lost. One defect fixed: the committed pages no longer came
+out of the tool, because the new test's parametrize list spells the dotted keys and the tracer counted its own test as a "test"
+use of six keys (the compute row would have said test). The tool now leaves tests/test_physical_account_tracer.py out of the
+scan; the regenerated pages are byte-identical to the committed ones. The two counts in the entry above were corrected (23 keys
+said "not yet" on main, not 13; eleven rows moved to code, not ten; be1795b's message keeps the 13). Left as they are:
+safety_commands' trace lands on safety.py's docstring, the module that implements the table, not on a value read; REBIND's
+for/as patterns also match prose in docstrings and can shadow `a` for a block, harmless while only loader.py calls the
+assumptions `a`. PDFs still not rebuilt. Files: tools/physical_account.py, WORKLOG.md. Decisions: none. Conflicts: none.
+### Sat 21:59 PDT · D1 binds on the data links and compute (branch fix/d1-data-compute-lines, for a teammate to merge) · Claude Fable 5.1 on behalf of Siddharth Chawla (sidd91)
+
+Admission judged six of the eight classes: a SATCOM or compute oversubscription came aboard with no line to name, against
+README's DEC-38 sentence. ledger.admission_lines() now adds satcom, los_radio and backbone (each guest at its card minimum,
+else nominal, DEC-38; capacities from A.data) and compute (nominal cores against A.compute nodes x cores_per_node x guest_share);
+SHIP_WIDE, explain, cli, the admit screen and the record schema's descriptions carry the classes and the units Mbit/s and cores.
+Files: src/sdv/{ledger,admission,explain,cli,ui/view}.py, config/decision_record.schema.json, tests/test_admission_links.py (22 tests).
+Tests: 1300 pass (1278 on main + 22); no oracle verdict or binding moves; /api/admit and the CLI render the lines. README's DEC-38
+wording left alone: the nominal shortfall is still not shown as degraded quality. Commit 26a6b69, pushed.
+Decisions: none. Conflicts: none. Requirements touched: none (R-046's eight classes are now all judged at D1; its row is unchanged).
+Review (Claude Fable 5.1, independent, on this branch): cli.py's LINES table unit column widened 5 to 6 so Mbit/s aligns with the state column; nothing else moved, 1300 pass. The worklog commit f2982cc carries no Co-Authored-By trailer, reword or squash on merge.
+### Sat 22:12 PDT · Jury edits to any card number decide or refuse, never crash (fix/jury-power-edit, to merge) · Claude Fable 5.1 on behalf of Siddharth Chawla (sidd91)
+
+What: a jury edit to a power number crashed D1 on main (`--set G4.consumes.power_kw.peak=50` raised StopIteration
+in ledger.envelope_mode, /api/admit answered 500 with the stale verdict kept, a mass edit leaving a part unplaced
+crashed records._line(None), modes.0.power_kw could not be addressed). Now envelope_mode falls back to the lowest
+mode covering the draw (else the top) and the one-genset step is priced from the actual draw; apply_edit takes
+dotted paths with list indices and mode names, and a nominal, peak or min edit moves the ladder rung that drew the
+old value (src/sdv/cli.py LADDER_RUNGS); an unplaced part binds as a "placement" line and an unfixable one-genset
+load as "genset_gate"; an unknown field or non-number is EditError: CLI exit 2, API 422 {refused: {field, reason}},
+previous verdict untouched; the screen offers NOMINAL and PEAK kW inputs and shows the refusal on the card.
+Files: src/sdv/{ledger,admission,cli,explain}.py, src/sdv/ui/{view,server}.py, src/sdv/ui/static/js/admit.js,
+README.md (one example line), tests/test_jury_edits.py (new). Oracle tests unchanged.
+Tests: 123 new (the +20 % sweep over every consumes.* number and part mass of G1-G6 under survey and sar, ladder and
+refusal rules, CLI, view, API through uvicorn); full suite 1401 passed; screen driven with Playwright on port 8211.
+Decisions: none. Conflicts: none. Requirements touched: none (serves R-152, R-153, R-208; rows not edited).
+Review (Sat 22:30 PDT, Claude Fable 5.1 for Siddharth): diff read line by line, suite 1401 passed, 51 CLI edits and
+55 API queries (power nominal/peak/min, data, compute, cooling, mass, list index and mode name, nonsense field,
+string, negative, zero, blank, 1e999, nan, a 3000-character field) all a verdict or a refusal, screen driven with
+Playwright on 8401 through 24 edits. One fix on the branch: typing a figure's own value back dropped the edit from
+the request but not from the kept set, so the next request still sent it as keep= and the panel showed the withdrawn
+card's verdict (peak 50 then 35 back kept the 96.5 kW throttle step; pre-existing in wire() on main for mass edits).
+admit.js now withdraws it from both; the verdict follows the figure on the next Enter.
+### Sat 22:15 PDT · Crew chip at 6 and 0 aboard refused honestly, never a crash · Claude Fable 5.1 on behalf of Siddharth Chawla (sidd91)
+
+Branch fix/crew-chip-guards for a teammate to merge. On main the Operations crew chip 14 to 6 or 0 around minute 8-9 raised in
+the test double (a bridge answer with no open request, clear_deck at a level it did not know), the /ws loop let the socket
+die and the page reconnected into a silent restart at 14 aboard; `sdv run --variant crew0` crashed the same way. Now the
+double ignores and logs the stray answer, clears in A.6's 8-12 min at 6 and refuses clearing at 0; the core says "forbidden"
+at 0 (deck state in the evidence) and "not now" at 6 with the fixture's line, deck clearing lead 15 min against 8 min, 7 min
+over; the screen turns an engine exception into an error frame, holds the run and shows one ALARM · ENGINE row.
+Files: src/sdv/core.py, src/sdv/records.py, src/sdv/ui/server.py, src/sdv/ui/static/js/app.js, tests/support/sim_stub.py,
+tests/test_crew_levels.py (new), tests/test_ui_server.py. Tests: 13 added, full suite 1291 passed, no existing test changed.
+Decisions: none. Conflicts: none. Requirements touched: R-009, R-011, R-012.
+
+### Sat 22:40 PDT · Review of fix/crew-chip-guards: the not-now's window at 6 aboard is kept · Claude Fable 5.1 on behalf of Siddharth Chawla (sidd91)
+
+Independent review of the entry above: diff read line by line, the full suite, `sdv run` at every variant and file, every
+/api route, /ws with the chip at 6 and 0 aboard at ticks 60, 470, 500 and 900 under both priority files, and the Operations
+screen in Chromium (chip, JUMP, HOLD, RESTART, priority file, an error frame on the page's own socket): no crash, no
+reconnect, every sentence from the record's fields. One gap fixed here: the not-now at 6 aboard named "the landing officer
+reports the zone clear" as its window, but a clear report after it changed nothing, the recovery stayed held and G4 never
+landed. core.py `_short_release`, on the `_hold_release` pattern: a clear report newer than the not-now clears the recovery,
+"the landing officer reported the zone clear at minute N" (the words a lifted landing hold uses), deck work at the A.6 pace;
+a forbidden recovery at 0 aboard is not reopened. Left as is: the chip 14 to 0 after the ask says "held: no answer from the
+bridge" (wait_s at 0 is 0 s), and the SIM bar's ENGINE note stays until RESTART.
+Files: src/sdv/core.py, tests/test_crew_levels.py. Tests: 1 added, full suite 1292 passed, 14-aboard records unchanged.
+Decisions: none. Conflicts: none. Requirements touched: R-009, R-011, R-012.
+### Sat 22:12 PDT · The run the jury watches is logged and replays; RESTART keeps a held swap · Claude Fable 5.1 on behalf of Siddharth Chawla (sidd91)
+
+What: `sdv demo` (live source) now logs every run and re-run the screen shows to its own directory under `--log-dir`
+(default runs/live), live-<start file>-<n>, n a counter that continues past the directories already there; the loop's
+five logs are line-buffered and closed on a jump back, RESTART, disconnect and shutdown; the server prints where the
+logs go, one line per run, and the `uv run sdv replay <dir> --mission <file>` line for the last run on shutdown. RESTART
+starts under a priority file chosen while held (the swap stamped for the next tick), and a JUMP back that drops a later
+swap writes "jump back: swap to <file>.yaml at <t> dropped" into the event log. Replay of a mid-run swap is unchanged (DEC-58).
+Files: src/sdv/loop.py, src/sdv/ui/live.py, src/sdv/ui/server.py, src/sdv/cli.py; tests/test_ui_live.py, tests/test_ui_server.py, tests/test_cli.py.
+Tests: 5 new (a logged live run replays EQUAL through `sdv replay`, the RunLogs counter, RESTART under the held file, the
+dropped-swap line, the server's start and shutdown lines; the /ws run is on disk tick by tick); 1283 pass. Screen driven
+with Playwright on :8213 through both cases; the three logged runs replay EQUAL. Branch fix/live-run-log, for a teammate to merge.
+Decisions: none. Conflicts: none. Requirements touched: R-007, R-017.
+Review (Claude Fable 5.1 for Siddharth, same branch): driven on :8403 with Playwright and a raw /ws client; 30 logged runs
+(held swap + RESTART, swap after the 19-min mark + JUMP back, crew 6/0 at 60/470/500/900 under both files, mission at
+t=0, SIGINT with a browser connected) all replay EQUAL and the LAST RUN line reaches a nohup log. One fix: a
+`priority_swap` laptop input naming an unknown file (or none) is refused as "no priority file X" instead of stamped;
+before, RESTART or a JUMP (`Run.swaps()`) or the next tick raised KeyError and the socket dropped. +1 test; 1284 pass.
+### Sat 22:38 PDT · Jury card as a file: `sdv admit --card`, a bad manifests/ file reported, not fatal · Claude Fable 5.1 on behalf of Siddharth Chawla (sidd91)
+What: `uv run sdv admit <id or path> --card path.yaml --installed … --mission …` loads the jury's file through the loader with the vocabulary; a schema or vocabulary problem is refused with the field named (exit 2); a card whose id has no activity registry in config/signals.yaml is judged with an empty activity set and the output says `G7 activities not registered: conditions not judged`, admission resting on quantities, positions and relations. `loader.load_cards` no longer raises: a bad file in manifests/ (schema, vocabulary, YAML, duplicate id) is collected in `refused` and printed once at start by `sdv admit` and `sdv demo` (`refused manifests/G7.yaml: <first problem>`); the other cards load. Admission screen untouched: the file path is CLI only.
+Files: src/sdv/loader.py, src/sdv/cli.py, src/sdv/ui/data.py, src/sdv/ui/server.py, tests/test_jury_card_file.py, README.md, manifests/README.md. Branch fix/jury-card-file, commit be7b83a, for a teammate to merge.
+Tests: 13 new in tests/test_jury_card_file.py (G6 copied as G7 at 3.2 t: YES onto G4,G5 under disaster_relief, tip 39.9 °C; YES-IF 12.245 t onto G1,G2,G3; refusals with the field; a bad manifests/ dir monkeypatched; `sdv demo` start-up with the bad file present prints the refusal and serves /api/meta). Full suite 1291 passed. Rehearsed live on port 8222 with a stray G7.yaml: refusal printed, /api/meta answered in 3 s.
+Decisions: none. Conflicts: none. Requirements touched: none.
+
+### Sat 22:55 PDT · Review of fix/jury-card-file: an unreadable card path is refused, not a traceback · Claude Fable 5.1 on behalf of Siddharth Chawla (sidd91)
+What: independent review of be7b83a + e5c10ae against the task. Diff read line by line; suite 1291 green before the change; the CLI exercised with a valid G7 (YES onto G4,G5 under disaster_relief, tip 39.9 °C, 1.6 ms; YES-IF 12.245 t onto G1,G2,G3), schema-broken, unknown-signal, missing-key, empty, list, string, YAML-broken, binary, directory and missing paths, a registered card as a file, an id mismatch and `--set` on the jury card; `sdv demo` started on 8422 with an unregistered G7.yaml, a schema-broken G8.yaml and a directory G9.yaml in manifests/ (three refusal lines, /api/meta in 5.7 s; page, Admission, Builder and Compare views clean in Playwright). One defect fixed: a mistyped `--card` path, a directory or a non-UTF-8 file ended in a Python traceback with exit 1; `loader.load_card` now refuses them like any other bad file (`refused <path>: file: No such file or directory`, exit 2), which also keeps a stray directory in manifests/ from stopping start-up.
+Files: src/sdv/loader.py, tests/test_jury_card_file.py, manifests/README.md. Commit 2419405 on fix/jury-card-file.
+Tests: 1 new (missing path, directory, binary file through the CLI) and the load_cards test extended with a directory entry; full suite 1292 passed.
+Decisions: none. Conflicts: none. Left alone: `--set` path typos (KeyError in cli.apply_edit) belong to fix/jury-power-edit; the worklog commit e5c10ae carries no Co-Authored-By line (history not rewritten).
+
+### Sat 22:41 PDT · Run sheet, presenter rules and T-30 checklist from the rehearsal; DEMO_READINESS.md · Claude Fable 5.1 on behalf of Siddharth Chawla (sidd91)
+
+What: docs/DEMO_SCRIPT.md's Scenario B table carries the measured key sequence at x12 in place of the 00:10 / 00:40 / 00:55 clock (RESTART 0:00, JUMP 08 at 0:06 and the D3 record at 0:08, JUMP 12 at about 0:25 and the HOLD at 0:26, JUMP 19 at about 0:45 and the shed at 0:46, T+20:00 by about 1:20, Mission compare as the two-ships beat, the jury's file in force before RESTART), a Presenter rules subsection (the rules that hold on tonight's main; those tied to fix/jury-power-edit, fix/crew-chip-guards, fix/simbar-clicks, fix/jury-card-file and fix/live-run-log written "until X is merged"), the spoken minute-12 fallback, one-sentence answers for A-prime, "is the plant real", "LOS 0 / 20 · ACOUSTIC DOWN" and "what capability was lost", one status line on the Scenario C segment, and the 10-line T-30 checklist under Rehearsal and fallbacks (chip wording and position checked on screen, "1278 passed" or more, port 8000 with the --port fallback). docs/DEMO_READINESS.md holds the Sat 22:00 PDT scorecard of 918478a verbatim with a status table of the Reds and their branches.
+Files: docs/DEMO_SCRIPT.md, docs/DEMO_READINESS.md; README.md untouched (another pass owns it).
+Tests: tests/test_requirements_trace.py (every DEMO_SCRIPT anchor kept); full suite 1314 passed on origin/main 1148d11 plus these docs; the screen driven on port 8223 to confirm the chip and the minute-12 sentence. Branch docs/run-sheet-and-checklist (d8b0235, cut on 1148d11 because main moved from 918478a while the branch was being made), for a teammate to merge.
+Decisions: none. Conflicts: none. Requirements touched: none.
+Review (Claude Fable 5.1, independent, on this branch, Sat 23:10 PDT): diff read line by line against the task; the scorecard section is byte-identical to the source; every link and anchor resolves; every timing in the run sheet matches scorecard section 2; the screen driven with Playwright on 8423 (this branch's build) and 8425 (origin/main 6a91f5d): chip LIVE · SIM TEST DOUBLE leftmost in the bottom bar, LINK UP top right, a 90 ms PRIORITY press 0 of 6 at x12 (0 of 10 under --source fixtures), HOLD/click/RUN swap applied in 0.12 s with MISSION RESCUE · PRIORITY sar.yaml VALID and SHED ORDER · RESCUE, RESTART 1.14 s, JUMP freezes 1.16 / 0.66 / 1.18 s, the minute-8, 12 and 19 records, both compare marks and the A1 hangar 0.8 edit and REVERT as written; on the CLI a busy port exits 3, a power edit still raises StopIteration and a stray G7.yaml is still fatal on 1148d11. Fixed here: origin/main moved to 6a91f5d (integrate/fix-pack-2, 22:46 PDT) with fix/jury-power-edit, fix/crew-chip-guards and fix/live-run-log merged, and fix/jury-card-file was pushed and reviewed (2419405), so the status table, the Presenter rules intro, the crew-chip and jury-card-file rules and checklist items 3, 4, 9 and 10 now say so (1457 pass on 6a91f5d in 193 s; the server prints a RUN line per run; `mkdir -p runs` before the tee, runs/ being git-ignored and absent in a fresh clone; the fixtures replay drops plain clicks too); the LOS / ACOUSTIC answer names when the link drops (T+09:06, course free, noise manoeuvring) and that the tile's state is SATCOM and LOS, not SATCOM alone; the A-prime drill is marked not built; the 22:50 stamps are the commit's 22:41. Suite 1314 passed on this branch after the edits; the branch merges clean into 6a91f5d (scratch merge).
+
+### Sat 23:20 PDT · Integration to main tonight (packs 1 to 3a) · Claude Fable 5.1 on behalf of Siddharth Chawla (sidd91)
+
+Siddharth asked for the reviewed fix branches to be merged without waiting for him. Each branch had an engineer and an
+independent reviewer; each integration branch ran the full suite before `main` was fast-forwarded to it.
+1148d11 (pack 1, 1314 tests): docs/AUDIT_MAIN.md, fix/minute-12-sentence, fix/physical-account-tracer,
+fix/d1-data-compute-lines. 6a91f5d (pack 2, 1457 tests): fix/jury-power-edit, fix/crew-chip-guards, fix/live-run-log;
+two union conflicts with pack 1 resolved in src/sdv/explain.py (LABELS/UNITS) and src/sdv/ui/view.py (line order).
+e88611b (pack 3a): fix/jury-card-file and docs/run-sheet-and-checklist; conflicts with pack 2 resolved as unions in
+README.md (both quickstart lines), src/sdv/cli.py (edit refusals plus allow_unregistered for a jury file) and
+src/sdv/ui/server.py (run() reports refused manifests, then logs runs). Still to land: fix/simbar-clicks (review in
+progress), fix/scenario-b-loadout-g1 (DEC-63, in progress), docs/readme-truth (in progress). ui/room-map is built on
+its own branch and is not merged: the team picks a screen at rehearsal (Siddharth, Sat 23:08).
+Decisions: none new. Conflicts: none. Requirements touched: none directly.
+
+### Sat 22:58 PDT · SIM-bar clicks land at x12 (fix/simbar-clicks, for a teammate to merge) · Claude Fable 5.1 on behalf of Siddharth Chawla (sidd91)
+What: the rehearsal's cross-cutting Red. app.js rebuilt #sim-speed, #sim-jump, #sim-file and #chips by innerHTML on every /ws frame, so a press that straddled a frame (any ordinary 80-150 ms click at x12) never fired; the groups now go through util.paint() and the chips through a new util.paintEach() (one slot per chip, so the crew button outlives its neighbours' ticks); PACE and PRIORITY carry aria-pressed; HOLD/RUN, RESTART and the view tabs were already static markup.
+Files: src/sdv/ui/static/js/app.js, src/sdv/ui/static/js/util.js, tests/test_ui_static.py (new, 5 tests).
+Tests: measured on the live engine at x12 with Playwright, ten presses per button, clock running in every trial: a 90 ms press landed 0/10 on RESCUE, PACE x1 and PACE x60 before; after, 10/10 on PRIORITY RESCUE, JUMP 08/12/19, PACE x1/x60 (20/20 on x12), plain .click() also 10/10, header MISSION flips and the clock lands on 07:57 / 11:57 / 18:57 each time, no console errors. Full suite 1283 passed (1278 + 5). Server untouched; a second press of the same JUMP still re-runs from tick 0 (2.5-4.6 s freeze measured here), out of scope.
+Decisions: none. Conflicts: none. Requirements touched: none.

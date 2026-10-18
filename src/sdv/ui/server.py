@@ -1,9 +1,10 @@
 """The ArgOS screen server: one page, five views, and /ws pushing {snapshot, records} per tick.
 
-    uv run python -m sdv.ui.server [--host 127.0.0.1] [--port 8000] [--source live|fixtures]
+    uv run python -m sdv.ui.server [--host 127.0.0.1] [--port 8000] [--source live|fixtures] [--log-dir runs/live]
 
 The source is the live tick loop (sdv.loop: simulator, estimator, core) by default; `fixtures` replays
-tests/fixtures/snapshots and tests/fixtures/records instead.
+tests/fixtures/snapshots and tests/fixtures/records instead. Every live run and re-run (a jump back, RESTART) is
+logged to its own directory under --log-dir, live-<start file>-<n>, for `uv run sdv replay <dir> --mission <file>`.
 
 Routes:
     GET  /                  the page (static/index.html)
@@ -11,7 +12,8 @@ Routes:
     GET  /api/state         one moment: ?mission=survey&t=1142 -> {tick, t_s, mission, snapshot, records, view}
     GET  /api/compare       both priority files at one moment: ?t=1142
     GET  /api/admit         D1 on a Scenario A case with the jury's edits: ?case=A1-survey&edit=G4.hangar.mass_t=0.9
-                            (&keep=... the last accepted edits, kept in force when an edit is rejected)
+                            or &edit=G4.consumes.power_kw.peak=40 (&keep=... the last accepted edits, kept in force
+                            when an edit is rejected); 422 {refused: {field, reason}} for an edit that cannot apply
     GET  /api/reference     guests, priority files, tiers and the governor's computers for the Reference view
     GET  /api/builder       what the profile and rule builder offers
     POST /api/builder/check {kind: profile|card, doc} -> {problems}
@@ -32,6 +34,7 @@ from fastapi import Body, FastAPI, Query, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
+from sdv import loader as Ld
 from sdv.ui import builder, data, live, view
 
 STATIC = Path(__file__).parent / "static"
@@ -116,13 +119,17 @@ class Replay:
             return "the fixture replay takes no inputs"
         return None
 
+    def close(self) -> None:
+        pass    # nothing is logged: the fixtures are the log
+
 
 class Live:
     """One browser's live run (sdv.ui.live), with the same interface as Replay."""
 
-    def __init__(self, I: data.Inputs, mission: str = "survey", t_s: int = 0, speed: float = 12, running: bool = True):
+    def __init__(self, I: data.Inputs, mission: str = "survey", t_s: int = 0, speed: float = 12, running: bool = True,
+                 run_logs: live.RunLogs | None = None):
         self.I = I
-        self.lr = live.LiveReplay(mission if mission in I.missions else "survey", t_s, speed, running, speeds=SPEEDS)
+        self.lr = live.LiveReplay(mission if mission in I.missions else "survey", t_s, speed, running, speeds=SPEEDS, logs=run_logs)
 
     @property
     def speed(self):
@@ -149,15 +156,18 @@ class Live:
     def command(self, msg: dict) -> str | None:
         return self.lr.command(msg, missions=tuple(self.I.missions))
 
+    def close(self) -> None:
+        self.lr.close()
+
 
 def create_app(inputs: data.Inputs | None = None, source: str = "live", profiles_dir: Path = builder.PROFILES_DIR,
-               drafts_dir: Path = builder.DRAFTS_DIR) -> FastAPI:
+               drafts_dir: Path = builder.DRAFTS_DIR, run_logs: live.RunLogs | None = None) -> FastAPI:
     if source not in SOURCES:
         raise ValueError(f"source {source!r} is not one of {SOURCES}")
     I = inputs or data.Inputs()
     ref = live.Reference() if source == "live" else None
     app = FastAPI(title="ArgOS", docs_url=None, redoc_url=None, openapi_url=None)
-    app.state.inputs, app.state.source, app.state.reference = I, source, ref
+    app.state.inputs, app.state.source, app.state.reference, app.state.run_logs = I, source, ref, run_logs
     app.mount("/static", StaticFiles(directory=STATIC), name="static")
 
     @app.middleware("http")
@@ -197,7 +207,10 @@ def create_app(inputs: data.Inputs | None = None, source: str = "live", profiles
 
     @app.get("/api/admit")
     def api_admit(case: str = "A1-survey", edit: list[str] = Query(default=[]), keep: list[str] = Query(default=[])):
-        return view.admit(I, case, parse_edits(edit), parse_edits(keep))
+        out = view.admit(I, case, parse_edits(edit), parse_edits(keep))
+        if "refused" in out:  # an edit that cannot be applied: {refused: {field, reason}}, the last verdict stands
+            return JSONResponse(out, status_code=422)
+        return out
 
     @app.get("/api/reference")
     def api_reference():
@@ -228,16 +241,27 @@ def create_app(inputs: data.Inputs | None = None, source: str = "live", profiles
         speed = int(speed) if speed.is_integer() else speed
         running = q.get("run", "1") != "0"
         mission = q.get("mission", "survey")
-        rp = Live(I, mission, t0, speed, running) if source == "live" else Replay(I, mission, t0, speed, running)
+        rp = Live(I, mission, t0, speed, running, run_logs) if source == "live" else Replay(I, mission, t0, speed, running)
         changed = asyncio.Event()
         refusals: list[str] = []
+        errors: list[str] = []
+
+        def guarded(fn, *args):
+            """One step of the run (a tick, a command, the payload). An exception in the engine is reported to the
+            screen as an error frame and the run is held at the tick it failed on; the socket stays up."""
+            try:
+                return fn(*args)
+            except Exception as e:  # noqa: BLE001
+                errors.append(f"{type(e).__name__}: {e}")
+                rp.command({"cmd": "hold"})
+                return None
 
         async def receive():
             try:
                 while True:
                     msg = await websocket.receive_json()
                     if isinstance(msg, dict):
-                        refused = rp.command(msg)
+                        refused = guarded(rp.command, msg)
                         if refused:
                             refusals.append(refused)
                         changed.set()
@@ -248,7 +272,11 @@ def create_app(inputs: data.Inputs | None = None, source: str = "live", profiles
         loop = asyncio.get_running_loop()
 
         async def send():
-            p = rp.payload()
+            p = guarded(rp.payload)
+            while errors:
+                await websocket.send_json({"type": "error", "tick": rp.t_s, "t_s": rp.t_s, "message": errors.pop(0)})
+            if p is None:
+                return
             if refusals:
                 p["refused"] = refusals.pop()
             await websocket.send_json(p)
@@ -261,7 +289,7 @@ def create_app(inputs: data.Inputs | None = None, source: str = "live", profiles
                 try:
                     await asyncio.wait_for(changed.wait(), timeout)
                 except asyncio.TimeoutError:
-                    rp.advance()
+                    guarded(rp.advance)
                     due += 1 / rp.speed
                     if due < loop.time() - 1:
                         due = loop.time() + 1 / rp.speed  # fell behind: do not burst
@@ -275,13 +303,33 @@ def create_app(inputs: data.Inputs | None = None, source: str = "live", profiles
             pass
         finally:
             rx.cancel()
+            rp.close()
 
     return app
 
 
-def run(host: str = "127.0.0.1", port: int = 8000, source: str = "live") -> None:
+def run(host: str = "127.0.0.1", port: int = 8000, source: str = "live", log_dir: Path | None = None) -> None:
+    """Serves until stopped. With log_dir (live source) it says where the runs are logged and how to replay the
+    first, tells of each run as a browser starts or re-runs one, and on shutdown repeats the line for the last run."""
     import uvicorn
-    uvicorn.run(create_app(source=source), host=host, port=port, log_level="warning")
+
+    def say(line: str) -> None:
+        print(line, flush=True)     # stdout may be a file (nohup, a service): these lines must not wait in a buffer
+
+    I = data.Inputs()
+    for err in I.refused:              # a bad file in manifests/ is reported once here and skipped, never fatal
+        say(Ld.refusal(err))
+    logs = live.RunLogs(log_dir, say=say) if source == "live" and log_dir is not None else None
+    if logs:
+        first = logs.path("survey")
+        say(f"LOGS {logs.root}: one directory per run, live-<file>-<n>; the first under survey.yaml replays with: "
+            f"{live.replay_line(first, 'survey')}")
+    try:
+        uvicorn.run(create_app(I, source=source, run_logs=logs), host=host, port=port, log_level="warning")
+    finally:
+        if logs and logs.last:
+            d, start = logs.last
+            say(f"LAST RUN {d} under {start}.yaml; replay: {live.replay_line(d, start)}")
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -289,9 +337,10 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--host", default="127.0.0.1")
     p.add_argument("--port", type=int, default=8000)
     p.add_argument("--source", choices=SOURCES, default="live", help="the live tick loop (default) or the fixture replay")
+    p.add_argument("--log-dir", default="runs/live", help="live runs are logged here, one directory per run, for sdv replay")
     a = p.parse_args(argv)
     print(f"ArgOS screen on http://{a.host}:{a.port}/ ({a.source})")
-    run(a.host, a.port, a.source)
+    run(a.host, a.port, a.source, Path(a.log_dir) if a.source == "live" else None)
     return 0
 
 
