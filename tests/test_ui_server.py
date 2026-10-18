@@ -11,6 +11,7 @@ import uvicorn
 from websockets.sync.client import connect
 
 from sdv.ui import data, server
+from sdv.ui.live import RunLogs
 
 I = data.Inputs()
 
@@ -63,6 +64,22 @@ def test_parse_edits():
     assert server.parse_edits(["G4.hangar.mass_t=0.9", "bad", "=1"]) == {"G4.hangar.mass_t": "0.9"}
 
 
+def test_run_says_where_the_live_runs_go_and_how_to_replay_the_last(monkeypatch, tmp_path, capsys):
+    def serve_one_run(app, host, port, log_level):
+        app.state.run_logs.new("sar")                       # a browser connected under sar.yaml, then the server stopped
+    monkeypatch.setattr(uvicorn, "run", serve_one_run)
+    server.run("127.0.0.1", 8999, "live", tmp_path)
+    d = tmp_path / "live-sar-1"
+    assert capsys.readouterr().out.splitlines() == [
+        f"LOGS {tmp_path}: one directory per run, live-<file>-<n>; the first under survey.yaml replays with: "
+        f"uv run sdv replay {tmp_path / 'live-survey-1'} --mission survey",
+        f"RUN 1 under sar.yaml logs to {d}; replay: uv run sdv replay {d} --mission sar",
+        f"LAST RUN {d} under sar.yaml; replay: uv run sdv replay {d} --mission sar"]
+    monkeypatch.setattr(uvicorn, "run", lambda app, **kw: None)
+    server.run("127.0.0.1", 8999, "fixtures", tmp_path)       # the fixture replay logs nothing
+    assert capsys.readouterr().out == ""
+
+
 def serve(app):
     with socket.socket() as s:
         s.bind(("127.0.0.1", 0))
@@ -89,7 +106,7 @@ def live():
 @pytest.fixture(scope="module")
 def loop_server(tmp_path_factory):
     tmp = tmp_path_factory.mktemp("builder")
-    srv, th, base = serve(server.create_app(I, source="live", profiles_dir=tmp, drafts_dir=tmp))
+    srv, th, base = serve(server.create_app(I, source="live", profiles_dir=tmp, drafts_dir=tmp, run_logs=RunLogs(tmp / "runs")))
     yield base, tmp
     srv.should_exit = True
     th.join(timeout=5)
@@ -173,6 +190,10 @@ def test_ws_streams_the_live_loop_and_takes_laptop_inputs(loop_server):
         ws.send(json.dumps({"cmd": "run"}))
         while msg["view"]["header"]["priority_file"] != "sar_ws · AT SEA":
             msg = json.loads(ws.recv(timeout=5))
+    d = loop_server[1] / "runs" / "live-sar-1"                   # the run the browser watched is on disk, tick by tick
+    assert sorted(p.name for p in d.iterdir()) == ["decisions.jsonl", "frames.jsonl", "inputs.jsonl", "snapshots.jsonl", "timing.jsonl"]
+    assert len((d / "frames.jsonl").read_text().splitlines()) > msg["t_s"]
+    assert any(json.loads(l)["type"] == "profile_applied" for l in (d / "inputs.jsonl").read_text().splitlines())
 
 
 def test_live_api_meta_compare_and_builder(loop_server):

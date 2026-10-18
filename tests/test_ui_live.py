@@ -1,7 +1,11 @@
 """The screen on the live tick loop: the same numbers as the oracles, the shed kept on show through its recheck,
-laptop inputs (priority swap, a profile applied at sea, crew level) and jumps that re-run the loop."""
+laptop inputs (priority swap, a profile applied at sea, crew level), jumps that re-run the loop, and the logs every
+run and re-run leaves for sdv replay."""
+import json
+
 import pytest
 
+from sdv import cli
 from sdv.ui import data, live, view
 
 I = data.Inputs()
@@ -57,6 +61,63 @@ def test_a_jump_back_re_runs_the_loop_to_the_same_records():
     assert lr.t_s == 700 and all(r["tick"] <= 700 for r in lr.run.records)
     lr.command({"cmd": "jump", "t": 1150})
     assert [(r["seq"], r["kind"], r["verdict"], r["sentence"]) for r in lr.run.records] == first
+
+
+def test_restart_after_a_held_swap_starts_under_the_chosen_file():
+    lr = live.LiveReplay("survey", 600, running=False)
+    lr.command({"cmd": "mission", "value": "sar"})
+    assert lr.mission == "survey" and lr.run.swaps() == [(601, "sar")]     # stamped for the next tick, not in force yet
+    lr.command({"cmd": "restart"})
+    assert lr.t_s == 0 and lr.running and lr.run.start == "sar" and lr.mission == "sar" and lr.run.laptop == {}
+    lr.run.advance_to(1142)
+    assert [r["mission"] for r in lr.run.records if r["kind"] == "D4"][-1] == "sar"
+
+
+def test_a_jump_back_over_a_swap_drops_it_and_the_event_log_says_so():
+    lr = live.LiveReplay("survey", 600, running=False)
+    lr.command({"cmd": "mission", "value": "sar"})
+    lr.run.advance_to(700)
+    assert lr.mission == "sar"
+    lr.command({"cmd": "jump", "t": 650})
+    assert lr.mission == "sar" and lr.run.swaps() == [(601, "sar")]          # before the target: kept and replayed (DEC-58)
+    assert not any(e.get("refused") for e in lr.run.inputs_log)
+    lr.command({"cmd": "jump", "t": 500})
+    assert lr.mission == "survey" and lr.t_s == 500 and lr.run.swaps() == []
+    row = next(e for e in view.screen(I, lr.run.moment())["log"] if e["tag"] == "PRIORITY")
+    assert row["msg"] == "jump back: swap to sar.yaml at 00:10:01 dropped" and row["refused"] and row["t"] == "00:08:20"
+
+
+def test_a_live_run_is_logged_and_sdv_replay_reports_equal(tmp_path, capsys):
+    logs = live.RunLogs(tmp_path)
+    lr = live.LiveReplay("survey", 600, running=False, logs=logs)
+    lr.command({"cmd": "input", "input": {"type": "crew_change", "payload": {"crew_aboard": 6}}})
+    lr.command({"cmd": "mission", "value": "sar"})
+    lr.run.advance_to(730)
+    d = tmp_path / "live-survey-1"
+    assert logs.last == (d, "survey")
+    assert sorted(p.name for p in d.iterdir()) == ["decisions.jsonl", "frames.jsonl", "inputs.jsonl", "snapshots.jsonl", "timing.jsonl"]
+    assert len((d / "frames.jsonl").read_text().splitlines()) == 731          # on disk before the run is closed, a line per tick
+    stamped = [(i["t_s"], i["type"]) for i in map(json.loads, (d / "inputs.jsonl").read_text().splitlines())]
+    assert {(540, "bridge_answer"), (601, "crew_change"), (601, "priority_swap")} <= set(stamped)
+    assert cli.main(["replay", str(d), "--mission", "survey"]) == 0
+    assert capsys.readouterr().out.startswith("REPLAY EQUAL 731 snapshots")
+    first = lr.run
+    lr.command({"cmd": "jump", "t": 500})                                       # a re-run: its own directory, the first closed
+    assert first.loop.logs is None and len((d / "frames.jsonl").read_text().splitlines()) == 731
+    assert logs.last == (tmp_path / "live-survey-2", "survey") and lr.run.loop.logs is not None
+    lr.close()
+    assert lr.run.loop.logs is None and len((tmp_path / "live-survey-2" / "frames.jsonl").read_text().splitlines()) == 501
+
+
+def test_run_logs_count_on_from_the_directories_already_there(tmp_path):
+    (tmp_path / "live-sar-7").mkdir()
+    logs = live.RunLogs(tmp_path)
+    assert logs.path("survey") == tmp_path / "live-survey-8"
+    said = []
+    logs.say = said.append
+    assert logs.new("sar") == tmp_path / "live-sar-8" and logs.path("survey") == tmp_path / "live-survey-9"
+    d = tmp_path / "live-sar-8"
+    assert said == [f"RUN 8 under sar.yaml logs to {d}; replay: uv run sdv replay {d} --mission sar"]
 
 
 def test_a_priority_swap_mid_run_decides_under_the_new_file():
