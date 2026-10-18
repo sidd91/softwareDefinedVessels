@@ -162,7 +162,9 @@
       ? `<span class="gl">crew</span><button type="button" data-crew="${CREW_NEXT[crewNow] ?? 14}" title="Next crew level">${esc(crewNow)} → ${CREW_NEXT[crewNow] ?? 14}</button>` : '');
     $('ops-fill').style.width = `${Math.round(100 * t.t_s / t.end_t_s)}%`;
     $('ops-src').textContent = `${t.source === 'live' ? `live · ${t.sim || 'simulator'}` : 'replay'}${h.standby ? ` · standby ${low(h.standby)}` : ''}`;
-    paint($('foot-live'), `${t.source === 'live' ? 'Live' : 'Replay'} · <b>${esc(t.sim || 'scripted plant')}, A.6</b>`);
+    // the stream's own plant label ("scripted plant · A.6" on main); the brief's section is appended only when the label lacks it
+    const sim = t.sim || 'scripted plant';
+    paint($('foot-live'), `${t.source === 'live' ? 'Live' : 'Replay'} · <b>${esc(/A\.6/.test(sim) ? sim : `${sim}, A.6`)}</b>`);
     paint($('foot-source'), `<span class="verify-only">snapshot tick ${esc(v.snapshot_tick)} · records ${esc(v.records_seen)} · ${esc(low(h.priority_file))}</span>`);
   }
 
@@ -478,16 +480,18 @@
       if (f && rec.trigger === 'cooling_degraded') trig += ` by ${f.votes.map(x => x.replace(/_/g, ' ')).join(', ')}`;
       if (rec.injected) trig += ' · injected';
       const rows = [['Trigger', trig, rec.injected ? 'b' : ''], ['Limit', `${g(b.capacity)} − ${g(b.capacity - rec.limit_kw)} headroom = ${g(rec.limit_kw)} kW`]];
+      // an air-cooled guest draws on the bus and not on the loop: the record then carries both (main's DEMAND row)
+      const bus = b.class === 'heat' && Number.isFinite(rec.total_kw) && Math.abs(rec.total_kw - rec.load_kw) > 0.05 ? ` · ${g(rec.total_kw)} kW on the bus` : '';
       let word = 'Holds', wcls = '', title = `Load management · ${cls} limit`;
       if (rec.verdict === 'shed') {
         word = 'Shed'; wcls = 'warm';
         const re = d.recheck ? (String(d.recheck).match(/\d\d:\d\d:\d\d/) || [])[0] : null;
-        rows.push(['Binding', `${cls} · ${g(rec.load_kw)} of ${g(rec.limit_kw)} kW`, 'b']);
+        rows.push(['Binding', `${cls} · ${g(rec.load_kw)} of ${g(rec.limit_kw)} kW${bus}`, 'b']);
         rows.push(['Action', (rec.steps || []).map(s => `${s.guest} ${words(s.from_mode)} → ${words(s.to_mode)} · frees ${g(s.frees_kw)} kW`).join(' · ')]);
         rows.push(['After', `${g(rec.load_after_kw)} of ${g(rec.limit_kw)} kW${re ? ` · recheck ${re} holds` : ''}`]);
       } else {
         word = rec.verdict === 'hold' ? 'Holds' : cap(words(rec.verdict));
-        rows.push(['Load', `${g(rec.load_kw)} kW · ${g(rec.limit_kw - rec.load_kw)} kW spare`]);
+        rows.push(['Load', `${g(rec.load_kw)} kW · ${g(rec.limit_kw - rec.load_kw)} kW spare${bus}`]);
         const a = (rec.armed || [])[0];
         rows.push(['Next armed', a ? `${a.guest} ${words(a.from_mode)} → ${words(a.to_mode)} · frees ${g(a.frees_kw)} kW` : 'nothing armed']);
       }

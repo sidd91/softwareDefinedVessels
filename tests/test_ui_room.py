@@ -26,13 +26,14 @@ def by_id(r):
 def test_scenario_b_cells_hold_the_slot_limits_and_what_is_free(mission, t):
     r = room.room(I, I.moment(mission, t))
     assert [c["id"] for c in r["cells"]] == list(room.ORDER)
-    assert r["situation"] == "at_sea" and r["installed"] == ["G3", "G4", "G5"] and r["t_s"] == t and r["mission"] == mission
+    # the organisers' load-out (DEC-63): G1 on the free mast slot, G3 in Bay 1, G4 on the flight deck, G5 in Bay 2 with its antenna on the roof
+    assert r["situation"] == "at_sea" and r["installed"] == ["G1", "G3", "G4", "G5"] and r["t_s"] == t and r["mission"] == mission
     c = by_id(r)
     mast = c["mast_free"]
-    assert mast["who"] == "G5 antenna" and mast["natives"] == ["radar", "SATCOM"]
-    assert mast["limits"] == {"slots_total": 3, "slots_used": 3, "slots_free": 0, "max_kg": 60, "area_m2": 0.6, "mass_kg": 25.0,
-                              "part_area_m2": 0.3, "air_cooled_max_kw": 2}
-    assert mast["what"] == "25 of 60 kg · 0.3 of 0.6 m² · air cooled" and (mast["free_k"], mast["free_v"], mast["free_n"]) == ("free slots", "0", 0)
+    assert mast["who"] == "G1 radio sensor" and mast["natives"] == ["radar", "SATCOM"] and mast["primary"] == ["G1"]
+    assert mast["limits"] == {"slots_total": 3, "slots_used": 3, "slots_free": 0, "max_kg": 60, "area_m2": 0.6, "mass_kg": 45.0,
+                              "part_area_m2": 0.5, "air_cooled_max_kw": 2}
+    assert mast["what"] == "45 of 60 kg · 0.5 of 0.6 m² · air cooled" and (mast["free_k"], mast["free_v"], mast["free_n"]) == ("free slots", "0", 0)
     bay2 = c["bay2"]
     assert bay2["who"] == "G5 comms node" and bay2["what"] == "3.0 of 4 t" and bay2["tag"] == "stbd line"
     assert bay2["limits"] == {"max_t": 4, "mass_t": 3.0, "free_t": 1.0, "halves": 1, "halves_used": 1, "halves_free": 0}
@@ -45,11 +46,13 @@ def test_scenario_b_cells_hold_the_slot_limits_and_what_is_free(mission, t):
     assert fd["limits"] == {"hangar_max_kg": 150, "drone_kg": 140.0, "free_kg": 10.0, "hangar_t": 0.85, "area_m": [12, 8]}
     assert fd["free_v"] == "10 kg under hangar limit"
     roof = c["hangar_roof"]
-    assert roof["who"] == "free" and roof["guests"] == [] and roof["limits"] == {"max_kg": 60, "mass_kg": 0.0, "free_kg": 60.0, "multiplier": 1.2}
+    assert roof["who"] == "G5 antenna" and roof["guests"] == ["G5"] and roof["primary"] == []   # a secondary part: no draw of its own
+    assert roof["limits"] == {"max_kg": 60, "mass_kg": 25.0, "free_kg": 35.0, "multiplier": 1.2} and roof["free_v"] == "35 kg"
+    assert roof["what"] == "25 of 60 kg · stability ×1.2"
     ramp = c["stern_ramp"]
     assert ramp["who"] == "free" and ramp["users"] == ["G3"] and ramp["limits"] == {"max_t": 5, "craft_len_m": [7, 9]}
     assert (ramp["free_k"], ramp["free_v"]) == ("excludes", "flight deck ops") and ramp["what"] == "one craft ≤ 5 t · 7–9 m"
-    assert r["mast"] == {"slots_free": 0, "slots_total": 3, "natives": ["radar", "SATCOM"], "guest": "G5 antenna"}
+    assert r["mast"] == {"slots_free": 0, "slots_total": 3, "natives": ["radar", "SATCOM"], "guest": "G1 radio sensor"}
     assert r["deck"] == {"halves_total": 3, "halves_free": 0, "bays_free": []}
     assert not any(cell["held"] for cell in r["cells"])
 
@@ -67,7 +70,7 @@ def test_mutability_follows_a11_and_at_sea_marks_the_crane_positions_port_only()
     assert c["flight_deck"]["rule_detail"] == c["stern_ramp"]["rule_detail"] == (
         "at-sea window: sea state ≤ 3, wind ≤ 20 kn, 4–8 kn, course steady, deck clear, survey vehicle not listening · "
         "≤ 250 kg via flight deck or stern ramp")
-    assert c["bay2"]["primary"] == ["G5"] and c["mast_free"]["primary"] == [] and c["bay1"]["primary"] == ["G3"]
+    assert c["bay2"]["primary"] == ["G5"] and c["mast_free"]["primary"] == ["G1"] and c["bay1"]["primary"] == ["G3"]
     assert r["as_built"]["gensets"] == "2 × 450 kW" and r["as_built"]["loop"] == "160 → 120 kW · 12 → 30 °C"
     assert r["as_built"]["lines"] == "150 + 150 kW" and (r["as_built"]["mass_t"], r["as_built"]["stability_t_eq"], r["as_built"]["headroom_kw"]) == (10, 12, 5)
     assert r["as_built"]["mast_natives"] == ["navigation radar", "satellite terminal"] and r["as_built"]["trip_signals"] == 3
@@ -165,8 +168,8 @@ def test_the_room_page_and_its_assets_are_served(replay):
     assert "Role views" in html and "not access control" in html
     for asset in ("/static/room/room.js", "/static/room/room.css"):
         assert get(replay, asset)[0] == 200
-    status, html = get(replay, "/")      # the console is untouched
-    assert status == 200 and "/static/js/app.js" in html and "room" not in html.lower()
+    status, html = get(replay, "/")      # the console is untouched: it loads none of the room page's assets
+    assert status == 200 and "/static/js/app.js" in html and "/static/room/" not in html
 
 
 def test_api_room_answers_for_a_moment_and_for_the_pier(replay):
