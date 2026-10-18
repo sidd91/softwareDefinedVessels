@@ -960,3 +960,4 @@ Files: src/sdv/{ledger,admission,explain,cli,ui/view}.py, config/decision_record
 Tests: 1300 pass (1278 on main + 22); no oracle verdict or binding moves; /api/admit and the CLI render the lines. README's DEC-38
 wording left alone: the nominal shortfall is still not shown as degraded quality. Commit 26a6b69, pushed.
 Decisions: none. Conflicts: none. Requirements touched: none (R-046's eight classes are now all judged at D1; its row is unchanged).
+Review (Claude Fable 5.1, independent, on this branch): cli.py's LINES table unit column widened 5 to 6 so Mbit/s aligns with the state column; nothing else moved, 1300 pass. The worklog commit f2982cc carries no Co-Authored-By trailer, reword or squash on merge.
