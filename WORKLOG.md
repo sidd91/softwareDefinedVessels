@@ -1408,3 +1408,18 @@ EQUAL. The run sheet driven live over /ws matched docs/DEMO_SCRIPT.md step by st
 Decisions: DEC-67. Conflicts: none. Deferrals: team number, bios, trial length and repository visibility (private) to Logan;
 a screen button for safety requests and the hard-coded response tags in the JS to the team (UI).
 
+
+### Sun 04:55 PDT · Main and the submission tag moved to the gated build, then the gate's polish · Claude Opus 5.5 on behalf of Logan Walker (GhostWalka)
+
+What: a release gate on ee50ece (two independent agents) passed the build and the demo: full suite twice with no flakes,
+scripted survey and rescue runs byte-identical to cfbc78d with old and new logs replaying across both, the run sheet driven
+over /ws matching docs/DEMO_SCRIPT.md word for word, zero browser console errors, kit build and verify, the map tool. main was
+fast-forwarded cfbc78d to 466600c (no force) and the `submission` tag re-pointed to it as Siddharth's note describes.
+The gate's skeptic found four polish items, all fixed on fix/polish (bb3326c) with tests/test_polish.py (62 tests) and a
+second skeptic: Admission and CLI refusals quote a value only by the door's rule, a deeply nested profile is refused at the
+door, enum and pattern problems read in words, a non-number jump is refused, None and booleans are described, newline-safe
+name patterns. docs/DEMO_SCRIPT.md and DEMO_READINESS.md: at x12 T+20:00 arrives at about 0:51, then about 30 s of dwell.
+Two older items stay open (crafted messages only): schema patterns ending in $ accept a trailing newline in a profile id,
+and type problems on the PROFILE row print True or None as Python writes them.
+Tests: 1774 collected, 1773 pass, 1 strict xfail. README count updated, README.pdf rebuilt (3/3 pages).
+Decisions: none new. Conflicts: none. Deferrals: as in the Sun 03:40 entry.

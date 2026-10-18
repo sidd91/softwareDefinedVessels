@@ -1,6 +1,6 @@
 # ArgOS pitch facts
 
-> **Final main, Sun 18 Oct ~04:00 PDT** (integrate/logan-final, then main): 1712 tests collected, all pass but one
+> **Final main, Sun 18 Oct ~04:00 PDT** (integrate/logan-final, then main): 1774 tests collected, all pass but one
 > deliberate strict xfail (the recovery-lead lookup, kept so the 6-aboard demo record stays as pinned). Every item in
 > docs/HANDOFF_SIDDHARTH.md is fixed except that one, the deployment map is merged (section 10 numbers hold, load-out
 > G1 + G3 + G4 + G5 read from config), and the scripted survey and rescue runs are byte-identical to the tagged
@@ -229,7 +229,7 @@ The jury's one-number edit (all A1's set unless named):
 
 | ID | Fact | Value | Verified by | When |
 |---|---|---|---|---|
-| F-60 | Test suite on the final main | 1712 tests collected, all pass except one strict xfail (tests/test_handoff_core.py, the recovery-lead lookup). Earlier: main 4c4f93c 1476, 7b9a804 1485 | `uv run pytest -q` on integrate/logan-final | Sun 03:40 |
+| F-60 | Test suite on the final main | 1774 tests collected: 1773 pass, 1 strict xfail (tests/test_handoff_core.py, the recovery-lead lookup). Earlier: main 4c4f93c 1476, 7b9a804 1485 | `uv run pytest -q` on main | Sun 05:00 |
 | F-61 | Test suite on fix/scenario-b-loadout-g1 | 1485 collected, main's 1476 plus 9 (now, since the load-out reached main at 7b9a804: 1485 on main). Siddharth's review logs 1485 green | C14, its WORKLOG | 23:58 |
 | F-62 | Known flaky test | `tests/test_ui_server.py::test_ws_streams_the_live_loop_and_takes_laptop_inputs` fails in some full runs and passes alone (docs/HANDOFF_SIDDHARTH.md, on branch fix/review-ours, not on main yet). It passed in C13 | C13 | 23:47 |
 | F-63 | Tests for tonight's fixes: jury edits, jury card file, crew levels | 150, all in the 1476 | C14 | 23:58 |

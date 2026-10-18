@@ -6,11 +6,11 @@ the hull's finite physical budget and decides, in seconds and in one plain sente
 aboard, where they go, who wins when two want the same thing, and what is shed when a generator trips.
 
 > **Status (Sat 23:50 PDT): the engine (D1 to D5, the 200 ms safety table, estimator, tick loop, replay) and the screen
-> run end to end with `uv run sdv demo`; 1712 tests pass.**
+> run end to end with `uv run sdv demo`; 1773 tests pass.**
 
 ## Run it
 
-Python 3.12 via uv: `uv sync` once on Wi-Fi, then everything runs offline; `uv run pytest` runs the 1712 tests.
+Python 3.12 via uv: `uv sync` once on Wi-Fi, then everything runs offline; `uv run pytest` runs the 1774 tests.
 
 ```bash
 uv run sdv admit G4 --installed G1,G2,G3 --mission survey
