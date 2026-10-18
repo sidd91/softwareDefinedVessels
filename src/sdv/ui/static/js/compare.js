@@ -60,7 +60,7 @@ function ship(f, s) {
   const d = s.decision;
   const hot = new Set(s.mimic.zones.filter(z => z.hot).map(z => z.guest.split(' ')[0]));
   const record = d
-    ? `<p class="why" style="margin: 0; font-size: 17px; font-weight: 600">${esc(d.sentence)}</p>${conflictTable({ ...d, conflicts: d.conflicts })}<div class="kv" style="padding: 0">${recordRows(d.rows.filter(r => r[0] !== 'RESPONSE'))}</div>`
+    ? `<p class="why" style="margin: 0; font-size: 17px; font-weight: 600" title="${esc(d.sentence)}">${esc(d.headline || d.sentence)}</p>${conflictTable({ ...d, conflicts: d.conflicts })}<div class="kv" style="padding: 0">${recordRows(d.rows.filter(r => r[0] !== 'RESPONSE'))}</div>`
     : '<div class="empty" style="padding: 0">NO DECISION</div>';
   const bars = s.bars.map(b => `<div><div class="bl"><b>${esc(b.name)}</b><span class="mono">${esc(b.value)}</span></div>
 ${meter(b.pct, b.mark, b.state === 'LIMITING' ? 'warn' : '')}</div>`).join('');

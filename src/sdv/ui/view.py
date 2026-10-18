@@ -543,8 +543,31 @@ def headline(sentence: str) -> str:
     return parts[0] if parts[0].endswith(".") else parts[0] + "."
 
 
+R3_RULE = {"confirm": "BRIDGE CONFIRMS DRONE LANDING", "standing_plan": "DRONE LANDS ON THE PLAN SET AT LAUNCH",
+           "automatic": "DRONE LANDS ON THE LAST DECK CHECK", "forbidden": "DRONE LANDING NOT ALLOWED"}
+
+
+def _policy_rows(I: Inputs, m: Moment) -> list:
+    """The rules in force when the decision was made: the priority file and the crew rule, from config and the snapshot."""
+    f = _file(I, m)
+    mc = " ".join(SHORT.get(g, g) for g in f.get("mission_critical", [])) or "NONE"
+    rows = [("PRIORITY", f"{mission_name(m.mission, f)} · MISSION-CRITICAL {mc}", False)]
+    crew = _value(m.snapshot, "crew", "crew_aboard")
+    rule = {**I.A["rules"]["r3"]["confirm"], **(f.get("confirm", {}).get("r3", {}) or {})}.get(crew)
+    if crew is not None and rule:
+        rows.append(("CREW RULE", f"{crew} ABOARD · {R3_RULE.get(rule, words(rule))}", False))
+    return rows
+
+
 def decision(I: Inputs, m: Moment, gs: dict, pl: dict) -> dict | None:
-    """The decision panel: the latest record, its one sentence first."""
+    """The decision panel: its headline, the record's rows, then the rules in force."""
+    out = _decision(I, m, gs, pl)
+    if out is not None:
+        out["rows"] = list(out["rows"]) + _policy_rows(I, m)
+    return out
+
+
+def _decision(I: Inputs, m: Moment, gs: dict, pl: dict) -> dict | None:
     r = _acting(m.records)
     if r is None:
         return None
