@@ -27,6 +27,7 @@ RECORD = jsonschema.Draft202012Validator(json.loads((Ld.ROOT / "config/decision_
 SNAP = {p.stem: json.loads(p.read_text()) for p in (Ld.ROOT / "tests/fixtures/snapshots").glob("*.json")}
 SIGNALS = {x["name"]: x for x in yaml.safe_load((Ld.ROOT / "config/signals.yaml").read_text())["signals"]}
 WAIT_14 = SIGNALS["bridge_requests"]["wait_s"]["by_crew"][14]
+LOST_FEED = "no answer from the bridge, the laptop feed is lost and the crew is taken as one level lower"
 
 
 def inp(t, type_, **payload):
@@ -104,7 +105,7 @@ def test_a_g4_telemetry_drop_gives_a_d3_on_endurance_not_a_crash(tmp_path, until
 
 def test_a_lost_laptop_feed_lets_the_bridge_request_lapse_and_holds_the_recovery(tmp_path):
     """#5: the laptop feed drops at 490, so the open request vanishes from the snapshot. The wait counts from R3's own
-    ask, the recovery is held, and a recall is no longer refused as under way."""
+    ask, the recovery is held with the lost feed named, and a recall is no longer refused as under way."""
     inputs = scripted_inputs()
     inputs.setdefault(490, []).append(inp(490, "feed_drop", feed="laptop", until_t_s=None))
     loop, outs, recs = run(inputs=inputs, until=900, log_dir=tmp_path)
@@ -112,7 +113,7 @@ def test_a_lost_laptop_feed_lets_the_bridge_request_lapse_and_holds_the_recovery
     assert [r["verdict"] for r in d5][:2] == ["confirm", "held"]
     held = d5[1]
     wait = max(loop.core.wait_s.values())
-    assert 480 + WAIT_14 < held["tick"] <= 480 + wait + 1 and held["deck_evidence"] == "no answer from the bridge"
+    assert 480 + WAIT_14 < held["tick"] <= 480 + wait + 1 and held["deck_evidence"] == LOST_FEED
     clean(held)
     assert loop.core.r3["state"] == "held"
     assert "under way" not in outs[-1].safety["g4_return_home"]["reason"]
@@ -266,3 +267,69 @@ def test_a_priority_swap_to_an_unknown_file_is_refused_not_a_crash(tmp_path):
     assert refused["tick"] == 300 and refused["profile"] == "fishing" and "fishing" in refused["problems"][0]
     assert kinds(recs, "D3")[0]["mission"] == "survey"
     same_everywhere(loop, outs, tmp_path)
+
+
+# ------------------------------------------------------------------------------------------------ repair round
+
+def test_a_denial_after_an_early_recall_is_not_asked_again(tmp_path):
+    """#6: a recall at 450 is open when the battery limit comes on at 480, so the limit is covered. The bridge denies
+    at 500 and ArgOS does not ask again a tick later."""
+    inputs = {500: [inp(500, "bridge_answer", request_seq=1, answer="denied")]}
+    loop, outs, recs = run(inputs=inputs, safety={450: ["g4_return_home"]}, log_dir=tmp_path)
+    d5 = [(r["tick"], r["verdict"], r["deck_evidence"]) for r in kinds(recs, "D5")]
+    assert d5 == [(450, "confirm", d5[0][2]), (500, "held", "the bridge denied the recovery")]
+    assert [(t, c["args"]["request_seq"]) for t, c in commands(outs, "bridge_request")] == [(450, 1)]
+    assert loop.core.r3_limit == ("G4.battery_pct", "land_or_ditch")
+    same_everywhere(loop, outs, tmp_path)
+
+
+def test_a_recall_that_lapses_after_the_battery_limit_came_on_is_not_asked_again():
+    """#6: a recall at 450 lapses at 511. The limit came on while it was open, so no ask at 512, as after a lapse at 541."""
+    _, outs, recs = run(inputs={}, safety={450: ["g4_return_home"]}, until=900, standby=False)
+    assert [(r["tick"], r["verdict"]) for r in kinds(recs, "D5")] == [(450, "confirm"), (450 + WAIT_14 + 1, "held")]
+    assert [t for t, _ in commands(outs, "bridge_request")] == [450]
+
+
+def test_a_confirmation_hidden_by_a_feed_drop_clears_the_deck_when_the_feed_returns(tmp_path):
+    """#5: the bridge confirms at 540 while the laptop feed is down (500 to 700). The wait runs out at 661 and the
+    recovery is held, the feed named as the cause. At 700 the fresh list shows the confirmation came in time, so the
+    deck is cleared and G4 lands at 1020, as with no drop."""
+    inputs = scripted_inputs()
+    inputs.setdefault(500, []).append(inp(500, "feed_drop", feed="laptop", until_t_s=700))
+    loop, outs, recs = run(inputs=inputs, log_dir=tmp_path)
+    d5 = [(r["tick"], r["verdict"], r["deck_evidence"]) for r in kinds(recs, "D5")]
+    wait = loop.core.wait_s[6]          # the crew reads the next lower level while the feed is lost
+    assert d5[1:] == [(480 + wait + 1, "held", LOST_FEED),
+                      (700, "cleared", "the bridge confirmed at minute 9")]
+    assert [t for t, _ in commands(outs, "clear_deck")] == [700]
+    assert loop.core.r3["landed_t_s"] == 1020
+    assert [(t, c["args"]["request_seq"]) for t, c in commands(outs, "bridge_close")] == [(1020, 1)]
+    clean(*kinds(recs, "D5"))
+    same_everywhere(loop, outs, tmp_path)
+
+
+def test_a_late_confirmation_seen_after_a_feed_drop_leaves_the_recovery_held():
+    """#5: the bridge confirms at 600, past the 60 s wait at 14 aboard. The fresh list at 700 shows it late, as an
+    unbroken feed would have, so the recovery stays held and the deck is not cleared."""
+    inputs = {500: [inp(500, "feed_drop", feed="laptop", until_t_s=700)],
+              600: [inp(600, "bridge_answer", request_seq=1, answer="confirmed")]}
+    loop, outs, recs = run(inputs=inputs, until=900, standby=False)
+    assert [r["verdict"] for r in kinds(recs, "D5")] == ["confirm", "held"]
+    assert not commands(outs, "clear_deck") and loop.core.r3["state"] == "held"
+
+
+def test_the_hard_limit_row_reads_a_word_limit_as_words():
+    """#22: with G4 telemetry lost before minute 8, D3 runs on the endurance limit. Its HARD LIMIT row has no raw
+    operator and no stray percent sign. The battery row at minute 8 reads as before."""
+    from sdv.ui import data, live, view
+    I = data.Inputs()
+    r = live.Run("survey", inputs={100: [inp(100, "feed_drop", feed="g4_telemetry", until_t_s=None)]})
+    r.advance_to(910)
+    rows = {k: v for k, v, _ in view.screen(I, r.moment())["decision"]["rows"]}
+    assert rows["HARD LIMIT"] == "G4 WHILE AIRBORNE · LAND WITHIN 90 min"
+    r.close()
+    nominal = live.Run("survey")
+    nominal.advance_to(481)
+    rows = {k: v for k, v, _ in view.screen(I, nominal.moment())["decision"]["rows"]}
+    assert rows["HARD LIMIT"] == "G4 BATT < 20 % · LAND WITHIN 12 min"
+    nominal.close()

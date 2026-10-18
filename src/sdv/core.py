@@ -252,34 +252,58 @@ class Core:
                         deadline_t_s=r3["deadline_t_s"], mission=self.mission)
         out.append(self._record(r, started, c, cmds))
 
+    def _r3_confirmed(self, snap: dict, r3: dict, req: dict) -> tuple[list, str, str, dict]:
+        """The bridge confirmed: the deck work, the verdict, the evidence and the extra record fields."""
+        r3["state"] = "cleared"
+        c = self._clear_or_withhold(snap, r3)
+        evidence = f"the bridge confirmed at minute {Rec.explain.minute(req['answered_t_s'])}"
+        if r3.get("withheld"):
+            evidence += ", deck clearing waits for the landing hold to lift"
+        verdict, evidence, extra = self._shorted(r3, "cleared", evidence)
+        return c, verdict, evidence, extra
+
     def _r3_follow(self, snap: dict, out: list, cmds: list) -> None:
         r3, t = self.r3, snap["run"]["t_ship_s"]
         g4 = snap["guests"].get("G4", {})
+        br = snap["crew"]["bridge_requests"]
+        stale = bool(br.get("stale"))
+        reqs = [] if stale else br["value"] or []
+        req = next((q for q in reqs if q["request_seq"] == r3["request_seq"]), None)
+        crew = snap["crew"]["crew_aboard"]["value"]
         if r3["state"] == "asked":
             # a stale list says nothing about the bridge, and a request missing from it is unanswered: either way the
             # wait counts from R3's own ask and then counts as no
-            br = snap["crew"]["bridge_requests"]
-            reqs = [] if br.get("stale") else br["value"] or []
-            req = next((q for q in reqs if q["request_seq"] == r3["request_seq"]), None)
-            crew = snap["crew"]["crew_aboard"]["value"]
             asked = req["asked_t_s"] if req else r3["asked_t_s"]
             if (req and req["state"] in ("confirmed", "denied")) or t - asked > self.wait_s[crew]:
                 started = time.perf_counter()
                 seq = self._take_seq()
                 extra = {}
                 if req and req["state"] == "confirmed":
-                    r3["state"] = "cleared"
-                    c = self._clear_or_withhold(snap, r3)
-                    verdict = "cleared"
-                    evidence = f"the bridge confirmed at minute {Rec.explain.minute(req['answered_t_s'])}"
-                    if r3.get("withheld"):
-                        evidence += ", deck clearing waits for the landing hold to lift"
-                    verdict, evidence, extra = self._shorted(r3, verdict, evidence)
+                    c, verdict, evidence, extra = self._r3_confirmed(snap, r3, req)
                 else:
                     r3["state"] = "held"
                     c = []
                     verdict = "held"
-                    evidence = "the bridge denied the recovery" if req and req["state"] == "denied" else "no answer from the bridge"
+                    if req and req["state"] == "denied":
+                        evidence = "the bridge denied the recovery"
+                    else:
+                        r3["unseen"] = req is None      # lapsed unseen: an answer given in time may still show up
+                        evidence = "no answer from the bridge"
+                        if stale:   # the record's crew is then the fallback's, the next lower level
+                            lower = snap["crew"]["crew_aboard"].get("stale")
+                            evidence += ", the laptop feed is lost" + (" and the crew is taken as one level lower" if lower else "")
+                r3["evidence"] = evidence
+                r = Rec.from_d5(seq=seq, snapshot=snap, verdict=verdict, crew=crew, deck_evidence=evidence,
+                                deadline_t_s=r3["deadline_t_s"], mission=self.mission, **extra)
+                out.append(self._record(r, started, c, cmds))
+        elif r3["state"] == "held" and r3.get("unseen") and r3["landed_t_s"] is None and req:
+            # the request shows again in a fresh list: a confirmation given within the wait clears the deck, as an
+            # unbroken feed would have. Pending, denied or late, the lapse stands.
+            r3["unseen"] = False
+            if req["state"] == "confirmed" and req["answered_t_s"] - req["asked_t_s"] <= self.wait_s[crew]:
+                started = time.perf_counter()
+                seq = self._take_seq()
+                c, verdict, evidence, extra = self._r3_confirmed(snap, r3, req)
                 r3["evidence"] = evidence
                 r = Rec.from_d5(seq=seq, snapshot=snap, verdict=verdict, crew=crew, deck_evidence=evidence,
                                 deadline_t_s=r3["deadline_t_s"], mission=self.mission, **extra)
@@ -353,8 +377,9 @@ class Core:
                 elif self.r3["state"] == "held" and self.r3["landed_t_s"] is None:
                     self._r3_reopen(snap, d["deadline_t_s"], out, cmds)   # an earlier recall lapsed: the hard limit asks again
                     self.r3_limit = self._limit_key(d["hard_limit"])
-                else:
+                else:   # R3 already open for an earlier recall: it covers this limit too
                     self.r3["deadline_t_s"] = d["deadline_t_s"]
+                    self.r3_limit = self._limit_key(d["hard_limit"])
         due = D3.recovery_due(self.A, self.cards, snap)
         key = self._limit_key(due) if due is not None else None
         if due is None:
@@ -366,6 +391,9 @@ class Core:
         elif self.r3["state"] == "held" and self.r3["landed_t_s"] is None and key != self.r3_limit:
             # a recall lapsed or was refused before this limit came on: the limit asks again, once per onset
             self._r3_reopen(snap, snap["guests"]["G4"]["land_by_t_s"]["value"], out, cmds)
+            self.r3_limit = key
+        elif self.r3["state"] != "held":
+            # R3 asked or cleared while the limit is due: this onset is covered, a later denial or lapse is not re-asked
             self.r3_limit = key
         if r3_before is not None:
             self._r3_follow(snap, out, cmds)
