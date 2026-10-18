@@ -223,7 +223,8 @@ def scanned():
     return texts
 
 
-TEXTS = scanned()
+# This tracer's own test names keys to check that they resolve; naming them there is not a use.
+TEXTS = {f: t for f, t in scanned().items() if f != "tests/test_physical_account_tracer.py"}
 
 
 def segs(subs):

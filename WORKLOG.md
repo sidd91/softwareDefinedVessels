@@ -952,11 +952,25 @@ off before a 60 S guest is throttled; discretionary tiers folded into shed_order
 
 ### Sat 22:04 PDT · Physical Account "Used in" sees the engine's reads · Claude Fable 5.1 on behalf of Siddharth Chawla (sidd91)
 
-The Physical Account's "Used in" column said "test" on most rows and "not yet" on 13 keys because the tracer rooted only
+The Physical Account's "Used in" column said "test" on most rows and "not yet" on 23 keys because the tracer rooted only
 variables assigned from the literal file name, blind to the engine's A parameter, self.A and I.A. tools/physical_account.py now
 seeds those names in src modules (shadowed while rebound to something else; a read must be a path in the YAML), follows self./I.
 aliases, walks the directories when git lists nothing, and shows a key's status when nothing reads it: 12 design statements carry
-`status: documented only`, five keys got trace patterns, no number or reason changed; ten rows moved to code, none says "not yet".
+`status: documented only`, five keys got trace patterns, no number or reason changed; eleven rows moved to code, none says "not yet".
 Files: tools/physical_account.py, config/assumptions.yaml, docs/PHYSICAL_ACCOUNT.md, docs/PHYSICAL_ACCOUNT_DETAIL.md,
 tests/test_physical_account_tracer.py (13 tests); 1291 pass. PDFs not rebuilt (this box cannot). Branch fix/physical-account-tracer, to merge.
 Decisions: none. Conflicts: none. Requirements touched: none.
+
+### Sat 22:14 PDT · Review of fix/physical-account-tracer · Claude Fable 5.1 on behalf of Siddharth Chawla (sidd91)
+
+Reviewed the diff above against its task and tried to break it: 1291 pass; `sdv admit`, `sdv run --mission survey` and
+`--mission sar` and the seven demo routes on :8301 answer as before; main's and the branch's assumptions.yaml parse identical
+except the status and trace fields; each of the 56 src/ references the tracer gained is a real read of A, self.A, I.A or an
+alias of one (by, b, g, r3, trip), and nothing it found on main was lost. One defect fixed: the committed pages no longer came
+out of the tool, because the new test's parametrize list spells the dotted keys and the tracer counted its own test as a "test"
+use of six keys (the compute row would have said test). The tool now leaves tests/test_physical_account_tracer.py out of the
+scan; the regenerated pages are byte-identical to the committed ones. The two counts in the entry above were corrected (23 keys
+said "not yet" on main, not 13; eleven rows moved to code, not ten; be1795b's message keeps the 13). Left as they are:
+safety_commands' trace lands on safety.py's docstring, the module that implements the table, not on a value read; REBIND's
+for/as patterns also match prose in docstrings and can shadow `a` for a block, harmless while only loader.py calls the
+assumptions `a`. PDFs still not rebuilt. Files: tools/physical_account.py, WORKLOG.md. Decisions: none. Conflicts: none.
