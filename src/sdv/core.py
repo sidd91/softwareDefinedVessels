@@ -134,16 +134,16 @@ class Core:
         rep = snap["crew"]["hlo_deck_report"]
         if deck == "clear" or (rep["value"] == "clear" and not rep["stale"]):
             return None
-        crew = snap["crew"]["crew_aboard"]["value"]
+        crew, t = snap["crew"]["crew_aboard"]["value"], snap["run"]["t_ship_s"]
         if self.A["ship_state"]["deck"]["clear_min"].get(crew) is None:
-            return {"verdict": "forbidden", "state": "forbidden", "evidence": f"the flight deck is {deck} and nobody aboard can clear it"}
+            return {"verdict": "forbidden", "state": "forbidden", "t_s": t, "evidence": f"the flight deck is {deck} and nobody aboard can clear it"}
         picks = self.A["transition_picks"]["r3_worst_case"]
         lead, window = picks["confirm_min"][crew] + picks["clear_deck_min"][crew], self._r3_window_min()
         if lead <= window:
             return None
         binding = {"class": "r3_lead", "label": Rec.explain.LABELS["r3_lead"], "capacity": window, "demand": lead,
                    "free": window - lead, "unit": "min"}
-        return {"verdict": "not-now", "state": "held", "evidence": f"the flight deck is {deck} and {crew} aboard cannot clear it in time",
+        return {"verdict": "not-now", "state": "held", "t_s": t, "evidence": f"the flight deck is {deck} and {crew} aboard cannot clear it in time",
                 "binding": binding, "next_window": {"kind": "event", "event": "the landing officer reports the zone clear"}}
 
     @staticmethod
@@ -227,6 +227,26 @@ class Core:
                             deadline_t_s=r3["deadline_t_s"], mission=self.mission)
             out.append(self._record(r, started, c, cmds))
 
+    def _short_release(self, snap: dict, r3: dict, out: list, cmds: list) -> None:
+        """A recovery not now because the crew aboard could not clear the deck in time goes on when the landing officer
+        reports the zone clear, newer than that record (the window it named): the deck evidence R3 takes at 14 and 6
+        aboard, as when a landing hold lifts. A forbidden recovery at 0 aboard is not reopened: nobody is there."""
+        rep = snap["crew"]["hlo_deck_report"]
+        if rep["value"] != "clear" or rep["stale"] or (rep.get("reported_t_s") or -1) <= r3["short"]["t_s"]:
+            return
+        started = time.perf_counter()
+        seq = self._take_seq()
+        r3.pop("short")
+        r3["state"] = "cleared"
+        c = self._clear_or_withhold(snap, r3)
+        evidence = f"the landing officer reported the zone clear at minute {Rec.explain.minute(rep['reported_t_s'])}"
+        if r3.get("withheld"):
+            evidence += ", deck clearing waits for the landing hold to lift"
+        r3["evidence"] = evidence
+        r = Rec.from_d5(seq=seq, snapshot=snap, verdict="cleared", crew=snap["crew"]["crew_aboard"]["value"], deck_evidence=evidence,
+                        deadline_t_s=r3["deadline_t_s"], mission=self.mission)
+        out.append(self._record(r, started, c, cmds))
+
     def _r3_follow(self, snap: dict, out: list, cmds: list) -> None:
         r3, t = self.r3, snap["run"]["t_ship_s"]
         g4 = snap["guests"].get("G4", {})
@@ -254,6 +274,8 @@ class Core:
                 r = Rec.from_d5(seq=seq, snapshot=snap, verdict=verdict, crew=crew, deck_evidence=evidence,
                                 deadline_t_s=r3["deadline_t_s"], mission=self.mission, **extra)
                 out.append(self._record(r, started, c, cmds))
+        elif r3["state"] == "held" and r3.get("short") and r3["landed_t_s"] is None:
+            self._short_release(snap, r3, out, cmds)
         if r3["landed_t_s"] is None and g4.get("activity", {}).get("value") == "landed":
             r3["landed_t_s"] = t
             self.reservations.pop("G4", None)

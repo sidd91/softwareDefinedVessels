@@ -106,6 +106,38 @@ def test_at_six_aboard_a_fresh_landing_officer_clear_report_lets_the_deck_work_g
     assert (tr["to"], tr["expected_end_t_s"], tr["latest_end_t_s"]) == ("clear", 481 + 60 * (lo + hi) / 2, 481 + 60 * hi)
 
 
+def test_at_six_aboard_the_landing_officer_clear_report_after_the_not_now_lifts_it():
+    """The not-now's window is kept: a clear report from the landing officer newer than the not-now clears the recovery,
+    with the report as the evidence (the words a lifted landing hold uses) and the deck work at the A.6 pace. The same
+    on the chip path, 14 to 6 after the bridge was asked. A report older than the not-now does not count (the case above
+    takes it as deck evidence at 480 instead) and a forbidden recovery at 0 aboard is never reopened by one."""
+    extra = [laptop(60, "crew_change", crew_aboard=6), laptop(60, "standing_plan", state="approved"),
+             laptop(600, "deck_report", deck="clear", wind_kn=20)]
+    _, outs = cli_loop(extra=extra)
+    recs = d5([r for o in outs for r in o.records])
+    assert [(r["tick"], r["verdict"], r["crew_aboard"]) for r in recs] == [(480, "not-now", 6), (600, "cleared", 6)]
+    assert recs[1]["sentence"] == "Recovery cleared at 6 aboard: the landing officer reported the zone clear at minute 10. G4 must land by minute 18.2."
+    assert "binding" not in recs[1] and not list(RECORD.iter_errors(recs[1]))
+    assert [t for t, _ in commands(outs, "clear_deck")] == [600]
+    tr = outs[601].frame["signals"]["deck_flight_deck"]["transition"]
+    lo, hi = A["ship_state"]["deck"]["clear_min"][6]
+    assert (tr["to"], tr["expected_end_t_s"]) == ("clear", 601 + 60 * (lo + hi) / 2)
+    lr = live.LiveReplay("survey", 500, running=False)
+    lr.command({"cmd": "input", "input": {"type": "crew_change", "payload": {"crew_aboard": 6}}})
+    lr.run.advance_to(620)
+    lr.command({"cmd": "input", "input": {"type": "deck_report", "payload": {"deck": "clear", "wind_kn": 20}}})
+    lr.run.advance_to(1200)
+    assert [(r["tick"], r["verdict"]) for r in d5(lr.run.records)] == [(480, "confirm"), (540, "not-now"), (621, "cleared")]
+    assert lr.run.loop.core.r3["state"] == "cleared" and [c for c in lr.run.loop.sim.log if "refused" in c] == []
+    lr = live.LiveReplay("survey", 100, running=False)
+    lr.command({"cmd": "input", "input": {"type": "crew_change", "payload": {"crew_aboard": 0}}})
+    lr.command({"cmd": "input", "input": {"type": "deck_sweep", "payload": {"result": "clear"}}})
+    lr.run.advance_to(600)
+    lr.command({"cmd": "input", "input": {"type": "deck_report", "payload": {"deck": "clear", "wind_kn": 20}}})
+    lr.run.advance_to(1200)
+    assert [(r["tick"], r["verdict"]) for r in d5(lr.run.records)] == [(480, "forbidden")]
+
+
 def test_the_crew0_variant_runs_through_the_cli(capsys):
     assert cli.main(["run", "--variant", "crew0"]) == 0
     out = capsys.readouterr().out

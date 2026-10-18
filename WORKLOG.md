@@ -961,3 +961,17 @@ over; the screen turns an engine exception into an error frame, holds the run an
 Files: src/sdv/core.py, src/sdv/records.py, src/sdv/ui/server.py, src/sdv/ui/static/js/app.js, tests/support/sim_stub.py,
 tests/test_crew_levels.py (new), tests/test_ui_server.py. Tests: 13 added, full suite 1291 passed, no existing test changed.
 Decisions: none. Conflicts: none. Requirements touched: R-009, R-011, R-012.
+
+### Sat 22:40 PDT · Review of fix/crew-chip-guards: the not-now's window at 6 aboard is kept · Claude Fable 5.1 on behalf of Siddharth Chawla (sidd91)
+
+Independent review of the entry above: diff read line by line, the full suite, `sdv run` at every variant and file, every
+/api route, /ws with the chip at 6 and 0 aboard at ticks 60, 470, 500 and 900 under both priority files, and the Operations
+screen in Chromium (chip, JUMP, HOLD, RESTART, priority file, an error frame on the page's own socket): no crash, no
+reconnect, every sentence from the record's fields. One gap fixed here: the not-now at 6 aboard named "the landing officer
+reports the zone clear" as its window, but a clear report after it changed nothing, the recovery stayed held and G4 never
+landed. core.py `_short_release`, on the `_hold_release` pattern: a clear report newer than the not-now clears the recovery,
+"the landing officer reported the zone clear at minute N" (the words a lifted landing hold uses), deck work at the A.6 pace;
+a forbidden recovery at 0 aboard is not reopened. Left as is: the chip 14 to 0 after the ask says "held: no answer from the
+bridge" (wait_s at 0 is 0 s), and the SIM bar's ENGINE note stays until RESTART.
+Files: src/sdv/core.py, tests/test_crew_levels.py. Tests: 1 added, full suite 1292 passed, 14-aboard records unchanged.
+Decisions: none. Conflicts: none. Requirements touched: R-009, R-011, R-012.
