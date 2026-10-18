@@ -100,7 +100,8 @@ class Inputs:
     def __init__(self, snapshots: Path = SNAPSHOTS, records: Path = RECORD_FIXTURES):
         self.A = Ld.load_assumptions()
         self.vocab = Ld.load_vocabulary(assumptions=self.A)
-        self.cards = Ld.load_cards(vocab=self.vocab)
+        self.refused: list[Ld.LoadError] = []   # card files refused at start, each naming its field; sdv demo prints them once
+        self.cards = Ld.load_cards(vocab=self.vocab, refused=self.refused)
         self.missions = Ld.load_missions(self.cards, self.vocab)
         self.signals = yaml.safe_load((ROOT / "config/signals.yaml").read_text())
         self.scenario = yaml.safe_load((ROOT / f"config/scenarios/{SCENARIO}.yaml").read_text())

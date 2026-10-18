@@ -36,6 +36,7 @@ from fastapi import Body, FastAPI, Query, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
+from sdv import loader as Ld
 from sdv.ui import builder, data, live, room, view
 
 STATIC = Path(__file__).parent / "static"
@@ -343,13 +344,16 @@ def run(host: str = "127.0.0.1", port: int = 8000, source: str = "live", log_dir
     def say(line: str) -> None:
         print(line, flush=True)     # stdout may be a file (nohup, a service): these lines must not wait in a buffer
 
+    I = data.Inputs()
+    for err in I.refused:              # a bad file in manifests/ is reported once here and skipped, never fatal
+        say(Ld.refusal(err))
     logs = live.RunLogs(log_dir, say=say) if source == "live" and log_dir is not None else None
     if logs:
         first = logs.path("survey")
         say(f"LOGS {logs.root}: one directory per run, live-<file>-<n>; the first under survey.yaml replays with: "
             f"{live.replay_line(first, 'survey')}")
     try:
-        uvicorn.run(create_app(source=source, run_logs=logs), host=host, port=port, log_level="warning")
+        uvicorn.run(create_app(I, source=source, run_logs=logs), host=host, port=port, log_level="warning")
     finally:
         if logs and logs.last:
             d, start = logs.last
