@@ -90,6 +90,10 @@ def _kind(x) -> str:
         return "a section"
     if isinstance(x, list):
         return "a list"
+    if isinstance(x, bool):
+        return "true or false"
+    if _number(x):
+        return "a number"
     return "text" if isinstance(x, str) else ("empty" if x is None else "a value")
 
 
@@ -97,9 +101,15 @@ def _message(e) -> str:
     """jsonschema's message, unless it quotes a whole section, a list or a long text back (a note can carry any
     punctuation): then the rule alone, in words."""
     x = e.instance
+    want = e.validator_value
+    if e.validator == "not":    # jsonschema says "0 should not be valid under {'const': 0}"
+        const = want.get("const") if isinstance(want, dict) and set(want) == {"const"} else None
+        if const == 0 and list(e.absolute_path)[:1] == ["shed_order"]:
+            return "a rank cannot be 0"
+        return f"cannot be {const}" if isinstance(const, (int, float, str)) and not isinstance(const, bool) \
+            else "is not in a form this field allows"
     if repr(x) not in e.message or not (isinstance(x, (dict, list)) or (isinstance(x, str) and (len(x) > 40 or ";" in x))):
         return e.message
-    want = e.validator_value
     if e.validator == "type":
         return f"is {_kind(x)} where {' or '.join(KINDS.get(k, k) for k in ([want] if isinstance(want, str) else want))} is expected"
     if e.validator == "enum":
@@ -137,7 +147,10 @@ def _number_problems(doc: Any) -> list[str]:
             out.append(f"{_path(parts)}: {x} is not a finite number")
         elif _number(x) and abs(x) > NUMBER_MAX:
             shown = "the number given" if abs(x) >= 1e15 else (int(x) if float(x).is_integer() else x)
-            out.append(f"{_path(parts)}: {shown} is above {NUMBER_MAX}, the largest number a file may carry")
+            if x > 0:
+                out.append(f"{_path(parts)}: {shown} is above {NUMBER_MAX}, the largest number a file may carry")
+            else:
+                out.append(f"{_path(parts)}: {shown} is below -{NUMBER_MAX}, the smallest number a file may carry")
 
     walk(doc, [])
     return out

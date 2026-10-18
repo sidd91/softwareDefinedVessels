@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import argparse
 import copy
+import re
 import sys
 import time
 from pathlib import Path
@@ -50,13 +51,33 @@ class EditError(ValueError):
 LADDER_RUNGS = ("nominal", "peak", "min")
 
 
+SHOWN_MAX = 20      # an edit longer than this is never echoed back: "the value given" instead
+_DIGITS = re.compile(r"^\s*[+-]?\d+(_\d+)*\s*$")    # what int() reads as a whole number
+
+
+def shown(raw: str) -> str:
+    """An edit as a message may echo it: as typed when short, else its first characters and an ellipsis."""
+    return raw if len(raw) <= SHOWN_MAX else raw[:SHOWN_MAX - 3] + "..."
+
+
 def _number(field: str, raw: str) -> int | float:
+    said = repr(raw) if len(raw) <= SHOWN_MAX else "the value given"
     try:
         value = float(raw) if any(c in raw for c in ".eE") else int(raw)
     except ValueError:
-        raise EditError(field, f"{raw!r} is not a number") from None
+        if _DIGITS.match(raw):
+            # a whole number past Python's digit limit (4300 digits). Its sign, underscores and leading zeros do not
+            # count: 0000...1 is 1. What is still past the limit is far beyond the largest a card may carry, so the
+            # loader refuses it as it refuses a 400-digit one (above or below), never "not a number"
+            text = raw.strip()
+            negative = text.startswith("-")
+            digits = text.lstrip("+-").replace("_", "").lstrip("0") or "0"
+            if len(digits) <= sys.get_int_max_str_digits():
+                return -int(digits) if negative else int(digits)
+            return -sys.float_info.max if negative else sys.float_info.max
+        raise EditError(field, f"{said} is not a number") from None
     if value != value or value in (float("inf"), float("-inf")):
-        raise EditError(field, f"{raw!r} is not a finite number")
+        raise EditError(field, f"{said} is not a finite number")
     return value
 
 
@@ -145,19 +166,19 @@ def cmd_admit(args) -> int:
         target, _, raw = edit.partition("=")
         gid, _, fld = target.partition(".")
         if gid not in cards:
-            print(f"refused: edit {target}={raw}: no card {gid}. Previous card kept.")
+            print(f"refused: edit {target}={shown(raw)}: no card {gid}. Previous card kept.")
             return 2
         try:
             edited = apply_edit(cards[gid], fld, raw)
         except EditError as e:
-            print(f"refused: {gid} edit {target}={raw}: {e.reason}. Previous card kept.")
+            print(f"refused: {gid} edit {target}={shown(raw)}: {e.reason}. Previous card kept.")
             return 2
         problems = Ld.check_card(edited, vocab, Ld._schema(Ld.ROOT, "manifests/schema.json"), allow_unregistered=gid == jury)
         if problems:
-            print(f"refused: {gid} edit {target}={raw}: {problems[0]}. Previous card kept.")
+            print(f"refused: {gid} edit {target}={shown(raw)}: {problems[0]}. Previous card kept.")
             return 2
         cards[gid] = edited
-        print(f"edited: {target} = {raw}, card re-validated")
+        print(f"edited: {target} = {shown(raw)}, card re-validated")
     t0 = time.perf_counter()
     r = Ad.admit(A, cards, installed, card_id, missions[args.mission])
     ms = (time.perf_counter() - t0) * 1000

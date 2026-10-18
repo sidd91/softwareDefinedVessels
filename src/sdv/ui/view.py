@@ -749,8 +749,8 @@ def log_rows(I: Inputs, m: Moment) -> list[dict]:
             typ, tag = "HOLD", "D4"
         elif r["kind"] == "D5":
             typ, tag = "CREW POLICY", f"{r.get('rule', 'R3')} · {r.get('crew_aboard', '')}".rstrip(" ·")
-        else:
-            typ, tag = r["kind"], words(r.get("rule", r["subject"]))
+        else:   # a safety command (200 MS), or any other record: its kind in upper case, as every row type reads
+            typ, tag = r["kind"].upper(), words(r.get("rule", r["subject"]))
         rows.append({"t_s": r["t_s"], "order": 3, "type": typ, "tag": tag, "msg": r["sentence"], "injected": False, "seq": r["seq"]})
     for e in m.inputs:
         rows.append({**e, "order": 1})

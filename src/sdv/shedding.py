@@ -9,8 +9,11 @@ G1 off while only the loop is over would cost its capability for nothing). Load 
 mode, a reservation from the decision log and a fresh reading). D4 never acts on a substituted value
 (docs/STATE_ESTIMATION.md, fallback_policy.d4): it acts only on a line over on fresh readings, its capacity and every
 draw counted on it. A line over on a stand-in (a stale or substituted capacity, a guest's mode or kW stale, substituted
-or missing) arms the ladder and the record says the load is unconfirmed, and the ladder walks no step for it. Only the
-line that binds can hold D4 back: cooling over on fresh chilled-water data is shed while the bus figure is a stand-in.
+or missing) arms the ladder and the record says the load is unconfirmed, and the ladder walks no step for it. One
+stand-in does not hold D4 back: a guest's kW beside its fresh mode. The draw then counts the mode's kW, a lower bound,
+so a line over with every mode on it fresh is over for certain and is shed. A guest whose mode is a stand-in leaves its
+line unconfirmed. Only the line that binds can hold D4 back: cooling over on fresh chilled-water data is shed while the
+bus figure is a stand-in.
 
 The record also carries every guest's envelope draw beside its draw now (envelope), so a hold can say why the envelope
 set, every guest at its sustained worst case, does not arise (the brief's explicit minute-12 sequence, R-067).
@@ -25,8 +28,12 @@ RT = A["response_time_s"]
 FAULT_LINE = {"genset_trip": "power", "cooling_degraded": "heat"}   # the line a held fault leaves unconfirmed
 
 
-def _fresh(field: dict) -> bool:
+def fresh(field: dict) -> bool:
+    """A reading, not a stand-in: neither stale nor substituted."""
     return not field.get("stale") and field.get("confidence") != "substituted"
+
+
+_fresh = fresh
 
 
 def _mode(card: dict, value) -> str:
@@ -38,9 +45,11 @@ def _mode(card: dict, value) -> str:
 
 
 def shed(cards: dict, mission: dict, snap: dict, reservations: dict[str, float] | None = None,
-         onset_t_s: float | None = None) -> dict:
+         onset_t_s: float | None = None, mode_changed_t_s: dict | None = None) -> dict:
     """onset_t_s: the first tick of the current over-limit stretch (the core carries it); the A.8 due ticks count from
-    the fault when the overload came with it, else from the onset, so a deadline never moves while the load stays over."""
+    the fault when the overload came with it, else from the onset, so a deadline never moves while the load stays over.
+    mode_changed_t_s: per guest, the tick its mode last changed between fresh readings (the core carries it, so a mode
+    back from its stand-in is no landed step); without it, the snapshot's since_t_s."""
     reservations = reservations or {}
     guests = snap["guests"]
     modes = {g: _mode(cards[g], b["mode"]["value"]) for g, b in guests.items()}
@@ -52,6 +61,9 @@ def shed(cards: dict, mission: dict, snap: dict, reservations: dict[str, float] 
     on_loop = [g for g in guests if cards[g]["cooling"] == "chilled_water"]
     total = sum(draws.values())
     loop = sum(draws[g] for g in on_loop)
+    # A guest whose mode is a fresh reading of one of its card's modes: its draw leaves a stale kW out (the mode's kW, a
+    # reservation, a fresh kW), a lower bound of what it commits.
+    known = {g for g, b in guests.items() if _fresh(b["mode"]) and modes[g] == b["mode"]["value"]}
     cap = {k: v["value"] for k, v in snap["capacity"].items()}
     headroom = A["power"]["shed_headroom_kw"]
     power_limit, heat_limit = cap["power"]["capacity"] - headroom, cap["heat"]["capacity"] - headroom
@@ -70,7 +82,13 @@ def shed(cards: dict, mission: dict, snap: dict, reservations: dict[str, float] 
             why[cls] = "fault held while its votes are stale"
         else:
             why[cls] = None
-    acting = [cls for cls in spare if over_on[cls] and why[cls] is None]
+    # A line over while its only stand-ins are kW readings beside fresh modes is over for certain and acted on: every
+    # guest on it known, its capacity a fresh reading, no fault on it held while its votes are stale. A guest whose
+    # mode is a stand-in, or a stand-in capacity, leaves the line unconfirmed and it waits.
+    counted = {"heat": set(on_loop), "power": set(guests)}
+    certain = {cls: over_on[cls] and counted[cls] <= known and _fresh(snap["capacity"][cls]) and cls not in held
+               for cls in spare}
+    acting = [cls for cls in spare if over_on[cls] and (why[cls] is None or certain[cls])]
     # The binding line is the one with the least spare: a line that is over always names the record and, with both
     # over, the more over does. Equal spare binds on cooling, as the shed ceiling min(power, heat) reads it. When D4
     # acts, it is the least spare of the lines it acts on.
@@ -104,10 +122,12 @@ def shed(cards: dict, mission: dict, snap: dict, reservations: dict[str, float] 
     record["first_shed_due_t_s"], record["full_sequence_due_t_s"] = first_due, full_due
     over = over_on["power"] or over_on["heat"]
     # the relieving steps in ladder order, the whole ladder when it cannot fit (the record then shows what is still over).
-    # A line on a stand-in has no limit in the walk, so no step is taken for it.
+    # A line on a stand-in has no limit in the walk, so no step is taken for it. A line over for certain walks on its
+    # load, every draw on it a lower bound from a fresh mode.
     no_limit = float("inf")
-    needed = Lg.walk(steps, total, no_limit if why["power"] else power_limit, loop_kw=loop,
-                     loop_limit=no_limit if why["heat"] else heat_limit, loop_guests=on_loop)[0] if acting else []
+    walks = (lambda cls: why[cls] is None or certain[cls])
+    needed = Lg.walk(steps, total, power_limit if walks("power") else no_limit, loop_kw=loop,
+                     loop_limit=heat_limit if walks("heat") else no_limit, loop_guests=on_loop)[0] if acting else []
     # A.8 as priorities: the 5 S steps go together as the first action; a 60 S step goes alone, and the next one
     # only on a later tick, after a fresh reading shows it is still needed (ARCHITECTURE: rechecked after each step).
     first = [s for s in needed if s.response == "shed_first_action"]
@@ -118,8 +138,8 @@ def shed(cards: dict, mission: dict, snap: dict, reservations: dict[str, float] 
     # The first action is due by the 5 s tick: every 5 S step, and a lone 60 S step when it goes first, on the stretch's
     # first tick or later while no step of the stretch has landed (no guest's fresh mode has changed since the onset,
     # as when D4 was held back by a stand-in). A 60 S step after one has landed is part of the full sequence, due by 60 s.
-    landed = any(_fresh(b["mode"]) and b["mode"].get("since_t_s") is not None and b["mode"]["since_t_s"] > onset
-                 for b in guests.values())
+    changed = {g: (b["mode"].get("since_t_s") if mode_changed_t_s is None else mode_changed_t_s.get(g)) for g, b in guests.items()}
+    landed = any(_fresh(b["mode"]) and changed[g] is not None and changed[g] > onset for g, b in guests.items())
     now = dict(due, shed_full_sequence=first_due) if onset == t or not landed else due
     record["steps"] = [_step(s, now) for s in taken]
     record["queued"] = [_step(s, due) for s in queued]
