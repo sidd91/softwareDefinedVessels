@@ -67,11 +67,15 @@ d3_m08_survey:
     to 67.'
   source: oracle scenario_b.minute_8 survey
 d4_m12_sar:
-  sentence: 'Holds: 81 of 95 kW with one genset down and G4''s 35 kW reserved, 0 steps, no capability lost. First armed step: G5 full to low power, 45 to 8 kW, frees 37 kW.'
-  source: oracle scenario_b.minute_12_as_decided sar
+  sentence: 'Holds: 81 of 95 kW with one genset down and G4''s 35 kW reserved, 0 steps, no capability lost. Armed in priced order: G5 full to low power, 45 to 8 kW, frees 37 kW (70 % lost), then
+    G5 low power to off, 8 to 0 kW, frees 8 kW (30 % lost), then G3 standby to off, 1 to 0 kW, frees 1 kW (30 % lost). The envelope case does not arise: G3 charging 25 kW, G4 fast charge 35 kW
+    and G5 full 45 kW would be 105 kW against the 95 kW limit, but G3 is holding at sea in standby (1 kW).'
+  source: 'oracle scenario_b.minute_12_as_decided sar; the armed ladder as the engine orders it from the snapshot (DEC-60: 5 S steps first); the envelope set is the oracle''s draw set B on load-out ii (one_genset_down_envelope 105 kW), with G3 holding at sea at its 1 kW standby'
 d4_m12_survey:
-  sentence: 'Holds: 48 of 95 kW with one genset down, 0 steps, no capability lost. First armed step: G5 full to low power, 45 to 8 kW, frees 37 kW.'
-  source: oracle scenario_b.minute_12_as_decided survey
+  sentence: 'Holds: 48 of 95 kW with one genset down, 0 steps, no capability lost. Armed in priced order: G5 full to low power, 45 to 8 kW, frees 37 kW (70 % lost), then G5 low power to off, 8 to
+    0 kW, frees 8 kW (30 % lost), then G4 standby to off, 2 to 0 kW, frees 2 kW (30 % lost). The envelope case does not arise: G3 charging 25 kW, G4 fast charge 35 kW and G5 full 45 kW would be
+    105 kW against the 95 kW limit, but G3 is holding depth in standby (1 kW) and G4 is airborne in standby (2 kW).'
+  source: 'oracle scenario_b.minute_12_as_decided survey; the armed ladder as the engine orders it from the snapshot; the envelope set is the oracle''s draw set B on load-out ii (one_genset_down_envelope 105 kW), with G3 holding depth at its 1 kW standby and G4 airborne at its 2 kW standby'
 d4_m19_sar:
   sentence: 'Cooling binds with one chilled-water pump down: 81 kW against the 75 kW limit. G5 full to low power, 45 to 8 kW, frees 37 kW and the load is 44 kW: G5 loses 70 %, G3 and G4 nothing.'
   source: EXPECTED_OUTCOMES 'Scenario B as decided', minute 19, sar
