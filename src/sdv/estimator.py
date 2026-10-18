@@ -142,12 +142,13 @@ class Estimator:
                 continue
             if sig.get("type") == "integer" and r["value"] is not None:
                 r = {**r, "value": int(r["value"])}   # 6.0 and 6 are one crew level, live and on replay
-            prev = self.last.get(name)
-            same = prev is not None and _canon(prev["value"]) == _canon(r["value"])
-            if name == "crew_aboard" and prev is not None and not same:
-                self.crew_changed_t_s = self.tick
-            if name in CREW_ANSWERS:
-                self.answered[name] = r.get("reported_t_s", self.answered.get(name) if same else r["t_s"])
+            if name == "crew_aboard" or name in CREW_ANSWERS:
+                prev = self.last.get(name)
+                same = prev is not None and _canon(prev["value"]) == _canon(r["value"])
+                if name == "crew_aboard" and prev is not None and not same:
+                    self.crew_changed_t_s = self.tick
+                if name in CREW_ANSWERS:
+                    self.answered[name] = r.get("reported_t_s", self.answered.get(name) if same else r["t_s"])
             self.last[name] = r
 
     # ---------------------------------------------------------------------------------------------- 3. feeds

@@ -35,7 +35,7 @@ From two strong reviews of Logan's post-freeze work (each defect reproduced by a
 | Physical Account 2 pages | main since the tracer fix | `tools/build_pdfs.py account` gives Letter 2, A4 2 (limit 1) |
 | README:90 | README | VENTUNO Q "instrument only" vs DEC-56 primary board: "instrument in the demo, primary in the deployment design" |
 | If the map merges | README:161-163, REPOSITORY_MAP | Data cached (Open-Meteo, CC BY 4.0) and "Coastlines: Natural Earth (public domain)"; a `tools/deploy_map` row |
-| Flaky test | tests/test_ui_server.py `test_ws_streams_the_live_loop_and_takes_laptop_inputs` | KeyError 'refused' at :169 in full runs (a tick frame can arrive before the refusal); passes alone |
+| Flaky test | tests/test_ui_server.py `test_ws_streams_the_live_loop_and_takes_laptop_inputs` | KeyError 'refused' at :204. After `hold`, a tick in flight sends one more held frame (tick 1143, running false) before the refusal frame, and the test takes the first held frame as the hold's answer. Slower ticks make it likelier (it failed 4 of 4 on a branch at 4.65 ms/tick, passed 4 of 4 at 4.39). Fix in the test: after the input, read frames until one carries `refused` |
 
 ## Found by the second review (not urgent)
 
