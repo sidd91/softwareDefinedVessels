@@ -8,8 +8,9 @@ capability kept above 0, mission-critical last). If neither, the verdict becomes
 
 Verdicts: YES; YES-IF with the minimal removal sets ranked by mission value lost, then size, then id, with
 mission-critical guests last; NO when no removal set works. The binding line is the most-over line, or for YES
-the tightest ship-wide line (mass, stability, power, heat, the two mission lines); slot limits such as the mast
-and the flight-deck drone are placement detail and bind only when over.
+the tightest ship-wide line (mass, stability, power, heat, the two mission lines, the three data links at the
+guests' minimum rates per DEC-38, and compute); slot limits such as the mast and the flight-deck drone are
+placement detail and bind only when over.
 """
 from __future__ import annotations
 
@@ -19,7 +20,7 @@ from dataclasses import dataclass, field
 from sdv import ledger as Lg
 from sdv.placement import moves, place
 
-SHIP_WIDE = ("mass", "stability", "power", "heat", "line_port", "line_stbd")
+SHIP_WIDE = ("mass", "stability", "power", "heat", "line_port", "line_stbd", "satcom", "los_radio", "backbone", "compute")
 
 
 @dataclass

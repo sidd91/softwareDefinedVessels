@@ -8,9 +8,11 @@ from __future__ import annotations
 LABELS = {"mass": "Mass", "stability": "Stability", "power": "Power", "heat": "Cooling", "line_port": "Port mission line",
           "line_stbd": "Starboard mission line", "mast_mass": "Mast slot weight", "mast_area": "Mast slot area",
           "mast_air_cooling": "Mast air cooling", "flight_deck_drone": "Hangar drone weight", "placement": "Placement",
-          "at_sea_lift": "At-sea lift", "r3_lead": "Deck clearing lead"}
-UNITS = {"t": "t", "t_eq": "t-eq", "kW": "kW", "kg": "kg", "m2": "m²", "kn": "kn", "min": "min", "h": "h", "halves": "halves"}
-SINGULAR = {"halves": "half"}
+          "at_sea_lift": "At-sea lift", "r3_lead": "Deck clearing lead", "satcom": "SATCOM", "los_radio": "Line-of-sight radio",
+          "backbone": "Backbone", "compute": "Compute"}
+UNITS = {"t": "t", "t_eq": "t-eq", "kW": "kW", "kg": "kg", "m2": "m²", "kn": "kn", "min": "min", "h": "h", "halves": "halves",
+         "Mbit/s": "Mbit/s", "cores": "cores"}
+SINGULAR = {"halves": "half", "cores": "core"}
 MODE_WORDS = {"fast_charge": "fast charge", "low_power": "low power"}
 POSITIONS = {"bay1": "Bay 1", "bay1_half": "half of Bay 1", "bay2": "Bay 2", "flight_deck": "the flight deck",
              "mast_free": "the free mast slot", "hangar_roof": "the hangar roof", "stern_ramp": "the stern ramp"}

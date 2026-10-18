@@ -802,7 +802,7 @@
       "properties": {
         "class": {
           "type": "string",
-          "description": "mass, stability, power, heat, line_port, line_stbd, mast_mass, mast_area, mast_air_cooling, flight_deck_drone, placement, at_sea_lift, r3_lead, ..."
+          "description": "mass, stability, power, heat, line_port, line_stbd, satcom, los_radio, backbone, compute, mast_mass, mast_area, mast_air_cooling, flight_deck_drone, placement, at_sea_lift, r3_lead, ..."
         },
         "label": {
           "type": "string",
@@ -820,7 +820,7 @@
         },
         "unit": {
           "type": "string",
-          "description": "t, t_eq, kW, kg, m2, halves, min"
+          "description": "t, t_eq, kW, kg, m2, Mbit/s, cores, halves, min"
         },
         "degraded_by": {
           "type": "array",

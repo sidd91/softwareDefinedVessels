@@ -21,7 +21,7 @@ from sdv import admission as Ad
 from sdv import loader as Ld
 from sdv import records as Rec
 
-UNITS = {"t": "t", "t_eq": "t-eq", "kW": "kW", "kg": "kg", "m2": "m²"}
+UNITS = {"t": "t", "t_eq": "t-eq", "kW": "kW", "kg": "kg", "m2": "m²", "Mbit/s": "Mbit/s", "cores": "cores"}
 
 
 def _num(x: float) -> str:
