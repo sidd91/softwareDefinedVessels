@@ -13,7 +13,8 @@ Click each button once. A pause of up to a second after a click is normal.
    uv run sdv demo
    ```
    Good: the last line printed reads "ArgOS screen on http://127.0.0.1:8000/ (live)". Leave this window open.
-2. Open Chrome and go to `127.0.0.1:8000`. Good: LINK UP at the top right and the clock counting.
+2. Open a new Chrome Incognito window (Ctrl, Shift and N) and go to `127.0.0.1:8000`. Incognito makes sure you see the
+   latest screen, not an old saved copy. Good: LINK UP at the top right and the clock counting.
 3. Press F11 for full screen. Zoom to 125 % (Ctrl and +). Turn on Do Not Disturb.
 4. Practise the run below once. Then click RESTART and leave it running.
 
@@ -43,6 +44,8 @@ If you are running long, skip GEN 2 TRIP.
   comes back by itself after a few seconds.
 - **Wrong choice at the top left:** click the right PRIORITY button, then RESTART.
 - **"Address already in use" when starting:** type `uv run sdv demo --port 8010` and open `127.0.0.1:8010`.
+- **DEMO COMPARE shows a TIMELINE box, or the right panel shows long paragraphs:** that is an old saved copy. Close
+  the window and open `127.0.0.1:8000` in a new Incognito window.
 - **The page looks wrong:** press Ctrl, Shift and R. It restarts on SURVEY, so pick again and click RESTART.
 - **Nothing works:** in the Terminal press Ctrl and C, then type `uv run sdv demo --source fixtures`. This plays a
   recording of the same run, marked REPLAY. Say: "We'll show you a recording of the same run."
