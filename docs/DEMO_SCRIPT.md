@@ -1,5 +1,7 @@
 # Demo storyboard (draft for team review)
 
+**Presenting? Use [DEMO_GUIDE.md](DEMO_GUIDE.md), the plain one-page version. This file is the detailed reference.**
+
 Status: built and measured. Drafted Sat 12:43 PDT by Claude Opus 5.5 on behalf of Logan Walker (GhostWalka);
 the Scenario B run sheet, the presenter rules and the T-30 checklist were written Sat 22:41 PDT from the
 rehearsal of origin/main 918478a ([DEMO_READINESS.md](DEMO_READINESS.md)) by Claude Fable 5.1 on behalf of
