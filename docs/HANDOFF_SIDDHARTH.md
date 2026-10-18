@@ -1,4 +1,39 @@
-# Review handoff for Siddharth (Sat 23:10 PDT, updated Sat 23:40)
+# Review handoff for Siddharth: status (Sun 02:10 PDT)
+
+There was no handoff after Saturday night, so Logan's session fixed every code item below in this
+session (Logan's decision, Sun 00:40 PDT). Each fix has a test that fails without it, every fix
+group had an adversarial reviewer, and the scripted survey and rescue runs (frames, inputs,
+snapshots, decisions) stay byte-identical to the tagged `submission` commit. Branches:
+`fix/handoff-core`, `fix/handoff-shedding`, `fix/handoff-loop`, `fix/handoff-cards`, merged on
+`integrate/logan-final`; cross-group leftovers on `fix/handoff-leftovers`.
+
+| # | Status | Fixed in | Test |
+|---|---|---|---|
+| 22 | fixed: a word limit reads as words, the screen row too | core.py, explain.py, ui/view.py | tests/test_handoff_core.py::test_d3_on_the_endurance_limit_says_the_word_not_a_number, ::test_the_hard_limit_row_reads_a_word_limit_as_words |
+| 3 | fixed: inputs logged exact, the standby gets its own copy | loop.py | tests/test_handoff_loop.py::test_a_profile_weight_off_the_tenth_decides_the_same_live_on_the_standby_and_in_replay |
+| 1 | fixed: no shed on stand-in draws | shedding.py | tests/test_handoff_shedding.py::test_a_guest_meter_drop_sheds_nothing_on_stand_in_draws |
+| 2 | fixed: only the binding line's stand-ins hold D4 back | shedding.py | ::test_a_pms_drop_does_not_hold_up_a_cooling_shed_on_fresh_data |
+| 15 | fixed: `safety_request` laptop input and `sdv run --safety T:request` (no screen button, that is UI) | ui/live.py, cli.py, loop.py | tests/test_handoff_loop.py::test_a_safety_request_from_the_screen_is_answered_at_once_and_replayed, ::test_sdv_run_sends_a_safety_request_and_the_replay_is_equal |
+| 5 | fixed: the wait runs from R3's own ask, a confirmation hidden by a feed drop still counts | core.py | tests/test_handoff_core.py::test_a_lost_laptop_feed_lets_the_bridge_request_lapse_and_holds_the_recovery, ::test_a_confirmation_hidden_by_a_feed_drop_clears_the_deck_when_the_feed_returns |
+| 6 | fixed: one re-ask per hard-limit onset, none after a denial | core.py | ::test_a_lapsed_recall_is_asked_again_at_the_battery_limit_when_g3_is_already_holding, ::test_a_denial_after_an_early_recall_is_not_asked_again |
+| 7 | fixed: G3 held by a safety request resumes after G4 is secured | core.py | ::test_a_g3_held_by_a_safety_request_resumes_after_g4_is_secured |
+| 8 | fixed: a policy hold re-runs the policy each tick | core.py | ::test_a_standing_plan_approved_after_a_policy_hold_reopens_the_recovery |
+| 9 | fixed: a delayed first action keeps its 5 s due tick | shedding.py | tests/test_handoff_shedding.py::test_a_delayed_first_action_keeps_the_5_s_due_tick |
+| 16 | fixed: the unconfirmed D4 says why | records.py | tests/test_handoff_core.py::test_the_unconfirmed_d4_record_says_why |
+| 17 | fixed: `add_input` takes the lock | loop.py | tests/test_handoff_loop.py::test_an_input_added_during_a_tick_is_stamped_for_the_next_one |
+| 18 | fixed: safety latency counts the wait for the lock | loop.py, Core.safety | ::test_a_safety_request_waiting_for_the_tick_counts_its_wait |
+| 21 | fixed: the snapshot names the file in force | loop.py | ::test_the_snapshot_names_the_priority_file_in_force |
+| float frames | fixed: one frame for every side | loop.py | ::test_the_primary_decides_on_the_frame_the_log_holds |
+| ws test race | fixed in the test | tests/test_ui_server.py | itself |
+| soak 4, 5, 6, 8, 9, 10 | fixed: partial weights, a bad confirm block, an unknown swap, the laptop input contract, plain refusal sentences, finite numbers | arbitration.py, loader.py, core.py, ui/live.py, manifests/schema.json | tests/test_handoff_core.py, tests/test_handoff_loop.py, tests/test_handoff_cards.py |
+| recovery lead | NOT fixed on purpose: `recovery_lead_s` drops the bridge confirm time (str vs int key). Fixing it moves the 6-aboard D5 off its pinned fixture | arbitration.py | strict xfail ::test_the_recovery_lead_counts_the_bridge_confirm |
+
+Still yours, not code: the Douglas list and the plan speed on feat/ship-state-fsm, README:95 VENTUNO wording, the
+response-class tags hard-coded in ops.js, builder.js and reference.js, and a screen button for safety requests.
+
+---
+
+## Original handoff (Sat 23:10 PDT, updated Sat 23:40)
 
 From two strong reviews of Logan's post-freeze work (each defect reproduced by a script). Items below are in your files. Logan's own fixes are on `fix/review-ours`. Severity first, then a one-line repro and the fix.
 
