@@ -22,7 +22,7 @@ PROFILES_DIR = Ld.ROOT / "config/missions"
 DRAFTS_DIR = Ld.ROOT / "manifests/drafts"
 OPS = {"number": ["<", "<=", "==", "!=", ">=", ">"], "integer": ["<", "<=", "==", "!=", ">=", ">"],
        "enum": ["==", "!="], "boolean": ["==", "!="]}
-_NAME = re.compile(r"^[a-z][a-z0-9_]*$")
+_NAME = re.compile(r"[a-z][a-z0-9_]*\Z")    # \Z, not $: a label never carries a trailing newline into a file name
 
 
 def _schemas() -> tuple[dict, dict]:

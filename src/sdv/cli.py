@@ -52,16 +52,42 @@ LADDER_RUNGS = ("nominal", "peak", "min")
 
 
 SHOWN_MAX = 20      # an edit longer than this is never echoed back: "the value given" instead
+FIELD_MAX = 40      # a field path longer than this is cut, as the door (sdv.loop) and the operations screen cut one
 _DIGITS = re.compile(r"^\s*[+-]?\d+(_\d+)*\s*$")    # what int() reads as a whole number
 
 
-def shown(raw: str) -> str:
+def shown(raw: str, longest: int = SHOWN_MAX) -> str:
     """An edit as a message may echo it: as typed when short, else its first characters and an ellipsis."""
-    return raw if len(raw) <= SHOWN_MAX else raw[:SHOWN_MAX - 3] + "..."
+    return raw if len(raw) <= longest else raw[:longest - 3] + "..."
+
+
+def _plain(text: str) -> bool:
+    """Text the door would quote back whatever its length (sdv.loader.quotable): printable, no colon, semicolon,
+    brace, quote or backslash."""
+    return Ld.quotable(text, len(text))
+
+
+def said_field(field: str) -> str | None:
+    """A field path or card id as a message may name it, cut past FIELD_MAX, or None when the door would not quote it."""
+    return shown(field, FIELD_MAX) if _plain(field) else None
+
+
+def no_card(gid: str) -> str:
+    said = said_field(gid)
+    return f"no card {said}" if said else "no such card"
+
+
+def _echo(target: str, raw: str) -> str:
+    """The edit as sdv admit echoes it, " target=value" with each cut when long. A target or a value the door would
+    not quote is left out."""
+    said = said_field(target)
+    if said is None:
+        return ""
+    return f" {said}={shown(raw)}" if _plain(raw) else f" {said}"
 
 
 def _number(field: str, raw: str) -> int | float:
-    said = repr(raw) if len(raw) <= SHOWN_MAX else "the value given"
+    said = repr(raw) if Ld.quotable(raw, SHOWN_MAX) else "the value given"     # the door's rule (sdv.loop._quoted)
     try:
         value = float(raw) if any(c in raw for c in ".eE") else int(raw)
     except ValueError:
@@ -91,7 +117,8 @@ def _child(node, key: str, field: str):
             return named[0]
     elif isinstance(node, dict) and key in node:
         return node[key]
-    raise EditError(field, f"no field {field} on the card")
+    said = said_field(field)
+    raise EditError(field, f"no field {said} on the card" if said else "the card has no such field")
 
 
 def apply_edit(card: dict, field: str, raw: str) -> dict:
@@ -108,7 +135,7 @@ def apply_edit(card: dict, field: str, raw: str) -> dict:
     key = keys[-1]
     old = _child(node, key, field)
     if isinstance(old, bool) or not isinstance(old, (int, float)):
-        raise EditError(field, f"{field} is not a number on the card")
+        raise EditError(field, f"{said_field(field) or 'the field given'} is not a number on the card")
     node[int(key) if isinstance(node, list) else key] = value
     if node is card["consumes"]["power_kw"] and key in LADDER_RUNGS:
         for m in card["modes"]:  # the ladder follows the card (LADDER_RUNGS)
@@ -166,19 +193,19 @@ def cmd_admit(args) -> int:
         target, _, raw = edit.partition("=")
         gid, _, fld = target.partition(".")
         if gid not in cards:
-            print(f"refused: edit {target}={shown(raw)}: no card {gid}. Previous card kept.")
+            print(f"refused: edit{_echo(target, raw)}: {no_card(gid)}. Previous card kept.")
             return 2
         try:
             edited = apply_edit(cards[gid], fld, raw)
         except EditError as e:
-            print(f"refused: {gid} edit {target}={shown(raw)}: {e.reason}. Previous card kept.")
+            print(f"refused: {gid} edit{_echo(target, raw)}: {e.reason}. Previous card kept.")
             return 2
         problems = Ld.check_card(edited, vocab, Ld._schema(Ld.ROOT, "manifests/schema.json"), allow_unregistered=gid == jury)
         if problems:
-            print(f"refused: {gid} edit {target}={shown(raw)}: {problems[0]}. Previous card kept.")
+            print(f"refused: {gid} edit{_echo(target, raw)}: {problems[0]}. Previous card kept.")
             return 2
         cards[gid] = edited
-        print(f"edited: {target} = {shown(raw)}, card re-validated")
+        print(f"edited: {shown(target, FIELD_MAX)} = {shown(raw)}, card re-validated")
     t0 = time.perf_counter()
     r = Ad.admit(A, cards, installed, card_id, missions[args.mission])
     ms = (time.perf_counter() - t0) * 1000

@@ -42,6 +42,19 @@ def _kept(mission_id: str) -> str:
 
 
 SHOWN_MAX = 40      # a field path or a word longer than this is cut in a row, as sdv admit cuts a long edit
+JUMP_REFUSED = "jump refused: the time given is not a number"
+
+
+def jump_target(t, end: int = END_T_S) -> int | None:
+    """The tick a jump asks for, within the run, or None when the time given is not a number (text, empty, true or
+    false, a list, nan, infinity, or digits past Python's limit)."""
+    if isinstance(t, bool):
+        return None
+    try:
+        n = int(t)
+    except (TypeError, ValueError, OverflowError):
+        return None
+    return max(0, min(n, end))
 
 
 def _cut(text: str) -> str:
@@ -51,10 +64,11 @@ def _cut(text: str) -> str:
 def _refusal(what: str, problem: str, kept: str) -> str:
     """A refused profile as one plain sentence, the field named as the Admission screen names it:
     "Profile jury_a refused: confirm.r3 (automatic is not a section of named fields). survey kept."
-    A long field path or word is cut, and a problem that still carries braces is told as a form the field refuses."""
+    A long field path or word is cut, and a problem that still carries a brace, a quote or a backslash after its
+    quoted plain values are unwrapped is told as a form the field refuses."""
     field, sep, _ = problem.partition(": ")
-    said = re.sub(r"'([^']*)'", r"\1", Ld.in_words(problem))
-    if any(c in said for c in "{}"):
+    said = re.sub(r"'([^'\"\\]*)'", r"\1", Ld.in_words(problem))
+    if any(c in said for c in "{}'\"\\"):
         said = "is not in a form this field allows"
     where = f"{field} ({said})" if sep and re.fullmatch(r"[\w.\[\]]+", field) else said
     return f"{what} refused: {_cut(where)}. {_kept(kept)}"
@@ -300,7 +314,9 @@ class LiveReplay:
         elif cmd == "speed" and msg.get("value") in self.speeds:
             self.speed = msg["value"]
         elif cmd == "jump":
-            target = max(0, min(int(msg.get("t", 0)), END_T_S))
+            target = jump_target(msg.get("t", 0))
+            if target is None:
+                return JUMP_REFUSED
             if target < self.t_s:
                 dropped = [(t, m) for t, m in self.run.swaps() if t > target]    # asked after the target: not replayed
                 self._rerun(target)

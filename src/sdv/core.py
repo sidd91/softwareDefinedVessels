@@ -26,7 +26,7 @@ from sdv import shedding as D4
 CEILING_MS = {"D1": "admission", "D2": "placement", "D3": "arbitration", "D4": "shed_first_action", "D5": "arbitration",
               "safety": "safety_command"}
 ACTIVE_FAULT = ("pending", "held_stale", "confirmed", "restoring")
-PLAIN_ID = re.compile(r"^[A-Za-z0-9_.-]{1,40}$")   # a file name a refusal may quote back
+PLAIN_ID = re.compile(r"[A-Za-z0-9_.-]{1,40}\Z")   # a file name a refusal may quote back (\Z: no trailing newline)
 
 
 def _pred_value(pred, current):

@@ -962,14 +962,15 @@ def _apply(cards: dict, I: Inputs, schema: dict, target: str, raw) -> tuple[dict
     """One jury edit on a copy of the cards, re-validated: (cards, None); (None, problem) when the schema refuses the
     edited card, a card-rejected decision; (None, EditError) when the edit cannot be applied at all (no such card or
     field, not a number), a refusal of the request that leaves the previous verdict standing."""
-    from sdv.cli import EditError, apply_edit
+    from sdv.cli import EditError, apply_edit, no_card, said_field
     gid, _, fld = target.partition(".")
+    named = said_field(target) or "the field given"     # cut when long, never a brace or a semicolon on the screen
     if gid not in cards:
-        return None, EditError(target, f"no card {gid}")
+        return None, EditError(named, no_card(gid))
     try:
         edited = apply_edit(cards[gid], fld, str(raw))
     except EditError as e:
-        return None, EditError(target, e.reason)
+        return None, EditError(named, e.reason)
     problems = Ld.check_card(edited, I.vocab, schema)
     if problems:
         return None, problems[0]

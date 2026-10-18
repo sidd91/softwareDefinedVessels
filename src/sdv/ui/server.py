@@ -112,7 +112,10 @@ class Replay:
         elif cmd == "speed" and msg.get("value") in SPEEDS:
             self.speed = msg["value"]
         elif cmd == "jump":
-            self.t_s = max(0, min(int(msg.get("t", 0)), data.END_T_S))
+            target = live.jump_target(msg.get("t", 0), data.END_T_S)
+            if target is None:
+                return live.JUMP_REFUSED
+            self.t_s = target
         elif cmd == "restart":
             self.t_s, self.running = 0, True
         elif cmd == "mission" and msg.get("value") in self.I.timeline:

@@ -29,6 +29,28 @@ CONDITION_TYPES = {"enum", "boolean", "number", "integer"}
 NUMBER_MAX = 1_000_000
 KINDS = {"object": "a section of named fields", "array": "a list", "string": "text", "number": "a number",
          "integer": "a whole number", "boolean": "true or false", "null": "empty"}
+# What a value quoted back in a refusal never carries: a second colon, a semicolon, braces, and what repr would escape
+# or re-quote. The door (sdv.loop), sdv admit and the Admission screen quote by this rule (quotable).
+UNQUOTABLE = ":;{}'\"\\"
+QUOTED_MAX = 40     # a file problem quotes a text back only when it is this short
+# The schemas' name patterns, in words: "'Survey' is not a plain lower-case name", never the regular expression.
+PATTERNS = {"^[a-z][a-z0-9_]*$": "a plain lower-case name", "^G[0-9]+$": "a guest id such as G4",
+            "^(G[0-9]+\\.)?[a-z][a-z0-9_]*$": "a signal name such as wind_kn or G4.battery_pct",
+            "^G[0-9]+\\.[a-z][a-z0-9_]*$": "a guest activity such as G3.surveying"}
+
+
+def quotable(text: str, longest: int) -> bool:
+    """Text a refusal may quote back: at most `longest` characters, printable, and none of UNQUOTABLE, so its repr
+    adds only the two quotes around it."""
+    return len(text) <= longest and text.isprintable() and not any(c in UNQUOTABLE for c in text)
+
+
+def _said(x) -> str | None:
+    """A value as a file problem may quote it: a number, or a short text quotable() allows. Else None, and the
+    problem is said without it (true or false, empty, a section and a list are described, never written as Python)."""
+    if _number(x):
+        return repr(x)
+    return repr(x) if isinstance(x, str) and quotable(x, QUOTED_MAX) else None
 
 
 class LoadError(Exception):
@@ -108,18 +130,27 @@ def _message(e) -> str:
             return "a rank cannot be 0"
         return f"cannot be {const}" if isinstance(const, (int, float, str)) and not isinstance(const, bool) \
             else "is not in a form this field allows"
-    if repr(x) not in e.message or not (isinstance(x, (dict, list)) or (isinstance(x, str) and (len(x) > 40 or ";" in x))):
+    said = _said(x)
+    if e.validator == "enum":   # the choices in words, never Python's list: "'auto' is not one of confirm, ..."
+        listed = ", ".join(str(w) for w in want)
+        if said:
+            return f"{said} is not one of {listed}"
+        return f"is {_kind(x)} where one of {listed} is expected" if isinstance(x, (dict, list)) else f"is not one of {listed}"
+    if e.validator == "pattern":    # the rule in words, never the regular expression
+        rule = f"is not {PATTERNS[want]}" if want in PATTERNS else "is not in a form this field allows"
+        return f"{said} {rule}" if said else rule
+    if e.validator == "additionalProperties" and isinstance(x, dict) and isinstance(e.schema, dict):
+        extra = [k for k in x if k not in e.schema.get("properties", {})]
+        if not all(isinstance(k, str) and _said(k) for k in extra):
+            return "has a field that is not allowed here"
+    if repr(x) not in e.message or not (isinstance(x, (dict, list)) or (isinstance(x, str) and said is None)):
         return e.message
     if e.validator == "type":
         return f"is {_kind(x)} where {' or '.join(KINDS.get(k, k) for k in ([want] if isinstance(want, str) else want))} is expected"
-    if e.validator == "enum":
-        return f"is {_kind(x)} where one of {', '.join(str(w) for w in want)} is expected"
     if e.validator in ("minItems", "minProperties"):
         return f"needs at least {want} {'item' if e.validator == 'minItems' else 'field'}{'s' if want != 1 else ''}"
     if e.validator == "uniqueItems":
         return "repeats an item"
-    if e.validator == "pattern":
-        return f"does not match the pattern {want}"
     if e.validator == "oneOf":
         return "fits more than one of the forms this field allows"
     return "is not in a form this field allows"
@@ -278,7 +309,8 @@ def check_mission(mission: dict, cards: dict[str, dict], vocab: Vocabulary, sche
     capabilities = {c["capability"]["name"] for c in cards.values()}
     for name in doc["weights"]:
         if name not in capabilities:
-            problems.append(f"weights.{name}: no loaded card returns this capability ({sorted(capabilities)})")
+            problems.append(f"weights.{name}: no loaded card returns this capability, "
+                            f"the loaded cards return {', '.join(sorted(capabilities))}")
     for i, gid in enumerate(doc["mission_critical"]):
         if gid not in cards:
             problems.append(f"mission_critical[{i}]: no loaded card {gid}")
@@ -295,7 +327,8 @@ def check_mission(mission: dict, cards: dict[str, dict], vocab: Vocabulary, sche
             problems.append(f"shed_order.{name}: no loaded card returns this capability")
     for rule in doc.get("confirm", {}):
         if rule not in vocab.rules:
-            problems.append(f"confirm.{rule}: no rule {rule!r} in config/assumptions.yaml ({sorted(vocab.rules)})")
+            problems.append(f"confirm.{rule}: no rule {rule!r} in config/assumptions.yaml, "
+                            f"it defines {', '.join(sorted(vocab.rules))}")
     return problems
 
 

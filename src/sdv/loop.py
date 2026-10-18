@@ -26,7 +26,7 @@ import yaml
 
 from sdv.core import Core
 from sdv.estimator import Estimator, r1
-from sdv.loader import NUMBER_MAX, ROOT
+from sdv.loader import NUMBER_MAX, ROOT, quotable
 
 SIGNALS = yaml.safe_load((ROOT / "config/signals.yaml").read_text())
 EVENTS, FEEDS = SIGNALS["events"], list(SIGNALS["feeds"])
@@ -80,8 +80,10 @@ def _writable(x):
     return x
 
 
-_QUOTABLE = 20      # a refusal quotes a value back only when it is this short and carries no ':' or ';'
-_FIELD = re.compile(r"^[A-Za-z_][A-Za-z0-9_]{0,39}$")
+_QUOTABLE = 20      # a refusal quotes a value back only when it is this short and quotable (sdv.loader)
+_FIELD = re.compile(r"[A-Za-z_][A-Za-z0-9_]{0,39}\Z")
+NESTING_MAX = 64    # levels of sections and lists an object input may carry: the standby's deepcopy and every walk stay far
+                    # inside Python's recursion limit
 
 
 def _number(v) -> bool:
@@ -94,11 +96,12 @@ def _finite(v) -> bool:
 
 
 def _quoted(v) -> str | None:
-    """The value as a refusal may quote it, or None when it must be described instead: a section, a list, a long or
-    punctuated text and a number beyond NUMBER_MAX are never quoted back (no second colon, no 5000 digits)."""
-    if isinstance(v, (dict, list, tuple)) or (_number(v) and _finite(v) and abs(v) > NUMBER_MAX):
+    """The value as a refusal may quote it, or None when it must be described instead: a section, a list, empty, true
+    or false, a text the door does not quote (quotable) and a number beyond NUMBER_MAX are never quoted back (no
+    second colon, no braces, no None or True as Python writes them, no 5000 digits)."""
+    if v is None or isinstance(v, (bool, dict, list, tuple)) or (_number(v) and _finite(v) and abs(v) > NUMBER_MAX):
         return None
-    if isinstance(v, str) and (len(v) > _QUOTABLE or ":" in v or ";" in v or not v.isprintable()):
+    if isinstance(v, str) and not quotable(v, _QUOTABLE):
         return None
     return repr(v)
 
@@ -110,11 +113,30 @@ def _what(v) -> str:
         return "a list"
     if isinstance(v, str):
         return "text"
+    if v is None:
+        return "empty"
+    if isinstance(v, bool):
+        return "true or false"
     return "a number" if _number(v) else "a value"
+
+
+def _too_deep(v, most: int = NESTING_MAX) -> bool:
+    """More than `most` levels of sections and lists, walked without recursion (a 5000-level value never reaches the
+    recursion limit here)."""
+    todo = [(v, 1)]
+    while todo:
+        x, level = todo.pop()
+        if isinstance(x, (dict, list, tuple)):
+            if level > most:
+                return True
+            todo.extend((y, level + 1) for y in (x.values() if isinstance(x, dict) else x))
+    return False
 
 
 def _unloggable(v) -> str | None:
     """Why a value cannot be written to the input log, or None when it can."""
+    if _too_deep(v):
+        return "is nested too deep to log"
     try:
         json.dumps(v)
     except ValueError:
