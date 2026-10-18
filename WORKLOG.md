@@ -949,3 +949,17 @@ stopped, the globe session was stopped before it changed anything (globe on hold
 Decisions: none new. Conflicts: Siddharth's feat/ship-state-fsm carries his weather support (fbe59a5) and a second
 governor (9a99dc7), neither on main, for the team sync. Deferrals: DEC-60's two calls (5 S guests may be switched
 off before a 60 S guest is throttled; discretionary tiers folded into shed_order) to Logan's team.
+
+### Sat 22:12 PDT · The run the jury watches is logged and replays; RESTART keeps a held swap · Claude Fable 5.1 on behalf of Siddharth Chawla (sidd91)
+
+What: `sdv demo` (live source) now logs every run and re-run the screen shows to its own directory under `--log-dir`
+(default runs/live), live-<start file>-<n>, n a counter that continues past the directories already there; the loop's
+five logs are line-buffered and closed on a jump back, RESTART, disconnect and shutdown; the server prints where the
+logs go, one line per run, and the `uv run sdv replay <dir> --mission <file>` line for the last run on shutdown. RESTART
+starts under a priority file chosen while held (the swap stamped for the next tick), and a JUMP back that drops a later
+swap writes "jump back: swap to <file>.yaml at <t> dropped" into the event log. Replay of a mid-run swap is unchanged (DEC-58).
+Files: src/sdv/loop.py, src/sdv/ui/live.py, src/sdv/ui/server.py, src/sdv/cli.py; tests/test_ui_live.py, tests/test_ui_server.py, tests/test_cli.py.
+Tests: 5 new (a logged live run replays EQUAL through `sdv replay`, the RunLogs counter, RESTART under the held file, the
+dropped-swap line, the server's start and shutdown lines; the /ws run is on disk tick by tick); 1283 pass. Screen driven
+with Playwright on :8213 through both cases; the three logged runs replay EQUAL. Branch fix/live-run-log, for a teammate to merge.
+Decisions: none. Conflicts: none. Requirements touched: R-007, R-017.
