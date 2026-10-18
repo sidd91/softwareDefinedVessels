@@ -1,8 +1,10 @@
-// Admission review: one guest card against the ship, D1 run by the engine on every committed edit.
-import { esc, chip, tag, panel, getJSON } from './util.js';
+// Admission review: one guest card against the ship, D1 run by the engine on every committed edit (a part's mass,
+// the card's nominal or peak kW). An edit the engine cannot apply comes back 4xx as {refused: {field, reason}}:
+// the refusal is shown on the card and the last verdict stays on the panel.
+import { esc, chip, tag, panel } from './util.js';
 import { app, setHeader } from './app.js';
 
-const state = { caseId: 'A1-survey', edits: {}, good: {}, data: null, seq: 0 };
+const state = { caseId: 'A1-survey', edits: {}, good: {}, data: null, refused: null, seq: 0 };
 
 export function renderAdmit(root) {
   if (!root.__wired) {
@@ -24,8 +26,12 @@ function wire(root) {
     } else if (el.matches('input[data-field]')) {
       const base = Number(el.dataset.base);
       const raw = el.value.trim();
-      if (raw !== '' && Number(raw) === base) delete state.edits[el.dataset.field];
-      else state.edits[el.dataset.field] = raw === '' ? 'blank' : raw;
+      if (raw !== '' && Number(raw) === base) {
+        // the card's own figure typed back withdraws the edit: it must leave the kept set too, or the next
+        // request would still send it as keep= and the verdict shown would be the withdrawn card's
+        delete state.edits[el.dataset.field];
+        delete state.good[el.dataset.field];
+      } else state.edits[el.dataset.field] = raw === '' ? 'blank' : raw;
       load(root);
     }
   });
@@ -41,13 +47,30 @@ function wire(root) {
   });
 }
 
+async function fetchAdmit(q) {
+  const r = await fetch(`/api/admit?${q}`, { cache: 'no-store' });
+  const body = await r.json().catch(() => null);
+  if (!r.ok) throw Object.assign(new Error(`/api/admit: ${r.status}`), { status: r.status, body });
+  return body;
+}
+
 async function load(root) {
   const seq = ++state.seq;
   const q = new URLSearchParams({ case: state.caseId });
   for (const [k, v] of Object.entries(state.edits)) q.append('edit', `${k}=${v}`);
   for (const [k, v] of Object.entries(state.good)) q.append('keep', `${k}=${v}`);
-  const d = await getJSON(`/api/admit?${q}`);
+  let d;
+  try {
+    d = await fetchAdmit(q);
+  } catch (err) {
+    if (seq !== state.seq) return;
+    state.refused = (err.body && err.body.refused) || { field: '', reason: err.message };
+    if (state.data) paint(root);  // the previous verdict stays; the refusal is shown on the card
+    else root.innerHTML = panel('ADMISSION REVIEW', `<p class="sentence" style="padding: 12px">${esc(state.refused.field)} ${esc(state.refused.reason)}</p>`);
+    return;
+  }
   if (seq !== state.seq) return;
+  state.refused = null;
   state.data = d;
   if (!d.rejected) state.good = { ...state.edits };
   paint(root);
@@ -73,28 +96,43 @@ function paint(root) {
   }
 }
 
+// One editable number: the typed value while an edit is pending, else the card's; red when the engine refused or
+// rejected this field, amber when the edit was accepted.
+function numberInput(id, field, base, shown) {
+  const typed = state.edits[field];
+  const rej = state.data.rejected;
+  const bad = (rej && rej.field === field) || (state.refused && state.refused.field === field);
+  const edited = typed != null && !bad;
+  const value = typed != null ? (typed === 'blank' ? '' : typed) : shown;
+  const input = `<input id="${esc(id)}" class="massin${bad ? ' bad' : edited ? ' edited' : ''}" type="text" inputmode="decimal" data-field="${esc(field)}" data-base="${esc(base)}" value="${esc(value)}">`;
+  return { input, cls: edited || bad ? ' class="hl"' : '' };
+}
+
 function card(d) {
   const opts = d.cases.map(c => `<option value="${esc(c.id)}"${c.id === d.case.id ? ' selected' : ''}>${esc(c.label)}</option>`).join('');
   const rej = d.rejected;
+  const ref = state.refused;
   const parts = d.parts.map(p => {
-    const typed = state.edits[p.field];
-    const bad = rej && rej.field === p.field;
-    const edited = typed != null && !bad;
-    const value = typed != null ? (typed === 'blank' ? '' : typed) : Number(p.mass_t).toFixed(3);
-    return `<tr${edited || bad ? ' class="hl"' : ''}><td><label for="m-${esc(p.name)}">${esc(p.name.toUpperCase())}</label></td>
-<td><input id="m-${esc(p.name)}" class="massin${bad ? ' bad' : edited ? ' edited' : ''}" type="text" inputmode="decimal" data-field="${esc(p.field)}" data-base="${esc(p.base)}" value="${esc(value)}"></td>
-<td>${esc(p.pos)}</td></tr>`;
+    const n = numberInput(`m-${p.name}`, p.field, p.base, Number(p.mass_t).toFixed(3));
+    return `<tr${n.cls}><td><label for="m-${esc(p.name)}">${esc(p.name.toUpperCase())}</label></td><td>${n.input}</td><td>${esc(p.pos)}</td></tr>`;
+  }).join('');
+  const power = (d.power || []).map(p => {
+    const n = numberInput(`p-${p.name}`, p.field, p.base, String(p.kw));
+    return `<tr${n.cls}><td><label for="p-${esc(p.name)}">${esc(p.label)}</label></td><td>${n.input}</td><td>${esc(p.mode)}</td></tr>`;
   }).join('');
   const nEdits = Object.keys(state.edits).length;
-  const schema = rej
-    ? `<span class="schema bad">SCHEMA FAIL · ${esc(rej.field)} · ${esc(rej.problem)} · PREVIOUS CARD KEPT</span>`
-    : `<span class="schema">${nEdits ? `EDITED ${nEdits} · SCHEMA OK` : 'SCHEMA OK'}</span>`;
+  const schema = ref
+    ? `<span class="schema bad">EDIT REFUSED · ${esc(ref.field)} · ${esc(ref.reason)} · PREVIOUS VERDICT KEPT</span>`
+    : rej
+      ? `<span class="schema bad">SCHEMA FAIL · ${esc(rej.field)} · ${esc(rej.problem)} · PREVIOUS CARD KEPT</span>`
+      : `<span class="schema">${nEdits ? `EDITED ${nEdits} · SCHEMA OK` : 'SCHEMA OK'}</span>`;
   const facts = d.facts.map(f => `<tr><th scope="row" style="color: var(--muted); font-weight: 600">${esc(f.k)}</th><td class="num">${esc(f.v)}</td></tr>`).join('');
   return `<section class="panel card" aria-label="Guest card"><div class="strip"><span>CARD · ${esc(d.case.card)} ${esc(d.case.card_name)}</span></div>
 <div class="body">
 <label class="schema" for="case-sel" style="color: var(--muted)">CASE</label>
 <select id="case-sel" class="sel" data-case="1">${opts}</select>
 <table class="big"><thead><tr><th scope="col">PART</th><th scope="col">MASS t</th><th scope="col">POSITION</th></tr></thead><tbody>${parts}</tbody></table>
+<table class="big"><thead><tr><th scope="col">POWER</th><th scope="col">kW</th><th scope="col">MODE</th></tr></thead><tbody>${power}</tbody></table>
 <div class="row" style="gap: 8px; align-items: center"><button type="button" class="btn" data-revert="1">REVERT</button>${schema}</div>
 <table class="big"><tbody>${facts}</tbody></table>
 </div></section>`;

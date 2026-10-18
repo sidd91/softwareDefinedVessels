@@ -1027,3 +1027,25 @@ Tests: 1300 pass (1278 on main + 22); no oracle verdict or binding moves; /api/a
 wording left alone: the nominal shortfall is still not shown as degraded quality. Commit 26a6b69, pushed.
 Decisions: none. Conflicts: none. Requirements touched: none (R-046's eight classes are now all judged at D1; its row is unchanged).
 Review (Claude Fable 5.1, independent, on this branch): cli.py's LINES table unit column widened 5 to 6 so Mbit/s aligns with the state column; nothing else moved, 1300 pass. The worklog commit f2982cc carries no Co-Authored-By trailer, reword or squash on merge.
+### Sat 22:12 PDT · Jury edits to any card number decide or refuse, never crash (fix/jury-power-edit, to merge) · Claude Fable 5.1 on behalf of Siddharth Chawla (sidd91)
+
+What: a jury edit to a power number crashed D1 on main (`--set G4.consumes.power_kw.peak=50` raised StopIteration
+in ledger.envelope_mode, /api/admit answered 500 with the stale verdict kept, a mass edit leaving a part unplaced
+crashed records._line(None), modes.0.power_kw could not be addressed). Now envelope_mode falls back to the lowest
+mode covering the draw (else the top) and the one-genset step is priced from the actual draw; apply_edit takes
+dotted paths with list indices and mode names, and a nominal, peak or min edit moves the ladder rung that drew the
+old value (src/sdv/cli.py LADDER_RUNGS); an unplaced part binds as a "placement" line and an unfixable one-genset
+load as "genset_gate"; an unknown field or non-number is EditError: CLI exit 2, API 422 {refused: {field, reason}},
+previous verdict untouched; the screen offers NOMINAL and PEAK kW inputs and shows the refusal on the card.
+Files: src/sdv/{ledger,admission,cli,explain}.py, src/sdv/ui/{view,server}.py, src/sdv/ui/static/js/admit.js,
+README.md (one example line), tests/test_jury_edits.py (new). Oracle tests unchanged.
+Tests: 123 new (the +20 % sweep over every consumes.* number and part mass of G1-G6 under survey and sar, ladder and
+refusal rules, CLI, view, API through uvicorn); full suite 1401 passed; screen driven with Playwright on port 8211.
+Decisions: none. Conflicts: none. Requirements touched: none (serves R-152, R-153, R-208; rows not edited).
+Review (Sat 22:30 PDT, Claude Fable 5.1 for Siddharth): diff read line by line, suite 1401 passed, 51 CLI edits and
+55 API queries (power nominal/peak/min, data, compute, cooling, mass, list index and mode name, nonsense field,
+string, negative, zero, blank, 1e999, nan, a 3000-character field) all a verdict or a refusal, screen driven with
+Playwright on 8401 through 24 edits. One fix on the branch: typing a figure's own value back dropped the edit from
+the request but not from the kept set, so the next request still sent it as keep= and the panel showed the withdrawn
+card's verdict (peak 50 then 35 back kept the 96.5 kW throttle step; pre-existing in wire() on main for mass edits).
+admit.js now withdraws it from both; the verdict follows the figure on the next Enter.

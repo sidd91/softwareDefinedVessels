@@ -20,6 +20,7 @@ uv sync
 uv run pytest
 uv run sdv admit G4 --installed G1,G2,G3 --mission survey
 uv run sdv admit G4 --installed G1,G2,G3 --set G4.hangar.mass_t=0.8
+uv run sdv admit G4 --installed G1,G2,G3 --set G4.consumes.power_kw.peak=50
 uv run sdv run --mission sar --log-dir runs/b-sar && uv run sdv replay runs/b-sar --mission sar
 ```
 
