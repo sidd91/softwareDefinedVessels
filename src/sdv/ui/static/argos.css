@@ -290,3 +290,18 @@ textarea.txt { min-height: 60px; padding: 6px 8px; resize: vertical; }
 .rule-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; padding: 10px; align-items: end; border-top: 1px solid var(--rule); }
 .rule-form label { display: flex; flex-direction: column; gap: 3px; font-size: 12px; font-weight: 700; letter-spacing: 0.06em; color: var(--muted); }
 .hint { font: 500 12px var(--mono); color: var(--muted); }
+
+/* DEMO COMPARE: small ship drawing, state by colour */
+.mini { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+.mhull { display: flex; gap: 4px; height: 70px; padding: 6px 0 6px 6px; background: #C9D2DB; clip-path: polygon(0 0, 90% 0, 100% 50%, 90% 100%, 0 100%); }
+.mz { flex: 2 1 0; min-width: 0; padding: 3px 6px; display: flex; flex-direction: column; font-size: 12px; line-height: 1.25; background: var(--panel); border: 1px solid var(--frame); border-top: 5px solid #2E7D4F; overflow: hidden; }
+.mz .zl { font-size: 10px; font-weight: 700; letter-spacing: 0.05em; color: var(--muted); }
+.mz .zm { font: 500 11px var(--mono); white-space: nowrap; }
+.mz.cut { border-top-color: var(--amber); background: var(--amber-pale); }
+.mz.down { border-top-color: var(--red); background: var(--red-pale); }
+.mz.bow { flex: 1 1 0; background: transparent; border: 0; justify-content: center; font-weight: 600; color: var(--muted); }
+.mplant, .mkey { display: flex; flex-wrap: wrap; gap: 4px; }
+.mp { font: 500 11px var(--mono); padding: 2px 6px; border: 1px solid var(--frame); border-left: 5px solid #2E7D4F; background: var(--panel); }
+.mp.cut { border-left-color: var(--amber); }
+.mp.down { border-left-color: var(--red); background: var(--red-pale); }
+.mkey .mp { font-size: 10px; color: var(--muted); }

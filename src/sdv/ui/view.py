@@ -932,7 +932,7 @@ def compare(I: Inputs, t_s: int, files=("survey", "sar"), moments: dict | None =
         v = screen(I, moments[f]) if moments else operations(I, f, t_s)
         ships[f] = {"name": f"MISSION {mission_name(f)}", "weights": _weights(I, f), "decision": v["decision"],
                     "bars": [t for t in v["tiles"] if t["name"] in ("POWER", "COOLING CHW")], "guests": v["guests"],
-                    "mimic": v["mimic"]}
+                    "mimic": v["mimic"], "plant": v["plant"]}
     a, b = (ships[f]["decision"] or {} for f in files)
     ra, rb = dict((k, v) for k, v, _ in a.get("rows", [])), dict((k, v) for k, v, _ in b.get("rows", []))
     diff = []

@@ -92,6 +92,15 @@ function alertBox(d, mark) {
 <div style="font-size: 18px; font-weight: 600; margin-top: 6px; line-height: 1.35">${esc(a.text)}</div></div>`;
 }
 
+// A small ship drawing per mission: each bay coloured by its state, the power and cooling plant underneath.
+function miniMimic(s) {
+  const st = z => /OFF|TRIP|ABORT/.test(z.mode + ' ' + z.extra) ? 'down' : z.hot ? 'cut' : 'ok';
+  const zones = s.mimic.zones.map(z => `<div class="mz ${st(z)}"><span class="zl">${esc(z.zone)}</span><b>${esc(z.guest)}</b><span class="zm">${esc(z.mode)}</span></div>`).join('');
+  const plant = (s.plant || []).map(p => `<span class="mp ${p.trip ? 'down' : 'ok'}"><b>${esc(p.tag)}</b> ${esc(p.state)}</span>`).join('');
+  return `<div class="mini"><div class="mhull">${zones}<div class="mz bow">BRIDGE</div></div><div class="mplant">${plant}</div>
+<div class="mkey"><span class="mp ok">RUNNING</span><span class="mp cut">TURNED DOWN</span><span class="mp down">DOWN</span></div></div>`;
+}
+
 function ship(f, s, mark) {
   const d = s.decision;
   const hot = new Set(s.mimic.zones.filter(z => z.hot).map(z => z.guest.split(' ')[0]));
@@ -102,7 +111,7 @@ ${meter(b.pct, b.mark, b.state === 'LIMITING' ? 'warn' : '')}</div>`).join('');
   const rows = s.guests.map(g => `<tr class="${hot.has(g.id) ? 'exec' : ''}"><td class="b">${esc(g.id)}</td><td>${esc(g.pos)}</td><td>${esc(g.mode)}</td><td class="num">${esc(g.kw)}</td><td class="num">${esc(g.cap)}</td></tr>`).join('');
   return `<section class="panel ship ${esc(f)}" aria-label="${esc(s.name)}">
 <div class="strip"><span>${esc(s.name)}</span><span class="w">${esc(s.weights)}</span></div>
-<div class="body">${alertBox(d, mark)}${record}<div class="bars">${bars}</div>
+<div class="body">${alertBox(d, mark)}${miniMimic(s)}${record}<div class="bars">${bars}</div>
 <table><thead><tr><th scope="col">ID</th><th scope="col">POS</th><th scope="col">MODE</th><th scope="col">kW</th><th scope="col">CAP</th></tr></thead><tbody>${rows}</tbody></table>
 </div></section>`;
 }

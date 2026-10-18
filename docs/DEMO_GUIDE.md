@@ -27,7 +27,8 @@ Use only one browser tab. A second tab runs its own separate copy of the demo.
 2. **Click DEMO COMPARE** (last tab at the top). Survey is on the left, rescue on the right. The whole run fits on this one screen, no scrolling.
 3. **In the bottom bar click ×20, then RESTART.** The 20-minute mission now plays out in 1 minute by itself. Do not click
    anything else. At each event a red or amber alert box opens at the top of each column, saying in one or two
-   sentences what happened and what ArgOS did. Talk over it:
+   sentences what happened and what ArgOS did. Under it, the small ship drawing colours each bay and the plant:
+   green running, amber turned down, red down. Talk over it:
 
 | About | What appears in both columns | Say |
 |---|---|---|
