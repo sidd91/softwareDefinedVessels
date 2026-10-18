@@ -52,7 +52,8 @@ class Core:
         self.timing: list[dict] = []
         self.reservations: dict[str, float] = {}
         self.d3: dict | None = None            # the open D3 decision and its follow-through
-        self.r3: dict | None = None            # {"seq", "request_seq", "state", "landed_t_s"}
+        self.r3: dict | None = None            # {"seq", "request_seq", "asked_t_s", "state", "by_policy", "landed_t_s"}
+        self.r3_limit: tuple | None = None     # the G4 hard limit R3 was last opened for, so each onset asks once
         self.d4_keys: set = set()
         self.next_request = 1
         self.shed_from: dict[str, str] = {}    # guest -> its mode before the first shed, for the 30 S restore
@@ -119,6 +120,10 @@ class Core:
             return "forbidden", "deck activity since the last crew sweep voided the latch"
         return "forbidden", f"the {self.mission['name'].lower()} file forbids it at {crew} aboard"
 
+    @staticmethod
+    def _limit_key(lim: dict) -> tuple:
+        return lim["when"]["signal"], lim["then"]["action"]
+
     def _r3_window_min(self) -> float:
         """Minutes G4's land-or-ditch limit leaves to clear the deck: its within_min less the approach (rules.r3)."""
         lim = next(l for l in self.cards["G4"]["hard_limits"] if l["then"]["action"] == "land_or_ditch")
@@ -175,13 +180,13 @@ class Core:
         started = time.perf_counter()
         seq = self._take_seq()
         r3 = {"seq": seq, "request_seq": None, "state": verdict, "landed_t_s": None, "deadline_t_s": deadline_t_s,
-              "cleared_cmds": False, "evidence": evidence}
+              "cleared_cmds": False, "evidence": evidence, "by_policy": verdict == "held"}
         c, extra = [], {}
         if verdict == "confirm":
             req = self.next_request
             self.next_request += 1
             c.append({"kind": "bridge_request", "args": {"request_seq": req, "rule": "R3", "asked_t_s": snap["run"]["t_ship_s"]}})
-            r3.update(request_seq=req, state="asked")
+            r3.update(request_seq=req, state="asked", asked_t_s=snap["run"]["t_ship_s"])
         elif verdict in ("standing_plan", "automatic"):
             r3["state"] = "cleared"
             c += self._clear_or_withhold(snap, r3)
@@ -251,13 +256,18 @@ class Core:
         r3, t = self.r3, snap["run"]["t_ship_s"]
         g4 = snap["guests"].get("G4", {})
         if r3["state"] == "asked":
-            req = next((q for q in snap["crew"]["bridge_requests"]["value"] if q["request_seq"] == r3["request_seq"]), None)
+            # a stale list says nothing about the bridge, and a request missing from it is unanswered: either way the
+            # wait counts from R3's own ask and then counts as no
+            br = snap["crew"]["bridge_requests"]
+            reqs = [] if br.get("stale") else br["value"] or []
+            req = next((q for q in reqs if q["request_seq"] == r3["request_seq"]), None)
             crew = snap["crew"]["crew_aboard"]["value"]
-            if req and (req["state"] in ("confirmed", "denied") or t - req["asked_t_s"] > self.wait_s[crew]):
+            asked = req["asked_t_s"] if req else r3["asked_t_s"]
+            if (req and req["state"] in ("confirmed", "denied")) or t - asked > self.wait_s[crew]:
                 started = time.perf_counter()
                 seq = self._take_seq()
                 extra = {}
-                if req["state"] == "confirmed":
+                if req and req["state"] == "confirmed":
                     r3["state"] = "cleared"
                     c = self._clear_or_withhold(snap, r3)
                     verdict = "cleared"
@@ -269,31 +279,43 @@ class Core:
                     r3["state"] = "held"
                     c = []
                     verdict = "held"
-                    evidence = "the bridge denied the recovery" if req["state"] == "denied" else "no answer from the bridge"
+                    evidence = "the bridge denied the recovery" if req and req["state"] == "denied" else "no answer from the bridge"
                 r3["evidence"] = evidence
                 r = Rec.from_d5(seq=seq, snapshot=snap, verdict=verdict, crew=crew, deck_evidence=evidence,
                                 deadline_t_s=r3["deadline_t_s"], mission=self.mission, **extra)
                 out.append(self._record(r, started, c, cmds))
         elif r3["state"] == "held" and r3.get("short") and r3["landed_t_s"] is None:
             self._short_release(snap, r3, out, cmds)
+        elif r3["state"] == "held" and r3.get("by_policy") and r3["landed_t_s"] is None:
+            # held by the crew policy, not by the bridge: a plan approved or a crew change since opens it again
+            if self._r3_policy(snap)[0] != "held":
+                self._r3_reopen(snap, r3["deadline_t_s"], out, cmds)
+                r3 = self.r3
         if r3["landed_t_s"] is None and g4.get("activity", {}).get("value") == "landed":
             r3["landed_t_s"] = t
             self.reservations.pop("G4", None)
             self.landing_hold = None
             if r3["request_seq"] is not None:
                 cmds.append({"seq": r3["seq"], "kind": "bridge_close", "args": {"request_seq": r3["request_seq"]}})
-        d3 = self.d3
-        if (r3["landed_t_s"] is not None and d3 and d3["loser"]["leg"] == "paused" and not d3.get("resumed")
+        # G3 paused by D3, or held by a 200 MS request: the ship re-steadies for its survey once G4 is secured
+        d3 = self.d3 if self.d3 and self.d3["loser"]["leg"] == "paused" else None
+        paused = d3 is not None or snap["guests"].get("G3", {}).get("leg_state", {}).get("value") == "paused"
+        if (r3["landed_t_s"] is not None and paused and not r3.get("resumed")
                 and t >= r3["landed_t_s"] + self.A["rules"]["r3"]["secure_s"]):
-            d3["resumed"] = t
-            cmds.append({"seq": d3["seq"], "kind": "ship_state", "args": self._ship_for("G3", "surveying", snap)})
+            r3["resumed"] = t
+            cmds.append({"seq": (d3 or r3)["seq"], "kind": "ship_state", "args": self._ship_for("G3", "surveying", snap)})
 
     # ---------------------------------------------------------------------------------------------- one tick
     def decide(self, snap: dict, core_inputs: list | None = None) -> tuple[list, list]:
         out, cmds = [], []
         for i in core_inputs or []:
             if i["type"] == "priority_swap":
-                self.mission = self.missions[i["payload"]["mission"]]
+                mid = i["payload"].get("mission")
+                if isinstance(mid, str) and mid in self.missions:
+                    self.mission = self.missions[mid]
+                else:   # a typo, or a profile refused or not yet applied: the file in force stays
+                    self.rejected.append({"tick": snap["run"]["tick"], "profile": mid,
+                                          "problems": [f"no priority file {mid} is loaded"]})
             elif i["type"] == "profile_applied":
                 prof = i["payload"]["profile"]
                 problems = Ld.check_mission(prof, self.cards, self.vocab, self.mission_schema)
@@ -327,13 +349,24 @@ class Core:
                 out.append(self._record(r, started, [{"kind": "guest_command", "args": {"guest": d["yields"], "action": action}}], cmds))
                 if self.r3 is None:
                     self._r3_open(snap, d["deadline_t_s"], out, cmds)
+                    self.r3_limit = self._limit_key(d["hard_limit"])
                 elif self.r3["state"] == "held" and self.r3["landed_t_s"] is None:
                     self._r3_reopen(snap, d["deadline_t_s"], out, cmds)   # an earlier recall lapsed: the hard limit asks again
+                    self.r3_limit = self._limit_key(d["hard_limit"])
                 else:
                     self.r3["deadline_t_s"] = d["deadline_t_s"]
-        if self.r3 is None and "G4" in snap["guests"] and D3.recovery_due(self.A, self.cards, snap) is not None:
+        due = D3.recovery_due(self.A, self.cards, snap)
+        key = self._limit_key(due) if due is not None else None
+        if due is None:
+            self.r3_limit = None
+        elif self.r3 is None:
             # no conflict to arbitrate (G3 already holding, or not aboard): R3 still opens G4's recovery
             self._r3_open(snap, snap["guests"]["G4"]["land_by_t_s"]["value"], out, cmds)
+            self.r3_limit = key
+        elif self.r3["state"] == "held" and self.r3["landed_t_s"] is None and key != self.r3_limit:
+            # a recall lapsed or was refused before this limit came on: the limit asks again, once per onset
+            self._r3_reopen(snap, snap["guests"]["G4"]["land_by_t_s"]["value"], out, cmds)
+            self.r3_limit = key
         if r3_before is not None:
             self._r3_follow(snap, out, cmds)
 

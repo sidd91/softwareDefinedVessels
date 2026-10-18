@@ -22,6 +22,7 @@ CAPABILITIES = {"sar_air": "air rescue", "seabed_inspection": "seabed inspection
                 "coastal_connectivity": "coastal connectivity", "passive_rf_detection": "RF detection", "fresh_water": "fresh water"}
 TRIGGERS = {"genset_trip": "one genset down", "cooling_degraded": "one chilled-water pump down"}
 OPS = {"<": "below", "<=": "at or below", ">": "above", ">=": "at or above"}
+WORD_OPS = {"==": "while", "!=": "while not"}
 ACTIONS = {"land_or_ditch": "land", "land": "land"}
 WINS = {"launch_recovery": "recovers first"}
 ACTIVITY_NOUNS = {"surveying": "survey"}
@@ -196,7 +197,12 @@ def d3(r: dict) -> str:
     unit = " %" if when["signal"].endswith("_pct") else ""
     winner_act = r["subject"].split(" against ")[0].partition(".")[2]
     loser_act = r["subject"].split(" against ")[-1].partition(".")[2]
-    first = (f"{r['proceeds']} {WINS.get(winner_act, 'goes first')}: {OPS.get(when['op'], when['op'])} {n(when['value'])}{unit} "
+    v = when["value"]
+    if isinstance(v, (int, float)) and not isinstance(v, bool):
+        cond = f"{OPS.get(when['op'], when['op'])} {n(v)}{unit}"
+    else:   # a state limit, G4's endurance while airborne: the value is a word
+        cond = f"{WORD_OPS.get(when['op'], when['op'])} {str(v).replace('_', ' ')}"
+    first = (f"{r['proceeds']} {WINS.get(winner_act, 'goes first')}: {cond} "
              f"it must {ACTIONS.get(then['action'], then['action'].replace('_', ' '))}")
     if then.get("within_min") is not None:
         first += f" within {n(then['within_min'])} min"
