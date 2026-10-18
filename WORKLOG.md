@@ -1131,3 +1131,32 @@ What: the rehearsal's cross-cutting Red. app.js rebuilt #sim-speed, #sim-jump, #
 Files: src/sdv/ui/static/js/app.js, src/sdv/ui/static/js/util.js, tests/test_ui_static.py (new, 5 tests).
 Tests: measured on the live engine at x12 with Playwright, ten presses per button, clock running in every trial: a 90 ms press landed 0/10 on RESCUE, PACE x1 and PACE x60 before; after, 10/10 on PRIORITY RESCUE, JUMP 08/12/19, PACE x1/x60 (20/20 on x12), plain .click() also 10/10, header MISSION flips and the clock lands on 07:57 / 11:57 / 18:57 each time, no console errors. Full suite 1283 passed (1278 + 5). Server untouched; a second press of the same JUMP still re-runs from tick 0 (2.5-4.6 s freeze measured here), out of scope.
 Decisions: none. Conflicts: none. Requirements touched: none.
+
+### Sat 23:50 PDT · README, memo and account say what main does tonight (docs/readme-truth) · Claude Fable 5.1 on behalf of Siddharth Chawla (sidd91)
+
+What: README rewritten to origin/main's state: status, Run it (sdv demo with --port, --log-dir and the printed replay line,
+--set and --card edits with refusal by field), the D1-D6 table naming the real files and objectives (D2 lexicographic, D3 opened
+by G4's hard limit with the file deciding how G3 yields, D5 in core.py _r3_policy with the 6-aboard not-now and the 0-aboard
+forbidden, D1 binding on the ten ship-wide lines incl. the three data links and compute), the minute-12 hold with its armed
+ladder and envelope clause, an honest Limitations list, and a "with another week" that keeps any retrieval outside D1-D6 with
+the loader as the gate and a human signing. The Scenario B load-out lines in Deliverables are byte for byte as on main, for
+fix/scenario-b-loadout-g1. Scenario C memo: ledger and D2 sentences match the code; Effect and "What runs: 14, 6 and 0 aboard"
+match core.py and tests/test_crew_levels.py (14 as scripted, 6 held or not now until the landing officer's clear report,
+0 automatic on a latched deck else forbidden), design-only items named as such. ARCHITECTURE.md, GAMEPLAN.md and the
+Reference view state the lexicographic D2 rule. SOFTWARE_LOG: versions on the nine dependency rows, a marked placeholder for
+the authorised-AI-list citation (also in the README Declarations); LICENSE names both authors.
+Physical Account: the tracer fix had pushed the one-page account to two pages (longer "Used in" cells); account.widths rebalanced
+and the landscape table set to 7.9 pt / 1.18 in tools/build_pdfs.py, page regenerated, 1/1 on Letter and A4. PDFs rebuilt on
+this box with a static pandoc 3.12.1 and the Playwright headless Chromium shell (scratchpad bin, not committed): README 3/3,
+memo 2/2, account 1/1. docs/requirements.yaml: 69 rows that still called the engine, D2, D5, the loop, replay or the screen
+planned now say what is built and tested (70 done), two renamed anchors repointed, pages re-rendered.
+Files: README.md, docs/SCENARIO_C_MEMO.md, docs/ARCHITECTURE.md, GAMEPLAN.md, src/sdv/ui/static/js/reference.js,
+docs/SOFTWARE_LOG.md, LICENSE, config/assumptions.yaml (account.widths), tools/build_pdfs.py, docs/PHYSICAL_ACCOUNT*.md,
+docs/requirements.yaml + rendered pages, docs/pdf/*.pdf. Tests: none added; full suite 1476 passed after merging origin/main.
+Open for Logan: paste the Day-0 authorised-list citation into README and SOFTWARE_LOG; the word "planned" on the Deliverables
+storyboard line is left for the load-out branch (same lines).
+Decisions: none. Conflicts: none. Requirements touched: R-002, R-007, R-016, R-017, R-034, R-035, R-037, R-066, R-067, R-084,
+R-085, R-086, R-089, R-090, R-091, R-093, R-094, R-095, R-097, R-099, R-100, R-101, R-103, R-104, R-105, R-106, R-107, R-109,
+R-110, R-111, R-112, R-113, R-114, R-115, R-116, R-117, R-119, R-122, R-124, R-125, R-126, R-127, R-135, R-145, R-146, R-151,
+R-155, R-196, R-197, R-206, R-209, R-218, R-234, R-235, R-243, R-269, R-286, R-447, R-448, R-451, R-452, R-453, R-507, R-508,
+R-509, R-510, R-540, R-541, R-554.
