@@ -99,6 +99,8 @@ Deadline: **Sun 2026-10-18 10:00 PDT**.
 | DEC-58 | Sat 14:51 | Mission profiles can be changed at sea (priority swap, or an edited profile from the builder); every change is a logged input, so a replay reproduces it | Logan | Claude for Logan |
 | DEC-59 | Sat 14:51 | Graceful degradation follows criticality tiers inside the profile: vessel-safety critical is never shed, mission-critical goes last, the rest in between by mission loss per kW freed. Tier names and their ordering are Claude's proposal, for Logan to confirm | Logan; tiers by Claude | Claude for Logan |
 | DEC-60 | Sat 15:38 | Degradation priorities are the brief's A.8 response classes (replaces DEC-59's four tiers, per Logan): 200 MS (card safety_critical or profile response.safety_command) is never shed and is acted on only by stop, hold or secure from a safety table rebuilt every tick and answered on arrival; 5 S (the default) gives power in the first action, applied within 5 s of the fault; 60 S (mission_critical) gives power only after every 5 S step, one step per tick after a fresh reading, within 60 s; restoring a shed guest is a 30 S decision once every fault is healthy for 60 s; D3 and D5 carry 2 S. D4 runs every 5 S step before any 60 S step (throttle before shed inside each class); D1's one-genset-down check keeps throttles first (DEC-35). Discretionary tiers become shed_order ranks. Two calls for Logan's team: 5 S guests may be switched off before a 60 S guest is throttled (sar minute-19 armed ladder now G5 off, not G4 slower), and the tier folding | Logan (thresholds as tags); design by Claude as core owner, two calls to confirm | Claude for Logan |
+| DEC-61 | Sat 21:40 | Scenario B minute 12 (DEC-51, freeze F4): the DEC-40 timeline stands. The minute-12 D4 record states the full armed ladder in declared order and why the brief's 105 kW set does not arise (G3 at sea on its own battery, G4 airborne); the minute-19 pump fault, labelled injected, runs that ladder live. No new timeline variant before the demo (req R-067) | Siddharth | Claude Fable 5.1 for Siddharth |
+| DEC-62 | Sat 21:40 | Rubric audit of main accepted as the work list (`docs/AUDIT_MAIN.md`): must-have gaps first (power-edit crash, minute-12 sentence, crew-chip crash guards, data/compute admission lines, Physical Account tracer), then README truth pass and PDFs; everything else declared as a limitation. `feat/ship-state-fsm` is never merged wholesale: plant and environment are ported behind main's simulator interface, engines, records and UI stay main's (req R-016, R-064 to R-067, R-069) | Siddharth | Claude Fable 5.1 for Siddharth |
 
 ## Conflicts and risks to watch
 
@@ -949,3 +951,20 @@ stopped, the globe session was stopped before it changed anything (globe on hold
 Decisions: none new. Conflicts: Siddharth's feat/ship-state-fsm carries his weather support (fbe59a5) and a second
 governor (9a99dc7), neither on main, for the team sync. Deferrals: DEC-60's two calls (5 S guests may be switched
 off before a 60 S guest is throttled; discretionary tiers folded into shed_order) to Logan's team.
+
+### Sat 21:40 PDT · Rubric audit of main, minute 12 decided, work split for the night · Claude Fable 5.1 on behalf of Siddharth Chawla (sidd91)
+
+Main at 7cd080b was audited against the brief with six rubric auditors, two independent refuters per finding and a
+cross-check against `feat/ship-state-fsm`; 46 findings survived, written up with file:line evidence, a merge
+direction per subsystem and an ordered plan in `docs/AUDIT_MAIN.md`. Headlines: every must-have has a working core
+and 1263 tests pass from a fresh copy; the must-have risks are a jury edit to a power number crashing D1 (CLI and
+/api/admit), minute 12 holding with no stated reason, crew 6/0 on the screen killing the socket, D1 binding on only
+six of eight classes (no data-link or compute line), and the Physical Account's "Used in" column saying test / not
+yet for keys the engine reads. Siddharth decided minute 12 (DEC-61) and accepted the audit as the work list (DEC-62).
+Siddharth's track takes, on branch `audit/main-gaps` off main: the minute-12 sentence (#2), the Physical Account
+tracer (#4), the data/compute admission lines transcribed from his branch (#6) and the plant relabel (#8); Logan's
+track keeps the power-edit crash (#1), crew-chip guards (#5) and the README/PDF pass (#3). RAG: not before the
+deadline; offline and advisory only if ever (audit §5).
+Decisions: DEC-61, DEC-62 (Siddharth). Conflicts: CON-07's residue is closed by DEC-62's merge direction. Deferrals:
+none. Requirements touched: none yet (R-067 once #2 lands). Next: #2, #4, #6 on `audit/main-gaps`, small commits,
+pushed as they pass.
