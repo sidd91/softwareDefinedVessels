@@ -1185,3 +1185,50 @@ badge reads LIVE · SCRIPTED PLANT · A.6 instead of LIVE · SIM TEST DOUBLE (au
 tests/support/sim_stub.py, swappable through SDV_SIM). UI, loop, CLI and requirements-trace tests pass.
 Decisions: none. Conflicts: none. Requirements touched: R-146 (screen wording), R-212 (run sheet).
 
+### Sat 23:50 PDT · README, memo and account say what main does tonight (docs/readme-truth) · Claude Fable 5.1 on behalf of Siddharth Chawla (sidd91)
+
+What: README rewritten to origin/main's state: status, Run it (sdv demo with --port, --log-dir and the printed replay line,
+--set and --card edits with refusal by field), the D1-D6 table naming the real files and objectives (D2 lexicographic, D3 opened
+by G4's hard limit with the file deciding how G3 yields, D5 in core.py _r3_policy with the 6-aboard not-now and the 0-aboard
+forbidden, D1 binding on the ten ship-wide lines incl. the three data links and compute), the minute-12 hold with its armed
+ladder and envelope clause, an honest Limitations list, and a "with another week" that keeps any retrieval outside D1-D6 with
+the loader as the gate and a human signing. The Scenario B load-out lines in Deliverables are byte for byte as on main, for
+fix/scenario-b-loadout-g1. Scenario C memo: ledger and D2 sentences match the code; Effect and "What runs: 14, 6 and 0 aboard"
+match core.py and tests/test_crew_levels.py (14 as scripted, 6 held or not now until the landing officer's clear report,
+0 automatic on a latched deck else forbidden), design-only items named as such. ARCHITECTURE.md, GAMEPLAN.md and the
+Reference view state the lexicographic D2 rule. SOFTWARE_LOG: versions on the nine dependency rows, a marked placeholder for
+the authorised-AI-list citation (also in the README Declarations); LICENSE names both authors.
+Physical Account: the tracer fix had pushed the one-page account to two pages (longer "Used in" cells); account.widths rebalanced
+and the landscape table set to 7.9 pt / 1.18 in tools/build_pdfs.py, page regenerated, 1/1 on Letter and A4. PDFs rebuilt on
+this box with a static pandoc 3.12.1 and the Playwright headless Chromium shell (scratchpad bin, not committed): README 3/3,
+memo 2/2, account 1/1. docs/requirements.yaml: 69 rows that still called the engine, D2, D5, the loop, replay or the screen
+planned now say what is built and tested (70 done), two renamed anchors repointed, pages re-rendered.
+Files: README.md, docs/SCENARIO_C_MEMO.md, docs/ARCHITECTURE.md, GAMEPLAN.md, src/sdv/ui/static/js/reference.js,
+docs/SOFTWARE_LOG.md, LICENSE, config/assumptions.yaml (account.widths), tools/build_pdfs.py, docs/PHYSICAL_ACCOUNT*.md,
+docs/requirements.yaml + rendered pages, docs/pdf/*.pdf. Tests: none added; full suite 1476 passed after merging origin/main.
+Open for Logan: paste the Day-0 authorised-list citation into README and SOFTWARE_LOG; the word "planned" on the Deliverables
+storyboard line is left for the load-out branch (same lines).
+Decisions: none. Conflicts: none. Requirements touched: R-002, R-007, R-016, R-017, R-034, R-035, R-037, R-066, R-067, R-084,
+R-085, R-086, R-089, R-090, R-091, R-093, R-094, R-095, R-097, R-099, R-100, R-101, R-103, R-104, R-105, R-106, R-107, R-109,
+R-110, R-111, R-112, R-113, R-114, R-115, R-116, R-117, R-119, R-122, R-124, R-125, R-126, R-127, R-135, R-145, R-146, R-151,
+R-155, R-196, R-197, R-206, R-209, R-218, R-234, R-235, R-243, R-269, R-286, R-447, R-448, R-451, R-452, R-453, R-507, R-508,
+R-509, R-510, R-540, R-541, R-554.
+
+### Sun 00:12 PDT · Review of docs/readme-truth: six sentences brought to what runs, PDFs rebuilt 3/2/1 (docs/readme-truth) · Claude Fable 5.1 on behalf of Siddharth Chawla (sidd91)
+
+What: independent review of the truth pass against origin/main 4c4f93c. Sixty-odd claims checked by reading or running: `sdv --help`,
+`sdv admit` with accepted and refused edits and a G7 card file, `sdv run` and `sdv replay` under both files and `--variant crew0`,
+`sdv demo` on port 8451 driven over `/ws` (crew_change, standing_plan, deck_report accepted, an unknown type refused), SIGINT for the
+`LAST RUN` line, the screen's own run replayed byte for byte. Scenario B load-out lines in Deliverables byte-identical to main.
+Fixed in the README: Ctrl+C prints a `LAST RUN` line, not the `RUN n` line; D2 writes no record of its own (its layout is in D1's);
+B.0 `excludes` are always activity-conditioned (manifests/schema.json requires `activity`), `requires` is data D1 does not read; the
+minute-12 record carries the next three armed steps (shedding.py `rest[:3]`; the ladder has four), not the whole ladder; no role views
+exist, so "no roles or access control". Fixed in the memo: the loader, not the estimator, refuses unknown names; the 5 min report
+life and the plan lapsing on a change of guests, priorities or crew are declared in config/signals.yaml (`expires_after_s`) and read
+by no code; `r3_hold_landing` answers a loop safety request (tests/test_response.py) with no screen control, it is not the HLO's
+"not clear" report. PDFs rebuilt with the scratchpad pandoc 3.12.1 + headless Chromium route; both documents were full to the line,
+so the fixes were paid for by trimming words ("ceilings are A.8's", "labelled INJECTED", the 18.0 parenthesis, the test citation).
+Files: README.md, docs/SCENARIO_C_MEMO.md, docs/pdf/README.pdf, docs/pdf/SCENARIO_C_MEMO.pdf, WORKLOG.md. Tests: none added; full
+suite 1476 passed before and after the edits. Page counts: README Letter 3 / A4 3, memo 2 / 2, account 1 / 1 (unchanged bytes).
+Open: docs/DEMO_SCRIPT.md (+03 row) plans a live "zone not clear, held within 200 ms" segment, but no screen control issues a
+safety request; the run-sheet branch owns that line. Decisions: none. Conflicts: none. Requirements touched: none.
