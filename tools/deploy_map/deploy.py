@@ -7,6 +7,10 @@ screen, until the team decides to wire it in.
 Writes DIR/index.html (one self-contained page, nothing fetched) and DIR/deployment.json.
 Data: Siddharth's plan and Open-Meteo cache (feat/ship-state-fsm fbe59a5; weather CC BY 4.0, Open-Meteo.com),
 Natural Earth coastlines (public domain). The verdicts come from the real engine (sdv.admission, sdv.ledger).
+
+The ranges and the cooling judgements come from the data itself: ROUTE is every planned hour along the route
+(position by hour, weather blended between the two waypoints), AREA is every hour of the cache at each distinct
+grid point. The seeded samples only draw the dots and count the weather windows.
 """
 from __future__ import annotations
 
@@ -44,13 +48,31 @@ def load(plan_id: str) -> tuple[dict, dict, dict]:
 
 
 def sea_state(wave_m: float | None) -> int | None:
-    """Douglas scale from wave height (Siddharth's thresholds)."""
+    """Douglas scale from significant wave height. `sea_state_wave_m[n]` is the top of state n: 0 glassy (0 m),
+    1 up to 0.1 m, 2 up to 0.5, ... 8 up to 14, and 9 above the last top. A height on a top belongs to that state."""
     if wave_m is None:
         return None
-    for state, top in enumerate(CFG["sea_state_wave_m"]):
+    tops = CFG["sea_state_wave_m"]
+    for state, top in enumerate(tops):
         if wave_m <= top:
             return state
-    return len(CFG["sea_state_wave_m"])
+    return len(tops)
+
+
+def data_period(cache: dict) -> str:
+    """The cache's own period, as a label: '1-15 OCT 2026', '28 SEP-12 OCT 2026' or '28 DEC 2026-3 JAN 2027'."""
+    axes = {tuple(w["hourly"]["time"]) for w in cache["waypoints"]}
+    if len(axes) != 1:
+        raise ValueError("the waypoints' hourly series do not share one time axis")
+    times = next(iter(axes))
+    a, b = datetime.fromisoformat(times[0]), datetime.fromisoformat(times[-1])
+    if (a.year, a.month) == (b.year, b.month):
+        label = f"{a.day}-{b.day} {b:%b %Y}"
+    elif a.year == b.year:
+        label = f"{a.day} {a:%b}-{b.day} {b:%b %Y}"
+    else:
+        label = f"{a.day} {a:%b %Y}-{b.day} {b:%b %Y}"
+    return label.upper()
 
 
 # ---------------------------------------------------------------------------------------------- the route
@@ -71,6 +93,20 @@ class Route:
         self.end_h = min(self.wps[-1]["eta_h"], self.hours)
         self.legs = [(i, i + 1) for i in range(len(self.wps) - 1)]
         self.leg_km = [self.km(self.wps[i], self.wps[j]) for i, j in self.legs]
+        # The sea the legs cover, each stretch once: a return leg over the same water repeats an earlier one.
+        self.unique_legs, seen = [], set()
+        for i, j in self.legs:
+            key = frozenset({(self.wps[i]["lat"], self.wps[i]["lon"]), (self.wps[j]["lat"], self.wps[j]["lon"])})
+            if key not in seen:
+                seen.add(key)
+                self.unique_legs.append((i, j))
+        # The distinct grid points behind the waypoints: two waypoints on one spot read one grid cell.
+        self.grid, seen = [], set()
+        for w in cache["waypoints"]:
+            key = (w.get("grid_lat", w["lat"]), w.get("grid_lon", w["lon"]))
+            if key not in seen:
+                seen.add(key)
+                self.grid.append(w)
 
     def xy(self, lat: float, lon: float) -> tuple[float, float]:
         return lon * KM_PER_DEG * math.cos(self.lat0), lat * KM_PER_DEG
@@ -89,9 +125,12 @@ class Route:
         last = len(self.wps) - 1
         return self.wps[last]["lat"], self.wps[last]["lon"], last, last, 0.0
 
-    def at_km(self, s: float) -> tuple[float, float, int, int, float]:
-        for (i, j), length in zip(self.legs, self.leg_km):
-            if s <= length or (i, j) == self.legs[-1]:
+    def at_km(self, s: float, legs: list[tuple[int, int]] | None = None) -> tuple[float, float, int, int, float]:
+        """The point `s` km along `legs` (default every leg, in order)."""
+        legs = self.legs if legs is None else legs
+        for i, j in legs:
+            length = self.leg_km[self.legs.index((i, j))]
+            if s <= length or (i, j) == legs[-1]:
                 f = min(max(s / length, 0.0), 1.0) if length else 0.0
                 a, b = self.wps[i], self.wps[j]
                 return a["lat"] + f * (b["lat"] - a["lat"]), a["lon"] + f * (b["lon"] - a["lon"]), i, j, f
@@ -120,9 +159,11 @@ class Route:
 
 
 def sample(route: Route, n: int, seed: int, corridor_km: float) -> list[dict]:
-    """Half the points along the route at the hour the ship is there, half anywhere in the area at any hour."""
+    """Half the points along the route at the hour the ship is there, half anywhere in the area at any hour of the
+    voyage. Area points spread over the distinct stretches of sea (a return leg is not drawn twice) and read the
+    weather of the route point they stand beside."""
     rng = random.Random(seed)
-    total = sum(route.leg_km)
+    total = sum(route.leg_km[route.legs.index(leg)] for leg in route.unique_legs)
     out = []
     for k in range(n):
         if k % 2 == 0:
@@ -130,7 +171,7 @@ def sample(route: Route, n: int, seed: int, corridor_km: float) -> list[dict]:
             lat, lon, i, j, f = route.at_hour(t)
             kind = "route"
         else:
-            lat, lon, i, j, f = route.at_km(rng.uniform(0, total))
+            lat, lon, i, j, f = route.at_km(rng.uniform(0, total), route.unique_legs)
             a, b = route.wps[i], route.wps[j]
             (ax, ay), (bx, by) = route.xy(a["lat"], a["lon"]), route.xy(b["lat"], b["lon"])
             length = math.hypot(bx - ax, by - ay) or 1.0
@@ -138,10 +179,27 @@ def sample(route: Route, n: int, seed: int, corridor_km: float) -> list[dict]:
             off = rng.uniform(-corridor_km, corridor_km)
             lat += off * ny / KM_PER_DEG
             lon += off * nx / (KM_PER_DEG * math.cos(route.lat0))
-            t = rng.uniform(0, route.hours)
+            t = rng.uniform(0, route.end_h)
             kind = "area"
         w = route.weather(t, i, j, f)
         out.append({"kind": kind, "lat": round(lat, 4), "lon": round(lon, 4), "t_h": round(t, 2), **w})
+    return out
+
+
+def route_hours(route: Route) -> list[dict]:
+    """The weather the ship meets at every planned hour, departure to the last waypoint, read as `sample` reads it."""
+    n = min(int(route.end_h) + 1, route.hours)
+    return [{"t_h": t, **route.weather(t, *route.at_hour(t)[2:])} for t in range(n)]
+
+
+def area_hours(route: Route) -> list[dict]:
+    """Every hour of the cache at each distinct grid point: what the operations area saw over the data's period."""
+    out = []
+    for g in route.grid:
+        h = g["hourly"]
+        for k, time in enumerate(h["time"]):
+            row = {key: h[key][k] for key in VARS}
+            out.append({**row, "sea_state": sea_state(row["wave_m"]), "time_utc": time.replace("T", " ")})
     return out
 
 
@@ -155,12 +213,19 @@ def pct(vals: list[float], p: float) -> float:
     return round(s[lo] + (s[hi] - s[lo]) * (x - lo), 2)
 
 
-def ranges(samples: list[dict]) -> dict:
+def ranges(rows: list[dict]) -> dict:
+    """Percentiles and extremes of each variable over `rows` (hourly weather), unknown hours left out and counted."""
     out = {}
     for key in VARS + ("sea_state",):
-        vals = [s[key] for s in samples if s[key] is not None]
-        out[key] = {"p10": pct(vals, 10), "p50": pct(vals, 50), "p90": pct(vals, 90), "max": max(vals), "min": min(vals)}
-    out["sea_state_hist"] = {str(k): sum(1 for s in samples if s["sea_state"] == k) for k in sorted({s["sea_state"] for s in samples})}
+        vals = [s[key] for s in rows if s[key] is not None]
+        if not vals:
+            out[key] = {"p10": None, "p50": None, "p90": None, "max": None, "min": None, "unknown_h": len(rows)}
+            continue
+        out[key] = {"p10": pct(vals, 10), "p50": pct(vals, 50), "p90": pct(vals, 90), "max": max(vals), "min": min(vals),
+                    "unknown_h": len(rows) - len(vals)}
+    known = {s["sea_state"] for s in rows if s["sea_state"] is not None}
+    out["sea_state_hours"] = {str(k): sum(1 for s in rows if s["sea_state"] == k) for k in sorted(known)}
+    out["hours"] = len(rows)
     return out
 
 
@@ -201,17 +266,20 @@ def judge(A: dict, cards: dict, mission: dict, load_out: list[str], seawater_c: 
             "heat_kw": round(heat.demand, 1), "cooling_kw": round(heat.capacity, 1), "one_genset_down": r.genset.state}
 
 
-def profiles(A: dict, cards: dict, missions: dict, rng_: dict, wins: list[dict], load_out: list[str]) -> list[dict]:
+def profiles(A: dict, cards: dict, missions: dict, route_rng: dict, wins: list[dict], load_out: list[str]) -> list[dict]:
+    """Each profile's D1 on the load-out at 30 C and at the route's P90 and max seawater, and its mission-critical
+    guests: out of the load-out, or aboard with the share of sampled hours each weather-gated activity is open."""
     out = []
     for mid, m in sorted(missions.items()):
         mc = []
         for g in m["mission_critical"]:
             acts = [w for w in wins if w["guest"] == g]
-            mc.append({"guest": g, "activities": [{"activity": w["activity"], "open_pct": w["open_pct"]} for w in acts]})
+            mc.append({"guest": g, "in_load_out": g in load_out,
+                       "activities": [{"activity": w["activity"], "open_pct": w["open_pct"]} for w in acts]})
         out.append({"id": mid, "name": m["name"],
                     "envelope": judge(A, cards, m, load_out, A["envelope"]["judge_cooling_at_c"]),
-                    "route_p90": judge(A, cards, m, load_out, rng_["seawater_c"]["p90"]),
-                    "route_max": judge(A, cards, m, load_out, rng_["seawater_c"]["max"]),
+                    "route_p90": judge(A, cards, m, load_out, route_rng["seawater_c"]["p90"]),
+                    "route_max": judge(A, cards, m, load_out, route_rng["seawater_c"]["max"]),
                     "mission_critical": mc})
     return out
 
@@ -224,27 +292,33 @@ def build(plan_id: str, seed: int, points: int) -> dict:
     vocab = Ld.load_vocabulary(assumptions=A)
     cards = Ld.load_cards(vocab=vocab)
     missions = Ld.load_missions(cards, vocab)
-    rng_ = ranges(samples)
+    on_route, in_area = ranges(route_hours(route)), ranges(area_hours(route))
     wins = windows(samples, gated(cards))
-    hot = rng_["seawater_c"]["max"]
+    p90, hot = on_route["seawater_c"]["p90"], on_route["seawater_c"]["max"]
     return {
         "plan": {"id": plan["id"], "name": plan["name"], "depart_utc": plan["depart_utc"], "days": plan["days"],
                  "waypoints": plan["waypoints"], "km": round(sum(route.leg_km), 1),
                  "period": f"{route.start:%d %b} to {(route.start + timedelta(hours=route.end_h)):%d %b %Y}"},
-        "sampling": {"seed": seed, "points": points, "corridor_km": CFG["corridor_km"]},
-        "ranges": rng_,
+        "sampling": {"seed": seed, "points": points, "corridor_km": CFG["corridor_km"],
+                     "area_legs": [[route.wps[i]["id"], route.wps[j]["id"]] for i, j in route.unique_legs],
+                     "hours": [0, route.end_h]},
+        "ranges": {"period": data_period(cache), "grid_points": len(route.grid), "waypoints": len(route.wps),
+                   "route": on_route, "area": in_area},
         "cooling": {"load_out_heat_kw": round(Lg.admission_lines(A, cards, CFG["load_out"])["heat"].demand, 1),
-                    "normal_kw_at_p90": round(Lg.heat_capacity_kw(A, rng_["seawater_c"]["p90"]), 1),
+                    "route_p90_c": p90, "route_max_c": hot,
+                    "normal_kw_at_p90": round(Lg.heat_capacity_kw(A, p90), 1),
                     "normal_kw_at_max": round(Lg.heat_capacity_kw(A, hot), 1),
                     "degraded_kw_at_max": round(Lg.heat_capacity_kw(A, hot, True), 1),
                     "envelope_kw": round(Lg.heat_capacity_kw(A, A["envelope"]["judge_cooling_at_c"]), 1)},
         "windows": wins,
         "load_out": CFG["load_out"],
-        "profiles": profiles(A, cards, missions, rng_, wins, CFG["load_out"]),
+        "profiles": profiles(A, cards, missions, on_route, wins, CFG["load_out"]),
         "samples": samples,
         "coast": coast,
         "sources": {"weather": f"{cache['attribution']} ({cache['licence']}), fetched {cache['fetched_at_utc']}",
-                    "coast": coast["attribution"] + " (public domain)", "plan": "Siddharth, feat/ship-state-fsm fbe59a5"},
+                    "weather_attribution": cache["attribution"], "weather_licence": cache["licence"],
+                    "coast": coast["attribution"] + " (public domain)", "coast_attribution": coast["attribution"],
+                    "plan": "Siddharth, feat/ship-state-fsm fbe59a5", "plan_credit": CFG["plan_credit"]},
     }
 
 
@@ -300,9 +374,14 @@ def svg_map(d: dict, width: int = 1000) -> str:
     return "".join(parts)
 
 
-def _row(label: str, r: dict, unit: str, fmt: str = "{:.1f}") -> str:
-    v = lambda x: fmt.format(x)
-    return f"<tr><th>{label}</th><td>{v(r['p50'])}</td><td>{v(r['p90'])}</td><td>{v(r['max'])}</td><td class='u'>{unit}</td></tr>"
+LICENCE_URL = {"CC BY 4.0": "https://creativecommons.org/licenses/by/4.0/"}
+WEATHER_URL = "https://open-meteo.com/"
+
+
+def _row(label: str, route: dict, area: dict, unit: str, fmt: str = "{:.1f}") -> str:
+    v = lambda x: "—" if x is None else fmt.format(x)
+    return (f"<tr><th>{label}</th><td>{v(route['p90'])}</td><td>{v(route['max'])}</td><td>{v(area['max'])}</td>"
+            f"<td class='u'>{unit}</td></tr>")
 
 
 def _share(pct_open: float) -> str:
@@ -329,16 +408,24 @@ def page(d: dict) -> str:
                            f"{j['verdict'].upper()}</span></td>" for j in cols)
         spares = "".join(f"<td class='{_margin(j['cooling_kw'] - j['heat_kw'])}'>{j['cooling_kw'] - j['heat_kw']:+.0f}</td>" for j in cols)
         mc = "".join(
-            f"<div class='mc'><b>{html.escape(x['guest'])}</b> " + (" · ".join(
-                f"{html.escape(a['activity'].replace('_', ' ').upper())} <span class='{_share(a['open_pct'])}'>{a['open_pct']:.0f} % OPEN</span>"
-                for a in x["activities"]) or "<span class='muted'>NOT WEATHER-GATED</span>") + "</div>"
+            f"<div class='mc'><b>{html.escape(x['guest'])}</b> " + (
+                "<span class='muted'>NOT IN LOAD-OUT</span>" if not x["in_load_out"] else " · ".join(
+                    f"{html.escape(a['activity'].replace('_', ' ').upper())} <span class='{_share(a['open_pct'])}'>{a['open_pct']:.0f} % OPEN</span>"
+                    for a in x["activities"]) or "<span class='muted'>NOT WEATHER-GATED</span>") + "</div>"
             for x in p["mission_critical"])
         cards.append(f"<div class='card'><h3>{html.escape(p['name'].upper())}</h3><table class='mini'><thead><tr><th></th>"
                      f"<th>30 °C</th><th>P90 {p['route_p90']['seawater_c']:.1f}</th><th>MAX {p['route_max']['seawater_c']:.1f}</th></tr></thead><tbody>"
                      f"<tr><th>D1</th>{verdicts}</tr><tr><th>COOLING SPARE kW</th>{spares}</tr></tbody></table>"
                      f"<div class='k' style='margin-top:6px'>MISSION CRITICAL</div>{mc}</div>")
     c = d["cooling"]
-    hist = " · ".join(f"SS {k}: {v}" for k, v in d["ranges"]["sea_state_hist"].items())
+    ro, ar, src = r["route"], r["area"], d["sources"]
+    hist = f"{ro['hours']} ROUTE HOURS · " + " · ".join(f"SS {k}: {v}" for k, v in ro["sea_state_hours"].items())
+    licence = html.escape(src["weather_licence"])
+    if src["weather_licence"] in LICENCE_URL:
+        licence = f'<a href="{LICENCE_URL[src["weather_licence"]]}">{licence}</a>'
+    credits = (f'<a href="{WEATHER_URL}">{html.escape(src["weather_attribution"])}</a> · {licence} · '
+               f'{html.escape(src["coast_attribution"])} · PLAN {html.escape(src["plan_credit"].upper())} · '
+               f'WEATHER BETWEEN {r["grid_points"]} GRID POINTS ({r["waypoints"]} WAYPOINTS), INTERPOLATED ALONG THE ROUTE')
     return f"""<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ArgOS · Deployment map</title>
 <style>
@@ -368,25 +455,25 @@ tbody tr + tr {{ border-top:1px solid #1B2D47; }}
 .kv {{ display:flex; gap:8px; align-items:baseline; margin:3px 0; flex-wrap:wrap; }} .k {{ font:12px 'IBM Plex Mono',ui-monospace,monospace; color:var(--mut); letter-spacing:1px; min-width:78px; }}
 .mc {{ font-size:13px; margin-top:3px; }} table.mini td {{ text-align:center; font-size:13px; }} table.mini thead th {{ text-align:center; }} table.mini tbody th {{ font-size:12px; color:var(--mut); }} footer {{ padding:0 24px 18px; color:var(--mut); font:12px 'IBM Plex Mono',ui-monospace,monospace; }} footer a {{ color:var(--mut); }}
 </style></head><body>
-<header><h1>ARGOS · DEPLOYMENT MAP</h1><span>{html.escape(d['plan']['name'].upper())} · {html.escape(d['plan']['period'].upper())} · {d['plan']['km']:.0f} KM · SEED {d['sampling']['seed']} · {d['sampling']['points']} POINTS</span></header>
+<header><h1>ARGOS · DEPLOYMENT MAP</h1><span>{html.escape(d['plan']['name'].upper())} · {html.escape(d['plan']['period'].upper())} · {d['plan']['km']:.0f} KM</span></header>
 <main>
 <div class="map">{svg_map(d)}
-<div class="legend"><span><i class="dot" style="background:{SS_COLOR['low']}"></i>SEA STATE ≤ 3</span><span><i class="dot" style="background:{SS_COLOR['mid']}"></i>SEA STATE 4</span><span><i class="dot" style="background:{SS_COLOR['high']}"></i>SEA STATE ≥ 5</span><span>— ROUTE</span><span>▒ AREA ±{d['sampling']['corridor_km']} KM</span></div></div>
+<div class="legend"><span><i class="dot" style="background:{SS_COLOR['low']}"></i>SEA STATE ≤ 3</span><span><i class="dot" style="background:{SS_COLOR['mid']}"></i>SEA STATE 4</span><span><i class="dot" style="background:{SS_COLOR['high']}"></i>SEA STATE ≥ 5</span><span>— ROUTE</span><span>▒ AREA ±{d['sampling']['corridor_km']} KM · ROUTE WEATHER</span></div></div>
 <div>
-<section><h2>FORECAST RANGES</h2><table><thead><tr><th></th><th>P50</th><th>P90</th><th>MAX</th><th></th></tr></thead><tbody>
-{_row('SEAWATER', r['seawater_c'], '°C')}{_row('WIND', r['wind_kn'], 'kn')}{_row('GUST', r['gust_kn'], 'kn')}{_row('WAVE', r['wave_m'], 'm', '{:.2f}')}{_row('SEA STATE', r['sea_state'], 'Douglas', '{:.0f}')}
+<section><h2>WEATHER RANGES · {html.escape(r['period'])} · OPEN-METEO ARCHIVE</h2><table><thead><tr><th></th><th>ROUTE P90</th><th>ROUTE MAX</th><th>AREA MAX</th><th></th></tr></thead><tbody>
+{_row('SEAWATER', ro['seawater_c'], ar['seawater_c'], '°C')}{_row('WIND', ro['wind_kn'], ar['wind_kn'], 'kn')}{_row('GUST', ro['gust_kn'], ar['gust_kn'], 'kn')}{_row('WAVE', ro['wave_m'], ar['wave_m'], 'm', '{:.2f}')}{_row('SEA STATE', ro['sea_state'], ar['sea_state'], 'Douglas', '{:.0f}')}
 </tbody></table><div class="mono muted" style="margin-top:6px">{hist}</div></section>
 <section><h2>DEPLOYMENT PARAMETERS</h2><table><tbody>
 <tr><th>LOAD-OUT HEAT ({' · '.join(d['load_out'])})</th><td class="big">{c['load_out_heat_kw']:.1f}</td><td class="u">kW</td></tr>
-<tr><th>COOLING AT P90 SEAWATER</th><td class="big {_margin(c['normal_kw_at_p90'] - c['load_out_heat_kw'])}">{c['normal_kw_at_p90']:.1f}</td><td class="u">kW</td></tr>
-<tr><th>COOLING AT MAX SEAWATER</th><td class="big {_margin(c['normal_kw_at_max'] - c['load_out_heat_kw'])}">{c['normal_kw_at_max']:.1f}</td><td class="u">kW</td></tr>
-<tr><th>ONE PUMP DOWN AT MAX</th><td class="big {_margin(c['degraded_kw_at_max'] - c['load_out_heat_kw'])}">{c['degraded_kw_at_max']:.1f}</td><td class="u">kW</td></tr>
+<tr><th>COOLING AT ROUTE P90 SEAWATER</th><td class="big {_margin(c['normal_kw_at_p90'] - c['load_out_heat_kw'])}">{c['normal_kw_at_p90']:.1f}</td><td class="u">kW</td></tr>
+<tr><th>COOLING AT ROUTE MAX SEAWATER</th><td class="big {_margin(c['normal_kw_at_max'] - c['load_out_heat_kw'])}">{c['normal_kw_at_max']:.1f}</td><td class="u">kW</td></tr>
+<tr><th>ONE PUMP DOWN AT ROUTE MAX</th><td class="big {_margin(c['degraded_kw_at_max'] - c['load_out_heat_kw'])}">{c['degraded_kw_at_max']:.1f}</td><td class="u">kW</td></tr>
 <tr><th>BRIEF ENVELOPE (30 °C)</th><td class="big {_margin(c['envelope_kw'] - c['load_out_heat_kw'])}">{c['envelope_kw']:.1f}</td><td class="u">kW</td></tr>
 </tbody></table></section>
 <section><h2>WEATHER WINDOWS · SHARE OF SAMPLED HOURS OPEN</h2><table><tbody>{wins}</tbody></table></section>
 <section><h2>MISSION PROFILES · LOAD-OUT {' · '.join(d['load_out'])} · D1 AT ROUTE SEAWATER</h2><div class="cards">{''.join(cards)}</div></section>
 </div></main>
-<footer>{html.escape(d['sources']['weather'])} · {html.escape(d['sources']['coast'])} · PLAN {html.escape(d['sources']['plan'])} · WEATHER BETWEEN 4 GRID POINTS, INTERPOLATED ALONG THE ROUTE</footer>
+<footer>{credits}</footer>
 </body></html>"""
 
 
@@ -402,11 +489,16 @@ def main(argv: list[str] | None = None) -> int:
     out.mkdir(parents=True, exist_ok=True)
     (out / "deployment.json").write_text(json.dumps({k: v for k, v in d.items() if k != "coast"}, indent=1) + "\n")
     (out / "index.html").write_text(page(d))
-    r = d["ranges"]
+    r, c = d["ranges"], d["cooling"]
+    ro, ar = r["route"], r["area"]
     print(f"DEPLOYMENT {d['plan']['name']} · {d['plan']['period']} · {d['sampling']['points']} points, seed {d['sampling']['seed']}")
-    print(f"  seawater P90 {r['seawater_c']['p90']} max {r['seawater_c']['max']} °C · gust P90 {r['gust_kn']['p90']} kn · sea state P90 {r['sea_state']['p90']:.0f}")
+    print(f"  weather {r['period']}: {ro['hours']} route hours, {ar['hours']} area hours at {r['grid_points']} grid points ({r['waypoints']} waypoints)")
+    print(f"  seawater route P90 {ro['seawater_c']['p90']} · route max {ro['seawater_c']['max']} · area max {ar['seawater_c']['max']} °C")
+    print(f"  gust route P90 {ro['gust_kn']['p90']} kn · sea state route P90 {ro['sea_state']['p90']:.0f}, route max {ro['sea_state']['max']}, area max {ar['sea_state']['max']}")
+    print(f"  cooling kW: load-out heat {c['load_out_heat_kw']} · at route P90 {c['normal_kw_at_p90']} · at route max {c['normal_kw_at_max']}"
+          f" · one pump down at route max {c['degraded_kw_at_max']} · envelope 30 °C {c['envelope_kw']}")
     for w in d["windows"]:
-        print(f"  {w['guest']} {w['activity']}: {w['open_pct']:.0f} % open")
+        print(f"  {w['guest']} {w['activity']}: {w['open_pct']:.1f} % of sampled hours open")
     for p in d["profiles"]:
         print(f"  {p['id']}: envelope {p['envelope']['verdict']} · route max {p['route_max']['verdict']} ({p['route_max']['binding']})")
     print(f"  wrote {out / 'index.html'}")

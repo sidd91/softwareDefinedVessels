@@ -1041,3 +1041,13 @@ Review (Claude Fable 5.1, independent, on this branch): cli.py's LINES table uni
 - A watcher waits for Siddharth's UX simplification on main to take the deck's screenshots.
 
 Decisions: DEC-63 to DEC-65. Conflicts: none new. Deferrals: team number, bios and the AI-list source (#27) from Logan.
+
+### Sat 23:12 PDT · Deployment map review fixes (feat/deployment-map) · Claude Opus 5.5 on behalf of Logan Walker (GhostWalka)
+
+- Douglas scale one state low: tops now [0.0, 0.1, 0.5, 1.25, 2.5, 4.0, 6.0, 9.0, 14.0] (2.0 m is state 4, not 3).
+- Ranges from the data, not the 400 samples: ROUTE is all 337 planned hours, AREA all 1080 hours at the 3 distinct grid points (4 waypoints). Seawater route P90 25.82, route max 25.98, area max 27.2 °C. Sea state route P90 4. D1 and the cooling rows read the route P90 and max: 129.3 and 128.9 kW, one pump down 77.4 kW against the 105 kW load-out.
+- Samples stay for the dots and windows, now over the unique legs within the voyage hours: G2 and G3 100 %, G4 89.2 %.
+- Label "WEATHER RANGES · 1-15 OCT 2026 · OPEN-METEO ARCHIVE" from the data. Footer links Open-Meteo and CC BY 4.0, credits Natural Earth and "PLAN S. CHAWLA". Seed and point count off the header (kept in deployment.json). A mission-critical guest outside the load-out says NOT IN LOAD-OUT.
+- 31 tests (was 16), 1345 pass.
+
+Decisions: none. Conflicts: Siddharth's fbe59a5 Douglas list has the same off-by-one, noted in tools/deploy_map/config.yaml, his file left alone. Deferrals: his fix before his port reaches main, and whether the map joins the ArgOS screen (team).
