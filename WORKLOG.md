@@ -1153,3 +1153,8 @@ fields, MAST 3 of 3, POWER the bus, COOLING the loop, the mimic with G1 SENSOR o
 OPEN_QUESTIONS #4, ORGANIZER_MESSAGE, DEMO_READINESS and docs/requirements.yaml still quote the DEC-32 set and 48 / 81 kW (history); the PDFs were not rebuilt.
 Branch fix/scenario-b-loadout-g1, pushed for a teammate to merge.
 Decisions: DEC-63. Conflicts: CON-18 settled for Scenario B. Requirements touched: R-066, R-067.
+### Sat 22:58 PDT · SIM-bar clicks land at x12 (fix/simbar-clicks, for a teammate to merge) · Claude Fable 5.1 on behalf of Siddharth Chawla (sidd91)
+What: the rehearsal's cross-cutting Red. app.js rebuilt #sim-speed, #sim-jump, #sim-file and #chips by innerHTML on every /ws frame, so a press that straddled a frame (any ordinary 80-150 ms click at x12) never fired; the groups now go through util.paint() and the chips through a new util.paintEach() (one slot per chip, so the crew button outlives its neighbours' ticks); PACE and PRIORITY carry aria-pressed; HOLD/RUN, RESTART and the view tabs were already static markup.
+Files: src/sdv/ui/static/js/app.js, src/sdv/ui/static/js/util.js, tests/test_ui_static.py (new, 5 tests).
+Tests: measured on the live engine at x12 with Playwright, ten presses per button, clock running in every trial: a 90 ms press landed 0/10 on RESCUE, PACE x1 and PACE x60 before; after, 10/10 on PRIORITY RESCUE, JUMP 08/12/19, PACE x1/x60 (20/20 on x12), plain .click() also 10/10, header MISSION flips and the clock lands on 07:57 / 11:57 / 18:57 each time, no console errors. Full suite 1283 passed (1278 + 5). Server untouched; a second press of the same JUMP still re-runs from tick 0 (2.5-4.6 s freeze measured here), out of scope.
+Decisions: none. Conflicts: none. Requirements touched: none.
