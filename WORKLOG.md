@@ -1111,3 +1111,18 @@ Files: docs/DEMO_SCRIPT.md, docs/DEMO_READINESS.md; README.md untouched (another
 Tests: tests/test_requirements_trace.py (every DEMO_SCRIPT anchor kept); full suite 1314 passed on origin/main 1148d11 plus these docs; the screen driven on port 8223 to confirm the chip and the minute-12 sentence. Branch docs/run-sheet-and-checklist (d8b0235, cut on 1148d11 because main moved from 918478a while the branch was being made), for a teammate to merge.
 Decisions: none. Conflicts: none. Requirements touched: none.
 Review (Claude Fable 5.1, independent, on this branch, Sat 23:10 PDT): diff read line by line against the task; the scorecard section is byte-identical to the source; every link and anchor resolves; every timing in the run sheet matches scorecard section 2; the screen driven with Playwright on 8423 (this branch's build) and 8425 (origin/main 6a91f5d): chip LIVE · SIM TEST DOUBLE leftmost in the bottom bar, LINK UP top right, a 90 ms PRIORITY press 0 of 6 at x12 (0 of 10 under --source fixtures), HOLD/click/RUN swap applied in 0.12 s with MISSION RESCUE · PRIORITY sar.yaml VALID and SHED ORDER · RESCUE, RESTART 1.14 s, JUMP freezes 1.16 / 0.66 / 1.18 s, the minute-8, 12 and 19 records, both compare marks and the A1 hangar 0.8 edit and REVERT as written; on the CLI a busy port exits 3, a power edit still raises StopIteration and a stray G7.yaml is still fatal on 1148d11. Fixed here: origin/main moved to 6a91f5d (integrate/fix-pack-2, 22:46 PDT) with fix/jury-power-edit, fix/crew-chip-guards and fix/live-run-log merged, and fix/jury-card-file was pushed and reviewed (2419405), so the status table, the Presenter rules intro, the crew-chip and jury-card-file rules and checklist items 3, 4, 9 and 10 now say so (1457 pass on 6a91f5d in 193 s; the server prints a RUN line per run; `mkdir -p runs` before the tee, runs/ being git-ignored and absent in a fresh clone; the fixtures replay drops plain clicks too); the LOS / ACOUSTIC answer names when the link drops (T+09:06, course free, noise manoeuvring) and that the tile's state is SATCOM and LOS, not SATCOM alone; the A-prime drill is marked not built; the 22:50 stamps are the commit's 22:41. Suite 1314 passed on this branch after the edits; the branch merges clean into 6a91f5d (scratch merge).
+
+### Sat 23:20 PDT · Integration to main tonight (packs 1 to 3a) · Claude Fable 5.1 on behalf of Siddharth Chawla (sidd91)
+
+Siddharth asked for the reviewed fix branches to be merged without waiting for him. Each branch had an engineer and an
+independent reviewer; each integration branch ran the full suite before `main` was fast-forwarded to it.
+1148d11 (pack 1, 1314 tests): docs/AUDIT_MAIN.md, fix/minute-12-sentence, fix/physical-account-tracer,
+fix/d1-data-compute-lines. 6a91f5d (pack 2, 1457 tests): fix/jury-power-edit, fix/crew-chip-guards, fix/live-run-log;
+two union conflicts with pack 1 resolved in src/sdv/explain.py (LABELS/UNITS) and src/sdv/ui/view.py (line order).
+e88611b (pack 3a): fix/jury-card-file and docs/run-sheet-and-checklist; conflicts with pack 2 resolved as unions in
+README.md (both quickstart lines), src/sdv/cli.py (edit refusals plus allow_unregistered for a jury file) and
+src/sdv/ui/server.py (run() reports refused manifests, then logs runs). Still to land: fix/simbar-clicks (review in
+progress), fix/scenario-b-loadout-g1 (DEC-63, in progress), docs/readme-truth (in progress). ui/room-map is built on
+its own branch and is not merged: the team picks a screen at rehearsal (Siddharth, Sat 23:08).
+Decisions: none new. Conflicts: none. Requirements touched: none directly.
+
