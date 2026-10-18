@@ -536,6 +536,13 @@ def _cond_value(signal: str, v) -> str:
     return words(v)
 
 
+def headline(sentence: str) -> str:
+    """The record's first sentence: the panel leads with it, the rows and the event log carry the rest."""
+    import re
+    parts = re.split(r"(?<=[a-z0-9%)])\. (?=[A-Z])", sentence, maxsplit=1)
+    return parts[0] if parts[0].endswith(".") else parts[0] + "."
+
+
 def decision(I: Inputs, m: Moment, gs: dict, pl: dict) -> dict | None:
     """The decision panel: the latest record, its one sentence first."""
     r = _acting(m.records)
@@ -544,7 +551,7 @@ def decision(I: Inputs, m: Moment, gs: dict, pl: dict) -> dict | None:
     snap = m.snapshot
     applied = m.t_s >= r.get("applies_at_tick", r["tick"] + 1)
     resp, ceil, _ = _response(r, m.timing)
-    out = {"kind": r["kind"], "seq": r["seq"], "sentence": r["sentence"], "t": clock(r["t_s"]), "rows": [], "conflicts": [],
+    out = {"kind": r["kind"], "seq": r["seq"], "sentence": r["sentence"], "headline": headline(r["sentence"]), "t": clock(r["t_s"]), "rows": [], "conflicts": [],
            "applied": applied}
     if r["kind"] == "D3":
         lim = r["hard_limit"]

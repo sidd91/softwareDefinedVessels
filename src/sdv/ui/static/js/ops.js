@@ -78,7 +78,7 @@ export function decision(d) {
   }
   return `<section class="panel record" aria-label="Decision record">
 <div class="strip navy"><span>${esc(d.title)}</span><span class="rtag ${esc(d.tone)}">${esc(d.tag)}</span></div>
-<p class="why">${esc(d.sentence)}</p>
+<p class="why" title="${esc(d.sentence)}">${esc(d.headline || d.sentence)}</p>
 ${conflictTable(d)}
 <div class="kv">${recordRows(d.rows)}</div>
 ${d.recheck ? `<div class="foot">${esc(d.recheck)}</div>` : ''}
