@@ -261,5 +261,7 @@ class LiveReplay:
             inp = msg.get("input") or {}
             if inp.get("type") not in LAPTOP_INPUTS or not isinstance(inp.get("payload"), dict):
                 return f"input {inp.get('type')!r} is not a laptop input"
+            if inp["type"] == "priority_swap" and inp["payload"].get("mission") not in missions:
+                return f"no priority file {inp['payload'].get('mission')}"      # the core has no such file: refused, not stamped
             self.run.add_input({"type": inp["type"], "injected": bool(inp.get("injected", False)), "payload": inp["payload"]})
         return None

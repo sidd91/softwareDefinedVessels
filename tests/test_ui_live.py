@@ -132,6 +132,23 @@ def test_a_priority_swap_mid_run_decides_under_the_new_file():
     assert lr.command({"cmd": "mission", "value": "nonsense"}) == "no priority file nonsense"
 
 
+def test_a_priority_swap_input_to_an_unknown_file_is_refused_not_stamped():
+    lr = live.LiveReplay("survey", 600, running=False)
+
+    def swap(payload):
+        return {"cmd": "input", "input": {"type": "priority_swap", "payload": payload}}
+
+    assert lr.command(swap({})) == "no priority file None"
+    assert lr.command(swap({"mission": "fishing"})) == "no priority file fishing"
+    assert lr.run.swaps() == [] and lr.run.laptop == {}
+    lr.command({"cmd": "restart"})                                  # nothing pending and nothing to trip over
+    assert lr.t_s == 0 and lr.mission == "survey"
+    assert lr.command(swap({"mission": "sar"})) is None             # a known file goes through as a swap stamped for the next tick
+    assert lr.run.swaps() == [(1, "sar")]
+    lr.run.advance_to(1)
+    assert lr.mission == "sar"
+
+
 def test_a_profile_applied_at_sea_takes_effect_and_a_bad_one_is_refused():
     prof = dict(I.missions["sar"], id="sar_tiers", name="Rescue with tiers", shed_order={"coastal_connectivity": 1})
     lr = live.LiveReplay("sar", 600, running=False)

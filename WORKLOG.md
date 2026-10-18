@@ -963,3 +963,8 @@ Tests: 5 new (a logged live run replays EQUAL through `sdv replay`, the RunLogs 
 dropped-swap line, the server's start and shutdown lines; the /ws run is on disk tick by tick); 1283 pass. Screen driven
 with Playwright on :8213 through both cases; the three logged runs replay EQUAL. Branch fix/live-run-log, for a teammate to merge.
 Decisions: none. Conflicts: none. Requirements touched: R-007, R-017.
+Review (Claude Fable 5.1 for Siddharth, same branch): driven on :8403 with Playwright and a raw /ws client; 30 logged runs
+(held swap + RESTART, swap after the 19-min mark + JUMP back, crew 6/0 at 60/470/500/900 under both files, mission at
+t=0, SIGINT with a browser connected) all replay EQUAL and the LAST RUN line reaches a nohup log. One fix: a
+`priority_swap` laptop input naming an unknown file (or none) is refused as "no priority file X" instead of stamped;
+before, RESTART or a JUMP (`Run.swaps()`) or the next tick raised KeyError and the socket dropped. +1 test; 1284 pass.
