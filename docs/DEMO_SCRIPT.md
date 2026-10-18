@@ -74,12 +74,11 @@ step does not exist yet.
 
 ### Presenter rules
 
-Measured Sat 22:00 PDT on 918478a ([DEMO_READINESS.md](DEMO_READINESS.md), section 4). A rule that starts
-"until X is merged" falls away when that branch lands; the others stay true on tonight's main. At Sat 23:10 PDT
-origin/main 6a91f5d (integrate/fix-pack-2, 22:46 PDT) carries fix/jury-power-edit, fix/crew-chip-guards and
-fix/live-run-log, so those three rules fall away on a freeze at or after 6a91f5d; fix/jury-card-file is pushed and
-reviewed but not merged; fix/simbar-clicks is not on origin. On the frozen commit, `git branch -r --merged HEAD`
-lists the fix branches it contains.
+Measured Sat 22:00 PDT on 918478a ([DEMO_READINESS.md](DEMO_READINESS.md), section 4) and restated for the
+frozen main. As of Sun 00:05 PDT origin/main 7b9a804 carries fix/jury-power-edit, fix/crew-chip-guards,
+fix/live-run-log, fix/jury-card-file, fix/simbar-clicks and fix/scenario-b-loadout-g1 (DEC-63), so every rule that
+used to start "until X is merged" is written below in the present tense. On the frozen commit,
+`git branch -r --merged HEAD` lists the fix branches it contains.
 
 Do not, on stage:
 
@@ -93,36 +92,29 @@ Do not, on stage:
   coroutine, every browser on the server freezes together, and a second click costs a second freeze.
 - JUMP 08 after a mid-run swap: the swap is dropped, SURVEY decides again and it looks as if the swap did nothing.
   Swap only as PRIORITY, watch the header flip, RESTART; or use Mission compare.
-- Press PRIORITY while HELD or at T+20:00 and then RESTART: until fix/live-run-log is merged it restarts under the
-  old file. Watch the header flip to the new MISSION first.
+- PRIORITY while HELD or at T+20:00 applies on the next tick, and RESTART honours a pending swap (fix/live-run-log).
+  Still watch the header flip to the new MISSION before you trust the file.
 - Use x60: pace clicks fail while it runs (one took 14 s of retries); x12 is the rehearsed pace.
-- Until fix/simbar-clicks is merged, expect a normal click on JUMP, PACE, PRIORITY or the crew chip to land at x12:
-  the SIM bar is re-rendered 12 times a second and a 90 ms press registered 0 of 12. HOLD (Space), click,
-  RUN (Space). HOLD/RUN is the measured static button (10 of 10).
+- A plain click on JUMP, PACE, PRIORITY and the crew chip lands at x12 (fix/simbar-clicks: 10 of 10 on every
+  button, 0 of 10 before); no HOLD needed. Press each JUMP once, in order 08 → 12 → 19, and wait for the clock to
+  move: a second press of the same JUMP, or any jump backwards, re-runs from tick 0 and freezes 2.5 to 4.6 s.
 - Undo an Admission edit by retyping the original value: the verdict stays flipped. Press REVERT.
-- Until fix/jury-power-edit is merged, edit a power number anywhere: G4.consumes.power_kw.peak=50, nominal=60,
-  peak=500 and G5 nominal=60 crash D1 (StopIteration: CLI exit 1, HTTP 500), and a hand-typed field path
-  (G4.nope.x=1, G4.modes.0.power_kw=50) crashes the CLI. On screen the only inputs are the DRONE and HANGAR
-  mass_t; on the CLI stay with mass_t, cooling, area_m2 and peak_duration_s. Once merged: any card number decides
-  or is refused with the field named (CLI exit 2, API 422, previous verdict kept) and the screen offers NOMINAL and
-  PEAK kW inputs.
-- Until fix/jury-card-file is merged, put a jury YAML into manifests/: the loader refuses the whole set ("id: G7
-  has no activity registry in config/signals.yaml") and `sdv demo` and `sdv admit` die at start-up until the file
-  is removed. A new card runs on the CLI: add its id to config/signals.yaml activities (copy the closest guest's
-  block), then `uv run sdv admit G7 --installed G4,G5 --mission disaster_relief` (1.6 ms measured). The Admission
-  tab offers its 14 pre-baked cases only. Once merged (pushed as be7b83a, reviewed 2419405, 14 tests; not on main
-  at 23:10 PDT): `uv run sdv admit --card path/to/G7.yaml --installed G4,G5 --mission disaster_relief` admits the
-  file from where it is, a schema or vocabulary problem is refused with the field named (exit 2), a card whose
-  activities are not registered is judged on its quantities, positions and relations and the output says so, and a
-  bad file in manifests/ is reported once at start and skipped.
-- Until fix/crew-chip-guards is merged, click the crew chip: to 6 before minute 9 the test double crashes on the
-  scripted bridge answer and the browser silently reconnects into a fresh 14-aboard run; after minute 9 it only
-  changes the label. Once merged (on origin/main since 6a91f5d), the chip holds or forbids the recovery with its
-  reason and never crashes: 6 aboard before minute 9 gives "Recovery held at 6 aboard: no standing plan approved.
-  G4 must land by minute 18.2." (seen on 6a91f5d: CREW 6 · R3 STANDING PLAN in the header, LINK UP, no error
-  frame) and 0 aboard "Recovery forbidden at 0 aboard: …" with the deck state in the evidence. Either way the
-  landing officer's report, the deck sweep and the standing plan have no screen control (the only key is Space):
-  14 aboard is what is rehearsed, and the Scenario C segment is spoken from the memo, not driven.
+- Any card number can be changed (fix/jury-power-edit): it decides, or it is refused with the field named (CLI
+  exit 2, API 422, previous verdict kept); the Admission tab offers NOMINAL and PEAK kW inputs beside the two
+  masses. Rehearsed: A1 with PEAK 50 stays YES-IF on mass and the one-genset line reads 96.5 / 100 · GATE 95 HOLDS
+  BY THROTTLING (G4 fast charge → charge, −40 kW); PEAK 150 gives NO, cooling 195 against 120 kW; "abc" shows
+  EDIT REFUSED with the field and keeps the verdict. Undo with REVERT, not by retyping.
+- A card the jury hands over as a file runs on the CLI (fix/jury-card-file): `uv run sdv admit --card
+  path/to/G7.yaml --installed G4,G5 --mission disaster_relief` admits it from where it is; a schema or vocabulary
+  problem is refused with the field named (exit 2); a card whose activities are not registered is judged on its
+  quantities, positions and relations and the output says so; a bad file dropped into manifests/ is reported once
+  at start and skipped, it no longer stops `sdv demo`. The Admission tab still offers its 14 pre-baked cases only.
+- The crew chip is safe at any time (fix/crew-chip-guards): 6 aboard before minute 9 gives "Recovery held at 6
+  aboard: no standing plan approved. G4 must land by minute 18.2." (CREW 6 · R3 STANDING PLAN in the header, LINK
+  UP, no error frame), 0 aboard "Recovery forbidden at 0 aboard: …" with the deck state in the evidence, and a
+  clear deck report lifts a hold at 6. The landing officer's report, the deck sweep and the standing plan still
+  have no screen control (the only key is Space): 14 aboard is what is rehearsed, and the Scenario C segment is
+  spoken from the memo over the minute-8 R3 block, not driven.
 - Pipe the CLI fallback: `uv run sdv run --mission sar --pace 12 | tail` shows nothing for 20 s (block-buffered).
   Run it in a TTY at 20 pt and 100 columns and accept the wrap: header at +2 s, first decision at +42 s, full run
   100 s.
@@ -145,9 +137,10 @@ Spoken lines, each built from what the record shows:
 - **Scenario A-prime, if asked.** "Admission under way is designed, not built: every card carries its installation
   windows in the installation.at_sea block (Reference tab), but the governor today returns yes, yes-if or no, and
   'not now, at the next port call' exists only as a sentence template with no live producer."
-- **"Is the plant real?"** "No: LIVE · SIM TEST DOUBLE in the SIM bar means the plant is tests/support/sim_stub.py,
-  a scripted Scenario B model of the brief's A.6 states built from the frozen signal contract, with no ship physics;
-  a simulator is swapped in through SDV_SIM, and the team's own simulator sits on feat/ship-state-fsm, not merged."
+- **"Is the plant real?"** "The engine is; the plant is scripted. LIVE · SCRIPTED PLANT · A.6 in the SIM bar means
+  the ship is tests/support/sim_stub.py, a scripted Scenario B model of the brief's A.6 states built from the frozen
+  signal contract, with no ship physics; a simulator is swapped in through SDV_SIM, and the team's own simulator
+  sits on feat/ship-state-fsm, not merged."
 - **"Why LOS 0 / 20 · ACOUSTIC DOWN at minute 19?"** "LOS is demand over capacity: G4 drew 20 of 20 Mbit/s of
   line-of-sight radio while airborne and nothing once it landed; ACOUSTIC DOWN is rule A.5 as a state check, the
   link is up only on a steady course, quiet, with no deck machinery, and the ship has been manoeuvring for the
@@ -214,11 +207,9 @@ section exactly. It replays Scenario B from minute 8 with the same seed and the 
 the screen labels it **replayed**. The landing officer's reports are single keys on the laptop. The 90 s
 Scenario B table above is unchanged.
 
-Status (Sat 22:00 PDT rehearsal): this segment cannot be driven live on tonight's main. No laptop key enters the
-landing officer's report (the only key is Space, HOLD/RUN), and the crew chip is 14 aboard on stage until
-fix/crew-chip-guards is merged. With that fix merged (origin/main 6a91f5d, Sat 22:46 PDT) the chip goes to 6 and 0
-aboard without a crash and the recovery record states the hold or the prohibition (Presenter rules), but the
-landing officer's report still has no key and the chip beat has no run sheet or rehearsal. Speak it from the
+Status (Sun 00:05 PDT, origin/main 7b9a804): the crew chip goes to 6 and 0 aboard without a crash and the recovery
+record states the hold or the prohibition (Presenter rules), so the chip beat can be shown live before minute 8 if
+rehearsed; the landing officer's report still has no key. Otherwise speak the segment from the
 [memo](SCENARIO_C_MEMO.md) over the minute-8 R3 block, or drop it; see Presenter rules.
 
 | Clock | Aboard | What happens | What the governor shows |
@@ -244,9 +235,9 @@ segment, so its timing lives here.
   from a rehearsal run.
 - The demo needs only the laptop. If the board is on the table, it only mirrors laptop inputs; unplug it
   if it misbehaves.
-- The Scenario C segment is not driven live on tonight's main (no key enters the landing officer's report; the
-  crew chip is 14 aboard on stage until fix/crew-chip-guards is merged): budget about 15 s to say it from the memo
-  over the minute-8 R3 block, or drop it.
+- The Scenario C segment: the crew chip to 6 or 0 before minute 8 is safe and shows the held or forbidden record;
+  the landing officer's report has no key. Budget about 15 s to say the rest from the memo over the minute-8 R3
+  block, or drop it.
 - Rehearse five times on Sun morning; freeze at 09:15 PDT.
 
 T-30 min checklist, from the laptop (measured Sat 22:00 PDT on 918478a, [DEMO_READINESS.md](DEMO_READINESS.md)
@@ -257,15 +248,15 @@ section 5; the laptop serves on port 8000, the port numbers in the scorecard are
 2. `uv sync` prints "Audited 27 packages" in under 2 s. If "No interpreter found for Python 3.12 ... offline
    mode": connect to Wi-Fi once and rerun (cold: CPython 3.12.14, 104 MB, plus 27 wheels; 1.7 s on the dev box,
    1 to 3 min on conference Wi-Fi).
-3. `uv run pytest -q` prints "1278 passed" or more (1278 on 918478a in 114 s, 1457 on 6a91f5d in 193 s; every
-   merged fix adds its own tests). Skip if under 20 min are left.
+3. `uv run pytest -q` prints "1485 passed" or more (1485 on 7b9a804 in about 215 s; every merged fix adds its own
+   tests). Skip if under 20 min are left.
 4. Port 8000 free (`lsof -i :8000` prints nothing), then `uv run sdv demo` prints "ArgOS screen on
    http://127.0.0.1:8000/ (live); Ctrl+C stops it" (since fix/live-run-log, in 6a91f5d, followed by a LOGS line
    naming runs/live); /api/meta answers after about 4 to 6 s (5.4 s on 918478a, 4.1 s on 6a91f5d). Nothing opens
    the browser for you. If "address already in use" (exit 3): `uv run sdv demo --port 8010` and open that port, or
    `lsof -ti :8000 | xargs kill`.
 5. Chrome, fresh window, http://127.0.0.1:8000: LINK UP at the top right, the clock ticking, and the chip at the
-   bottom left of the SIM bar reading LIVE · SIM TEST DOUBLE. Zoom 125 % on a 1920x1080 projector, 110 % on
+   bottom left of the SIM bar reading LIVE · SCRIPTED PLANT · A.6. Zoom 125 % on a 1920x1080 projector, 110 % on
    1600x1000, 100 % on 1280x800; F11; sleep and notifications off.
 6. Dry run: PRIORITY RESCUE (header MISSION RESCUE), RESTART, JUMP 08 (D3 record at T+00:08:00), JUMP 12 (D4 HOLD
    82.5 / 95 kW), JUMP 19 (SHED 44 / 75 kW); ADMISSION REVIEW case A1, hangar 0.8 gives YES, then REVERT.
@@ -275,8 +266,7 @@ section 5; the laptop serves on port 8000, the port numbers in the scorecard are
 8. Blank page: Cmd+Shift+R, then http://localhost:8000. Last resort, a second terminal at 20 pt and 100 columns:
    `uv run sdv run --mission sar --pace 12` (first decision at +42 s; never through a pipe).
 9. Live loop misbehaving: `uv run sdv demo --source fixtures` (ready in 1.4 s; the chip reads REPLAY, every SIM
-   bar control works under the same click rule, HOLD, click, RUN, since a plain click is dropped at x12 here too,
-   0 of 10 measured; no crew chip, no inputs) and say it is replayed. Laptop dead: play the backup recording from
+   bar control works with a plain click since fix/simbar-clicks; no crew chip, no inputs) and say it is replayed. Laptop dead: play the backup recording from
    the second laptop or the phone. The rehearsal's silent 80 s headless recording (RESCUE, JUMP 08 to T+20:00 at
    x12, then Mission compare) is on the dev box, not in the repo; record the narrated one on the laptop after the
    last rehearsal (Cmd+Shift+5): Scenario B with the swap, then Scenario A.

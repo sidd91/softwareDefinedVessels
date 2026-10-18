@@ -1173,3 +1173,15 @@ What: the rehearsal's cross-cutting Red. app.js rebuilt #sim-speed, #sim-jump, #
 Files: src/sdv/ui/static/js/app.js, src/sdv/ui/static/js/util.js, tests/test_ui_static.py (new, 5 tests).
 Tests: measured on the live engine at x12 with Playwright, ten presses per button, clock running in every trial: a 90 ms press landed 0/10 on RESCUE, PACE x1 and PACE x60 before; after, 10/10 on PRIORITY RESCUE, JUMP 08/12/19, PACE x1/x60 (20/20 on x12), plain .click() also 10/10, header MISSION flips and the clock lands on 07:57 / 11:57 / 18:57 each time, no console errors. Full suite 1283 passed (1278 + 5). Server untouched; a second press of the same JUMP still re-runs from tick 0 (2.5-4.6 s freeze measured here), out of scope.
 Decisions: none. Conflicts: none. Requirements touched: none.
+
+### Sun 00:10 PDT · Run sheet restated for the frozen main; plant badge relabelled · Claude Fable 5.1 on behalf of Siddharth Chawla (sidd91)
+
+docs/DEMO_SCRIPT.md: the presenter rules that read "until X is merged" are restated in the present tense for
+origin/main 7b9a804 (SIM-bar clicks land, any card number edits or is refused by field, a jury file admits on the CLI,
+the crew chip is safe, RESTART honours a pending swap), the Scenario C status and checklist counts updated (1485 tests),
+and the "is the plant real" answer reworded. docs/DEMO_READINESS.md: one status line saying every branch in its table is
+on main and the submission route is the only open Red. src/sdv/loop.py and src/sdv/ui/static/js/app.js: the SIM-bar
+badge reads LIVE · SCRIPTED PLANT · A.6 instead of LIVE · SIM TEST DOUBLE (audit gap #8; the plant is still
+tests/support/sim_stub.py, swappable through SDV_SIM). UI, loop, CLI and requirements-trace tests pass.
+Decisions: none. Conflicts: none. Requirements touched: R-146 (screen wording), R-212 (run sheet).
+

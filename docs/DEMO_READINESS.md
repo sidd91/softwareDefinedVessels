@@ -6,6 +6,11 @@ not this repo); the status list is as of Sat 23:10 PDT, origin/main 6a91f5d (int
 
 ## Status of the Reds (and the Ambers that have a branch)
 
+Update Sun 00:05 PDT: origin/main 7b9a804 carries every branch in this table (fix/simbar-clicks, fix/jury-power-edit,
+fix/jury-card-file, fix/crew-chip-guards, fix/live-run-log, fix/minute-12-sentence, fix/physical-account-tracer,
+fix/d1-data-compute-lines) plus fix/scenario-b-loadout-g1 (DEC-63). The only open Red is the submission route
+(section 3, item 3): repo visibility for the jury and the `submission` tag. The rows below are left as recorded at 23:10.
+
 | Finding (section 1) | Light at 918478a | Branch | State at Sat 23:10 PDT, origin/main 6a91f5d |
 |---|---|---|---|
 | SIM-bar clicks dropped at x12 (JUMP, PACE, PRIORITY, crew chip) | Red, cross-cutting | fix/simbar-clicks | named in the fix plan (section 3, item 1); not on origin at 23:10 PDT (a 90 ms press still 0 of 6 on 6a91f5d, 0 of 10 under --source fixtures). Until then: HOLD (Space), click, RUN |

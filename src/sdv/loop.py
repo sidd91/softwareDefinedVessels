@@ -46,7 +46,7 @@ def canonical(obj) -> str:
 
 
 def load_simulator(scenario="scenario_b", mission="survey", seed=0, variant="default"):
-    """Siddharth's simulator when SDV_SIM names it (module:Class); until then the labelled test double."""
+    """Siddharth's simulator when SDV_SIM names it (module:Class); until then the labelled scripted plant (tests/support/sim_stub.py, the A.6 drafts)."""
     spec = os.environ.get("SDV_SIM")
     if spec:
         mod, _, cls = spec.partition(":")
@@ -56,7 +56,7 @@ def load_simulator(scenario="scenario_b", mission="survey", seed=0, variant="def
     sys.path.insert(0, str(ROOT / "tests/support"))
     import sim_stub
     sim = sim_stub.Simulator(scenario, mission, seed, variant)
-    sim.argos_label = "test double"
+    sim.argos_label = "scripted plant · A.6"
     return sim
 
 
