@@ -19,8 +19,9 @@ the rule covers coding assistants. Claude is approved on Logan's word (WORKLOG D
 used so far is a Claude model (first two rows below). Where the list was published, and when, is not yet
 recorded. The question was sent in [ORGANIZER_MESSAGE.md](ORGANIZER_MESSAGE.md) (Sat 12:31 PDT, DEC-49); the
 answers so far do not name the list's source. The source and date go here when they come:
-**Authorised list citation: [Logan: paste the Day-0 list URL/title/date or the organiser's written confirmation
-(name, channel, timestamp)].** Until it is pasted, this entry is an open compliance item, not a confirmation.
+**Authorised list citation: not yet available.** No organiser answer names the list's URL, title or date (status
+Sun 18 Oct 2026, 07:30 PDT); when one comes it goes here with name, channel and timestamp. Until then this entry is an
+open compliance item, not a confirmation.
 
 ## Installed or already present on the laptop
 | Software | Version | Licence | Origin | Purpose | Ships | Status |
