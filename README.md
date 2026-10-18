@@ -148,7 +148,7 @@ Every path: [docs/REPOSITORY_MAP.md](docs/REPOSITORY_MAP.md); every requirement 
 
 ## Declarations and licence
 
-AI and software, with licences and origins: [docs/SOFTWARE_LOG.md](docs/SOFTWARE_LOG.md). Claude (Anthropic) is the
-coding and research assistant; the Day-0 authorised-AI-list citation is still an open item in the software log;
-no model from a China-based company is used. Only open-source third-party code
+AI and software, with licences and origins: [docs/SOFTWARE_LOG.md](docs/SOFTWARE_LOG.md). AI used: Claude by
+Anthropic (Claude Opus 5.5 and Claude Fable 5.1, in Claude Code), for coding, research and writing, and nothing else.
+No model from a China-based company is used. ArgOS itself contains no AI model. Only open-source third-party code
 or our own; licence [MIT](LICENSE), copyright Logan Walker and Siddharth Chawla.

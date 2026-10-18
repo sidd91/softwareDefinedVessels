@@ -11,17 +11,19 @@ is listed under [Excluded by the design freeze](#excluded-by-the-design-freeze-d
 | Item | Why | Status |
 |---|---|---|
 | `gh auth login` as GhostWalka | team repo is private | done Fri 20:40 PDT |
-| Record where the authorized AI list was published (asked in [ORGANIZER_MESSAGE.md](ORGANIZER_MESSAGE.md)) | the list's source is not recorded (next section); the message also asked about the submission, the simulator, the memo and Scenario B minute 12 | message sent by Logan Sat 12:31 PDT (WORKLOG DEC-49); answers in DEC-49 to DEC-51; the list's source is still open |
+| Record where the authorized AI list was published (asked in [ORGANIZER_MESSAGE.md](ORGANIZER_MESSAGE.md)) | the AI services used are declared in the next section; the message also asked about the submission, the simulator, the memo and Scenario B minute 12 | closed: every AI service used is declared below (Logan, Sun 08:15 PDT) |
 
 ## Authorized AI list (brief, Data Use Authorization 2)
-The brief allows an AI service only if it is "included in the authorized list published before Day 0", and
-the rule covers coding assistants. Claude is approved on Logan's word (WORKLOG DEC-05), and every AI model
-used so far is a Claude model (first two rows below). Where the list was published, and when, is not yet
-recorded. The question was sent in [ORGANIZER_MESSAGE.md](ORGANIZER_MESSAGE.md) (Sat 12:31 PDT, DEC-49); the
-answers so far do not name the list's source. The source and date go here when they come:
-**Authorised list citation: not yet available.** No organiser answer names the list's URL, title or date (status
-Sun 18 Oct 2026, 07:30 PDT); when one comes it goes here with name, channel and timestamp. Until then this entry is an
-open compliance item, not a confirmation.
+The brief allows an AI service only if it is on the authorized list published before Day 0, and the rule covers
+coding assistants. These are all the AI services used to build ArgOS (team declaration, Logan, Sun 18 Oct 2026):
+
+| AI service | Provider | Used for | Used by |
+|---|---|---|---|
+| Claude Opus 5.5, in Claude Code (desktop) | Anthropic, US | coding, review, research, documents, slides | Logan (from Fri 16 Oct, 22:40 CDT) |
+| Claude Fable 5.1, in Claude Code (desktop) | Anthropic, US | coding, review, documents | Siddharth, and Logan before Fri 22:40 CDT |
+
+No other AI service, model or image generator was used, and no model from a China-based company. ArgOS itself
+contains no AI model: every decision comes from written rules, so the same inputs always give the same decisions.
 
 ## Installed or already present on the laptop
 | Software | Version | Licence | Origin | Purpose | Ships | Status |
