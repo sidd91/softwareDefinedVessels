@@ -13,12 +13,19 @@ through a subscript chain on a variable loaded from the same YAML file, followin
 `p = A["power"]` then `p["shed_headroom_kw"]`. Rows may add exact `trace` patterns for uses that are not a
 key lookup (card fields, priority files, dynamic subscripts).
 
-A key with `source: measured` is a figure we measure rather than assume (the governor's own footprint on the
-board); until it is measured its `status` (for example "planned") stands in the "Used in" column.
+The engine never names the file: it receives the assumptions as a parameter or attribute called `A`
+(`admission_lines(A, ...)`, `self.A`, `I.A`; `a` and `assumptions` in the loader), so in every module under src/
+those names are seeded as reads of config/assumptions.yaml. A seeded name bound to something else (`a` for a mode
+or a parser) reads nothing until its block ends, and any read must be a path that exists in the YAML.
+
+A key nothing reads shows its `status` instead of "not yet": `documented only` for a design statement no code
+looks up, or, for a `source: measured` figure (the governor's own footprint on the board), "planned" until it is
+measured.
 """
 from pathlib import Path
 import glob
 import html
+import os
 import re
 import subprocess
 import sys
@@ -187,11 +194,26 @@ KIND = {"src": "code", "tests": "test", "manifests": "card", "config/scenarios":
 SUBS = r'(?:\[\s*["\']\w+["\']\s*\])+'
 CHAIN = re.compile(rf"\b([A-Za-z_]\w*)({SUBS})")
 ASSIGN = re.compile(rf"^\s*([A-Za-z_]\w*)\s*=\s*(.+?)\s*(?:#.*)?$")
+# How src/ names the assumptions dict it is handed: a parameter A, self.A, I.A; a and assumptions in the loader.
+SEEDED = {"A": "", "a": "", "assumptions": ""}
+RESEED = re.compile(r"\b(?:A|a|assumptions|load_assumptions)\b")  # an assignment that still holds the assumptions
+# Bindings that end an alias; those marked True also end a seeded name's reach in their block. A def does not:
+# a parameter named A is how the engine receives the assumptions.
+REBIND = {r"\bfor\s+(.+?)\s+in\b": True, r"\bdef\s+\w+\((.*?)\)": False, r"\bas\s+(\w+)": True,
+          r"\blambda\s+(.*?):": True, r"^\s*([A-Za-z_][\w\s,]*)=(?!=)": True}
 
 
 def scanned():
-    out = subprocess.run(["git", "ls-files", "--cached", "--others", "--exclude-standard", "--", *SCAN],
-                         cwd=ROOT, capture_output=True, text=True).stdout.split()
+    try:
+        out = subprocess.run(["git", "ls-files", "--cached", "--others", "--exclude-standard", "--", *SCAN],
+                             cwd=ROOT, capture_output=True, text=True).stdout.split()
+    except OSError:  # no git on the box
+        out = []
+    if not out:  # not a git checkout (an exported copy): walk the same directories
+        for d in SCAN:
+            for dp, dns, fns in os.walk(ROOT / d):
+                dns[:] = [n for n in dns if not n.startswith(".") and n != "__pycache__"]
+                out += [str(Path(dp, fn).relative_to(ROOT)) for fn in fns if not fn.startswith(".")]
     texts = {}
     for f in sorted(set(out)):
         try:
@@ -201,11 +223,22 @@ def scanned():
     return texts
 
 
-TEXTS = scanned()
+# This tracer's own test names keys to check that they resolve; naming them there is not a use.
+TEXTS = {f: t for f, t in scanned().items() if f != "tests/test_physical_account_tracer.py"}
 
 
 def segs(subs):
     return re.findall(r'["\'](\w+)["\']', subs)
+
+
+def is_path(pre, chain):
+    """True when the chain is a path in its YAML source; a seeded name holding anything else reads no key."""
+    node = SCEN[pre] if pre else A
+    for k in chain:
+        if not isinstance(node, dict) or k not in node:
+            return False
+        node = node[k]
+    return True
 
 
 def python_reads():
@@ -220,39 +253,48 @@ def python_reads():
     for f, lines in TEXTS.items():
         if not f.endswith(".py"):
             continue
-        names = dict(roots[f])
+        seeded = SEEDED if f.startswith("src/") else {}
+        names = {**seeded, **roots[f]}
         for line in lines:  # names imported from another scanned module that loaded a source
             if m := re.match(r"^\s*from\s+(\w+)\s+import\s+(.+)$", line):
                 for n in re.split(r"[,\s()]+", m.group(2)):
                     if n in roots.get(by_stem.get(m.group(1), ""), {}):
                         names[n] = roots[by_stem[m.group(1)]][n]
         alias = {}  # name -> (source prefix, chain, indent of the assignment)
+        shadow = {}  # seeded name -> indent of the block that bound it to something else
         for i, line in enumerate(lines, 1):
             if not line.strip() or line.lstrip().startswith("#"):
                 continue
             indent = len(line) - len(line.lstrip())
-            # An alias lives in the block that assigned it; any other binding of the name ends it.
-            rebound = set()
-            for pat in (r"\bfor\s+(.+?)\s+in\b", r"\bdef\s+\w+\((.*?)\)", r"\bas\s+(\w+)", r"\blambda\s+(.*?):"):
+            # An alias lives in the block that assigned it; any other binding of the name ends it. So does a
+            # seeded name's reach when the binding cannot be the assumptions.
+            rebound, shadowed = set(), set()
+            for pat, shadows in REBIND.items():
                 for m in re.finditer(pat, line):
-                    rebound.update(re.findall(r"[A-Za-z_]\w*", m.group(1)))
+                    found = re.findall(r"[A-Za-z_]\w*", m.group(1))
+                    rebound.update(found)
+                    shadowed.update(found if shadows else ())
             alias = {n: a for n, a in alias.items() if a[2] <= indent and n not in rebound}
+            shadow = {n: d for n, d in shadow.items() if d <= indent}
+            shadow.update({n: indent for n in shadowed if n in seeded})
             for m in CHAIN.finditer(line):
                 name, chain = m.group(1), segs(m.group(2))
-                if name in names:
+                if name in names and name not in shadow:
                     reads.append((f, i, names[name], chain))
                 elif name in alias:
                     reads.append((f, i, alias[name][0], alias[name][1] + chain))
             if m := ASSIGN.match(line):
                 lhs, rhs = m.group(1), m.group(2)
-                r = re.fullmatch(rf"([A-Za-z_]\w*)({SUBS})", rhs)
-                if r and r.group(1) in names:
+                r = re.fullmatch(rf"(?:[A-Za-z_]\w*\.)*([A-Za-z_]\w*)({SUBS})", rhs)  # r3 = self.A["rules"]["r3"]
+                if r and r.group(1) in names and r.group(1) not in shadow:
                     alias[lhs] = (names[r.group(1)], segs(r.group(2)), indent)
                 elif r and r.group(1) in alias:
                     alias[lhs] = (alias[r.group(1)][0], alias[r.group(1)][1] + segs(r.group(2)), indent)
                 else:
                     alias.pop(lhs, None)
-    return reads
+                    if lhs in seeded and RESEED.search(re.sub(r"\"[^\"]*\"|'[^']*'", "", rhs)):
+                        shadow.pop(lhs, None)  # A = Ld.load_assumptions(); a = assumptions if ... else load_assumptions(root)
+    return [r for r in reads if is_path(r[2], r[3])]
 
 
 READS = python_reads()
@@ -290,8 +332,9 @@ def kinds(hits):
 
 
 def used_in(keys, hits):
-    """Where a row's numbers are used; a measured key nothing reads yet adds its status (e.g. "planned")."""
-    status = sorted({PROV[k].get("status", "measured") for k in keys if PROV[k]["source"] == "measured" and not where(k)})
+    """Where a row's numbers are used; a key nothing reads adds its status ("documented only"; a measured key "planned")."""
+    unread = [PROV[k] for k in keys if not where(k)]
+    status = sorted({p.get("status", "measured" if p["source"] == "measured" else "") for p in unread} - {""})
     return ", ".join(([kinds(hits)] if hits else []) + status) or "not yet"
 
 
@@ -302,53 +345,59 @@ def refs(hits, limit=4):
 
 # ---------------------------------------------------------------- render
 
-assumed = [k for k, p in PROV.items() if p["source"] == "assumed"]
-measured = [k for k, p in PROV.items() if p["source"] == "measured"]
-rows = ACC["rows"]
-covered = [k for r in rows for k in r.get("keys", [])]
-missing = [k for k in assumed + measured if k not in covered]
-unknown = [k for k in covered if PROV.get(k, {}).get("source") not in ("assumed", "measured")]
-if missing or unknown:
-    sys.exit(f"Physical Account: assumed or measured keys in no row: {missing}; row keys that are neither: {unknown}")
+def render():
+    """Write both pages; stops if an assumed or measured key is in no row."""
+    assumed = [k for k, p in PROV.items() if p["source"] == "assumed"]
+    measured = [k for k, p in PROV.items() if p["source"] == "measured"]
+    rows = ACC["rows"]
+    covered = [k for r in rows for k in r.get("keys", [])]
+    missing = [k for k in assumed + measured if k not in covered]
+    unknown = [k for k in covered if PROV.get(k, {}).get("source") not in ("assumed", "measured")]
+    if missing or unknown:
+        sys.exit(f"Physical Account: assumed or measured keys in no row: {missing}; row keys that are neither: {unknown}")
 
-# The one-page table is HTML inside the Markdown so it can carry Annex C's column widths; a pipe table
-# lets the browser squeeze the reasons column and the page overflows.
-cells = lambda tag, xs: "<tr>" + "".join(f"<{tag}>{html.escape(str(x), quote=False)}</{tag}>" for x in xs) + "</tr>"
-one = ["# Physical Account", "", " ".join(ACC["intro"].split()), "", "<table>",
-       "<colgroup>" + "".join(f'<col style="width:{w}%">' for w in ACC["widths"]) + "</colgroup>",
-       "<thead>" + cells("th", ["Annex C row", "What we assumed", "Value", "Why", "Used in"]) + "</thead>", "<tbody>"]
-last = None
-for r in rows:
-    hits = sorted({h for k in r.get("keys", []) for h in where(k)} | set(traced(r.get("trace", []))))
-    one.append(cells("td", [r["row"] if r["row"] != last else "", r["what"], fill(r["value"]), r["why"], used_in(r.get("keys", []), hits)]))
-    last = r["row"]
-# A non-breaking space keeps "30 °C" on one line.
-one += ["</tbody>", "</table>", "", re.sub(r"(\d) °C", "\\1\u00a0°C", fill(" ".join(ACC["closing"]["text"].split())))]
-(ROOT / "docs/PHYSICAL_ACCOUNT.md").write_text("\n".join(one) + "\n")
+    # The one-page table is HTML inside the Markdown so it can carry Annex C's column widths; a pipe table
+    # lets the browser squeeze the reasons column and the page overflows.
+    cells = lambda tag, xs: "<tr>" + "".join(f"<{tag}>{html.escape(str(x), quote=False)}</{tag}>" for x in xs) + "</tr>"
+    one = ["# Physical Account", "", " ".join(ACC["intro"].split()), "", "<table>",
+           "<colgroup>" + "".join(f'<col style="width:{w}%">' for w in ACC["widths"]) + "</colgroup>",
+           "<thead>" + cells("th", ["Annex C row", "What we assumed", "Value", "Why", "Used in"]) + "</thead>", "<tbody>"]
+    last = None
+    for r in rows:
+        hits = sorted({h for k in r.get("keys", []) for h in where(k)} | set(traced(r.get("trace", []))))
+        one.append(cells("td", [r["row"] if r["row"] != last else "", r["what"], fill(r["value"]), r["why"], used_in(r.get("keys", []), hits)]))
+        last = r["row"]
+    # A non-breaking space keeps "30 °C" on one line.
+    one += ["</tbody>", "</table>", "", re.sub(r"(\d) °C", "\\1\u00a0°C", fill(" ".join(ACC["closing"]["text"].split())))]
+    (ROOT / "docs/PHYSICAL_ACCOUNT.md").write_text("\n".join(one) + "\n")
 
-det = ["# Physical Account, detail", "",
-       "Full reasons and every file:line that reads each assumed or measured key. One-page version: [PHYSICAL_ACCOUNT.md](PHYSICAL_ACCOUNT.md).",
-       "A key counts as read where a line names its full dotted key, or reads it through a subscript chain on a variable",
-       "loaded from its YAML file; \"not yet\" means nothing reads it yet.", "",
-       "| Key | Value | Why | Where used |", "|---|---|---|---|"]
-for r in rows:
-    for k in r.get("keys", []):
-        hits = where(k)
-        status = PROV[k].get("status") if PROV[k]["source"] == "measured" and not hits else None
-        det.append(f"| `{k}` | {shown(lookup(k))} | {PROV[k]['why']} | {status or refs(hits)} |")
-det += ["", "## Guest-card values we assumed", "",
-        "Card lines marked `assumed: true`: at least one number on the line is ours, not Annex B's. G6 is wholly our invention.", "",
-        "| Card line | Where |", "|---|---|"]
-for f, lines in TEXTS.items():
-    if f.startswith("manifests/G") and f.endswith(".yaml"):
-        det += [f"| `{line.strip()[:110]}` | {f}:{i} |" for i, line in enumerate(lines, 1) if "assumed: true" in line]
-from_brief = {k: p for k, p in PROV.items() if p["source"].startswith("brief")}
-narrowed = {k: p["narrowed"] for k, p in from_brief.items() if p.get("narrowed")}
-unchanged = sorted(k for k in from_brief if k not in narrowed)
-det += ["", "Taken from the brief, then narrowed by the rows above: " +
-        "; ".join(f"`{k}`: {why}" for k, why in narrowed.items()) + ".", "",
-        "Taken from the brief without change: " + ", ".join(f"`{k}`" for k in unchanged) + ".", "",
-        "The closing answer's numbers are derived from these files by tools/physical_account.py, which stops if any of its",
-        "claims no longer holds; tests/test_scenario_b_timeline_data.py checks them again."]
-(ROOT / "docs/PHYSICAL_ACCOUNT_DETAIL.md").write_text("\n".join(det) + "\n")
-print(f"wrote one-page account ({len(rows)} rows, {len(assumed)} assumed and {len(measured)} measured keys, {len(CARDS)} cards) and detail page")
+    det = ["# Physical Account, detail", "",
+           "Full reasons and every file:line that reads each assumed or measured key. One-page version: [PHYSICAL_ACCOUNT.md](PHYSICAL_ACCOUNT.md).",
+           "A key counts as read where a line names its full dotted key, or reads it through a subscript chain on a variable",
+           "loaded from its YAML file; a key nothing reads shows its status (documented only, planned) or \"not yet\".", "",
+           "| Key | Value | Why | Where used |", "|---|---|---|---|"]
+    for r in rows:
+        for k in r.get("keys", []):
+            hits = where(k)
+            status = PROV[k].get("status") if not hits else None  # "documented only", or "planned" for a measured key
+            det.append(f"| `{k}` | {shown(lookup(k))} | {PROV[k]['why']} | {status or refs(hits)} |")
+    det += ["", "## Guest-card values we assumed", "",
+            "Card lines marked `assumed: true`: at least one number on the line is ours, not Annex B's. G6 is wholly our invention.", "",
+            "| Card line | Where |", "|---|---|"]
+    for f, lines in TEXTS.items():
+        if f.startswith("manifests/G") and f.endswith(".yaml"):
+            det += [f"| `{line.strip()[:110]}` | {f}:{i} |" for i, line in enumerate(lines, 1) if "assumed: true" in line]
+    from_brief = {k: p for k, p in PROV.items() if p["source"].startswith("brief")}
+    narrowed = {k: p["narrowed"] for k, p in from_brief.items() if p.get("narrowed")}
+    unchanged = sorted(k for k in from_brief if k not in narrowed)
+    det += ["", "Taken from the brief, then narrowed by the rows above: " +
+            "; ".join(f"`{k}`: {why}" for k, why in narrowed.items()) + ".", "",
+            "Taken from the brief without change: " + ", ".join(f"`{k}`" for k in unchanged) + ".", "",
+            "The closing answer's numbers are derived from these files by tools/physical_account.py, which stops if any of its",
+            "claims no longer holds; tests/test_scenario_b_timeline_data.py checks them again."]
+    (ROOT / "docs/PHYSICAL_ACCOUNT_DETAIL.md").write_text("\n".join(det) + "\n")
+    print(f"wrote one-page account ({len(rows)} rows, {len(assumed)} assumed and {len(measured)} measured keys, {len(CARDS)} cards) and detail page")
+
+
+if __name__ == "__main__":
+    render()
