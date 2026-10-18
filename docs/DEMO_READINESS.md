@@ -2,19 +2,19 @@
 
 Commit audited: origin/main 918478a, Sat 2026-10-17 about 22:00 PDT; measured by four rehearsal agents; see WORKLOG.
 The scorecard below is verbatim (its evidence paths are the rehearsal agents' scratch directories on the dev box,
-not this repo); the status list is as of Sat 22:50 PDT, origin/main 1148d11.
+not this repo); the status list is as of Sat 23:10 PDT, origin/main 6a91f5d (integrate/fix-pack-2), re-checked in review.
 
 ## Status of the Reds (and the Ambers that have a branch)
 
-| Finding (section 1) | Light at 918478a | Branch | State at Sat 22:50 PDT |
+| Finding (section 1) | Light at 918478a | Branch | State at Sat 23:10 PDT, origin/main 6a91f5d |
 |---|---|---|---|
-| SIM-bar clicks dropped at x12 (JUMP, PACE, PRIORITY, crew chip) | Red, cross-cutting | fix/simbar-clicks | named in the fix plan (section 3, item 1); not on origin yet. Until then: HOLD (Space), click, RUN |
-| jury card, power or other edit: StopIteration on a power number, KeyError on a typed path | Red | fix/jury-power-edit | pushed (eca6dee, 123 tests), for a teammate to merge: any card number decides or is refused with the field named (CLI exit 2, API 422); NOMINAL and PEAK kW inputs on screen |
-| new card file: a jury YAML in manifests/ kills start-up | Red | fix/jury-card-file | named in the fix plan (section 3, item 4); not on origin yet. Until then: never put a jury file in manifests/; a new card runs on the CLI (DEMO_SCRIPT.md, Presenter rules) |
+| SIM-bar clicks dropped at x12 (JUMP, PACE, PRIORITY, crew chip) | Red, cross-cutting | fix/simbar-clicks | named in the fix plan (section 3, item 1); not on origin at 23:10 PDT (a 90 ms press still 0 of 6 on 6a91f5d, 0 of 10 under --source fixtures). Until then: HOLD (Space), click, RUN |
+| jury card, power or other edit: StopIteration on a power number, KeyError on a typed path | Red | fix/jury-power-edit | merged into origin/main 6a91f5d (integrate/fix-pack-2, Sat 22:46 PDT; eca6dee plus review 75dd4d9, 123 tests): any card number decides or is refused with the field named (CLI exit 2, API 422); NOMINAL and PEAK kW inputs on screen (four inputs seen on 6a91f5d) |
+| new card file: a jury YAML in manifests/ kills start-up | Red | fix/jury-card-file | pushed (be7b83a plus review 2419405, 14 tests), not merged at 23:10 PDT: `sdv admit --card path.yaml` admits a jury file from where it is, a bad file in manifests/ is reported once at start and skipped. Until merged: never put a jury file in manifests/; a new card runs on the CLI after its id is added to config/signals.yaml (DEMO_SCRIPT.md, Presenter rules) |
 | submission route: private repo, no tag, jury access unanswered | Red, cross-cutting | none; the routine in section 3, item 3 | open, to run before 09:15 PDT |
 | minute 12: nothing on screen on the ladder and the 105 kW case | Amber | fix/minute-12-sentence (DEC-61) | on origin/main since 1148d11 (integrate/fix-pack-1): the HOLD record's own sentence states the ladder in order and why the envelope case does not arise |
-| crew chip to 6 before minute 9 crashes the test double (recovery row; Scenario C) | Amber | fix/crew-chip-guards | pushed (96ce735, 13 tests), for a teammate to merge: 6 and 0 aboard refused honestly, an engine exception becomes an error frame |
-| reload or engine restart rewrites the run; PRIORITY while HELD lost on RESTART | Amber | fix/live-run-log | pushed (5f860e1, 5 tests), for a teammate to merge: the live run is logged and replays, RESTART honours a held swap; F5 still starts a fresh run |
+| crew chip to 6 before minute 9 crashes the test double (recovery row; Scenario C) | Amber | fix/crew-chip-guards | merged into origin/main 6a91f5d (96ce735 plus review a107c01, 14 tests): 6 and 0 aboard give a held or forbidden recovery with its reason, an engine exception becomes an error frame (6 aboard checked on 6a91f5d: "Recovery held at 6 aboard: no standing plan approved", LINK UP, no error frame) |
+| reload or engine restart rewrites the run; PRIORITY while HELD lost on RESTART | Amber | fix/live-run-log | merged into origin/main 6a91f5d (5f860e1 plus review 3ab37e7, 6 tests): every live run is logged under runs/live and replays, RESTART honours a held swap, the server prints one RUN line per run; F5 still starts a fresh run |
 | Physical Account "Used in" blind to A / self.A reads; no data-link or compute admission line | Amber, paper | fix/physical-account-tracer, fix/d1-data-compute-lines | on origin/main since 1148d11 |
 | README truth edits, memo rewrite, PDF rebuild, compliance citation | Amber, paper | another pass | open |
 | DEMO_SCRIPT.md clock column, presenter rules, T-30 checklist | Amber, paper | docs/run-sheet-and-checklist | this branch: [DEMO_SCRIPT.md](DEMO_SCRIPT.md) |

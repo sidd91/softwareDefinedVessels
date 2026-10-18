@@ -1,9 +1,9 @@
 # Demo storyboard (draft for team review)
 
 Status: built and measured. Drafted Sat 12:43 PDT by Claude Opus 5.5 on behalf of Logan Walker (GhostWalka);
-the Scenario B run sheet, the presenter rules and the T-30 checklist were written Sat 22:50 PDT from the
+the Scenario B run sheet, the presenter rules and the T-30 checklist were written Sat 22:41 PDT from the
 rehearsal of origin/main 918478a ([DEMO_READINESS.md](DEMO_READINESS.md)) by Claude Fable 5.1 on behalf of
-Siddharth Chawla (sidd91).
+Siddharth Chawla (sidd91) and re-checked in review Sat 23:10 PDT on origin/main 6a91f5d (integrate/fix-pack-2).
 Built on WORKLOG DEC-26: two deep examples, Scenario B with a live priority swap and Scenario A with
 the jury's card, and everything else as one-line breadth. Aligned with the design freeze (DEC-44):
 no cameras, webcam or failover beats; rule R3 runs on the landing officer's report and, with nobody
@@ -51,13 +51,13 @@ compare view.
 | 0:00 | RESTART | min 0 | First T+0 frame after 1.1 to 1.2 s. Baseline as in the brief: 3 kn over the cable route, 24 °C water, G3 on its 40-min leg, G4 airborne, G5 full. Say: "Eight gauges steady: 48.0 / 128.3 kW cooling, 48.0 / 245.0 kW power, 9.515 / 10.000 t." | 48 kW | 48 kW |
 | 0:00 to 0:05 | let it run | min 0 to 1 | The clock, the ship-state chips and G4's LAND BY countdown move; the tiles are step functions that move at events (DECK, MAST, MASS / STAB and COMPUTE never move in Scenario B: nothing is reconfigured). | | |
 | 0:06 | JUMP 08 | min 8 | Freeze 1.2 to 1.4 s, lands at T+07:57. G4 reports 18 % in 22 kn; G3's and G4's condition sets collide: four CONFLICT rows (SPEED 3.0 kn now, G3 needs 3.0 kn, G4 needs 5 TO 12 kn; DECK MACHINERY OFF against ON; HEADING STEADY against FREE; EXCLUSION G3 SURVEYING EXCLUDES G4 LAUNCH RECOVERY). | | |
-| 0:08 | the D3 record | min 8 | D3 decides within 2 s (measured 0.4 to 0.5 ms against 2.0 s); hard limit first: G4 BATT < 20 % · LAND WITHIN 12 min, LAND BY 00:18:12 · T-10:06. Read the record's sentence; point at the CONFLICT rows, LAND BY and RESPONSE. The R3 block reads CREW 14 CONFIRM 00:08:00 and G4 must land by minute 18.2. | G4 recovers; G3 holds depth, survey paused to min 23, leg re-run: COST G3 SURVEY LOSS 25 TO 27 min | G4 recovers first; G3's leg aborted: G3 holds at sea and is recovered over the ramp only after G4 has landed (flight deck and ramp are mutually exclusive, A.3); COST OPEN-ENDED, RESERVED G4 35 kW. The release to manoeuvre is on the chips (COURSE FREE, SPEED 5.0 kn by minute 12), not in the sentence. |
+| 0:08 | the D3 record | min 8 | D3 decides within 2 s (measured 0.4 to 0.5 ms against 2.0 s); hard limit first: G4 BATT < 20 % · LAND WITHIN 12 min, LAND BY 00:18:12 · T-10:06 (counting down). Read the record's sentence; point at the CONFLICT rows, LAND BY and RESPONSE. The R3 block reads CREW 14 CONFIRM 00:08:00 and G4 must land by minute 18.2. | G4 recovers; G3 holds depth, survey paused to min 23, leg re-run: COST G3 SURVEY LOSS 25 TO 27 min | G4 recovers first; G3's leg aborted: G3 holds at sea and is recovered over the ramp only after G4 has landed (flight deck and ramp are mutually exclusive, A.3); COST OPEN-ENDED, RESERVED G4 35 kW. The release to manoeuvre is on the chips (COURSE FREE, SPEED 5.0 kn by minute 12), not in the sentence. |
 | 0:08 to 0:25 | dwell, about 20 s | min 8 to 10 | Let the jury read the record. | | |
 | about 0:25 | JUMP 12 | min 12 | Freeze 0.4 to 0.7 s. Genset trips, confirmed on 2 of 3 plant signals: TRIGGER GEN 2 TRIP · 00:12:00, log "Trip confirmed 2 of 3 at 00:12:01"; cooling nominal, LIMIT 100.0 - 5.0 = 95.0 kW. | 48 of 95 kW, holds (G4 airborne at 2 kW): 47.0 kW SPARE | 81 of 95 kW, holds (G4's 35 kW reserved): 14.0 kW SPARE |
 | 0:26 | the D4 HOLD record | min 12 | D4 within 5 s (measured 0.5 ms): 0 steps, every loss "none", the whole armed ladder in order (the brief's explicit sequence, R-067, DEC-61) and why the brief's 105 kW case does not arise, in the record's own sentence (on main since 1148d11; an older build stops at the first armed step: then say the minute-12 line under Presenter rules). | "Holds: 48 of 95 kW with one genset down, 0 steps, no capability lost. Armed in order: G5 full to low power, frees 37 kW (70 % lost), then G5 low power to off, frees 8 kW (30 % lost), then G4 standby to off, frees 2 kW (30 % lost). The envelope case does not arise: G3 charging 25 kW, G4 fast charge 35 kW and G5 full 45 kW would be 105 kW against the 95 kW limit, but G3 is holding depth in standby (1 kW) and G4 is airborne in standby (2 kW)." | "Holds: 81 of 95 kW with one genset down, 0 steps, no capability lost. Armed in order: G5 full to low power, frees 37 kW (70 % lost), then G5 low power to off, frees 8 kW (30 % lost), then G3 standby to off, frees 1 kW (30 % lost). The envelope case does not arise: G3 charging 25 kW, G4 fast charge 35 kW and G5 full 45 kW would be 105 kW against the 95 kW limit, but G3 is holding at sea in standby (1 kW)." |
 | 0:26 to 0:45 | dwell | min 12 to 16 | Nothing is shed; the ladder stays armed with each guest's loss (70 % / 30 %), footer ORDER COMPUTED · CLASS, THEN LOSS PER kW. G4 lands at min 17 and fast-charges (81 of 95 kW under both files); the next jump passes it. | | |
 | about 0:45 | JUMP 19 | min 19 | Freeze 0.9 to 1.2 s. INJECTED EVENT, labelled in four places (trigger, plant cell, COOLING tile, log): chilled-water pump 1 fails, confirmed by the plant alarm plus flow or delta-T. Loop 133.3 to 80 kW; ceiling 75 kW; cooling binds, not power. | 81 against 75 | 81 against 75 |
-| 0:46 | the shed | min 19 | D4 walks the same ladder: COMMANDED at 0:46, EXECUTED one tick later (83 ms), first action within 5 s (measured 0.5 ms), RECHECK 00:19:02 · HOLDS. Read the record's sentence; point at INJECTED on the trigger, RESULT and the POWER tile's CHW BINDS. | G4 fast charge to charge, frees 25 kW: RESULT 56.0 / 75.0 kW; G4 loses 30 % (CAP 100 → 70 %), G3 and G5 nothing | G5 full to low power, frees 37 kW: RESULT 44.0 / 75.0 kW; G5 loses 70 % (CAP 100 → 30 %), G3 and G4 nothing |
+| 0:46 | the shed | min 19 | D4 walks the same ladder: commanded at 0:46, the record's tag EXECUTED one tick later (83 ms), first action within 5 s (measured 0.5 ms), RECHECK 00:19:02 · HOLDS. Read the record's sentence; point at INJECTED on the trigger, RESULT and the POWER tile's CHW BINDS. | G4 fast charge to charge, frees 25 kW: RESULT 56.0 / 75.0 kW; G4 loses 30 % (CAP 100 → 70 %), G3 and G5 nothing | G5 full to low power, frees 37 kW: RESULT 44.0 / 75.0 kW; G5 loses 70 % (CAP 100 → 30 %), G3 and G4 nothing |
 | 0:46 to about 1:20 | dwell | min 19 to 20 | T+20:00 ends the run (END_T_S); with the dwells above it arrives by about 1:20. DEC-40's optional minute-24 genset restart is not in the live run. | 56 of 75 kW; POWER USABLE 19.0 kW · CHW BINDS | 44 of 75 kW; POWER USABLE 31.0 kW · CHW BINDS |
 | +20 s if wanted | MISSION COMPARE tab; click 00:08, then 00:19 on the timeline | | The two-ships beat: the same inputs under both files side by side, each with its sentence, CONFLICT table, CHW and POWER bars and guest table, and the DIFFERENCE table SAME INPUTS · PRIORITY FILE ONLY (instant; /api/compare 10 ms, from two reference runs the live swap cannot touch). | DECISION HOLDING DEPTH, LEG PAUSED, RESERVED --; at 00:19 FREED 25, RESULT 56, CAPABILITY G3 30 % · G4 70 % · G5 100 % | HOLDING AT SEA, LEG ABORTED, RESERVED G4 35 kW; at 00:19 FREED 37, RESULT 44, CAPABILITY G3 30 % · G4 100 % · G5 30 % |
 
@@ -70,7 +70,11 @@ step does not exist yet.
 ### Presenter rules
 
 Measured Sat 22:00 PDT on 918478a ([DEMO_READINESS.md](DEMO_READINESS.md), section 4). A rule that starts
-"until X is merged" falls away when that branch lands; the others stay true on tonight's main.
+"until X is merged" falls away when that branch lands; the others stay true on tonight's main. At Sat 23:10 PDT
+origin/main 6a91f5d (integrate/fix-pack-2, 22:46 PDT) carries fix/jury-power-edit, fix/crew-chip-guards and
+fix/live-run-log, so those three rules fall away on a freeze at or after 6a91f5d; fix/jury-card-file is pushed and
+reviewed but not merged; fix/simbar-clicks is not on origin. On the frozen commit, `git branch -r --merged HEAD`
+lists the fix branches it contains.
 
 Do not, on stage:
 
@@ -101,12 +105,19 @@ Do not, on stage:
   has no activity registry in config/signals.yaml") and `sdv demo` and `sdv admit` die at start-up until the file
   is removed. A new card runs on the CLI: add its id to config/signals.yaml activities (copy the closest guest's
   block), then `uv run sdv admit G7 --installed G4,G5 --mission disaster_relief` (1.6 ms measured). The Admission
-  tab offers its 14 pre-baked cases only.
+  tab offers its 14 pre-baked cases only. Once merged (pushed as be7b83a, reviewed 2419405, 14 tests; not on main
+  at 23:10 PDT): `uv run sdv admit --card path/to/G7.yaml --installed G4,G5 --mission disaster_relief` admits the
+  file from where it is, a schema or vocabulary problem is refused with the field named (exit 2), a card whose
+  activities are not registered is judged on its quantities, positions and relations and the output says so, and a
+  bad file in manifests/ is reported once at start and skipped.
 - Until fix/crew-chip-guards is merged, click the crew chip: to 6 before minute 9 the test double crashes on the
   scripted bridge answer and the browser silently reconnects into a fresh 14-aboard run; after minute 9 it only
-  changes the label. Once merged, 6 and 0 aboard are refused honestly ("not now", "forbidden"), never a crash.
-  Either way the landing officer's report, the deck sweep and the standing plan have no screen control (the only
-  key is Space): 14 aboard is what runs live, and the Scenario C segment is spoken from the memo, not driven.
+  changes the label. Once merged (on origin/main since 6a91f5d), the chip holds or forbids the recovery with its
+  reason and never crashes: 6 aboard before minute 9 gives "Recovery held at 6 aboard: no standing plan approved.
+  G4 must land by minute 18.2." (seen on 6a91f5d: CREW 6 · R3 STANDING PLAN in the header, LINK UP, no error
+  frame) and 0 aboard "Recovery forbidden at 0 aboard: …" with the deck state in the evidence. Either way the
+  landing officer's report, the deck sweep and the standing plan have no screen control (the only key is Space):
+  14 aboard is what is rehearsed, and the Scenario C segment is spoken from the memo, not driven.
 - Pipe the CLI fallback: `uv run sdv run --mission sar --pace 12 | tail` shows nothing for 20 s (block-buffered).
   Run it in a TTY at 20 pt and 100 columns and accept the wrap: header at +2 s, first decision at +42 s, full run
   100 s.
@@ -133,8 +144,10 @@ Spoken lines, each built from what the record shows:
   a simulator is swapped in through SDV_SIM, and the team's own simulator sits on feat/ship-state-fsm, not merged."
 - **"Why LOS 0 / 20 · ACOUSTIC DOWN at minute 19?"** "LOS is demand over capacity: G4 drew 20 of 20 Mbit/s of
   line-of-sight radio while airborne and nothing once it landed; ACOUSTIC DOWN is rule A.5 as a state check, the
-  link is up only on a steady course, quiet, with no deck machinery, and the ship's course has been free and its
-  noise manoeuvring since the recovery; the tile's state follows SATCOM, 6.0 of 6.0 Mbit/s, so it stays NORMAL."
+  link is up only on a steady course, quiet, with no deck machinery, and the ship has been manoeuvring for the
+  recovery since T+09:06 (the tile shows ACOUSTIC DOWN from then under both files, reason 'course free,
+  noise manoeuvring'; under survey at minute 19 'course free, settling to steady, noise normal'); the tile's state
+  is NORMAL while SATCOM, 6.0 of 6.0 Mbit/s, and LOS stay within capacity, and the acoustic state does not enter it."
 - **"What capability was lost?"** The record states it as a mode change and a percentage (G4 FAST CHARGE → CHARGE
   · CAP 100 → 70 %; G5 FULL → LOW POWER · CAP 100 → 30 %), not as a named capability; the brief's ocean module is
   absent because G2 is not aboard (DEC-32).
@@ -183,7 +196,7 @@ Prepared drills (the jury chooses, but we rehearse these):
   weigh 12.07 t against the 10 t margin. Yes-if G5 leaves (9.045 t) or G2 leaves (8.57 t, G5 moves to
   Bay 2, Arch Q4), ranked by the active priority file.
 - **Scenario A-prime (if time):** the same card under way gets "not now", with the next installation
-  window and, at 0 crew, a logical reconfiguration instead.
+  window and, at 0 crew, a logical reconfiguration instead. Not built: answer in words (Presenter rules).
 
 ## Scenario C, rule R3 at 14, 6 and 0 aboard (fixed, about 15 s)
 
@@ -195,8 +208,10 @@ Scenario B table above is unchanged.
 
 Status (Sat 22:00 PDT rehearsal): this segment cannot be driven live on tonight's main. No laptop key enters the
 landing officer's report (the only key is Space, HOLD/RUN), and the crew chip is 14 aboard on stage until
-fix/crew-chip-guards is merged. Speak it from the [memo](SCENARIO_C_MEMO.md) over the minute-8 R3 block, or
-drop it; see Presenter rules.
+fix/crew-chip-guards is merged. With that fix merged (origin/main 6a91f5d, Sat 22:46 PDT) the chip goes to 6 and 0
+aboard without a crash and the recovery record states the hold or the prohibition (Presenter rules), but the
+landing officer's report still has no key and the chip beat has no run sheet or rehearsal. Speak it from the
+[memo](SCENARIO_C_MEMO.md) over the minute-8 R3 block, or drop it; see Presenter rules.
 
 | Clock | Aboard | What happens | What the governor shows |
 |---|---|---|---|
@@ -234,11 +249,12 @@ section 5; the laptop serves on port 8000, the port numbers in the scorecard are
 2. `uv sync` prints "Audited 27 packages" in under 2 s. If "No interpreter found for Python 3.12 ... offline
    mode": connect to Wi-Fi once and rerun (cold: CPython 3.12.14, 104 MB, plus 27 wheels; 1.7 s on the dev box,
    1 to 3 min on conference Wi-Fi).
-3. `uv run pytest -q` prints "1278 passed" or more (1278 on 918478a in 114 s; every merged fix adds its own
-   tests). Skip if under 20 min are left.
+3. `uv run pytest -q` prints "1278 passed" or more (1278 on 918478a in 114 s, 1457 on 6a91f5d in 193 s; every
+   merged fix adds its own tests). Skip if under 20 min are left.
 4. Port 8000 free (`lsof -i :8000` prints nothing), then `uv run sdv demo` prints "ArgOS screen on
-   http://127.0.0.1:8000/ (live); Ctrl+C stops it"; /api/meta answers after about 5.4 s. Nothing opens the
-   browser for you. If "address already in use" (exit 3): `uv run sdv demo --port 8010` and open that port, or
+   http://127.0.0.1:8000/ (live); Ctrl+C stops it" (since fix/live-run-log, in 6a91f5d, followed by a LOGS line
+   naming runs/live); /api/meta answers after about 4 to 6 s (5.4 s on 918478a, 4.1 s on 6a91f5d). Nothing opens
+   the browser for you. If "address already in use" (exit 3): `uv run sdv demo --port 8010` and open that port, or
    `lsof -ti :8000 | xargs kill`.
 5. Chrome, fresh window, http://127.0.0.1:8000: LINK UP at the top right, the clock ticking, and the chip at the
    bottom left of the SIM bar reading LIVE · SIM TEST DOUBLE. Zoom 125 % on a 1920x1080 projector, 110 % on
@@ -251,13 +267,18 @@ section 5; the laptop serves on port 8000, the port numbers in the scorecard are
 8. Blank page: Cmd+Shift+R, then http://localhost:8000. Last resort, a second terminal at 20 pt and 100 columns:
    `uv run sdv run --mission sar --pace 12` (first decision at +42 s; never through a pipe).
 9. Live loop misbehaving: `uv run sdv demo --source fixtures` (ready in 1.4 s; the chip reads REPLAY, every SIM
-   bar control works, no crew chip, no inputs) and say it is replayed. Laptop dead: play the backup recording from
+   bar control works under the same click rule, HOLD, click, RUN, since a plain click is dropped at x12 here too,
+   0 of 10 measured; no crew chip, no inputs) and say it is replayed. Laptop dead: play the backup recording from
    the second laptop or the phone. The rehearsal's silent 80 s headless recording (RESCUE, JUMP 08 to T+20:00 at
    x12, then Mission compare) is on the dev box, not in the repo; record the narrated one on the laptop after the
    last rehearsal (Cmd+Shift+5): Scenario B with the swap, then Scenario A.
-10. Terminal on the laptop display, browser on the projector, this file open on the phone. The server prints
-    nothing while it runs (log level warning; only a bind error or an ASGI exception shows); to keep a log start it
-    as `PYTHONUNBUFFERED=1 uv run sdv demo 2>&1 | tee runs/demo-$(date +%H%M).log`.
+10. Terminal on the laptop display, browser on the projector, this file open on the phone. On 918478a the server
+    prints nothing while it runs (log level warning; only a bind error or an ASGI exception shows); since
+    fix/live-run-log (in 6a91f5d) it prints one `RUN n under <file>.yaml logs to runs/live/live-<file>-n` line per
+    run and a LAST RUN line on Ctrl+C, and any run it showed replays with `uv run sdv replay runs/live/live-<file>-n
+    --mission <file>`. To keep the terminal's own log: `mkdir -p runs && PYTHONUNBUFFERED=1 uv run sdv demo 2>&1 |
+    tee runs/demo-$(date +%H%M).log` (runs/ is git-ignored and absent in a fresh clone; without the mkdir, tee says
+    "No such file or directory" and writes nothing).
 
 ## Open questions for the team
 
