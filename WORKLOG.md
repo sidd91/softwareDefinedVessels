@@ -1016,3 +1016,14 @@ said "not yet" on main, not 13; eleven rows moved to code, not ten; be1795b's me
 safety_commands' trace lands on safety.py's docstring, the module that implements the table, not on a value read; REBIND's
 for/as patterns also match prose in docstrings and can shadow `a` for a block, harmless while only loader.py calls the
 assumptions `a`. PDFs still not rebuilt. Files: tools/physical_account.py, WORKLOG.md. Decisions: none. Conflicts: none.
+### Sat 21:59 PDT · D1 binds on the data links and compute (branch fix/d1-data-compute-lines, for a teammate to merge) · Claude Fable 5.1 on behalf of Siddharth Chawla (sidd91)
+
+Admission judged six of the eight classes: a SATCOM or compute oversubscription came aboard with no line to name, against
+README's DEC-38 sentence. ledger.admission_lines() now adds satcom, los_radio and backbone (each guest at its card minimum,
+else nominal, DEC-38; capacities from A.data) and compute (nominal cores against A.compute nodes x cores_per_node x guest_share);
+SHIP_WIDE, explain, cli, the admit screen and the record schema's descriptions carry the classes and the units Mbit/s and cores.
+Files: src/sdv/{ledger,admission,explain,cli,ui/view}.py, config/decision_record.schema.json, tests/test_admission_links.py (22 tests).
+Tests: 1300 pass (1278 on main + 22); no oracle verdict or binding moves; /api/admit and the CLI render the lines. README's DEC-38
+wording left alone: the nominal shortfall is still not shown as degraded quality. Commit 26a6b69, pushed.
+Decisions: none. Conflicts: none. Requirements touched: none (R-046's eight classes are now all judged at D1; its row is unchanged).
+Review (Claude Fable 5.1, independent, on this branch): cli.py's LINES table unit column widened 5 to 6 so Mbit/s aligns with the state column; nothing else moved, 1300 pass. The worklog commit f2982cc carries no Co-Authored-By trailer, reword or squash on merge.
