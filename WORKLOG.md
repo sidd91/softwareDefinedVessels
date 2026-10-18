@@ -1313,3 +1313,58 @@ Decisions: none. Conflicts: Siddharth's fbe59a5 Douglas list has the same off-by
 - 32 tests (was 31). Page rebuilt locally (out/ is gitignored).
 
 Decisions: none. Conflicts: none. Deferrals: none.
+
+### Sat 23:18 PDT · Review fixes to this session's docs, kit text from config, on docs/review-fixes · Claude Opus 5.5 on behalf of Logan Walker (GhostWalka)
+
+A review of the docs this session wrote found claims the code does not back. Each one was checked against
+origin/main (6a91f5d) by grep or by running it, then fixed. RESPONSE_TIME: MET and MISSED are not computed yet;
+records carry due ticks (first_shed_due_t_s, full_sequence_due_t_s, each step's due_t_s) and queued steps; the
+safety table states ready, not_needed or cannot, and an answered request is a record with verdict sent; the
+screen shows the class tags only, plus the due minute in a D4 sentence with a queued step, and no safety state.
+STATE_ESTIMATION: marked not built the restart transition on gensets_online (the estimator refuses a simulator
+reading of it), the decision watchdog and timed_out, and the landing officer's crew_report stage (the core does not
+read hlo_wind_kn); a pending fault cancels only when all of its subject's own votes read false; fixtures match
+except since_t_s and the substituted.rule wording; "logged" is the estimator's in-memory log; run logs use
+sdv.loop.canonical; the core ignores card_edited; bridge_close and the survey resume add no record; derived
+"confirmed" covers restoring. Crew answer expiry is not on main, so step 4 is unchanged. DEPLOYMENT: the kit covers
+every card in manifests/ (vendor manuals listed as required), the build is not filtered by D1 or D2 yet, the
+heartbeat, the 3 s takeover, zone boards, the edge shed-table push and page regeneration at sea are marked Design,
+the standby state is in the tick output and on the screen, not in the five logs, and "tier" is now "weight and
+response class". NICE_TO_HAVE: status refreshed, the VENTUNO Q is the primary board (DEC-56), a Built since list
+(builder, restore, standby in lockstep), the failover-by-replay and restore rows dropped, globe rows kept.
+src/sdv/kit.py, text only: the runbook and FAQ numbers are formatted from config (confirm_rules, restart_min, the
+bridge wait_s, restore healthy_hold_s, the class tags), same output at today's config; two runbook rows say
+"design, not built", and the out-of-step row names the tick output instead of the logs.
+Files: docs/RESPONSE_TIME.md, docs/STATE_ESTIMATION.md, docs/DEPLOYMENT.md, docs/NICE_TO_HAVE.md, src/sdv/kit.py, WORKLOG.md.
+Tests: tests/test_kit.py and tests/test_requirements_trace.py 18 passed; full suite 1457 passed; no test changed.
+Decisions: none. Conflicts: README calls the VENTUNO Q an instrument only, against DEC-56; the screen's STANDBY OUT
+OF STEP chip does not name the differing field, while the Reference page says it does. Both are Siddharth's files,
+left to him. Deferrals: README notes for Siddharth (VENTUNO Q role, data credits if the deployment map merges,
+tools/deploy_map in REPOSITORY_MAP); the crew answer expiry text waits for fix/review-ours to reach main.
+
+### Sat 23:46 PDT · Second review of docs/review-fixes: response time on screen, due ticks, compare built; kit.py moved · Claude Opus 5.5 on behalf of Logan Walker (GhostWalka)
+
+A second review found claims in this branch's docs that the code does not back. Each was checked in the code or
+by running the core, then fixed. Correction to the Sat 23:18 entry: MET and MISSED per step are still not
+computed, but the screen already shows the acting decision's time against its limit. The RESPONSE tile and the
+ledger's RESPONSE D4 row add NORMAL or LATE. The D3 and D4 panels' RESPONSE row and the Admission header show the
+time against the limit. It is the compute time from the timing log in a live run, and ship time from the raw
+event to the applied tick in a fixture replay. D3's panel shows a LAND BY countdown. "Class tags only" was wrong.
+RESPONSE_TIME: the status no longer says config and screen cannot disagree. The server formats the tags, but the
+operations screen's set of known tags, the builder footer and the Reference page carry the A.8 values as fixed
+text. Due ticks count from the fault's raw event, or from the first over-limit tick when no fault is confirmed or
+the overload started after it confirmed. A restore record carries no due tick, and its limit is the 30 s
+ceiling_ms. The `cannot` reason says why, and the crew's action where there is one. STATE_ESTIMATION: a third
+fixture difference, the fixtures' free-text `notes`. In the core's run the close carries the D5 record's seq (2)
+and the resume the D3 record's seq (1). The script's drafted seqs predate the D5 record. NICE_TO_HAVE: Mission
+compare (built-in files, live reference runs) under Built since, its Ideas row narrowed to the jury's own file,
+"Unanswered means no" dropped from the R3 row, the builder is DEC-55 (applied at sea under DEC-58).
+DEPLOYMENT: Board 1 running the governor and the SSD copies of the kit and run logs are marked Design (today the
+governor runs on the laptop). No doc on this branch quotes deployment-map figures, so none were changed.
+src/sdv/kit.py is back to origin/main: its text changes moved to fix/review-ours, so this branch carries docs only.
+Files: docs/RESPONSE_TIME.md, docs/STATE_ESTIMATION.md, docs/NICE_TO_HAVE.md, docs/DEPLOYMENT.md, src/sdv/kit.py
+(reverted), WORKLOG.md.
+Tests: tests/test_kit.py, tests/test_requirements_trace.py and the eight tests that read docs/ files, 894 passed.
+Decisions: none. Conflicts: none. STATE_ESTIMATION edits avoid the lines of Siddharth's unmerged
+fix/scenario-b-loadout-g1. Deferrals: for Siddharth, a change to response_time_s needs ops.js CLASS_TAGS,
+builder.js's response-class footer and reference.js's tag rows edited by hand (UI files, his).
