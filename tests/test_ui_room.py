@@ -180,3 +180,30 @@ def test_api_room_answers_for_a_moment_and_for_the_pier(replay):
     assert status == 422 and json.loads(body) == {"refused": {"field": "G4.consumes.power_kw.peak", "reason": "'abc' is not a number"}}
     assert get(replay, "/api/room?mission=patrol&t=0")[0] == 404
     assert get(replay, "/api/room?case=A9-survey")[0] == 404
+
+
+# ------------------------------------------------------------------------------------------- the page's own discipline
+
+ROOM_JS = (data.ROOT / "src/sdv/ui/static/room/room.js").read_text()
+ROOM_PAGE = (data.ROOT / "src/sdv/ui/static/room/index.html").read_text()
+
+
+def test_room_js_paints_only_when_the_markup_changes_and_keeps_its_controls_static():
+    """main's SIM-bar lesson (tests/test_ui_static.py): a button rebuilt between mousedown and mouseup never fires, so
+    the operator's row is static markup changed in place, and every other region goes through paint()."""
+    import re
+    assigns = [m.start() for m in re.finditer(r"\.innerHTML\s*=", ROOM_JS)]
+    paint = re.search(r"function paint\(el, html\) \{(.*?)\}", ROOM_JS, re.S)
+    assert paint and len(assigns) == 1 and paint.start() < assigns[0] < paint.end()
+    assert "el.__last !== html" in paint.group(1)
+    for control in ('id="ops-run"', 'id="ops-restart"', 'id="ops-speed"', 'id="ops-jump"', 'id="ops-fill"', 'id="profile"', 'id="presets"', 'id="tabs"'):
+        assert control in ROOM_PAGE, control
+    assert "run.textContent = t.running ? 'Hold' : 'Run'" in ROOM_JS and "$('ops-fill').style.width" in ROOM_JS
+    assert "paint($('ops-speed')" in ROOM_JS and "paint($('ops-jump')" in ROOM_JS and "paint($('profile')" in ROOM_JS
+
+
+def test_the_room_page_loads_nothing_but_google_fonts_from_outside():
+    import re
+    urls = set(re.findall(r"https?://[^\s\"')]+", ROOM_PAGE + ROOM_JS + (data.ROOT / "src/sdv/ui/static/room/room.css").read_text()))
+    assert urls == {"https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"}
+    assert "Role views" in ROOM_PAGE and "not access control" in ROOM_PAGE

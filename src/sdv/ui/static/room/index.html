@@ -23,7 +23,16 @@
     <span class="clock" id="clock">T+00:00:00</span>
   </header>
 
-  <div class="ops ops-only" id="ops" role="group" aria-label="Simulation"></div>
+  <!-- The operator's controls are static markup, changed in place: a button rebuilt between mousedown and mouseup never fires. -->
+  <div class="ops ops-only" id="ops" role="group" aria-label="Simulation">
+    <button type="button" id="ops-run" data-cmd="toggle" title="Space">Hold</button>
+    <span class="grp"><span class="gl">pace</span><span id="ops-speed"></span></span>
+    <span class="grp"><span class="gl">jump</span><span id="ops-jump"></span></span>
+    <button type="button" id="ops-restart" data-cmd="restart">Restart</button>
+    <span class="grp" id="ops-crew"></span>
+    <span class="track" aria-hidden="true"><i id="ops-fill"></i></span>
+    <span class="gl" id="ops-src"></span>
+  </div>
   <div class="steps ops-only" id="steps" role="list" aria-label="Demo run"></div>
 
   <div class="main">

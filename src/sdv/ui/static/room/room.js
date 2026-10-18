@@ -149,19 +149,19 @@
     document.querySelectorAll('#presets button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.preset === state.preset)));
     document.body.className = `preset-${state.preset}`;
 
-    const jumps = marks().filter(m => m.t_s > 0).map(m =>
-      `<button type="button" data-jump="${Math.max(0, m.at - 3)}" title="${esc(m.label)}">${esc(m.t.slice(3))}</button>`).join('');
-    const crew = t.source === 'live'
-      ? `<span class="grp"><span class="gl">crew</span><button type="button" data-crew="${CREW_NEXT[snap.crew.crew_aboard.value] ?? 14}" title="Next crew level">${esc(snap.crew.crew_aboard.value)} → ${CREW_NEXT[snap.crew.crew_aboard.value] ?? 14}</button></span>` : '';
-    paint($('ops'), [
-      `<button type="button" data-cmd="toggle" class="${t.running ? '' : 'primary'}" title="Space">${t.running ? 'Hold' : 'Run'}</button>`,
-      `<span class="grp"><span class="gl">pace</span>${state.meta.speeds.map(s => `<button type="button" data-speed="${s}" class="${s === t.speed ? 'on' : ''}">×${s}</button>`).join('')}</span>`,
-      `<span class="grp"><span class="gl">jump</span>${jumps}</span>`,
-      `<button type="button" data-cmd="restart">Restart</button>`,
-      crew,
-      `<span class="track" aria-hidden="true"><i style="width:${Math.round(100 * t.t_s / t.end_t_s)}%"></i></span>`,
-      `<span class="gl">${esc(t.source === 'live' ? `live · ${t.sim || 'simulator'}` : 'replay')}${h.standby ? ` · standby ${esc(low(h.standby))}` : ''}</span>`,
-    ].join(''));
+    // The operator's row is static markup changed in place (main's SIM-bar lesson, tests/test_ui_static.py): a button
+    // rebuilt between mousedown and mouseup never fires its click. Only a group whose markup changed is repainted.
+    const run = $('ops-run');
+    run.textContent = t.running ? 'Hold' : 'Run';
+    run.classList.toggle('primary', !t.running);
+    paint($('ops-speed'), state.meta.speeds.map(s => `<button type="button" data-speed="${s}" class="${s === t.speed ? 'on' : ''}" aria-pressed="${s === t.speed}">×${s}</button>`).join(''));
+    paint($('ops-jump'), marks().filter(m => m.t_s > 0).map(m =>
+      `<button type="button" data-jump="${Math.max(0, m.at - 3)}" title="${esc(m.label)}">${esc(m.t.slice(3))}</button>`).join(''));
+    const crewNow = snap.crew.crew_aboard.value;
+    paint($('ops-crew'), t.source === 'live'
+      ? `<span class="gl">crew</span><button type="button" data-crew="${CREW_NEXT[crewNow] ?? 14}" title="Next crew level">${esc(crewNow)} → ${CREW_NEXT[crewNow] ?? 14}</button>` : '');
+    $('ops-fill').style.width = `${Math.round(100 * t.t_s / t.end_t_s)}%`;
+    $('ops-src').textContent = `${t.source === 'live' ? `live · ${t.sim || 'simulator'}` : 'replay'}${h.standby ? ` · standby ${low(h.standby)}` : ''}`;
     paint($('foot-live'), `${t.source === 'live' ? 'Live' : 'Replay'} · <b>${esc(t.sim || 'scripted plant')}, A.6</b>`);
     paint($('foot-source'), `<span class="verify-only">snapshot tick ${esc(v.snapshot_tick)} · records ${esc(v.records_seen)} · ${esc(low(h.priority_file))}</span>`);
   }
