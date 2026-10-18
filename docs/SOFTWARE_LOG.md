@@ -18,7 +18,9 @@ The brief allows an AI service only if it is "included in the authorized list pu
 the rule covers coding assistants. Claude is approved on Logan's word (WORKLOG DEC-05), and every AI model
 used so far is a Claude model (first two rows below). Where the list was published, and when, is not yet
 recorded. The question was sent in [ORGANIZER_MESSAGE.md](ORGANIZER_MESSAGE.md) (Sat 12:31 PDT, DEC-49); the
-answers so far do not name the list's source. The source and date go here when they come.
+answers so far do not name the list's source. The source and date go here when they come:
+**Authorised list citation: [Logan: paste the Day-0 list URL/title/date or the organiser's written confirmation
+(name, channel, timestamp)].** Until it is pasted, this entry is an open compliance item, not a confirmation.
 
 ## Installed or already present on the laptop
 | Software | Version | Licence | Origin | Purpose | Ships | Status |
@@ -31,8 +33,8 @@ answers so far do not name the list's source. The source and date go here when t
 | GitHub CLI (gh) | present | MIT | GitHub | repo access | no | present, signed in as GhostWalka |
 | Docker | present | Apache-2.0 | Docker Inc. | may build the container that the board instrument also runs (DEC-44); who builds it is not decided | not decided | unused so far |
 | PyYAML | 6.0.3 | MIT | PyYAML team | read assumptions, cards, priority files | yes | installed Fri 21:40 PDT into the project `.venv` |
-| jsonschema (+ attrs, referencing, rpds-py, jsonschema-specifications, typing-extensions) | 4.26.0 | MIT (deps MIT; typing-extensions PSF-2.0) | Julian Berman et al. | validate guest manifests | yes | installed Fri 21:40 PDT |
-| pytest (+ iniconfig, packaging, pluggy, pygments) | 9.1.1 | MIT (deps MIT / Apache-2.0 / BSD-2) | pytest devs | tests | no (dev) | installed Fri 21:40 PDT |
+| jsonschema (+ attrs 26.1.0, referencing 0.37.0, rpds-py 2026.9.1, jsonschema-specifications 2025.9.1, typing-extensions 4.16.0) | 4.26.0 | MIT (deps MIT; typing-extensions PSF-2.0) | Julian Berman et al. | validate guest manifests | yes | installed Fri 21:40 PDT |
+| pytest (+ iniconfig 2.3.1, packaging 26.3, pluggy 1.7.0, pygments 2.21.0) | 9.1.1 | MIT (deps MIT / Apache-2.0 / BSD-2) | pytest devs | tests | no (dev) | installed Fri 21:40 PDT |
 | hatchling | build backend, fetched by uv into an isolated build env | MIT | PyPA | builds the `sdv-governor` package | no (build) | used by `uv sync` |
 | OpenCV (opencv-python-headless) and NumPy | 5.0.0.93 and 2.5.3 | Apache-2.0; BSD-3 | OpenCV.org; NumPy devs | CPU timing benches by a camera research agent, Fri about 23:30 PDT, on synthetic frames; that camera work is cut (DEC-44) | no | nothing installed: both were already in the laptop's uv cache from Oct 9 and were used through PYTHONPATH; the project environment is unchanged |
 | LibreOffice | 26.2.6.3 (system package) | MPL-2.0 | The Document Foundation | page-count renders of the Scenario C memo and README by a requirements agent, Sat about 00:20 PDT; now the fallback route in `tools/build_pdfs.py` | no | nothing installed: already on the system; the early renders went to /tmp |

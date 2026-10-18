@@ -58,16 +58,20 @@ requirements:
   sources:
   - slides p14
   quote: The functional resource governor executable.
-  how: 'Mechanism: the `sdv` console script declared in pyproject.toml (sdv = sdv.cli:main) will load config/assumptions.yaml,
-    manifests/G*.yaml and one config/missions file, build the ledger, and run D1 to D4 as pure functions that each
-    return a decision record with the binding ledger line, sentence, latency_ms and ceiling_ms (ARCHITECTURE data
-    contract 6). Binding numbers: ceilings of 30 s admission, 2 s arbitration, 5 s first shed and 60 s full sequence
-    (A.8); runs on a laptop (brief p5 Constraints), offline (brief p3, ''Would it run on the platform''). Today:
-    src/sdv holds only __init__.py and sdv/cli.py does not exist, so the declared entry point cannot run; the only
-    working command is `uv run pytest` (11 data checks pass, README ''Run it''). Missing: CLI, ledger, engines,
-    simulator, replay. Proof: `uv run sdv demo scenario-b --priority sar` driving DEMO_SCRIPT''s Scenario B, with
-    latency_ms logged against ceiling_ms in every record.'
+  how: 'Done: `sdv = sdv.cli:main` (pyproject.toml, src/sdv/cli.py) loads config/assumptions.yaml, manifests/G*.yaml and
+    config/missions/*.yaml through src/sdv/loader.py and runs the engines as pure functions over the ledger
+    (src/sdv/ledger.py): `sdv admit` (D1 and D2: verdict, binding line, every ledger line, placement, ranked yes-if
+    options, the one-genset-down check, time taken against 30 s), `sdv run` (Scenario B through the tick loop,
+    simulator, estimator and core: D3, D5 and D4 with their sentences and the worst latency against its ceiling),
+    `sdv replay` (a logged run compared byte for byte) and `sdv demo` (the engine and the screen, src/sdv/ui/).
+    Every record carries its binding line and sentence; latency_ms and ceiling_ms go to the timing log. Runs offline
+    after `uv sync`. Proof: tests/test_cli.py, tests/test_loop.py, tests/test_ui_server.py; the full suite, 1457
+    tests.'
   links:
+  - label: CLI
+    path: src/sdv/cli.py
+  - label: Screen server
+    path: src/sdv/ui/server.py
   - label: Entry point (module missing)
     path: pyproject.toml
   - label: Package stub
@@ -82,7 +86,7 @@ requirements:
   - DEC-01
   - DEC-20
   - CON-10
-  status: planned
+  status: done
   question: What is the thinnest slice of the executable we commit to running first (ledger plus D1 refusing one
     card with its sentence, the core of the brief's hour-4 checkpoint on p4), so every later engine plugs into a
     command that already works?
@@ -234,16 +238,20 @@ requirements:
   - slides p2
   - slides p5
   quote: A Resource Governor for a Re-configurable Multi-Role Vessel
-  how: 'Mechanism (GAMEPLAN core model, locked as DEC-15 to DEC-17): one pure-Python deterministic core. PlatformModel
-    reads config/assumptions.yaml; Guest objects come from manifests/*.yaml; a ShipState machine holds the A.6 variables;
-    D1 to D4 each return Decision{verdict, binding, why}; MissionContext layers the priority file, overrides and
-    crew level; a seeded 1 Hz simulator writes a decision log that replay must reproduce; one screen reads it. Binding
-    numbers: eight resource classes, 200 kW guest reserve at cruise and 100 kW with one genset down, cooling 160
-    kW at 12 °C falling to 120 kW at 30 °C, 10 t mass margin, one free mast slot. Today only the data layer is built
-    (11 tests pass); the README''s Decision classes table marks D1 to D4 planned and its Architecture diagram is
-    design only, and sdv.cli is declared but missing. M1 has slipped (CON-10). Proof: both deep demos in docs/DEMO_SCRIPT.md
-    plus a replay test.'
+  how: 'Built: one pure-Python deterministic core. src/sdv/loader.py reads the profile, the cards and the priority files
+    and refuses a file naming something unknown; src/sdv/ledger.py is the one ledger (admission and operations
+    views, the shed ladder); src/sdv/admission.py (D1), placement.py (D2), arbitration.py (D3), shedding.py (D4) and
+    core.py (D5, the R3 follow-through and the 200 ms safety table of src/sdv/safety.py) each write the decision
+    record of config/decision_record.schema.json through src/sdv/records.py, and src/sdv/explain.py builds the one
+    sentence from the record''s fields. src/sdv/loop.py ticks the simulator, the estimator (src/sdv/estimator.py)
+    and the core at 1 Hz ship time and logs frames, inputs, snapshots, decisions and timing; `sdv replay` reproduces
+    every snapshot and record byte for byte. Not built: Scenario A-prime and the not-now verdict for admission
+    (R-101, R-102), absolute excludes and requires in D1 (R-131, R-132), over-consumption handling (R-351).'
   links:
+  - label: Core
+    path: src/sdv/core.py
+  - label: Tick loop and replay
+    path: src/sdv/loop.py
   - label: Architecture (the frozen design)
     path: GAMEPLAN.md#architecture-the-frozen-design
   - label: Core model
@@ -263,7 +271,7 @@ requirements:
   - DEC-20
   - CON-10
   - DEC-44
-  status: planned
+  status: done
   question: 'Which single moment should the jury remember as proof this is a governor and not a dashboard: the min-8
     sentence with its cost to the loser, the min-12 shed ladder, or the same event re-decided under a swapped priority
     file?'
@@ -325,9 +333,9 @@ requirements:
   - label: 'Memo: by crew level'
     path: docs/SCENARIO_C_MEMO.md#by-crew-level
   - label: 'Memo: assumptions'
-    path: docs/SCENARIO_C_MEMO.md#live-demo-14-6-and-0-aboard
+    path: docs/SCENARIO_C_MEMO.md#what-runs-14-6-and-0-aboard
   - label: 'Memo: live demo'
-    path: docs/SCENARIO_C_MEMO.md#live-demo-14-6-and-0-aboard
+    path: docs/SCENARIO_C_MEMO.md#what-runs-14-6-and-0-aboard
   - label: Conditions snapshot
     path: docs/ARCHITECTURE.md#data-contracts
   - label: 'DEMO_SCRIPT: Scenario C segment'
@@ -361,7 +369,7 @@ requirements:
   - label: Memo
     path: docs/SCENARIO_C_MEMO.md
   - label: 'Memo: assumptions'
-    path: docs/SCENARIO_C_MEMO.md#live-demo-14-6-and-0-aboard
+    path: docs/SCENARIO_C_MEMO.md#what-runs-14-6-and-0-aboard
   - label: Physical Account draft
     path: docs/PHYSICAL_ACCOUNT.md
   - label: PDF route (open)
@@ -486,9 +494,9 @@ requirements:
   - label: 'Memo: by crew level'
     path: docs/SCENARIO_C_MEMO.md#by-crew-level
   - label: 'Memo: live demo'
-    path: docs/SCENARIO_C_MEMO.md#live-demo-14-6-and-0-aboard
+    path: docs/SCENARIO_C_MEMO.md#what-runs-14-6-and-0-aboard
   - label: 'Memo: assumptions'
-    path: docs/SCENARIO_C_MEMO.md#live-demo-14-6-and-0-aboard
+    path: docs/SCENARIO_C_MEMO.md#what-runs-14-6-and-0-aboard
   - label: G4 card
     path: manifests/G4.yaml
   decisions:
@@ -520,7 +528,7 @@ requirements:
   - label: 'Memo: open questions'
     path: docs/OPEN_QUESTIONS.md
   - label: 'Memo: live demo'
-    path: docs/SCENARIO_C_MEMO.md#live-demo-14-6-and-0-aboard
+    path: docs/SCENARIO_C_MEMO.md#what-runs-14-6-and-0-aboard
   decisions:
   - DEC-17
   - DEC-21
@@ -535,15 +543,11 @@ requirements:
   sources:
   - brief p5, Deliverables
   quote: Source repository runnable with one documented command
-  how: 'Mechanism: pyproject.toml declares the console script sdv = sdv.cli:main; the planned command is `uv run
-    sdv demo scenario-b --priority sar` (README ''Run it''; GAMEPLAN Stack), resolved by uv from uv.lock on Python
-    3.12 (.python-version). The README now documents one command, `uv run sdv demo`, which starts the engine and
-    the screen and loads Scenario B; the priority file is picked and swapped on screen. Binding: one documented
-    command (brief p5 Deliverables), run on a laptop (brief p5 Constraints) and offline (brief p3, ''Would it run
-    on the platform''), with cached public data and fixed seeds (DEMO_SCRIPT ''Rehearsal and fallbacks''). Today:
-    src/sdv/cli.py does not exist, so `sdv` cannot start; the documented commands that work are `uv sync` then `uv
-    run pytest` (11 checks pass). Missing: the CLI module and a decision on which single command. Proof: from a
-    fresh clone on the demo laptop with Wi-Fi off, run the README command once and watch Scenario B play.'
+  how: 'Done: `uv run sdv demo` (README ''Run it'') starts the engine and the screen on http://127.0.0.1:8000 (`--port`,
+    `--log-dir`, `--source fixtures` for the recorded replay); `uv sync` once resolves uv.lock on Python 3.12
+    (.python-version) and everything after runs offline. The README also documents `uv run pytest`, `sdv admit`,
+    `sdv run` and `sdv replay`. Proof: tests/test_cli.py (the demo command starts the server),
+    tests/test_ui_server.py.'
   links:
   - label: Entry point
     path: pyproject.toml
@@ -557,7 +561,7 @@ requirements:
   - DEC-01
   - DEC-13
   - DEC-44
-  status: planned
+  status: done
   question: Should the one documented command be a single `uv run sdv demo` that serves the screen and plays Scenario
     B, with scenario and priority file picked on screen by the jury, instead of separate demo and serve commands?
 - id: R-017
@@ -567,14 +571,13 @@ requirements:
   sources:
   - brief p5, Deliverables
   quote: the decision engine may not be mocked
-  how: 'Mechanism: the delivered run calls the same D1 to D4 functions the tests call, and every sentence is built
-    from the binding ledger line''s numbers, never a canned string (ARCHITECTURE principle 3; brief p3 ''No canned
-    strings''); DEMO_SCRIPT states the shed order comes from the ledger and the active priority file, not from the
-    script. Each decision record carries inputs_hash, latency_ms and ceiling_ms, so a replay must reproduce it.
-    Binding numbers: the 2 s, 5 s and 30 s ceilings, measured live. Today no engine exists, so nothing is mocked
-    and nothing is real; README ''Run it'' already promises the real engine. Risk: breadth lines labelled ''replayed''
-    must feed recorded inputs to the live engine, not replay recorded outputs. Proof: the 35 kg drill, where G1+G2+G3+G4
-    at 10.035 t is refused and the jury''s edit of the hangar to 800 kg flips it to yes.'
+  how: 'Done: the delivered run (`sdv demo`, `sdv run`) calls the same src/sdv/core.py the tests call (Core.decide on
+    each snapshot for D3, D5 and D4, Core.safety for the 200 ms table, admission.admit for D1 and D2), and every
+    sentence is built in src/sdv/explain.py from the record''s own fields, with tests/test_explain.py guarding the
+    words. What is scripted is the plant: tests/support/sim_stub.py plays the Scenario B event timeline (the
+    brief''s own suggestion of a simulator) and is labelled ''test double'' in the RUN header and on screen;
+    `SDV_SIM=module:Class` swaps a simulator in behind the same interface. Proof: tests/test_loop.py (REPLAY EQUAL),
+    tests/test_decisions_b.py.'
   links:
   - label: Principles
     path: docs/ARCHITECTURE.md#principles
@@ -590,7 +593,7 @@ requirements:
   - DEC-01
   - DEC-26
   - DEC-44
-  status: planned
+  status: done
   question: Does a 'replayed' breadth line count as mocked in the jury's eyes, and do we rule now that every replayed
     line re-runs the real engine on recorded inputs?
 - id: R-018
@@ -1125,18 +1128,11 @@ requirements:
   sources:
   - slides p10
   quote: Shed low priorities in a declared order. No manual re-planning.
-  how: 'Mechanism: D4 recomputes the shedding ladder every tick as ''if a genset tripped now'', so the first action
-    at a confirmed trip is a lookup; crews approve the standing plan ahead of time instead of re-planning (DEC-16,
-    DEC-17). Faults enter as one rule, fault_entry: a trip on 2 of 3 signals (power.trip_confirm), a cooling fault
-    on the plant alarm plus flow or delta-T, held 1 s inside the 5 s first shed counted from the raw event; each
-    record carries the raw-event and confirmed times, and a restore needs a 60 s hold. The ladder''s order follows
-    the freeze''s precedence: safety-critical never shed and hard limits first, throttle before shed, then shed_order
-    if the priority file declares one, then the computed price (DEC-44, F3; T18). Numbers: reserve halves to about
-    100 kW (A.9); first shed within 5 s, full sequence within 60 s (A.8); confirmation takes 15-60 s at 14, 1-3
-    min at 6 and is impossible at 0, all slower than 5 s. Today: GAMEPLAN ''Shedding ladder'' and ''Crew in two
-    roles''; research E8''s table marks shed in declared order automatic at all three crew levels. Missing: D4 code,
-    the tick, a timing test. Shown: DEMO_SCRIPT Scenario B at minute 12 (0 steps, both armed ladders) and the minute-19
-    INJECTED pump fault (the ladder runs), timed against 5 s and 60 s.'
+  how: 'Done: src/sdv/shedding.py recomputes the ladder every tick and acts on the first over-limit tick with no
+    operator in the loop; faults enter through src/sdv/estimator.py as confirmed signals (a trip on 2 of 3 signals,
+    a pump fault on the alarm plus flow or delta-T, held 1 s). The 5 S steps go together as the first action, a 60 S
+    step one per tick after a fresh reading (src/sdv/ledger.py response classes). Crews approve standing plans ahead
+    of time (D5), never re-plan a shed. Tests: tests/test_decisions_b.py, tests/test_response.py.'
   links:
   - label: Shedding ladder
     path: GAMEPLAN.md#shedding-ladder-d4-precomputed-every-tick
@@ -1153,7 +1149,7 @@ requirements:
   - DEC-17
   - DEC-40
   - DEC-44
-  status: planned
+  status: done
   question: After a genset restarts (5-15 min), is restore automatic in reverse order, or human-confirmed at 14
     and 6 as research E8's table proposes?
 - id: R-035
@@ -1163,15 +1159,12 @@ requirements:
   sources:
   - slides p10
   quote: Automated Triage Sequencer
-  how: 'Mechanism: our triage sequencer is D4. Inputs: ledger, each card''s mode ladder (power_kw, capability_retained)
-    and the active priority file. Each step is priced as mission weight x capability lost / kW freed; all throttles
-    before any shed, mission-critical last, safety-critical never, ties by guest id; power and heat rechecked after
-    every step; stop 5 kW under the ceiling (power.shed_headroom_kw). One sentence per step: ''{guest} to {mode}:
-    frees {kW}; loses {capability}''. Numbers: 5 s and 60 s (A.8); G5 45 to 8 kW keeps 30 % (brief B, 70 % capability
-    loss). The slide sheds a desalination unit; G6 is ours for that reason. Today: modes in six cards, weights in
-    config/missions/, ARCHITECTURE D4 row. Missing: code; R-116 records that minute 12 loads only 87 kW against
-    95. Shown: DEMO_SCRIPT Scenario B 00:42. Update: decided by DEC-32; Scenario B runs G3, G4, G5, and the full
-    load-out is refused at the pier with this alternative recommended and a logged override available.'
+  how: 'Done: the triage sequencer is D4 (src/sdv/shedding.py over src/sdv/ledger.py ladder): inputs are the snapshot''s
+    committed draws, each card''s mode ladder (power_kw, capability_retained) and the active priority file; each
+    step is priced as mission weight x capability lost per kW freed, ordered by response class (5 S before 60 S),
+    throttle before shed, the profile''s shed_order, then price, with safety-critical guests never on the ladder;
+    load is rechecked each tick against min(power reserve, cooling) minus 5 kW. Tests: tests/test_ledger.py,
+    tests/test_decisions_b.py.'
   links:
   - label: D4 objective and pattern
     path: docs/ARCHITECTURE.md#decision-engines-inputs-objective-ceiling
@@ -1187,7 +1180,7 @@ requirements:
   - DEC-16
   - CON-12
   - DEC-32
-  status: planned
+  status: done
   question: To give the sequencer a real shortfall at minute 12 (87 kW against a 95 kW ceiling today), do we count
     declared envelopes instead of current modes, or start Scenario B with G3 still charging from an earlier leg?
 - id: R-036
@@ -1230,13 +1223,17 @@ requirements:
   sources:
   - slides p11 (implied)
   quote: 14 / 6 / 0
-  how: 'Mechanism: the policy per rule and crew level is data. R3''s default is rules.r3.confirm {14: confirm, 6:
-    standing_plan, 0: automatic} in config/assumptions.yaml. A priority file may override it with the optional `confirm`
-    field (config/missions/schema.json, crew_policy): each level 14, 6 and 0 takes one of confirm, standing_plan,
-    automatic or forbidden, and the schema refuses confirm at 0 (A.6). tests/test_mission_schema.py checks both.
-    A standing plan lapses when crew level changes unless a plan for the new level was approved first (memo). Missing:
-    the loader and D5 in the core (T17, T11).'
+  how: 'Done: the policy per rule and crew level is data: rules.r3.confirm {14: confirm, 6: standing_plan, 0: automatic}
+    in config/assumptions.yaml, overridable per level by a priority file''s `confirm` (config/missions/schema.json
+    refuses confirm at 0; src/sdv/loader.py check_mission). src/sdv/core.py `_r3_policy` reads it each time R3
+    opens; a profile applied at sea is re-validated and a bad one refused with the field named, the previous kept
+    (tests/test_ui_live.py). Tests: tests/test_mission_schema.py, tests/test_crew_levels.py (14, 6 and 0 through the
+    loop).'
   links:
+  - label: D5 in the core
+    path: src/sdv/core.py
+  - label: Crew-level tests
+    path: tests/test_crew_levels.py
   - label: Priority file fields
     path: docs/ARCHITECTURE.md#data-contracts
   - label: Mission schema
@@ -1250,7 +1247,7 @@ requirements:
   decisions:
   - DEC-17
   - DEC-44
-  status: planned
+  status: done
   question: Should standing_plan also be refused at 0 aboard, since A.6 says an uncrewed rule must be automatic
     or forbidden?
 - id: R-038
@@ -1378,7 +1375,7 @@ requirements:
   - label: R3 and why it exists
     path: docs/SCENARIO_C_MEMO.md#the-rule-and-why-it-exists
   - label: R3 live demo
-    path: docs/SCENARIO_C_MEMO.md#live-demo-14-6-and-0-aboard
+    path: docs/SCENARIO_C_MEMO.md#what-runs-14-6-and-0-aboard
   - label: Candidate rules from procedures
     path: research/vessels/event_protocols_log.md#1-event-index
   - label: G2 conditions and excludes
@@ -2248,22 +2245,15 @@ requirements:
   - brief p3, Scenario table, B (good handling)
   - brief p6, The demo moment we want to see
   quote: min-8 decision with rationale and cost to the loser
-  how: 'Planned as D3 within 2 s (response_time_s.arbitration). The conflict is between card conditions on ship
-    state: G3 surveying needs 3 kn, steady, quiet, no deck machinery; G4 recovery needs deck clear, 5-12 kn, freedom
-    to turn into wind, wind 25 kn or less (22 kn reported). Hard limit first: below 20 % G4 must land within 12
-    min or ditch, so waiting for the leg''s end at min 40 is off the table. Then utility = sum of mission weight
-    x capability delivered (survey file: seabed_inspection 1.0, sar_air 0.2; sar file: sar_air 1.0, seabed_inspection
-    0.2). Outcomes (oracle minute_8.by_file): under survey G4 recovers and G3 pauses its leg and holds depth, 25-27
-    survey minutes lost; under rescue the survey is suspended, G4''s 35 kW is reserved first, and G3''s leg is aborted:
-    it holds at sea and is recovered over the stern ramp only after G4 has landed (A.3: flight deck and ramp are
-    mutually exclusive). The live swap and the Mission compare view (two runs on one timeline) both show it. Decided
-    (DEC-32): Scenario B runs G3, G4, G5; the full load-out is refused at the pier with an override available. Decided
-    (DEC-40): minute 12 holds with 0 steps and both armed ladders; G4 lands at minute 17; a labelled INJECTED pump
-    fault at minute 19 makes cooling bind (81 against 75 kW): survey slows G4''s charge (56 kW), rescue takes G5
-    to 8 kW (44 kW). Minute 12 is Siddharth''s call as simulator owner (DEC-51); DEC-40 stands until he decides.
-    Missing: the simulator and ship-state machine (T4, Siddharth, DEC-47) and D3 (T5). Timeline: config/scenarios/scenario_b.yaml;
-    checked by tests/test_scenario_b_timeline_data.py.'
+  how: 'Done: src/sdv/arbitration.py right_of_way on the minute-8 snapshot: G4''s active hard limit (below 20 %: land
+    within 12 min, so by minute 18.2) against G3''s survey leg, the typed conflicts of the two cards'' conditions
+    listed in the record (speed, heading, deck machinery, the exclusion), decided in about 0.4 ms against 2 s. The
+    priority file decides how G3 yields: under the survey file G3 holds depth and loses 25 to 27 survey minutes;
+    under the rescue file its leg is aborted, open-ended, and G4''s charge is reserved. The sentence comes from the
+    record (src/sdv/explain.py). Tests: tests/test_decisions_b.py, tests/test_explain.py, tests/test_loop.py.'
   links:
+  - label: D3
+    path: src/sdv/arbitration.py
   - label: 'DEMO_SCRIPT: Scenario B'
     path: docs/DEMO_SCRIPT.md#scenario-b-90-s-deep
   - label: 'DEMO_SCRIPT: load-out decision (CON-12)'
@@ -2297,7 +2287,7 @@ requirements:
   - DEC-44
   - DEC-47
   - DEC-51
-  status: planned
+  status: done
   question: Do both priority sets state the loser's cost in one unit (survey minutes delayed against drone recharge
     minutes deferred), so the jury can compare the two outcomes side by side?
 - id: R-067
@@ -2310,19 +2300,17 @@ requirements:
   - brief p3, Scenario table, B (good handling)
   - brief p6, The demo moment we want to see
   quote: min-12 explicit shedding sequence
-  how: 'Planned as D4, the ladder locked in DEC-16 with the freeze''s precedence: safety-critical never shed and
-    hard limits first, throttle before shed, then `shed_order` if the priority file declares one (none does), then
-    the computed price, mission weight x capability lost / kW freed; power and heat rechecked each step, first action
-    within 5 s, all within 60 s. Ceiling = min(100 kW one-genset reserve, 133.3 kW cooling at 24 °C) minus 5 kW
-    headroom = 95 kW. As decided (DEC-40; oracle minute_12_as_decided), minute 12 holds with 0 steps: survey 48
-    of 95 kW (G3 standby 1, G4 airborne 2, G5 full 45) and rescue 81 of 95 kW (G4''s 35 kW reserved). The first
-    armed step in both files is G5 full to low power, which frees 37 kW (0.0038 per kW under survey, 0.0189 under
-    rescue); under survey G4 has no charge to throttle. The freeze''s section 4 fallback sentence is not used (its
-    81 kW is rescue''s). The labelled INJECTED pump fault at minute 19 then runs a ladder live: cooling binds at
-    81 against 75 kW; survey slows G4''s charge to 10 kW (56 kW), rescue takes G5 to 8 kW (44 kW). Minute 12 is
-    Siddharth''s call (DEC-51), after the organizer question was sent (DEC-49). The load-out decision is DEC-32.
-    Missing: the ladder core and D4 (T18, T6). Timeline: config/scenarios/scenario_b.yaml; checked by tests/test_scenario_b_timeline_data.py.'
+  how: 'Done as decided (DEC-40, DEC-61): at minute 12 src/sdv/shedding.py records a HOLD under both files (the load
+    after the trip fits under the 95 kW ceiling, 0 steps) and the sentence states the whole armed ladder in its
+    order, each step with the kW it frees and the capability it costs, then why the brief''s envelope set (every
+    guest at its sustained worst case) does not arise. The executed shed is the minute-19 pump fault, injected and
+    labelled INJECTED: cooling binds at 75 kW, one step keeps the winner and the sentence states every guest''s loss
+    (src/sdv/explain.py d4). Tests: tests/test_decisions_b.py, tests/test_explain.py.'
   links:
+  - label: D4
+    path: src/sdv/shedding.py
+  - label: Sentences
+    path: src/sdv/explain.py
   - label: 'GAMEPLAN: shedding ladder'
     path: GAMEPLAN.md#shedding-ladder-d4-precomputed-every-tick
   - label: 'assumptions.yaml: reserve, headroom, trip rule'
@@ -2351,7 +2339,7 @@ requirements:
   - DEC-44
   - DEC-49
   - DEC-51
-  status: planned
+  status: done
   question: If Siddharth changes minute 12 so G3 is charging (105 kW, the brief's sum), do we keep both readings
     in the oracle so the switch is one data change?
 - id: R-068
@@ -2864,24 +2852,23 @@ requirements:
   - brief p5, Success criteria, Should-have
   - 'brief p3, Scenario table, C (Optional: implement it at two levels)'
   quote: Scenario C rule implemented at two crew levels and shown live
-  how: 'Rule chosen in the memo: R3, ''Nobody on the flight deck during recovery'' (DEC-21), without the camera
-    (DEC-44, F5). Planned (T11): the core evaluates the memo''s trigger block every tick at the current crew level:
-    deadline = G4''s 20 % crossing + 12 min; lead = longest confirm + longest clear (1 + 5 = 6 min at 14; 3 + 12
-    = 15 min at 6, A.6); hold while the window is open and the deck is not ok, within 200 ms (A.8) from the safety-command
-    table. Deck evidence: at 14 the landing officer reports the deck and the bridge confirms; at 6 the standing
-    plan approved at launch applies; at 0 recovery is allowed only if the deck was latched clear at the last crew
-    sweep with no deck activity since, otherwise it is forbidden and the record states the cost under G4''s hard
-    limit. At 14, Scenario B leaves about 12 s of margin; at 6 the 15 min lead exceeds the 8 min available, so the
-    zone stays clear from launch. Data done: rules.r3.* in config/assumptions.yaml (deck_evidence, confirm, latched_deck,
-    stale_s and the rest), each with a reason and on the Physical Account. Missing: R3 in the core. Proof: memo
-    live-demo steps 1 to 3 as replay tests at 14, 6 and 0.'
+  how: 'Done: R3 runs at three crew levels through src/sdv/core.py. 14 asks the bridge and clears the deck on
+    confirmation; 6 needs an approved standing plan (else ''held: no standing plan approved'') and, with one, is
+    ''not now'' because the 15 min confirm-and-clear lead exceeds the 8 min the hard limit leaves after the
+    approach, until the landing officer reports the zone clear; 0 is automatic on a deck latched clear at the last
+    sweep and forbidden otherwise, the sentence stating that G4 ditches by minute 18.2. tests/test_crew_levels.py
+    runs every level to the end of Scenario B; `sdv run --variant crew0` plays the 0-aboard case.'
   links:
+  - label: D5 in the core
+    path: src/sdv/core.py
+  - label: Crew-level tests
+    path: tests/test_crew_levels.py
   - label: 'Memo: trigger'
     path: docs/SCENARIO_C_MEMO.md#trigger
   - label: 'Memo: by crew level'
     path: docs/SCENARIO_C_MEMO.md#by-crew-level
   - label: 'Memo: r3 assumptions'
-    path: docs/SCENARIO_C_MEMO.md#live-demo-14-6-and-0-aboard
+    path: docs/SCENARIO_C_MEMO.md#what-runs-14-6-and-0-aboard
   - label: 'BUILD_PLAN: T11'
     path: docs/BUILD_PLAN.md#stage-6-replay-then-breadth
   - label: 'assumptions.yaml: crew, deck clear times'
@@ -2892,7 +2879,7 @@ requirements:
   - DEC-44
   - CON-20
   - CON-21
-  status: planned
+  status: done
   question: Does R3's latch (deck activity since the last sweep) need its own snapshot field from the simulator,
     or does the core derive it from the hatch, hangar-door and winch events (CON-21)?
 - id: R-085
@@ -2903,17 +2890,14 @@ requirements:
   - brief p5, Success criteria, Should-have
   - brief p5, Deliverables (live demo on your laptop)
   quote: Scenario C rule implemented at two crew levels and shown live
-  how: 'Planned (T11); the memo and DEMO_SCRIPT now agree. Right after Scenario A, a fixed segment of about 15 s
-    replays Scenario B from minute 8 as the crew dial turns. At 14, the landing officer''s ''not clear'' report
-    (a laptop key) holds recovery within 200 ms and a ''clear'' report releases it. At 6, the standing plan approved
-    at launch is shown, and an INJECTED deck work request at sortie min 3 is refused (''not now; when: after G4
-    is secured''; allowed at 14). At 0, a deck latched clear at handover gives automatic recovery with no confirm
-    or override button; the same replay with deck activity reported after the sweep (INJECTED) gives forbidden,
-    with the cost to G4 stated. No camera, marker or webcam (DEC-44). Missing: R3 in the core and the screen. Proof:
-    the Scenario C segment run live.'
+  how: 'Partly: on screen the crew chip (Operations view) sets 14, 6 or 0 aboard mid-run and the D5 record follows
+    (tests/test_crew_levels.py drives src/sdv/ui/live.py); 14 aboard runs as scripted in every demo. The standing
+    plan, deck sweep and landing-officer report are laptop inputs the /ws socket accepts (src/sdv/ui/live.py
+    LAPTOP_INPUTS) but have no button, and the 200 ms landing hold is a safety request with no screen control; those
+    cases run on the CLI and in tests, not live on the screen.'
   links:
   - label: 'Memo: live demo'
-    path: docs/SCENARIO_C_MEMO.md#live-demo-14-6-and-0-aboard
+    path: docs/SCENARIO_C_MEMO.md#what-runs-14-6-and-0-aboard
   - label: 'DEMO_SCRIPT: breadth strip'
     path: docs/DEMO_SCRIPT.md#breadth-strip-one-line-each-about-5-s-each
   - label: 'DEMO_SCRIPT: Scenario C segment'
@@ -2925,7 +2909,7 @@ requirements:
   - DEC-26
   - DEC-44
   - CON-20
-  status: planned
+  status: drafted
   question: Is about 15 s enough for three crew levels, or do we show 14 and 0 live and leave 6 to the log?
 - id: R-086
   category: should-have
@@ -2936,15 +2920,15 @@ requirements:
   - brief p3, What you're judged on, Would it run on the platform
   - brief p4, Stack, data and tools
   quote: Deterministic, replayable simulation
-  how: 'Planned (T22); not built. Mechanism (GAMEPLAN architecture, ARCHITECTURE principle 2): the seeded 1 Hz simulator
-    (Siddharth, T4, DEC-47) reads an event timeline (t_s, type, payload, seq), and the core writes a decision log
-    whose records carry inputs_hash over the timeline, assumptions, cards and priority file. Engines are pure functions
-    with ties broken by guest id, public data is cached, and replay re-runs the log and asserts identical output
-    on every field except wall-clock latency and timestamps, which go to a separate timing log. A restart is a replay.
-    Failover by replay is cut (DEC-44). Binding numbers: the 30, 2, 5 and 60 s ceilings must hold on replay too.
-    Missing: simulator, log writer, replay command and test (M4). Shown: DEMO_SCRIPT rehearsal (fixed seeds, cached
-    data).'
+  how: 'Done: src/sdv/loop.py writes frames, inputs, snapshots, decisions and timing as JSONL through one canonical
+    serializer (no wall clock outside the timing log); `sdv replay <dir> --mission <file>` re-runs the estimator and
+    the core from the frame and input logs without the simulator and compares every snapshot and record byte for
+    byte (REPLAY EQUAL, 1201 snapshots). Every `sdv demo` run is logged the same way, one directory per run
+    (src/sdv/ui/live.py RunLogs). No randomness in the decision path; ties broken by guest id. Tests:
+    tests/test_loop.py, tests/test_ui_live.py, tests/test_cli.py.'
   links:
+  - label: Loop and replay
+    path: src/sdv/loop.py
   - label: 'GAMEPLAN: deterministic core'
     path: GAMEPLAN.md#architecture-the-frozen-design
   - label: 'ARCHITECTURE: principles'
@@ -2959,7 +2943,7 @@ requirements:
   - CON-10
   - DEC-44
   - DEC-47
-  status: planned
+  status: done
   question: Should the replay test run inside every `uv run pytest`, so everyone runs it before pushing, since the
     repo has no CI?
 - id: R-087
@@ -3031,10 +3015,11 @@ requirements:
   sources:
   - slides p6
   quote: You must allocate, deny, or steal from another system.
-  how: 'Mapped to planned verdicts: allocate = D1 ''yes'' or a D3 grant; deny = D1 ''no'' or ''not-now-and-when''
-    (with the next installation window); steal = D1 ''yes-if'' (ranked displacement list), D3 taking a contested
-    state from the loser with a stated cost, and D4 throttling or shedding in declared order. Each returns Decision{verdict,
-    binding, why}. Not built.'
+  how: 'Mapped to the built verdicts: allocate = D1 ''yes'' or D3 ''proceeds''; deny = D1 ''no'' (and D5 ''forbidden''
+    for a recovery); steal = D1 ''yes-if'' (ranked removal sets), D3 taking a contested ship state from the loser
+    with its cost stated, D4 throttling or shedding in declared order. ''Not now'' exists for the R3 recovery at 6
+    aboard (with its window), not yet for admission (R-101, R-102). Each returns the decision record of
+    config/decision_record.schema.json.'
   links:
   - label: Declared objectives
     path: GAMEPLAN.md#declared-objectives-readme-table-one-line-each
@@ -3043,7 +3028,7 @@ requirements:
   decisions:
   - DEC-15
   - DEC-16
-  status: planned
+  status: drafted
   question: Should each decision record carry one of the slide's three words (allocate, deny, steal) so the jury
     can map our verdicts to their slide instantly?
 - id: R-090
@@ -3054,16 +3039,10 @@ requirements:
   - slides p8
   - brief p2, D1
   quote: '> YES'
-  how: 'Mechanism: D1 (planned, no code) returns yes only when the card, at its D2 placement and with nothing displaced,
-    keeps a non-negative margin in every ledger class (ARCHITECTURE contract 7) over the envelope in config/assumptions.yaml
-    `envelope` (seawater 12-30 °C with cooling judged at 30 °C, sea state to 5, wind to 30 kn, one genset down possible).
-    Which corner decides is ARCHITECTURE open decision 3 (proposal: both gensets at 30 °C, one-genset-down reported).
-    The sentence names the tightest margin, not just "admitted" (GAMEPLAN constraint ledger). Binding numbers: 200
-    kW cruise and 100 kW one-genset-down reserve, 120 kW cooling at 30 °C, 10 t mass, 12 t-eq stability. Worked
-    case from the cards (not yet a test): G4 onto installed G1, G2, G5 is 7.56 t and 101.5 of 200 kW at cruise;
-    the tightest line is heat, 100 of 120 kW at 30 °C; but it is 1.5 kW over the 100 kW one-genset-down reserve,
-    so it is a plain yes only under the proposal. Today: data only. Proof: DEMO_SCRIPT Scenario A "Verdict" and
-    "Degraded check" steps; a verdict test, not written.'
+  how: 'Done: src/sdv/admission.py admit returns ''yes'' when no ledger line is over, every part has a position (D2) and
+    the one-genset-down check does not fail (fits, or holds by throttling); the binding line is then the tightest
+    ship-wide line (mass, stability, power, heat, the mission lines, the three data links, compute). Every Scenario
+    A oracle case in tests/oracles/expected_outcomes.yaml passes (tests/test_admission.py).'
   links:
   - label: D1 objective
     path: GAMEPLAN.md#declared-objectives-readme-table-one-line-each
@@ -3078,7 +3057,7 @@ requirements:
   decisions:
   - DEC-15
   - DEC-26
-  status: planned
+  status: done
   question: Should every yes name its tightest margin and the seawater temperature at which it would flip, or do
     we keep that detail for no and yes-if only?
 - id: R-091
@@ -3090,15 +3069,12 @@ requirements:
   - brief p2, D1
   - brief p10, Manifest ontology (B.0)
   quote: '> YES, IF [X IS DISPLACED]'
-  how: 'Mechanism: when a card fails only because of guests already aboard, D1 tries displacing guests (whole, parts
-    together per B.0 part-of) or throttling them down their modes ladders, keeps every fix that restores all margins
-    over the envelope, and ranks them by mission value lost under the active priority file. An unmet `requires`
-    relation (B.0; G3 requires stern_ramp) also turns yes into yes-if. Numbers: the 35 kg case, G4 onto installed
-    G1, G2, G3, is 10.035 t against 10 t (tested); throttling frees no mass, so only a displacement helps. The named
-    X changes with the file (computed from config/missions/, not a test): survey puts G1 first (weight 0.2, 45 kg),
-    sar and patrol put G3 first (0.2, but 5.5 t), disaster relief ties G1 and G3 at 0.2. DEMO_SCRIPT''s "yes-if
-    G1 disembarks" is therefore right under survey, a tie under disaster relief and wrong under sar and patrol.
-    Today: data only. Proof: DEMO_SCRIPT Scenario A "Yes-if" step and the 35 kg drill run under two files.'
+  how: 'Done: when a line is over, a part has no position or one genset down does not hold, src/sdv/admission.py
+    enumerates the minimal removal sets of installed guests that make every check pass, ranks them mission-critical
+    last, then by mission value lost (the priority file''s weight of each removed guest''s capability), size and id,
+    and reports each with its placement, port moves and one-genset check; the sentence names the first (''Yes if G1
+    disembarks, mission value lost 0.2''). An unmet `requires` is not read (R-131). Tests: tests/test_admission.py,
+    tests/test_jury_edits.py.'
   links:
   - label: yes-if objective
     path: GAMEPLAN.md#declared-objectives-readme-table-one-line-each
@@ -3114,7 +3090,7 @@ requirements:
   - DEC-15
   - DEC-22
   - DEC-26
-  status: planned
+  status: done
   question: How many alternatives does yes-if show the captain (only the top fix, the top three, or every feasible
     one), and does each carry its own one-sentence cost?
 - id: R-092
@@ -3143,15 +3119,11 @@ requirements:
   - brief p1, Area
   - slides p8
   quote: admission control
-  how: 'Mechanism: D1 in the governor core (ARCHITECTURE components table; owner open). Input: a card from manifests/G*.yaml
-    validated against manifests/schema.json, current placement, conditions snapshot, active priority file. Check:
-    every ledger class over the envelope grid (seawater 12-30 °C, cooling judged at 30 °C, gensets 2 and 1, sea
-    state to 5, wind to 30 kn), then a seawater scan in 0.1 °C steps to 35 °C (`admission.seawater_scan_*`) for
-    the flip point. Output: decision record, contract 6 (verdict, binding, sentence, options, placement, latency_ms
-    against 30 s). Built: inputs only; the 11 checks in tests/test_brief_arithmetic.py pass, including the 35 kg
-    mass case. Missing: ledger and D1 code. Proof: DEMO_SCRIPT Scenario A with the jury''s card (DEC-26) and its
-    prepared drills. Caveat: the "free mast slot" drill (G1 onto G2, G3, G4) is the same 10.035 t set, so mass binds
-    before the mast does.'
+  how: 'Done: D1 is src/sdv/admission.py over src/sdv/ledger.py admission_lines, judged at the mission envelope (both
+    gensets, the 200 kW reserve, cooling at 30 C) with the one-genset-down check of DEC-35, on a card from
+    manifests/ validated by manifests/schema.json, the installed set and the active priority file. Entry points:
+    `sdv admit`, the Admission view, `card_presented` in the core. Tests: tests/test_admission.py,
+    tests/test_admission_links.py, tests/test_jury_edits.py.'
   links:
   - label: D1 objective
     path: GAMEPLAN.md#declared-objectives-readme-table-one-line-each
@@ -3168,7 +3140,7 @@ requirements:
   - DEC-22
   - DEC-26
   - CON-10
-  status: planned
+  status: done
   question: Is the ledger plus D1 the first thing we build, since Scenario A rests on it, and which fields of the
     decision record must it return on day one?
 - id: R-094
@@ -3179,14 +3151,10 @@ requirements:
   - brief p1, Area
   - slides p9
   quote: runtime arbitration
-  how: 'Mechanism: D3 (planned, no code) fires when two admitted guests'' conditions or excludes collide on the
-    A.6 ship state or a shared ledger line. The cards already encode Scenario B: G3 surveying needs 3 kn, steady,
-    quiet, no deck machinery; G4 launch_recovery needs 5-12 kn, turn into wind free, deck clear; G3 excludes G4.recovering
-    while surveying. Decision: hard limits first (G4 below 20 % lands within 12 min or ditches), then utility =
-    sum of mission weight x capability delivered from config/missions/*.yaml. Output: one sentence plus the cost
-    to the loser, latency against 2 s. A priority swap re-arbitrates every standing decision (GAMEPLAN mission sets).
-    Today: cards and four priority files only. Proof: DEMO_SCRIPT Scenario B 00:10 to 00:25, the same event decided
-    under survey and then rescue (DEC-26); a replay test that the two files give different records, not written.'
+  how: 'Built for the contention the brief raises: src/sdv/arbitration.py conflicts() intersects the two cards'' typed
+    conditions on the A.6 ship state and their exclusions; right_of_way fires when G4''s hard limit calls for its
+    recovery while G3 is surveying, and the priority file decides how G3 yields. Not generic: the pair is G4 against
+    G3, triggered by an active hard limit; a contention with no hard limit is not arbitrated (README Limitations).'
   links:
   - label: D3 objective
     path: GAMEPLAN.md#declared-objectives-readme-table-one-line-each
@@ -3204,7 +3172,7 @@ requirements:
   - DEC-02
   - DEC-15
   - DEC-26
-  status: planned
+  status: drafted
   question: Besides the drone-versus-survey clash, which second contention (G1 against G5's antenna for the mast,
     SATCOM share, G2's winch while G3 listens) do we arbitrate so D3 is not a one-case special?
 - id: R-095
@@ -3216,15 +3184,11 @@ requirements:
   - slides p10
   - brief p5, Constraints
   quote: graceful degradation on a 60–70 m multi-role vessel
-  how: 'Mechanism: D4 (DEC-16 locked), no code. Ceiling = tighter of the degraded power reserve (100 kW) and cooling
-    at current seawater (160 kW at 12 °C to 120 kW at 30 °C, x0.6 degraded; about 133 kW at Scenario B''s 24 °C),
-    minus 5 kW `power.shed_headroom_kw`. Steps come from each card''s modes ladder (G5 45, 8, 0 kW; G4 35, 10, 2,
-    0), priced as weight x capability lost / kW freed; throttles before sheds, mission-critical last, safety-critical
-    never, ties by guest id; power and heat rechecked after each step; restore in reverse with a hold-off. Precomputed
-    every tick, so the first action is a lookup inside the 5 s and 60 s ceilings (A.8); a trip counts on 2 of 3
-    signals (`power.trip_confirm`); while genset state is uncertain, admit as if one is down (WORKLOG data-modeling
-    entry). Today: ceilings, headroom, trip rule and mode ladders exist as data only. Proof: DEMO_SCRIPT Scenario
-    B 00:40-00:42; a ladder test per priority file, not written.'
+  how: 'Done: src/sdv/shedding.py on every snapshot: the limit is min(power reserve, cooling capacity) minus 5 kW
+    headroom (100 kW one genset down; 160 to 120 kW cooling by seawater, x0.6 with a pump down), the steps come from
+    each card''s modes, and the ladder is recomputed every tick; a fault held on stale votes keeps the ladder armed
+    and the record says so. Scenario B: minute 12 holds, minute 19 sheds one step under each file. Tests:
+    tests/test_decisions_b.py, tests/test_ledger.py.'
   links:
   - label: Shedding ladder
     path: GAMEPLAN.md#shedding-ladder-d4-precomputed-every-tick
@@ -3240,7 +3204,7 @@ requirements:
   - DEC-16
   - DEC-17
   - DEC-26
-  status: planned
+  status: done
   question: Beyond a genset trip, which other shrinking budget do we show degrading gracefully (a degraded cooling
     loop, a lost SATCOM link, a lost compute node), or is power alone enough for the jury?
 - id: R-096
@@ -3282,16 +3246,16 @@ requirements:
   - brief p1, The challenge
   - 'brief p1, why containers fail: Placement is discrete and scarce'
   quote: where it goes
-  how: 'Mechanism: D2, planned as exhaustive enumeration (at most 6 guests; positions bay1, bay1_half, bay2, flight_deck,
-    mast_free, hangar_roof from manifests/schema.json), maximising the smallest normalised margin, preferring each
-    part''s preferred list, tie-breaking on future freedom, and printing rejected alternatives with their binding
-    class. D1 calls D2, so every verdict carries a placement. Binding numbers (A.3, A.4): Bay 1 20 ft and 8 t, shared
-    by two 10-ft guests only if neither needs the bay clear (G2 does); Bay 2 10 ft and 4 t; one free mast slot,
-    0.6 m2 and 60 kg; mast x3 and hangar roof x1.2 on the 12 t-eq stability budget. Today: positions in config/assumptions.yaml
-    and preferred/allowed lists in every card. Whether installed guests may move between bays in port is ARCHITECTURE
-    open decision 4 (TEAM_BRIEF proposal: yes, report the moves). Proof: DEMO_SCRIPT Scenario A "Placement" step
-    and the bay-story drill.'
+  how: 'Done: src/sdv/placement.py place enumerates every assignment of each part to its preferred and allowed positions
+    (bay1, bay1_half, bay2, flight_deck, mast_free, hangar_roof), drops layouts that break a bay''s halves, tonnage
+    or needs_bay_clear, a single slot or the flight deck, and keeps the best under a lexicographic rule: no
+    installed part left without a position, most parts placed, fewest port moves (DEC-37, each reported with its
+    crane time), most parts in a preferred position, then a fixed order. Mast and roof weight, area and air-cooling
+    limits are ledger lines, so a breach binds with numbers. Not built: a margin term and rejected alternatives
+    (CON-18). Tests: tests/test_admission.py.'
   links:
+  - label: D2
+    path: src/sdv/placement.py
   - label: D2 objective
     path: GAMEPLAN.md#declared-objectives-readme-table-one-line-each
   - label: Positions
@@ -3306,7 +3270,7 @@ requirements:
     path: docs/DEMO_SCRIPT.md#scenario-a-jurys-card-deep
   decisions:
   - DEC-15
-  status: planned
+  status: done
   question: In port, may D2 move an installed guest (for example G5's node from half of Bay 1 to an empty Bay 2,
     to free all of Bay 1 for G3) to admit a card, and is that reported as a yes or a yes-if?
 - id: R-098
@@ -3349,14 +3313,11 @@ requirements:
   sources:
   - brief p1, The challenge
   quote: who wins when two want the same thing
-  how: 'Mechanism: D3 (planned): hard limits first, then utility = sum of mission weight x capability delivered,
-    weights from the active config/missions/*.yaml, with the loser''s cost stated. Equal weights are common: sar
-    gives sar_air and coastal_connectivity 1.0 (G4, G5), survey gives seabed_inspection and ocean_data 1.0 (G3,
-    G2), disaster relief gives G4, G5 and G6 1.0. Each file''s `mission_critical` list breaks most of these (sar
-    G4, survey G3), but disaster relief marks both G5 and G6 mission-critical at 1.0, a true tie. Only the D4 ladder
-    has a tie-break (guest id, for determinism); D3 has none. Today: weights and lists in data; `test_every_capability_has_a_weight_in_every_priority_file`
-    passes. Proof: DEMO_SCRIPT Scenario B 00:25, the same event with two winners after the swap; a replay test,
-    not written.'
+  how: 'Built narrowly: src/sdv/arbitration.py applies the hard limit first (G4 below 20 % must land within 12 min) and
+    then reads the priority file''s weights and mission-critical set to decide how G3 yields (pause and resume when
+    its weight is at least G4''s, else abort open-ended) and whether G4''s charge is reserved; the winner is the
+    guest with the active hard limit, not a utility sum. Equal weights give the pause form. Tests:
+    tests/test_decisions_b.py.'
   links:
   - label: D3 objective
     path: GAMEPLAN.md#declared-objectives-readme-table-one-line-each
@@ -3371,7 +3332,7 @@ requirements:
   decisions:
   - DEC-02
   - DEC-16
-  status: planned
+  status: drafted
   question: When two guests tie on weight and are both mission-critical (G5 and G6 under disaster relief), what
     decides between them, the smaller resource draw, a live crew override, or guest id?
 - id: R-100
@@ -3384,15 +3345,8 @@ requirements:
   - brief p3, What you're judged on (run on platform)
   - brief p9, Annex A table, Response time (A.8)
   quote: D1 Admission in 30 s
-  how: 'Mechanism: ceiling `response_time_s.admission: 30` in config/assumptions.yaml (A.8; placement is also 30
-    s). D1 is a pure function with no solver on the critical path: one card, at most 6 guests and 6 position kinds,
-    evaluated over 231 seawater points (12-35 °C in 0.1 °C steps, `admission.seawater_scan_*`) x 2 genset states
-    = 462 ledger evaluations per candidate placement (twice that if a degraded loop is added), which should take
-    milliseconds. Every record carries latency_ms and ceiling_ms (contract 6); a watchdog emits the safe default
-    (hold or deny) with a sentence naming the ceiling if 30 s is missed (GAMEPLAN failsafes section). The brief''s
-    trap is a perfect solver that takes four minutes. Today: the ceiling is data; nothing is timed. Missing: D1,
-    watchdog, a timing test. Proof: a pytest that runs each prepared drill and asserts latency well under 30 s,
-    and the latency shown beside the verdict in DEMO_SCRIPT Scenario A.'
+  how: 'Done: D1 runs in 1 to 8 ms on the laptop (the TIME line of `sdv admit`, RESPONSE on the Admission view) against
+    response_time_s.admission 30 s in config/assumptions.yaml; by enumeration, no solver. Tests: tests/test_cli.py.'
   links:
   - label: Ceiling
     path: config/assumptions.yaml
@@ -3407,7 +3361,7 @@ requirements:
   decisions:
   - DEC-26
   - DEC-44
-  status: planned
+  status: done
   question: Do we show D1's measured latency beside every verdict on screen, and if the watchdog ever fires is the
     safe default deny or not-now?
 - id: R-101
@@ -3418,15 +3372,11 @@ requirements:
   - brief p2, D1
   - brief p3, Scenario table, A'
   quote: yes / no / yes-if / not-now-and-when
-  how: 'Planned rules for D1 (only GAMEPLAN''s objective line exists): yes = every class keeps margin over the envelope
-    with nothing changed aboard; yes-if = margins restored by a ranked set of displacements or throttles, or an
-    unmet `requires` (B.0); no = infeasible even after any allowed displacement (no slot of an allowed kind, an
-    absolute exclude, or mass over 10 t with nothing displaceable); not-now-and-when = feasible but needs a physical
-    change A.11 does not allow now, answered with the next window or port call. From the cards: every brief card
-    has a port-only part (G1 sensor, G2 module, G3 cradle, G4 hangar, G5 node), so under way a new card gets "not
-    now; when: next port call", and only a drone or vehicle swap fits an at-sea window. Today: verdict rules exist
-    only as text. Proof: DEMO_SCRIPT Scenario A verdict step and A-prime drill; a table test with one case per verdict,
-    not written.'
+  how: 'Three of four verdicts are built in src/sdv/admission.py: yes, yes-if (ranked removal sets) and no (no removal
+    set works). Not-now-and-when exists for admission only as a sentence template and a hand-written fixture
+    (src/sdv/explain.py, tests/fixtures/records/cases/d1_not_now_A6_under_way_survey.json); the engine has no at-sea
+    input and does not read installation windows (R-102). The R3 recovery at 6 aboard does return ''not-now'' with
+    its window (src/sdv/core.py _deck_short).'
   links:
   - label: D1 verdicts
     path: GAMEPLAN.md#declared-objectives-readme-table-one-line-each
@@ -3438,7 +3388,7 @@ requirements:
     path: docs/DEMO_SCRIPT.md#scenario-a-jurys-card-deep
   decisions:
   - DEC-26
-  status: planned
+  status: drafted
   question: Is "no" reserved for cards that would fail even on an empty ship (no allowed slot, an absolute exclude),
     with everything else answered as yes-if or not-now?
 - id: R-102
@@ -3466,7 +3416,7 @@ requirements:
   - label: Cut order
     path: GAMEPLAN.md#schedule-pacific-pdt
   - label: 'Memo example: not now, when'
-    path: docs/SCENARIO_C_MEMO.md#live-demo-14-6-and-0-aboard
+    path: docs/SCENARIO_C_MEMO.md#what-runs-14-6-and-0-aboard
   decisions:
   - DEC-26
   status: planned
@@ -3481,17 +3431,11 @@ requirements:
   - brief p3, Scenario table, A
   - brief p9, Degraded state (A.9)
   quote: degraded state included, not against the pier
-  how: 'Mechanism: D1 judges the mission envelope (A.10), which assumes one genset down is possible, and every verdict
-    states "holds with one genset down: yes or no" with the binding line. Degraded values in config/assumptions.yaml:
-    `guest_reserve_kw.one_genset_down: 100`, `peak_extra_kw.one_genset_down: 100` for up to 60 s, `heat.degraded_factor:
-    0.6`, `line_lost_on_trip: none`. Worked case from the cards (not yet a test): G4 joining installed G1, G2, G5
-    needs 101.5 kW sustained (G2''s 20 kW winch runs 300 s, past the 60 s peak window): yes at cruise against 200
-    kW, no with one genset down by 1.5 kW. Open: whether that corner decides the verdict or is only reported (ARCHITECTURE
-    open decision 3; TEAM_BRIEF proposal: report), and how peak power behaves right after a trip (CON-08). Proof:
-    DEMO_SCRIPT Scenario A "Degraded check" step. Decided (DEC-35): verdict at both gensets and 30 °C; the set must
-    also survive one genset down by throttling alone against a 95 kW gate (interruptible steps that keep capability,
-    mission-critical last and named), else yes-if; the raw as-loaded line is always shown; cooling at -40 % is information
-    only (DEC-36, closing CON-13). Checked by tests/test_envelope_gate_data.py.'
+  how: 'Done: every verdict carries the one-genset-down check (src/sdv/admission.py genset_check): the stacked envelope
+    draws against the 100 kW reserve, the 95 kW gate, and whether the set fits, holds by throttling (the steps
+    named) or does not hold, in which case the verdict becomes yes-if or no (DEC-35). The -40 % loop at 30 C is an
+    information line on the Admission view, not part of the verdict (DEC-36). Tests: tests/test_admission.py,
+    tests/test_envelope_gate_data.py.'
   links:
   - label: Degraded values
     path: config/assumptions.yaml
@@ -3509,7 +3453,7 @@ requirements:
   - DEC-35
   - CON-13
   - DEC-36
-  status: planned
+  status: done
   question: If the one-genset-down check fails by a small margin (1.5 kW), is the verdict no, yes-if with a named
     throttle after a trip, or yes with the failure stated?
 - id: R-104
@@ -3520,15 +3464,10 @@ requirements:
   - brief p2, D1
   - 'brief p3, What you''re judged on: Explainability from the binding constraint'
   quote: Name the binding resource class
-  how: 'Mechanism: the constraint ledger scores each class as margin = free minus requested, normalised by capacity;
-    the binding class is the smallest, and the sentence is built from that ledger line''s fields (record `binding`:
-    class, label, capacity, demand, free, unit) on ARCHITECTURE''s D1 pattern "Refused: {line} has {free} {unit}
-    free; {guest} needs {need} {unit}", never a canned string, as in the brief''s "Refused: cooling loop at 30 °C
-    has 12 kW free". Binding numbers in our drills: mass 10.035 t against 10 t (35 kg over, tested); one-genset-down
-    power 101.5 against 100 kW. Two classes can fail at once: G3 onto installed G1, G2, G5 finds no whole Bay 1
-    and weighs 12.07 t, and no rule yet compares a missing slot with tonnes over. After the 850 kg correction the
-    brief''s "free mast slot" set (G1 onto G2, G3, G4: 9.99 t installed, 10.035 t with G1) binds on mass, not the
-    mast. Proof: DEMO_SCRIPT Scenario A verdict sentence; a test that each drill names its expected class, not written.'
+  how: 'Done: src/sdv/ledger.py Line.margin (free over capacity); src/sdv/admission.py takes the most-over line, else
+    the tightest ship-wide line, as `binding`, and src/sdv/records.py writes class, label, capacity, demand, free
+    and unit into the record; src/sdv/explain.py builds the sentence from it (''Mass binds: 10.035 t against 10 t,
+    35 kg over''). Tests: tests/test_decision_record.py, tests/test_explain.py.'
   links:
   - label: Constraint ledger
     path: GAMEPLAN.md#explainability-by-construction-the-constraint-ledger
@@ -3543,7 +3482,7 @@ requirements:
   decisions:
   - DEC-15
   - DEC-22
-  status: planned
+  status: done
   question: When two classes fail together (G3 onto G1, G2, G5 fails on bay and mass), do we name one binding class
     and list the rest, and how do we compare a missing slot with tonnes over?
 - id: R-105
@@ -3554,15 +3493,10 @@ requirements:
   - brief p2, D1
   - brief p3, Scenario table, A
   quote: a ranked list of what is displaced or throttled
-  how: 'Mechanism: for each candidate fix (displace a guest whole, parts together per B.0, or throttle one down
-    its modes ladder) D1 re-runs the ledger over the envelope and keeps fixes that restore every margin; the rank
-    is mission value lost = priority-file weight x share of capability lost, summed over the guests touched (ARCHITECTURE
-    D1 objective: least mission value lost). In the 35 kg case (G4 onto G1, G2, G3, 10.035 t) throttling frees no
-    mass, so the list holds displacements only, and the order depends on the file, computed from config/missions/:
-    survey ranks G1 first (0.2 lost, 45 kg moved), sar and patrol rank G3 first (0.2 lost, 5.5 t moved), disaster
-    relief ties G1 and G3. Smallest mass moved is one candidate tie-break. Today: weights and capability_retained
-    in data. Missing: search and ranking code. Proof: DEMO_SCRIPT 35 kg drill run under two priority files; a ranking
-    test, not written.'
+  how: 'Done: src/sdv/admission.py ranks the minimal removal sets by mission-critical last, mission value lost, size and
+    id, each with its placement and port moves; the one-genset-down check names the throttle steps that make a set
+    hold (''holds once G4 goes from fast charge to charge, 25 kW freed''). Shown by `sdv admit` (YES IF list) and
+    the Admission view. Tests: tests/test_admission.py.'
   links:
   - label: D1 yes-if
     path: GAMEPLAN.md#declared-objectives-readme-table-one-line-each
@@ -3579,7 +3513,7 @@ requirements:
   decisions:
   - DEC-15
   - DEC-22
-  status: planned
+  status: done
   question: Should the yes-if list rank purely by mission value lost (which puts a 5.5 t G3 ahead of a 45 kg G1
     under sar), or also weigh the physical work and port time each displacement takes?
 - id: R-106
@@ -3590,13 +3524,9 @@ requirements:
   - brief p2, D1
   - brief p10, Annex B, G5 (low-power mode with 70 % capability loss)
   quote: and the capability lost
-  how: 'Mechanism: every mode in a card carries `capability_retained` (schema `mode`), and each capability name
-    has a weight in the active priority file. For each yes-if item D1 states guest, mode and share lost in words,
-    plus the weighted loss used for ranking, for example "G5 to low_power keeps 30 % of coastal_connectivity (weight
-    1.0 under sar)". Numbers in the cards: G5 low_power keeps 0.3 (Annex B: 70 % loss); G4 charge keeps 0.7, G2
-    sampling 0.8, G3 standby 0.3 (all marked assumed); a displaced guest keeps 0. The assumed shares belong in the
-    Physical Account, which today only points at `assumed: true` in the cards. Missing: the sentence builder. Proof:
-    DEMO_SCRIPT Scenario A "Yes-if" step; a test that each sentence quotes the card''s own number, not written.'
+  how: 'Done: each yes-if option carries the mission value lost (the priority file''s weight of each removed guest''s
+    capability) and whether a mission-critical guest is among them; the one-genset-down steps carry the capability
+    share lost per mode (capability_retained). Tests: tests/test_admission.py, tests/test_explain.py.'
   links:
   - label: mode definition
     path: manifests/schema.json
@@ -3608,7 +3538,7 @@ requirements:
     path: docs/DEMO_SCRIPT.md#scenario-a-jurys-card-deep
   decisions:
   - DEC-15
-  status: planned
+  status: done
   question: Do we state capability lost as the card's own share ("keeps 30 %"), the weighted mission loss, or a
     mission-level phrase the captain would use, and which goes on screen?
 - id: R-107
@@ -3620,14 +3550,11 @@ requirements:
   - brief p5, Success criteria, Should-have
   - brief p10, Manifest ontology (B.0)
   quote: bay, mast, deck, power line and cooling manifold
-  how: 'Mechanism: D2 enumerates every assignment of each part to an allowed position (schema enum bay1, bay1_half,
-    bay2, flight_deck, mast_free, hangar_roof), drops any that break a slot, mass, stability or line limit, and
-    keeps the one that maximises the smallest normalised margin, trying preferred positions first and reporting
-    a merely tolerated one (B.0), with future freedom as tie-break. Parts of one guest are admitted and shed together
-    but may sit apart: G5''s node in Bay 2 or half Bay 1, its antenna on the mast or the hangar roof (x1.2). Binding
-    numbers: Bay 1 8 t, Bay 2 4 t, one free mast slot (0.6 m2, 60 kg), 12 t-eq stability with mast x3. Output: placement
-    plus rejected alternatives with their binding class. Today: positions in data only. Proof: DEMO_SCRIPT Scenario
-    A "Placement" step (a should-have).'
+  how: 'Done: src/sdv/placement.py enumerates every assignment of each part to an allowed position (bay1, bay1_half,
+    bay2, flight_deck, mast_free, hangar_roof), drops any that breaks a slot, bay tonnage or needs_bay_clear, and
+    keeps the best under the lexicographic rule (installed parts keep a position, most parts placed, fewest port
+    moves, preferred positions first); a part no position takes binds as a ''placement'' line. Mast and roof limits
+    are ledger lines. Tests: tests/test_admission.py, tests/test_jury_edits.py.'
   links:
   - label: D2 objective
     path: GAMEPLAN.md#declared-objectives-readme-table-one-line-each
@@ -3641,7 +3568,7 @@ requirements:
     path: docs/DEMO_SCRIPT.md#scenario-a-jurys-card-deep
   decisions:
   - DEC-15
-  status: planned
+  status: done
   question: Is placement one joint search over every part, or do we place the scarcest slot first (mast, then bays,
     then deck) and accept a possibly smaller margin for a simpler explanation?
 - id: R-108
@@ -3680,14 +3607,10 @@ requirements:
   sources:
   - brief p2, D2
   quote: leaving future guests least constrained
-  how: 'Planned tie-break for D2 (GAMEPLAN declared objectives): among placements with equal smallest margin, prefer
-    the one after which the most archetype cards stay admissible, found by re-running D1 for each archetype against
-    each candidate placement (cheap at 6 guests). The archetype set is undefined; candidates are the six cards in
-    manifests/. The data already holds a real case: G5''s antenna (25 kg, 0.3 m2) prefers the one free mast slot,
-    which locks out G1 (mast only; 0.5 plus 0.3 m2 exceeds the slot''s 0.6 m2), while the hangar roof keeps the
-    mast free at 30 kg-eq instead of 75 kg-eq on the stability budget, plus a drone clearance check. Today: preferred
-    and allowed lists in the cards. Missing: archetype list and D2 code. Proof: D2''s rejected-alternatives line
-    in DEMO_SCRIPT Scenario A "Placement" step; a test on the antenna choice, not written.'
+  how: 'Not built: D2''s score has no margin or future-freedom term (CON-18); src/sdv/placement.py is lexicographic
+    (installed parts keep a position, most parts placed, fewest port moves, preferred positions first). The planned
+    tie-break, prefer the layout after which the most archetype cards stay admissible, would re-run D1 per archetype
+    against each candidate layout; the archetype set is undefined.'
   links:
   - label: D2 objective
     path: GAMEPLAN.md#declared-objectives-readme-table-one-line-each
@@ -3711,13 +3634,9 @@ requirements:
   - brief p3, What you're judged on (run on platform)
   - brief p9, Annex A table, Response time (A.8)
   quote: D3 Right of way in 2 s
-  how: 'Mechanism: ceiling `response_time_s.arbitration: 2` in config/assumptions.yaml (A.8). D3 is a rule lookup
-    plus a utility sum over at most 6 guests (hard limits first, then priority-file weights), no solver, so compute
-    is not the risk; reading a fresh conditions snapshot is. Every record logs latency_ms against ceiling_ms; on
-    a miss the watchdog emits the safe default (keep current state) with a sentence naming the ceiling. Note: the
-    slide 9 timer reads "02:00 SECONDS", a display style for 2.00 s; the brief''s 2 s (D3, A.8) and slide 12''s
-    "decides in 2s" are the rule. Today: the ceiling is data; nothing is timed. Proof: DEMO_SCRIPT Scenario B 00:12
-    shows the decision with its latency against 2 s; a pytest timing D3 on the Scenario B event, not written.'
+  how: 'Done: D3 decides in about 0.4 ms (the worst latency `sdv run` prints; RESPONSE on the screen) against
+    response_time_s.arbitration 2 s; every record''s latency_ms and ceiling_ms go to the timing log. Tests:
+    tests/test_loop.py.'
   links:
   - label: Ceiling
     path: config/assumptions.yaml
@@ -3729,7 +3648,7 @@ requirements:
     path: docs/DEMO_SCRIPT.md#scenario-b-90-s-deep
   decisions:
   - DEC-26
-  status: planned
+  status: done
   question: If G4's battery reading is stale when the conflict fires, does D3 decide within 2 s on the most pessimistic
     value or wait for a fresh reading and risk the ceiling?
 - id: R-111
@@ -3740,16 +3659,10 @@ requirements:
   - brief p2, D3
   - 'brief p4, State the system reasons on: Ship state machine'
   quote: two admitted guests want the same resource or incompatible ship states
-  how: 'Mechanism: D3 triggers when two admitted guests'' declared conditions conflict on the A.6 ship state (course,
-    speed band, noise, deck, emission), the brief''s own definition of a conflict, or when their demands on one
-    ledger line exceed it. From the cards: G3 surveying needs 3 kn, steady, quiet, no deck machinery; G4 launch_recovery
-    needs 5-12 kn, turn into wind free, deck clear. Shared-line case: G3 charging 25 kW with G4''s 35 kW and G5''s
-    45 kW is the brief''s 105 kW against the 100 kW degraded reserve. The brief''s Scenario B load-out (G2, G3,
-    G4, G5) is 13.015 t against 10 t and needs Bay 2 twice (CON-12); DEMO_SCRIPT proposes running it as given with
-    an on-screen flag, so D3 must run on a set our own D1 would refuse. G3, G4, G5 (9.515 t) fits. Today: conditions
-    and excludes in the cards only. Proof: DEMO_SCRIPT Scenario B 00:10, "two condition sets, not an alarm". Update:
-    decided by DEC-32; Scenario B runs G3, G4, G5, and the full load-out is refused at the pier with this alternative
-    recommended and a logged override available.'
+  how: 'Built for the scenario''s pair: src/sdv/arbitration.py conflicts() lists the ship-state signals on which G3
+    surveying and G4 launch_recovery cannot both hold (speed, heading, deck machinery) and the cards'' exclusions,
+    and right_of_way opens when G4''s hard limit calls for its recovery; a conflict with no active hard limit, or
+    between other guests, is not arbitrated.'
   links:
   - label: 'Demo: Scenario B'
     path: docs/DEMO_SCRIPT.md#scenario-b-90-s-deep
@@ -3766,7 +3679,7 @@ requirements:
   - DEC-26
   - DEC-22
   - DEC-32
-  status: planned
+  status: drafted
   question: Do we run Scenario B on the brief's over-mass load-out with a flag (the CON-12 proposal), or on G3,
     G4, G5 at 9.515 t, which loses G2's standby step from the min-12 shed?
 - id: R-112
@@ -3778,14 +3691,9 @@ requirements:
   - slides p9
   - slides p12, 00:08
   quote: with a one-sentence rationale and the cost to the loser
-  how: 'Mechanism: D3''s sentence is assembled from the decision record''s fields (winner, the hard limit or weight
-    that decided, loser, cost_to_loser) on ARCHITECTURE''s pattern "{winner} proceeds: {hard limit or weight}; {loser}
-    loses {cost}." Every number comes from a card, the priority file or the ledger, never a canned string (brief
-    p3). The hard limit is read from G4''s `hard_limits` (below 20 % land within 12 min or ditch), so under survey
-    priority the sentence names it first, as the brief''s demo moment requires. Example under survey: "G4 recovers
-    now: below 20 % it must land within 12 min; G3 holds depth and loses about 23 survey minutes" (R-113). Today:
-    the pattern and its input fields exist; no generator. Proof: DEMO_SCRIPT Scenario B 00:12 and 00:25 (DEC-26);
-    a test that the sentence changes when the jury edits one number, not written.'
+  how: 'Done: the D3 sentence is built in src/sdv/explain.py from the record''s fields (winner, the hard limit, the
+    loser''s leg, hold and cost): ''G4 recovers first: below 20 % it must land within 12 min, by minute 18.2. G3
+    holds depth and loses 25 to 27 survey minutes.'' Tests: tests/test_explain.py, tests/test_decisions_b.py.'
   links:
   - label: D3 sentence pattern
     path: docs/ARCHITECTURE.md#decision-engines-inputs-objective-ceiling
@@ -3798,7 +3706,7 @@ requirements:
   decisions:
   - DEC-15
   - DEC-26
-  status: planned
+  status: done
   question: Should the sentence say where its deciding fact comes from (a card's hard limit, the priority file,
     a crew rule), so the captain can tell a physical limit from a policy choice?
 - id: R-113
@@ -3810,16 +3718,10 @@ requirements:
   - brief p3, Scenario table, B
   - slides p12, 00:08
   quote: with a one-sentence rationale and the cost to the loser
-  how: 'Mechanism: D3 fills `cost_to_loser` in the decision record (contract 6) in the loser''s own units. Survey
-    primary: the survey pauses for the brief''s minimum 15-minute recovery window and the 40-min leg is re-run;
-    at min 8 that delays the leg''s end by about 23 minutes (15 paused plus the 8 already run), our reading of the
-    brief, while GAMEPLAN''s D3 line counts 15 min plus the re-run leg (55 min of vehicle time). Rescue primary:
-    the survey is suspended and G3''s leg is aborted; G3 holds at sea and is recovered over the stern ramp only
-    after G4 has landed (A.3: flight deck and ramp are mutually exclusive), so the cost is the aborted leg plus
-    the wait for the ramp. If the drone ever loses, the cost is the risk accepted (ditch if not landed within 12
-    min below 20 %). A weighted figure from capability_retained and the file''s weights can rank options but is
-    not the sentence. Today: the 40-min leg is in manifests/G3.yaml and the 12-min limit in G4.yaml; the 15-min
-    window is not yet in data. Proof: DEMO_SCRIPT Scenario B 00:12, the sentence that names the survey minutes lost.'
+  how: 'Done: the record''s loser block carries survey_minutes_lost (time flown on the leg, the recovery window and the
+    time to settle back to quiet, config/signals.yaml g3_leg and assumptions ship_state.noise.to_quiet_min) with the
+    leg paused and resumed under the survey file, or aborted and open-ended under the rescue file. Tests:
+    tests/test_decisions_b.py.'
   links:
   - label: Cost to loser
     path: GAMEPLAN.md#declared-objectives-readme-table-one-line-each
@@ -3835,7 +3737,7 @@ requirements:
   - DEC-26
   - DEC-40
   - DEC-44
-  status: planned
+  status: done
   question: Is the survey's cost the delay to the leg (about 23 minutes at min 8) or vehicle time spent (15 paused
     plus a 40-minute re-run, 55, as GAMEPLAN has it), and do we put a number on the drone's risk?
 - id: R-114
@@ -3846,16 +3748,10 @@ requirements:
   - brief p2, D4
   - 'brief p9, Ship state variables (A.6): Genset / cooling'
   quote: a generator trips or cooling is lost
-  how: 'Mechanism: the event timeline (contract 5) carries genset_trip, genset_restart and cooling_degraded. Faults
-    enter only as debounced, confirmed plant signals (fault_entry in config/assumptions.yaml): a trip on 2 of 3
-    signals (relay flag, kW near zero, frequency dip; power.trip_confirm), a cooling fault on the plant alarm plus
-    flow or delta-T, held 1 s, with the debounce counted inside the 5 s first shed from the raw event. Each record
-    keeps the raw-event and confirmation times, and a restore needs 60 s. D4 then runs its precomputed ladder (degraded
-    cooling is x0.6; at 24 °C the loop drops from about 133 to 80 kW). Injection: the seeded simulator timeline
-    (T4, Siddharth): the genset trip at Scenario B minute 12, and a labelled INJECTED pump fault at minute 19 (DEC-40).
-    Trips sharing one condition are reported as binding (Viking Sky, research E1). Cameras are cut (DEC-44). Today:
-    event types, fault_entry and the trip rule as data. Missing: the debounce in code and D4. Proof: DEMO_SCRIPT
-    Scenario B minute 12 (holds, 0 steps) and minute 19 (cooling binds, the ladder runs).'
+  how: 'Done: src/sdv/estimator.py confirms a genset trip on 2 of 3 signals and a pump fault on the plant alarm plus
+    flow or delta-T, held 1 s, with raw-event and confirmed times; src/sdv/shedding.py runs every tick and records
+    on a confirmed fault (minute 12 trip, minute 19 pump fault, the latter injected and labelled INJECTED). Tests:
+    tests/test_estimator.py, tests/test_decisions_b.py.'
   links:
   - label: Event types
     path: docs/ARCHITECTURE.md#data-contracts
@@ -3874,7 +3770,7 @@ requirements:
   - DEC-40
   - DEC-44
   - CON-21
-  status: planned
+  status: done
   question: Does the simulator emit the raw trip and cooling signals, so the debounce and the raw-event and confirmed
     times are exercised, or do faults arrive pre-confirmed (CON-21)?
 - id: R-115
@@ -3886,15 +3782,9 @@ requirements:
   - brief p3, What you're judged on (run on platform)
   - brief p9, Annex A table, Response time (A.8)
   quote: first shed within 5 s
-  how: 'Mechanism: ceiling `response_time_s.shed_first_action: 5` (A.8). The ladder is recomputed every tick as
-    "if a genset tripped now", so at a confirmed trip the first action is a lookup plus one mode command, logged
-    against 5 s. The bottleneck is confirmation, not compute: 2 of 3 trip signals must agree, and a human yes (15-60
-    s at 14 aboard, 1-3 min at 6, impossible at 0) cannot fit, so the crew approve the standing plan ahead of time
-    (DEC-17). Research anchor: illustrative PMS preferential-trip stages at about 5 and 10 s, main breaker about
-    15 s (E1). Computed first action at min 12, when a shortfall exists (a trip alone at 87 kW needs none, R-116):
-    under sar, G5 45 to 8 kW (price 0.019); under survey, G4''s charge 35 to 10 kW (0.002), since G4 weighs only
-    0.2 there. Today: ceiling and trip rule as data. Proof: DEMO_SCRIPT 00:42 ladder with timestamps against 5 s;
-    a timing test, not written.'
+  how: 'Done: the 5 S steps (non-critical guests) go together as the first action on the first over-limit tick, due by
+    first_shed_due_t_s in the record (fault plus 5 s); at minute 19 the step is commanded on tick 1141 and executed
+    on 1142. Tests: tests/test_response.py, tests/test_decisions_b.py.'
   links:
   - label: Precomputed ladder
     path: GAMEPLAN.md#shedding-ladder-d4-precomputed-every-tick
@@ -3909,7 +3799,7 @@ requirements:
   decisions:
   - DEC-16
   - DEC-17
-  status: planned
+  status: done
   question: Does the 5 s clock start at the first trip signal or at confirmation (2 of 3), and how do we show that
     interval on screen so the jury can see it?
 - id: R-116
@@ -3921,16 +3811,9 @@ requirements:
   - brief p9, Annex A table, Response time (A.8)
   - brief p6, The demo moment we want to see
   quote: full sequence within 60 s
-  how: 'Mechanism: ceiling `response_time_s.shed_full_sequence: 60` (A.8). D4 walks the ladder until the shortfall
-    closes, waiting out each step''s transition and rechecking power and heat after every step; total time logged
-    against 60 s. Binding: 100 kW degraded reserve minus 5 kW headroom = 95 kW. Finding from the cards: at min 12
-    the brief''s set draws G4 35 + G5 45 + G2 6 + G3 1 = 87 kW, so a trip alone needs no shed; one is needed if
-    G3 is charging (111 kW, the brief''s 105 kW check plus G2) or the loop is also degraded (80 kW at 24 °C). Under
-    sar our price order lists G5 to 8 kW then G2 to standby, the brief''s sequence, though at 111 kW the first step
-    alone closes the gap. The min-12 load is a team choice tied to CON-12. Today: ceiling and headroom as data.
-    Proof: DEMO_SCRIPT 00:40-00:42; a test per priority file, not written. Update: decided by DEC-32; Scenario B
-    runs G3, G4, G5, and the full load-out is refused at the pier with this alternative recommended and a logged
-    override available.'
+  how: 'Done: a 60 S step (mission-critical guest) goes alone, the next only on a later tick after a fresh reading, all
+    due by full_sequence_due_t_s (fault plus 60 s) in the record; the record also lists queued and armed steps.
+    Tests: tests/test_response.py.'
   links:
   - label: Shedding ladder
     path: GAMEPLAN.md#shedding-ladder-d4-precomputed-every-tick
@@ -3947,7 +3830,7 @@ requirements:
   - DEC-17
   - CON-12
   - DEC-32
-  status: planned
+  status: done
   question: Which load is on at min 12 so the trip really forces a shed (G3 charging at 25 kW, G2's winch at 20
     kW, or a degraded loop), and is that faithful to the brief's story?
 - id: R-117
@@ -3959,18 +3842,9 @@ requirements:
   - slides p10
   - brief p6, The demo moment we want to see
   quote: in a declared order
-  how: 'Mechanism: the order is computed, not hand-written (slide 10: no manual re-planning), with the freeze''s
-    precedence (DEC-44, F3): safety-critical guests never shed and hard limits first; all throttles before any shed;
-    then the priority file''s optional `shed_order` (keyed by capability name, like the weights) if it declares
-    one; then the computed price = weight x share of capability lost / kW freed, from each card''s modes, with the
-    file''s `mission_critical` guests last and ties by guest id. It is ''declared'' because the ladder is computed
-    every tick, shown on screen and approved as the standing plan before it is needed (DEC-17), and each record
-    says which rule set the order (order_source). No shipped priority file sets shed_order: disaster_relief already
-    keeps G5 last through mission_critical, and test_survey_and_sar_declare_no_shed_order checks survey and sar.
-    The schema takes shed_order ranks as non-zero integers, positive before unlisted capabilities and negative after,
-    and tests/test_mission_schema.py refuses an unknown capability. Armed at Scenario B minute 12 (oracle minute_12_as_decided),
-    the first step under both files is G5 full to low power (0.0038 per kW under survey, 0.0189 under sar). Missing:
-    the ladder core (T18). Proof: DEMO_SCRIPT minutes 12 and 19, and a ladder test per file.'
+  how: 'Done: the order is computed in src/sdv/ledger.py (Step.shed_key): response class (5 S before 60 S), throttle
+    before shed, the profile''s shed_order if it declares one, then mission value lost per kW freed, ties by guest
+    id; the record''s armed list shows it and the screen prints ''ORDER COMPUTED''. Tests: tests/test_ledger.py.'
   links:
   - label: Ladder order
     path: GAMEPLAN.md#shedding-ladder-d4-precomputed-every-tick
@@ -3993,7 +3867,7 @@ requirements:
   - DEC-16
   - DEC-17
   - DEC-44
-  status: planned
+  status: done
   question: Should one demo moment show a priority file with shed_order set, so the jury sees an operator's declared
     order override the computed price?
 - id: R-118
@@ -4028,12 +3902,10 @@ requirements:
   - brief p2, D4
   - brief p10, Manifest ontology (B.0)
   quote: Safety-critical guests are never shed automatically.
-  how: 'safety_critical guests never enter the ladder''s candidate list; host safety systems are host commitments
-    (count, never shed); research puts emergency-switchboard loads outside governor authority. The freeze''s precedence
-    puts this first: safety-critical never shed and hard limits first, then throttle before shed, then shed_order
-    if present, then the computed price (DEC-44, F3; T18). A shortfall left after shedding everything else has no
-    designed answer (likely: report the binding constraint to the crew, forbid at 0). No card is safety-critical,
-    so exercising it needs a test card.'
+  how: 'Done: src/sdv/ledger.py response_of puts a guest with criticality.safety_critical (or the profile''s
+    response.safety_command) in the 200 MS class, and next_step returns None for it, so it is never on the ladder;
+    it is only stopped, held or secured from the safety table (src/sdv/safety.py). Tests: tests/test_response.py,
+    tests/test_ledger.py.'
   links:
   - label: Ladder rule
     path: GAMEPLAN.md#shedding-ladder-d4-precomputed-every-tick
@@ -4046,7 +3918,7 @@ requirements:
   decisions:
   - DEC-16
   - DEC-44
-  status: planned
+  status: done
   question: What happens if shedding everything else still does not cover a safety-critical guest?
 - id: R-120
   category: decision-class
@@ -4075,7 +3947,7 @@ requirements:
   - label: Effect
     path: docs/SCENARIO_C_MEMO.md#effect
   - label: Live demo
-    path: docs/SCENARIO_C_MEMO.md#live-demo-14-6-and-0-aboard
+    path: docs/SCENARIO_C_MEMO.md#what-runs-14-6-and-0-aboard
   - label: 'DEMO_SCRIPT: Scenario C segment'
     path: docs/DEMO_SCRIPT.md#scenario-c-rule-r3-at-14-6-and-0-aboard-fixed-about-15-s
   - label: Memo entry
@@ -4108,7 +3980,7 @@ requirements:
   - label: By crew level
     path: docs/SCENARIO_C_MEMO.md#by-crew-level
   - label: Live demo
-    path: docs/SCENARIO_C_MEMO.md#live-demo-14-6-and-0-aboard
+    path: docs/SCENARIO_C_MEMO.md#what-runs-14-6-and-0-aboard
   - label: 'DEMO_SCRIPT: Scenario C segment'
     path: docs/DEMO_SCRIPT.md#scenario-c-rule-r3-at-14-6-and-0-aboard-fixed-about-15-s
   decisions:
@@ -4128,18 +4000,10 @@ requirements:
   - brief p6, The demo moment
   - slides p9, Core Mechanic 2
   quote: A conflict is an incompatibility between guests' conditions on this state.
-  how: 'Planned as D3''s trigger; not built. Mechanism: each active or requested activity''s conditions[].requires
-    map (manifests/G*.yaml) is intersected per ship-state variable (assumptions.yaml ship_state: course, speed_band,
-    noise, deck, emission, genset, cooling); an empty intersection is a conflict, shown as the two condition sets,
-    ''not as an alarm'' (brief p6). Scenario B binds it: G3 surveying needs speed_kn 3, course steady, noise quiet,
-    no deck machinery; G4 launch_recovery needs speed_kn 5-12, turn_into_wind free, deck clear; A.3 makes flight
-    deck and ramp mutually exclusive. Today G3.yaml also hand-declares the pair as a conditional exclude (G4.recovering
-    when G3.surveying); D3 should derive it, not depend on it. Missing: condition keys are free-form in schema.json
-    ($defs/condition requires is any object), so G4''s turn_into_wind and G3''s course name one variable differently
-    and only speed_kn collides by key. The freeze puts typed conditions before any engine code (DEC-44, F2): T15
-    makes every signal, position and capability name a vocabulary checked against assumptions.yaml, and OPEN_QUESTIONS
-    #44 adds a numeric speed_kn beside speed_band and one canonical activity name (G4.launch_recovery). Proof: DEMO_SCRIPT
-    00:10 shows both sets; a planned pytest asserts G3 surveying against G4 recovery conflicts on speed and course.'
+  how: 'Built: src/sdv/arbitration.py conflicts() intersects the two activities'' requires maps per ship-state signal
+    (range, set or value, with the speed tolerance) and adds the effects one activity has on the other''s conditions
+    and the cards'' exclusions; the record lists each conflict with what each side needs. The trigger, however, is
+    G4''s active hard limit, so a condition clash with no hard limit is not arbitrated.'
   links:
   - label: D3 engine row
     path: docs/ARCHITECTURE.md#decision-engines-inputs-objective-ceiling
@@ -4159,7 +4023,7 @@ requirements:
   - DEC-15
   - DEC-26
   - DEC-44
-  status: planned
+  status: drafted
   question: 'Does T15 map G4''s turn_into_wind onto the course variable (course: free), or add a separate turn_into_wind
     state to the A.6 vocabulary?'
 - id: R-123
@@ -4215,15 +4079,10 @@ requirements:
   - brief p5, Success criteria, Must-have
   - brief p2, Decision classes
   quote: Identifiable decision engine covering D1, D3 and one of D2 / D4, with declared objectives in the README.
-  how: 'Planned; the README half is drafted. Mechanism: D1 to D4 as pure functions in the deterministic core (src/sdv/),
-    each returning the ARCHITECTURE contract 6 decision record (verdict, binding line, sentence, latency_ms against
-    ceiling_ms). Ceilings bind it: D1 and D2 30 s, D3 2 s, D4 5 s to the first action and 60 s for the sequence
-    (assumptions.yaml response_time_s). Today: the README skeleton''s ''Decision classes'' table declares what each
-    class optimises, its ceiling and status, mirroring GAMEPLAN ''Declared objectives'' and the ARCHITECTURE engine
-    table; the D1 to D4 rows all say planned, src/sdv/ holds only __init__.py, and pyproject''s sdv = sdv.cli:main
-    points at a missing module. Missing: the engines, and a column naming each engine''s module, since brief p2
-    asks us to ''point at the component''. Proof: Scenario A exercises D1 and D2, Scenario B D3 and D4 (DEMO_SCRIPT),
-    plus a pytest per engine.'
+  how: 'Done: D1 to D5 are the pure functions in src/sdv/ (admission, placement, arbitration, shedding, core), each with
+    its declared objective in the README ''Decision classes'' table and the ARCHITECTURE engine table, each writing
+    the decision record of config/decision_record.schema.json with the binding line and a sentence built from the
+    record''s fields. Ceilings are measured on every record (timing log). Tests: the full suite, 1457 tests.'
   links:
   - label: README decision classes
     path: README.md#decision-classes
@@ -4248,7 +4107,7 @@ requirements:
   - DEC-26
   - CON-07
   - CON-10
-  status: planned
+  status: done
   question: 'If time runs short after D1 and D3, which third engine do we build first: D4, which Scenario B''s min-12
     shed needs, or D2, which Scenario A''s placement line needs?'
 - id: R-125
@@ -4260,15 +4119,10 @@ requirements:
   - brief p2, D3
   - slides p12, 00:08 CONFLICT
   quote: Within two seconds the governor decides, and spots the hard constraint first
-  how: 'Planned as D3''s first phase; not built. Mechanism: D3 lists the candidate outcomes (recover the drone now;
-    wait for the end of the leg, which means the drone ditches), drops every one that breaks a hard limit or the
-    ledger, then scores survivors by the sum of mission weight x capability delivered from the active priority file
-    (GAMEPLAN D3 objective). Hard limits come from manifests/G4.yaml hard_limits (battery_pct < 20: land within
-    12 min or ditch; emission silent: return home; airborne: endurance 90 min) and the ledger (the 35 kW, 20-min
-    charge must fit the reserve). Numbers: 18 % at min 8, 20 % threshold, 12 min, 2 s ceiling. Missing: hard_limits
-    when and then are free text in schema.json ($defs/limit), so nothing can evaluate them yet. Proof: DEMO_SCRIPT
-    00:12 shows the hard limit as the binding line; a planned pytest under survey.yaml (sar_air weight 0.2) asserts
-    no option breaking the 12-minute limit survives.'
+  how: 'Done: src/sdv/arbitration.py recovery_due applies G4''s hard limits before any weight: the land-or-ditch limit
+    at once, the land-by deadline once the recovery lead time is needed; the record states whether waiting for the
+    leg''s end is feasible against the deadline, and only then do the priority file''s weights decide how G3 yields.
+    Tests: tests/test_decisions_b.py.'
   links:
   - label: G4 hard limits
     path: manifests/G4.yaml
@@ -4284,7 +4138,7 @@ requirements:
     path: docs/DEMO_SCRIPT.md#scenario-b-90-s-deep
   decisions:
   - DEC-26
-  status: planned
+  status: done
   question: Do we turn hard_limits into small expressions the engine evaluates (battery_pct < 20 gives a land-by
     deadline 12 min out), or hand-code the drone rule and risk the jury reading it as a hard-coded answer?
 - id: R-126
@@ -4296,15 +4150,8 @@ requirements:
   - brief p6, The demo moment
   - brief p3, Scenario table, B
   quote: so "wait for the end of the leg" is off the table
-  how: 'Planned; the limit itself is in data. Mechanism: D3 computes G4''s land-by time from its hard limit and
-    tests every option against it before weights apply. Numbers: brief p3 gives a 40-min leg at min 0; on our reading
-    that it runs min 0 to min 40, and with the drone reporting 18 % at min 8, even the full 12 min from that report
-    means landing by min 20, so waiting overruns by 20 min (the Scenario C memo''s drain assumption, 100 % over
-    90 min, gives about min 18). The option stays in the decision record''s ranked options, marked rejected, with
-    the overrun as its binding line. Today: G4.yaml hard_limits holds the 20 %/12-min rule and a note that waiting
-    for the end of a survey leg is not an option; that note must never be printed as the rationale (brief p3: no
-    canned strings). Proof: DEMO_SCRIPT 00:12; a planned pytest asserts ''wait'' is rejected under survey.yaml,
-    where sar_air weighs 0.2.'
+  how: 'Done: the record''s wait_for_leg_end is computed from G3''s leg start and length against G4''s land-by time
+    (minute 18.2 at minute 8: infeasible), before the weights apply. Tests: tests/test_decisions_b.py.'
   links:
   - label: G4 hard limits
     path: manifests/G4.yaml
@@ -4318,7 +4165,7 @@ requirements:
     path: config/missions/survey.yaml
   decisions:
   - DEC-26
-  status: planned
+  status: done
   question: Do we show the rejected 'wait for the end of the leg' option on screen with its computed 20-minute overrun,
     or only the winner and its binding limit?
 - id: R-127
@@ -4329,12 +4176,9 @@ requirements:
   sources:
   - 'brief p8, Glossary: Right of way'
   quote: when two things cannot both happen, which one proceeds.
-  how: 'Right of way is D3 (planned, not built; the Scenario B detail sits in R-122, R-125 and R-126). Drafted precedence:
-    crew safety rules first (the Scenario C memo''s rule R3 holds a landing within 200 ms and no priority file lifts
-    it), then hard limits (G4 below 20 % lands within 12 min), then the sum of mission weight x capability delivered
-    from the active priority file, with the cost to the loser computed. Ceiling 2 s (assumptions.yaml response_time_s.arbitration).
-    Research E3 (R-E3-5) adds that a low-battery rescue recovery outranks survey guests but never safety-critical
-    loads. Proof: DEMO_SCRIPT 00:12 to 00:25.'
+  how: 'Built narrowly: the 200 ms landing hold (src/sdv/safety.py r3_hold_landing) and the hard limit
+    (src/sdv/arbitration.py) come before any weight, and the priority file decides only how the loser yields; a
+    generic right-of-way over any pair of guests is not built (R-094, R-111).'
   links:
   - label: 'GAMEPLAN: Declared objectives (D3)'
     path: GAMEPLAN.md#declared-objectives-readme-table-one-line-each
@@ -4349,7 +4193,7 @@ requirements:
   decisions:
   - DEC-17
   - DEC-21
-  status: planned
+  status: drafted
   question: Should the README state D3's precedence as three tiers (safety rules, hard limits, mission weights),
     so the jury sees right of way is more than a weight table?
 - id: R-128
@@ -4371,7 +4215,7 @@ requirements:
   - label: 'Scenario C memo: trigger'
     path: docs/SCENARIO_C_MEMO.md#trigger
   - label: 'Scenario C memo: live demo'
-    path: docs/SCENARIO_C_MEMO.md#live-demo-14-6-and-0-aboard
+    path: docs/SCENARIO_C_MEMO.md#what-runs-14-6-and-0-aboard
   decisions:
   - DEC-17
   - DEC-21
@@ -4568,15 +4412,10 @@ requirements:
   - brief p2, D4
   - slides p10, Core Mechanic 3
   quote: mission-critical, resolved against the priority file, not a bare boolean ... shed last, after throttling.
-  how: 'Planned as D4''s ordering; not built. Mechanism: mission_critical comes from the active priority file (survey
-    G3, sar G4, patrol G1, disaster_relief G5 and G6), not from the card, whose field only says ''per priority file''.
-    The ladder walks each guest''s modes, prices each step as weight x capability lost / kW freed, takes all throttles
-    before any shed, cheapest first, mission-critical guests last, ties by guest id, rechecking power and heat after
-    every step (GAMEPLAN ladder steps 3 to 5). Modes from the cards: G5 45 to 8 to 0 kW; G4 35 to 10 to 2 to 0;
-    G2 20 to 6 to 1 to 0; G3 charging 25 (not interruptible) to 1 to 0. Numbers: about 100 kW reserve after a trip,
-    5 kW headroom, 5 s and 60 s ceilings. Missing: the D4 code and the shed-order policy the priority files are
-    meant to carry. Proof: DEMO_SCRIPT 00:42 shows the ladder under the file active after the 00:25 swap; a planned
-    pytest asserts the mission-critical guest is the last guest touched under each file.'
+  how: 'Done: mission_critical comes from the active priority file; src/sdv/ledger.py response_of puts such a guest in
+    the 60 S class, which Step.shed_key orders after every 5 S step, throttles before sheds inside each class; D4
+    takes one 60 S step per tick after a fresh reading. Minute 19 under the survey file throttles G4 (fast charge to
+    charge) while G3, mission-critical, is untouched. Tests: tests/test_response.py, tests/test_decisions_b.py.'
   links:
   - label: 'GAMEPLAN: Shedding ladder (D4)'
     path: GAMEPLAN.md#shedding-ladder-d4-precomputed-every-tick
@@ -4592,7 +4431,7 @@ requirements:
     path: docs/DEMO_SCRIPT.md#scenario-b-90-s-deep
   decisions:
   - DEC-16
-  status: planned
+  status: done
   question: Does 'mission-critical last' span both phases, so under sar.yaml G4's 35 kW charge is never throttled
     while any non-critical guest still runs, or only within each phase as GAMEPLAN's 'all throttles before any shed'
     implies?
@@ -4894,9 +4733,9 @@ requirements:
   sources:
   - brief p3, What you're judged on
   quote: A decision engine, not a dashboard
-  how: The plan makes the decision record (verdict, binding, sentence, cost_to_loser, options, latency) the core
-    output that the screen only reads; engines D1 to D4 return Decision{verdict, binding, why}. None of these engines
-    exists yet; implementation is paused for team analysis.
+  how: 'Done: the decision record (verdict, binding line, sentence, cost to the loser, options, placement; latency in
+    the timing log) is the core''s output, and the screen (src/sdv/ui/) only reads snapshots and records. Tests:
+    tests/test_decision_record.py, tests/test_ui_view.py.'
   links:
   - label: Decision record contract
     path: docs/ARCHITECTURE.md#data-contracts
@@ -4904,7 +4743,7 @@ requirements:
     path: GAMEPLAN.md#architecture-the-frozen-design
   decisions:
   - DEC-20
-  status: planned
+  status: done
   question: Is the decision record the single source of truth for screen, replay and demo (ARCHITECTURE open decision
     2)?
 - id: R-146
@@ -4914,10 +4753,9 @@ requirements:
   sources:
   - brief p3, What you're judged on (decision engine)
   quote: eight moving gauges are the starting point, not the deliverable
-  how: 'The proposed schedule (BUILD_PLAN; CON-10 and CON-17 open) builds decisions before the screen: S1 contracts
-    Sat 14:00, S2 ledger 16:00, M1 Scenario A 18:30, M2 Scenario B 22:30, and only then M3, the screen with its
-    gauges, Sun 01:30; freeze 09:15. The demo script spends its time on decisions, not gauges, and the gauges sit
-    in the Operations view beside the decision log. No gauges or decisions exist yet.'
+  how: 'Done: the engines were built before the screen, and the screen is organised around the decision record (the
+    record panel, the armed ladder, the event log of sentences); the eight tiles read the ledger lines. The run
+    sheet spends its time on the minute 8, 12 and 19 decisions and the jury''s card.'
   links:
   - label: Schedule
     path: GAMEPLAN.md#schedule-pacific-pdt
@@ -4930,7 +4768,7 @@ requirements:
   - DEC-44
   - CON-10
   - CON-17
-  status: planned
+  status: done
   question: Do we skip polished gauges entirely until D1 and D3 produce real sentences?
 - id: R-147
   category: judging
@@ -5023,11 +4861,10 @@ requirements:
   sources:
   - brief p3, What you're judged on (explainability)
   quote: No canned strings.
-  how: 'Plan says no text beyond the record''s fields: every sentence is filled from a template over record fields,
-    for example D1 ''Refused: {line} has {free} {unit} free, {guest} needs {need} {unit}.'' (BUILD_PLAN''s done
-    check). The templates themselves are fixed text with slots, so the team should agree, and the README should
-    say, that slot-filled templates count as generated, not canned. A replay reproduces each sentence because it
-    is built from the record.'
+  how: 'Done: every sentence is built in src/sdv/explain.py from the record''s own fields (numbers, units, guests,
+    modes); the templates are fixed text with slots and tests/test_explain.py guards the words against the fixtures;
+    the screen prints the record''s sentence, never its own. Tests: tests/test_explain.py,
+    tests/test_decision_record.py.'
   links:
   - label: Constraint ledger
     path: GAMEPLAN.md#explainability-by-construction-the-constraint-ledger
@@ -5037,7 +4874,7 @@ requirements:
     path: docs/BUILD_PLAN.md#milestones-proposed
   decisions:
   - DEC-44
-  status: planned
+  status: done
   question: 'How do we show the jury the sentence is generated: print the ledger line beside it, or change a card
     number live and watch the sentence change?'
 - id: R-152
@@ -5158,15 +4995,10 @@ requirements:
   - brief p3, What you're judged on
   - brief p9, Annex A, Response time (A.8)
   quote: 'Would it run on the platform: 30 s / 2 s / 5 s ceilings met, offline, deterministic, replayable.'
-  how: 'Planned; nothing runs yet. Mechanism: a pure-Python core with no I/O (ARCHITECTURE principle 2); every decision
-    record logs latency_ms against ceiling_ms from assumptions.yaml response_time_s (admission and placement 30
-    s, arbitration 2 s, first shed 5 s, full sequence 60 s, safety commands 200 ms); a watchdog emits the safe default
-    (hold, deny, keep state) on a miss; inputs_hash and a replay test prove determinism; JS and public data are
-    vendored or cached, so it runs offline (DEC-01). Platform compute is modelled too: 4 nodes x 32 cores, 80 %
-    for guests. Today: only the ceilings and compute numbers exist, in data; pyproject declares sdv = sdv.cli:main
-    with no module behind it. Proof: latency against ceiling on every DEMO_SCRIPT decision, a replay pytest comparing
-    two runs line by line, and the board instrument, which runs the same container and reports latency per decision
-    class against these ceilings (T24, builder not decided).'
+  how: 'Measured, no watchdog: every decision logs latency_ms against ceiling_ms (D1 1 to 8 ms, D3 0.4 ms, D4 0.5 ms, D5
+    0.3 ms on the laptop); the whole stack runs offline after `uv sync`; the run is deterministic and replayable
+    byte for byte (`sdv replay`). The planned watchdog that falls back to the safe default on a missed ceiling
+    (decision_watchdog in config/assumptions.yaml) is documented only.'
   links:
   - label: Principles
     path: docs/ARCHITECTURE.md#principles
@@ -5184,7 +5016,7 @@ requirements:
   - DEC-01
   - DEC-13
   - DEC-44
-  status: planned
+  status: drafted
   question: 'Who builds the board instrument (T24, OPEN_QUESTIONS #46), so ''runs on the platform'' is shown on
     hardware nearer the A.7 rack, or do we report laptop timings only?'
 - id: R-156
@@ -5907,7 +5739,7 @@ requirements:
   - label: Installation window
     path: config/assumptions.yaml
   - label: 'Memo: not-now example'
-    path: docs/SCENARIO_C_MEMO.md#live-demo-14-6-and-0-aboard
+    path: docs/SCENARIO_C_MEMO.md#what-runs-14-6-and-0-aboard
   - label: Forecast data plan
     path: research/SENSOR_CATALOG.md#data-plan
   - label: 'Demo: A-prime drill'
@@ -6349,7 +6181,7 @@ requirements:
   - label: 'Memo: drone timing'
     path: docs/SCENARIO_C_MEMO.md#by-crew-level
   - label: 'Memo: assumptions'
-    path: docs/SCENARIO_C_MEMO.md#live-demo-14-6-and-0-aboard
+    path: docs/SCENARIO_C_MEMO.md#what-runs-14-6-and-0-aboard
   - label: 'Demo: Scenario B'
     path: docs/DEMO_SCRIPT.md#scenario-b-90-s-deep
   decisions:
@@ -6366,17 +6198,10 @@ requirements:
   - brief p3, Scenario table, B (good handling)
   - brief p6, The demo moment
   quote: a shedding sequence that keeps the winner alive
-  how: 'Mechanism planned: D4''s ladder orders throttles before sheds, cheapest mission loss per kW first, mission-critical
-    last, safety-critical never, and walks it until demand fits 95 kW (100 kW less 5 kW headroom), rechecking heat
-    each step. As decided (DEC-40; oracle minute_12_as_decided), minute 12 holds with 0 steps, and neither file''s
-    first armed step touches G4, the minute-8 winner: both start with G5 full to low power (0.0038 per kW under
-    survey, 0.0189 under sar). Under survey G4 is airborne at 2 kW with no charge to throttle; under sar its 35
-    kW is reserved and G4 is mission-critical. Once G4 is charging, the survey ladder throttles its charge to 10
-    kW (0.0024 per kW) before G5, as the minute-19 INJECTED fault shows, and survey.yaml does not make G4 mission-critical,
-    so protecting the winner over the full ladder is still the engine''s question. Today: ladder text in GAMEPLAN;
-    power.shed_headroom_kw 5. Proof planned: DEMO_SCRIPT 00:42, ''the winner kept alive''. Update: decided by DEC-32;
-    Scenario B runs G3, G4, G5, and the full load-out is refused at the pier with this alternative recommended and
-    a logged override available.'
+  how: 'Done as decided (DEC-40, DEC-61): minute 12 holds under both files with 0 steps, the minute-8 winner untouched,
+    and the record states the armed ladder in order; the executed shed at minute 19 (the injected pump fault)
+    throttles G4 under the survey file and G5 under the rescue file, the winner kept in both. Tests:
+    tests/test_decisions_b.py.'
   links:
   - label: Shedding ladder
     path: GAMEPLAN.md#shedding-ladder-d4-precomputed-every-tick
@@ -6394,7 +6219,7 @@ requirements:
   - DEC-32
   - DEC-40
   - DEC-44
-  status: planned
+  status: done
   question: 'How is the min-8 winner protected at min 12: a ''protect'' entry that D3 writes into the override stack,
     or making the winner mission-critical for the rest of the event, given that survey.yaml alone would throttle
     G4''s charge first?'
@@ -6406,14 +6231,9 @@ requirements:
   - brief p3, Scenario table, B (good handling)
   - brief p6, The demo moment
   quote: states what every guest loses
-  how: 'Mechanism planned: each ladder step writes one sentence from its ledger numbers, using ARCHITECTURE''s pattern
-    ''{guest} to {mode}: frees {kW}; loses {capability}'', where the capability lost is 1 minus the new mode''s
-    capability_retained, weighted by the active priority file. Numbers from the cards: G5 45 to 8 kW frees 37 kW
-    and keeps 30 % of coastal connectivity; G2 sampling to standby frees 5 kW and keeps none of its ocean data (assumed
-    value); G4 35 to 10 kW keeps 70 % (assumed). Today: modes and capability_retained in manifests/G*.yaml, schema-validated;
-    the sentence pattern in docs/ARCHITECTURE.md (Decision engines); no D4. Proof planned: DEMO_SCRIPT 00:42 ''one
-    line per guest'' against the 5 s and 60 s ceilings, and a test that every installed guest appears in the min-12
-    output.'
+  how: 'Done: the D4 sentence names every guest''s loss (''G4 loses 30 %, G3 and G5 nothing'') and the hold sentence
+    gives each armed step''s kW and capability lost; the record''s losses block carries mode and capability before
+    and after per guest (src/sdv/explain.py, src/sdv/shedding.py). Tests: tests/test_explain.py.'
   links:
   - label: Sentence pattern
     path: docs/ARCHITECTURE.md#decision-engines-inputs-objective-ceiling
@@ -6427,7 +6247,7 @@ requirements:
     path: docs/DEMO_SCRIPT.md#scenario-b-90-s-deep
   decisions:
   - DEC-16
-  status: planned
+  status: done
   question: Does 'what every guest loses' mean a line for every installed guest, including untouched ones such as
     G3 waiting on its own battery, so the jury can see nobody was skipped?
 - id: R-198
@@ -6481,7 +6301,7 @@ requirements:
   - label: 'Memo: by crew level'
     path: docs/SCENARIO_C_MEMO.md#by-crew-level
   - label: 'Memo: live demo'
-    path: docs/SCENARIO_C_MEMO.md#live-demo-14-6-and-0-aboard
+    path: docs/SCENARIO_C_MEMO.md#what-runs-14-6-and-0-aboard
   - label: Priority file test
     path: tests/test_brief_arithmetic.py
   decisions:
@@ -6511,7 +6331,7 @@ requirements:
   - label: 'Memo: by crew level'
     path: docs/SCENARIO_C_MEMO.md#by-crew-level
   - label: 'Memo: live demo'
-    path: docs/SCENARIO_C_MEMO.md#live-demo-14-6-and-0-aboard
+    path: docs/SCENARIO_C_MEMO.md#what-runs-14-6-and-0-aboard
   - label: Template file
     path: config/missions/patrol.yaml
   decisions:
@@ -6540,9 +6360,9 @@ requirements:
   - label: 'Memo: by crew level'
     path: docs/SCENARIO_C_MEMO.md#by-crew-level
   - label: 'Memo: live demo'
-    path: docs/SCENARIO_C_MEMO.md#live-demo-14-6-and-0-aboard
+    path: docs/SCENARIO_C_MEMO.md#what-runs-14-6-and-0-aboard
   - label: 'Memo: assumptions'
-    path: docs/SCENARIO_C_MEMO.md#live-demo-14-6-and-0-aboard
+    path: docs/SCENARIO_C_MEMO.md#what-runs-14-6-and-0-aboard
   decisions:
   - DEC-02
   - DEC-17
@@ -6603,9 +6423,9 @@ requirements:
   - label: 'Memo: by crew level'
     path: docs/SCENARIO_C_MEMO.md#by-crew-level
   - label: 'Memo: live demo'
-    path: docs/SCENARIO_C_MEMO.md#live-demo-14-6-and-0-aboard
+    path: docs/SCENARIO_C_MEMO.md#what-runs-14-6-and-0-aboard
   - label: 'Memo: assumptions'
-    path: docs/SCENARIO_C_MEMO.md#live-demo-14-6-and-0-aboard
+    path: docs/SCENARIO_C_MEMO.md#what-runs-14-6-and-0-aboard
   - label: 'WORKLOG: memo entry'
     path: WORKLOG.md#fri-2306-pdt--scenario-c-memo-draft--claude-opus-55-on-behalf-of-logan-walker-ghostwalka
   decisions:
@@ -6688,16 +6508,9 @@ requirements:
   sources:
   - slides p12, 00:12
   quote: Autonomous shedding sequence executes.
-  how: 'Mechanism: D4''s ladder is precomputed every tick as ''if a genset tripped now'' (GAMEPLAN, DEC-16); a trip
-    counts once 2 of 3 signals agree (power.trip_confirm), and the first step is then a lookup with no operator
-    in the loop. Slides p10 say the same: ''No manual re-planning.'' Crew authority is honoured ahead of time through
-    the standing plan (DEC-17), because live confirmation (15-60 s at 14, 1-3 min at 6, impossible at 0) cannot
-    meet the 5 s first action and 60 s sequence (response_time_s). Design only: GAMEPLAN''s ladder and docs/DEMO_SCRIPT.md
-    00:40-00:42; GAMEPLAN''s older 00:55 beat still sends G6 to ''standby'', a mode G6 lacks (it has recirculate,
-    4 kW). Open: the brief''s load-out fails mass and Bay 2 (CON-12), and our min-12 load (87 kW) needs no shed
-    yet (R-230). Proof: DEMO_SCRIPT 00:42 shows ladder timestamps against 5 s and 60 s with no keypress. Update:
-    decided by DEC-32; Scenario B runs G3, G4, G5, and the full load-out is refused at the pier with this alternative
-    recommended and a logged override available.'
+  how: 'Done: D4 runs every tick with no operator input; the first action goes out on the first over-limit tick after
+    the fault confirms (src/sdv/shedding.py, src/sdv/core.py). Crew authority is honoured ahead of time through the
+    standing plan (D5). Tests: tests/test_decisions_b.py, tests/test_crew_levels.py.'
   links:
   - label: Shedding ladder, precomputed
     path: GAMEPLAN.md#shedding-ladder-d4-precomputed-every-tick
@@ -6717,7 +6530,7 @@ requirements:
   - DEC-26
   - CON-12
   - DEC-32
-  status: planned
+  status: done
   question: Does the crew approve the standing shed plan once at mission start, or must the screen show it re-approved
     whenever the priority file or the guest set changes?
 - id: R-207
@@ -6781,15 +6594,9 @@ requirements:
   sources:
   - brief p5, Deliverables
   quote: a live demo on your laptop
-  how: 'Mechanism: everything runs on our laptop, offline, with no runtime compute beyond the local stack (DEC-01);
-    the brief also says laptop, single screen, no specialised hardware (p5 Constraints). The planned entry point
-    is one command, `uv run sdv demo`, which starts the engine and the screen (README ''Run it''). Today pyproject.toml
-    declares `sdv = sdv.cli:main`, but src/sdv holds only __init__.py and cli.py does not exist; only `uv sync`
-    and `uv run pytest` (11 checks) run, as README ''Run it'' says. The VENTUNO Q board is an instrument only (DEC-44):
-    the laptop provides every demo input and nothing in the demo depends on the board; NPU inference is cut (CON-04
-    closed by CON-20). docs/DEMO_SCRIPT.md ''Rehearsal and fallbacks'' plans fixed seeds, cached public data, a
-    backup recording, five Sunday rehearsals and a 09:15 freeze. Proof: a cold run on the demo laptop with Wi-Fi
-    off, timed, before the freeze.'
+  how: 'Done: `uv run sdv demo` runs everything on the laptop, offline after `uv sync`, no runtime compute beyond the
+    local stack (DEC-01); the screen is served on 127.0.0.1 with vendored static files and no CDN. Tests:
+    tests/test_ui_server.py.'
   links:
   - label: Stack and one command
     path: GAMEPLAN.md#stack-decided-unless-something-breaks
@@ -6806,7 +6613,7 @@ requirements:
   - CON-04
   - DEC-44
   - CON-20
-  status: planned
+  status: done
   question: If the board is on the table, does it mirror one laptop input (a button for the genset trip), or stay
     off the table so 'laptop only' is unmistakable?
 - id: R-210
@@ -7072,14 +6879,9 @@ requirements:
   - brief p6, The demo moment
   - slides p12, Baseline
   quote: the survey vehicle listening, eight gauges steady
-  how: 'Mechanism: the screen draws one gauge per brief class (power, heat, deck positions, mast, mass and stability,
-    data links, compute, response time), each fed at 1 Hz from ledger lines (ARCHITECTURE contract 7) that sum per-guest
-    draws from the cards; ''steady'' is the baseline with every guest in its nominal mode. The ledger contract lists
-    15 line classes (port and starboard lines, SATCOM, acoustic and others), so the roll-up into eight gauges is
-    still undecided. The brief warns eight gauges are the starting point, not the deliverable (p3, R-146), and expects
-    them moving by hour 4 (p4). It lives only in GAMEPLAN''s Architecture sketch and ARCHITECTURE''s Screen row;
-    GAMEPLAN''s M1 (Sat 01:30) promises eight gauges and is likely to move because implementation is paused (CON-10).
-    Proof: docs/DEMO_SCRIPT.md 00:00 ''eight gauges steady'', then the power gauge drop at 00:40.'
+  how: 'Done: the Operations view shows eight tiles (cooling, power, deck, mast, mass and stability, data links,
+    compute, response) fed from the ledger lines of each snapshot; at minute 0 every guest is in its baseline mode
+    and the tiles read NORMAL. Tests: tests/test_ui_view.py.'
   links:
   - label: Screen sketch
     path: GAMEPLAN.md#architecture-the-frozen-design
@@ -7093,7 +6895,7 @@ requirements:
     path: docs/DEMO_SCRIPT.md#scenario-b-90-s-deep
   decisions:
   - CON-10
-  status: planned
+  status: done
   question: How do the 15 ledger line classes roll up into eight gauges, for example does the power gauge show the
     total or the tighter of the port and starboard lines?
 - id: R-219
@@ -7587,14 +7389,9 @@ requirements:
   sources:
   - brief p6, The demo moment
   quote: on a ship that might have had six people aboard, or none
-  how: 'Mechanism: crew level is a setting in D5, and the shed path is the same at every level because no live confirmation
-    fits the 5 s first action: confirmation takes 15-60 s at 14, 1-3 min at 6 and is impossible at 0 (crew.confirm_s),
-    so the crew approves the standing plan ahead of time (DEC-17). What changes with crew is hands: clearing the
-    deck takes 3-5 min at 14, 8-12 min at 6 and is impossible at 0 (ship_state.deck.clear_min), which is why the
-    Scenario C memo keeps the landing zone clear from launch at 6 and, at 0, recovers only on a deck latched clear
-    at the last crew sweep. Lives in config/assumptions.yaml (R3''s policy per level is rules.r3.confirm), GAMEPLAN''s
-    crew table and the memo; no D5 or crew dial yet. Plan: the DEMO_SCRIPT Scenario C segment, crew dial 14 / 6
-    / 0. Proof: one timeline replayed at 14, 6 and 0 yields the same shed records.'
+  how: 'Done: crew level is a runtime input (crew_change) and the shed path is the same at every level, because D4 never
+    waits for a confirmation; what changes with crew is R3 (D5): confirm at 14, standing plan at 6, automatic or
+    forbidden at 0. tests/test_crew_levels.py runs Scenario B to the end at 14, 6 and 0 aboard.'
   links:
   - label: Crew and deck timings
     path: config/assumptions.yaml
@@ -7608,7 +7405,7 @@ requirements:
   - DEC-17
   - DEC-21
   - DEC-44
-  status: planned
+  status: done
   question: The brief names six or none, so do we run the 90 s at 6 aboard and flip to 0, instead of the storyboard's
     14 to 0?
 - id: R-235
@@ -7620,15 +7417,10 @@ requirements:
   - slides p12, 01:30
   - brief p3, What you're judged on (jury inputs)
   quote: the same code just ran two different ships
-  how: 'Mechanism: the code reads the priority file as data; swapping config/missions/survey.yaml for sar.yaml changes
-    only weights (for example seabed_inspection 1.0 to 0.2, sar_air 0.2 to 1.0, coastal_connectivity 0.2 to 1.0)
-    and mission_critical (G3 to G4). From the same timeline the governor then runs a survey ship (G3 holds, 15-min
-    pause, about 15 to 23 survey minutes lost) or a rescue ship (survey suspended, ship released, 35 kW reserved,
-    G5 throttled first at min 12). test_every_capability_has_a_weight_in_every_priority_file guarantees each file
-    prices every guest. Missing: loader, priority_swap handling and a side-by-side view. Plan: docs/DEMO_SCRIPT.md
-    00:25 ''Both decisions side by side: same code, two ships'' and the 01:25 close; slides p12 put the swap at
-    01:30 instead (a callout time, R-207). Proof: one replay under both files from one commit, with records differing
-    only where weights differ.'
+  how: 'Done: the same code under config/missions/survey.yaml and sar.yaml gives two coherent outcomes from the same
+    timeline: minute 8 G3 holds depth and resumes, or aborts open-ended with G4''s charge reserved; minute 19 G4 is
+    throttled, or G5. Mission compare shows both runs side by side and the SIM bar swaps the file mid-run. Tests:
+    tests/test_decisions_b.py, tests/test_ui_live.py.'
   links:
   - label: Survey file
     path: config/missions/survey.yaml
@@ -7645,7 +7437,7 @@ requirements:
   decisions:
   - DEC-02
   - DEC-26
-  status: planned
+  status: done
   question: Do we show 'same code' literally, with one commit hash on screen beside the two priority-file hashes
     and the two decision records?
 - id: R-236
@@ -7831,14 +7623,9 @@ requirements:
   sources:
   - slides p2, ship drawing
   quote: BRIDGE DECK
-  how: 'Mechanism: the one screen (GAMEPLAN Architecture: FastAPI, static SVG and JS, 1 Hz websocket) shows the
-    schematic, 8 gauges and an event log whose lines are the decision record''s sentence field (docs/ARCHITECTURE.md
-    contract 6: verdict, binding line, sentence, cost_to_loser, latency_ms against ceiling_ms). The screen is read-only;
-    the bridge''s authority to confirm, approve standing plans and push priority overrides is set in GAMEPLAN ''Crew
-    in two roles (D5)'', locked as DEC-17. Numbers: every decision carries one sentence a captain would accept (brief
-    p1); ceilings 30 s, 2 s, 5 s and 200 ms (A.8). Where today: the contract, and a sample bridge sentence in docs/SCENARIO_C_MEMO.md
-    ''Effect''; no screen code. Proof: docs/DEMO_SCRIPT.md Scenario B row 00:12 (decision record with latency, binding
-    constraint and cost to the loser) and row 00:42 (one line per guest against the 5 s and 60 s ceilings).'
+  how: 'Done: the Operations view is the bridge''s screen: ship mimic, eight tiles, ship-state chips, the decision
+    record with its sentence and the event log of sentences from the records (src/sdv/ui/view.py). The screen is
+    read-only on the engine apart from the laptop inputs (SIM bar, priority file, crew chip).'
   links:
   - label: 'GAMEPLAN: screen in the architecture'
     path: GAMEPLAN.md#architecture-the-frozen-design
@@ -7853,7 +7640,7 @@ requirements:
   decisions:
   - DEC-17
   - DEC-26
-  status: planned
+  status: done
   question: Should the top of the screen be the latest decision sentence the captain acts on (verdict, binding line,
     cost to the loser) rather than the eight gauges, since the brief scores a decision engine, not a dashboard?
 - id: R-244
@@ -8115,7 +7902,7 @@ requirements:
   - label: Row for 14
     path: docs/SCENARIO_C_MEMO.md#by-crew-level
   - label: Memo live demo
-    path: docs/SCENARIO_C_MEMO.md#live-demo-14-6-and-0-aboard
+    path: docs/SCENARIO_C_MEMO.md#what-runs-14-6-and-0-aboard
   - label: Confirmation against ceilings
     path: GAMEPLAN.md#crew-in-two-roles-d5
   decisions:
@@ -8146,7 +7933,7 @@ requirements:
   - label: Row for 6
     path: docs/SCENARIO_C_MEMO.md#by-crew-level
   - label: Memo live demo
-    path: docs/SCENARIO_C_MEMO.md#live-demo-14-6-and-0-aboard
+    path: docs/SCENARIO_C_MEMO.md#what-runs-14-6-and-0-aboard
   - label: Hands as a resource
     path: GAMEPLAN.md#crew-in-two-roles-d5
   - label: Crew timings
@@ -8377,7 +8164,7 @@ requirements:
   - label: Open decision 2
     path: docs/ARCHITECTURE.md#open-decisions-for-the-team
   - label: README idea
-    path: README.md#the-idea-in-one-line
+    path: README.md#architecture
   - label: Restart is a replay
     path: GAMEPLAN.md#failsafes-stale-feeds-and-the-board-instrument
   decisions:
@@ -8713,15 +8500,9 @@ requirements:
   sources:
   - 'brief p4, State: Platform budget'
   quote: per resource class capacity, committed, free and degraded capacity, at 1 Hz
-  how: 'Mechanism: a seeded simulator loop ticks at 1 Hz; each tick builds the conditions snapshot, recomputes every
-    ledger line (capacity, committed, free, degraded per class), re-prices the D4 ladder as ''if a genset tripped
-    now'' (DEC-16) and pushes one state message to the screen over the 1 Hz websocket. Numbers: 1 Hz (brief p4);
-    first shed within 5 s, so the precompute must finish well inside one tick; problem size at most 6 guests and
-    5 positions. Where today: GAMEPLAN Architecture and Shedding ladder sections and docs/ARCHITECTURE.md contracts
-    4 and 7; contract 7''s ledger line has capacity and demand but no explicit free or degraded field; src/sdv holds
-    only __init__.py, so no loop, ledger or snapshot exists. Proof: a test still to write that runs 60 simulated
-    seconds and asserts 60 snapshots with per-tick compute time logged, and the docs/DEMO_SCRIPT.md Scenario B 00:00
-    baseline with eight gauges steady.'
+  how: 'Done: src/sdv/loop.py ticks at 1 Hz ship time; each snapshot carries capacity, demand and free per class with
+    the degraded causes (src/sdv/estimator.py, src/sdv/ledger.py), the ladder is re-priced every tick, and the /ws
+    stream pushes each tick to the screen. Tests: tests/test_estimator.py, tests/test_snapshot_contract.py.'
   links:
   - label: 'GAMEPLAN: architecture'
     path: GAMEPLAN.md#architecture-the-frozen-design
@@ -8733,7 +8514,7 @@ requirements:
     path: docs/DEMO_SCRIPT.md#scenario-b-90-s-deep
   decisions:
   - DEC-16
-  status: planned
+  status: done
   question: At the storyboard's 12x time compression, is 1 Hz counted in ship time (12 ledger updates per wall second,
     about 83 ms each) or wall time, and which clock do the 2 s and 5 s ceilings use?
 - id: R-270
@@ -9288,14 +9069,8 @@ requirements:
   sources:
   - 'brief p8, Glossary: Optionally crewed'
   quote: A platform designed so that people aboard are a configuration, not a different ship.
-  how: 'Mechanism: crew level is a runtime input, not a build choice: the same code, cards, priority files and assumptions
-    serve 14, 6 and 0 aboard. A crew_change event (docs/ARCHITECTURE.md contract 5) updates the snapshot''s crew
-    field and every rule re-reads its per-crew policy. Per docs/SCENARIO_C_MEMO.md ''Trigger'', a standing plan
-    lapses when the crew level changes unless a plan for the new level was approved first; the departing crew approve
-    the 0-aboard plan at handover. Numbers (A.6): confirm 15-60 s, 1-3 min, impossible; deck clearing 3-5 min, 8-12
-    min, only if already clear. Where today: config/assumptions.yaml crew holds all three levels; no engine reads
-    them. Missing: event handling and a test that one replay at 14 and at 0 differs only by crew. Shown at docs/DEMO_SCRIPT.md
-    breadth line ''Crew dial 14 to 0''.'
+  how: 'Done: crew level is a runtime input (crew_change) to the same code, cards, priority files and assumptions; R3
+    re-reads its per-crew policy when it opens (src/sdv/core.py). Tests: tests/test_crew_levels.py.'
   links:
   - label: 'ARCHITECTURE: data contracts'
     path: docs/ARCHITECTURE.md#data-contracts
@@ -9308,7 +9083,7 @@ requirements:
   decisions:
   - DEC-10
   - DEC-17
-  status: planned
+  status: done
   question: When the crew dial moves mid-run, do every open decision and standing plan re-run at once like a priority
     swap, with the lapsed plans listed on screen?
 - id: R-287
@@ -12025,7 +11800,7 @@ requirements:
   - label: G4 card
     path: manifests/G4.yaml
   - label: 'Scenario C memo: assumptions'
-    path: docs/SCENARIO_C_MEMO.md#live-demo-14-6-and-0-aboard
+    path: docs/SCENARIO_C_MEMO.md#what-runs-14-6-and-0-aboard
   - label: 'Payload research: generator specs'
     path: research/sensors/payload_deck_human.md#4-synthetic-generator-specs
   decisions: []
@@ -12465,7 +12240,7 @@ requirements:
   - label: Physical Account
     path: docs/PHYSICAL_ACCOUNT.md
   - label: r3 assumptions
-    path: docs/SCENARIO_C_MEMO.md#live-demo-14-6-and-0-aboard
+    path: docs/SCENARIO_C_MEMO.md#what-runs-14-6-and-0-aboard
   - label: Physical Account detail
     path: docs/PHYSICAL_ACCOUNT_DETAIL.md
   - label: Board instrument
@@ -12630,7 +12405,7 @@ requirements:
   - label: Reason test
     path: tests/test_brief_arithmetic.py
   - label: Memo assumptions (r3.*)
-    path: docs/SCENARIO_C_MEMO.md#live-demo-14-6-and-0-aboard
+    path: docs/SCENARIO_C_MEMO.md#what-runs-14-6-and-0-aboard
   - label: G6 card (all assumed)
     path: manifests/G6.yaml
   decisions:
@@ -12665,7 +12440,7 @@ requirements:
   - label: Generator
     path: tools/physical_account.py
   - label: Memo assumptions (r3.*)
-    path: docs/SCENARIO_C_MEMO.md#live-demo-14-6-and-0-aboard
+    path: docs/SCENARIO_C_MEMO.md#what-runs-14-6-and-0-aboard
   - label: 'README: deliverables'
     path: README.md#deliverables
   decisions:
@@ -12721,7 +12496,7 @@ requirements:
   - label: Physical Account draft
     path: docs/PHYSICAL_ACCOUNT.md
   - label: Memo assumptions (r3.*)
-    path: docs/SCENARIO_C_MEMO.md#live-demo-14-6-and-0-aboard
+    path: docs/SCENARIO_C_MEMO.md#what-runs-14-6-and-0-aboard
   - label: 'assumptions.yaml: provenance'
     path: config/assumptions.yaml
   - label: Reason test
@@ -12752,7 +12527,7 @@ requirements:
   - label: Generator script
     path: tools/physical_account.py
   - label: 'Scenario C memo: assumptions'
-    path: docs/SCENARIO_C_MEMO.md#live-demo-14-6-and-0-aboard
+    path: docs/SCENARIO_C_MEMO.md#what-runs-14-6-and-0-aboard
   - label: 'WORKLOG: Scenario C memo entry'
     path: WORKLOG.md#fri-2306-pdt--scenario-c-memo-draft--claude-opus-55-on-behalf-of-logan-walker-ghostwalka
   decisions:
@@ -13596,9 +13371,9 @@ requirements:
   sources:
   - brief p3, What you're judged on (run on platform)
   quote: offline, deterministic, replayable
-  how: 'Principle 2: engines are pure functions; seeded simulator; ties broken by guest id in the ladder; replay
-    ordered by ship time and sequence number, never wall clock; wall-clock latency and timestamps go to a separate
-    timing log. No code to verify it.'
+  how: 'Done: the engines are pure functions of the snapshot, the cards and the priority file; ties are broken by guest
+    id; wall-clock latency and timestamps go to the separate timing log; `sdv replay` reproduces every snapshot and
+    record byte for byte (tests/test_loop.py).'
   links:
   - label: Principles
     path: docs/ARCHITECTURE.md#principles
@@ -13607,7 +13382,7 @@ requirements:
   decisions:
   - DEC-16
   - DEC-44
-  status: planned
+  status: done
   question: Which hidden non-determinism (dict order, float sums, time.now) do we ban by lint or test from the first
     commit?
 - id: R-448
@@ -13619,14 +13394,9 @@ requirements:
   - brief p5, Success criteria, Should-have
   - brief p4, Stack, data & tools
   quote: offline, deterministic, replayable
-  how: 'Mechanism: ARCHITECTURE defines the input timeline (t_s, type, payload, seq) and the output decision record,
-    whose inputs_hash covers the timeline, assumptions, cards and priority file. The planned `replay` command (T22)
-    re-runs a recorded timeline and asserts decision logs identical on every field except wall-clock latency and
-    timestamps, which go to a separate timing log. Events are ordered by ship time and sequence number, never wall
-    clock, and seeds are fixed. A restart is a replay. Camera readings and failover by replay are cut (DEC-44).
-    Replay is on the never-cut list, and M4 (Sun 03:00) asks for a green replay test. Nothing is built, and CON-10
-    records that the milestones are likely to move. Proof: a pytest replay of the Scenario B timeline under both
-    the survey and sar files, plus DEMO_SCRIPT''s ''replayed'' labels on breadth lines.'
+  how: 'Done: `sdv replay <dir> --mission <file>` re-runs the estimator and the core from the frame and input logs and
+    asserts every snapshot and record identical (src/sdv/loop.py replay, first_difference); `sdv run --log-dir` and
+    every `sdv demo` run write the logs. Tests: tests/test_loop.py, tests/test_ui_live.py.'
   links:
   - label: 'ARCHITECTURE: data contracts'
     path: docs/ARCHITECTURE.md#data-contracts
@@ -13642,7 +13412,7 @@ requirements:
   - CON-10
   - DEC-26
   - DEC-44
-  status: planned
+  status: done
   question: Does the timing log need its own check (every record within its ceiling), separate from the replay match?
 - id: R-449
   category: constraint
@@ -13719,14 +13489,8 @@ requirements:
   - brief p5, Constraints
   - slides p13, Local Environment
   quote: Runs on a laptop, single screen, no specialised hardware
-  how: 'Mechanism: one Python 3.12 project run by uv from the repo''s .venv (PyYAML, jsonschema and pytest installed;
-    FastAPI, uvicorn and websockets planned, DEC-39). The screen is one locally served HTML/JS page with vendored
-    libraries, with no Node or build step (GAMEPLAN Stack). Everything runs on the laptop: the governor, Siddharth''s
-    simulator and the screen. The VENTUNO Q board is an instrument only, and the demo never depends on it; Lark
-    and the camera checks are cut (DEC-44). Today `uv run pytest` runs the data checks in about a second. pyproject.toml
-    declares the script sdv = sdv.cli:main, but src/sdv/cli.py does not exist, so the README''s planned command
-    `uv run sdv demo` would fail today. Proof: run that command from a fresh clone on the laptop during the Sun
-    08:00-09:15 rehearsal.'
+  how: 'Done: one Python 3.12 project run by uv (PyYAML, jsonschema, FastAPI, uvicorn, websockets; pytest for the
+    tests), the screen one locally served page with vendored static files; everything runs on the laptop.'
   links:
   - label: 'README: run it'
     path: README.md#run-it
@@ -13741,7 +13505,7 @@ requirements:
   - DEC-13
   - DEC-39
   - DEC-44
-  status: planned
+  status: done
   question: Do we smoke-test the one command from a fresh clone on a second laptop, so 'runs on a laptop' does not
     mean only ours?
 - id: R-452
@@ -13752,15 +13516,10 @@ requirements:
   - brief p5, Constraints
   - brief p4, Stack, data & tools
   quote: Runs on a laptop, single screen, no specialised hardware
-  how: 'Mechanism: one page served locally with a 1 Hz websocket (GAMEPLAN Architecture), with three views. Operations:
-    the ship schematic (bays, mast, deck, ramp, hangar), eight gauges, the ship-state row and the event log with
-    decisions and rationales, with the constraint ledger as its drill-down (T8). Mission compare: two runs, one
-    per priority file, on one timeline (T20). Admission review: the jury''s card and its one-number edit (T21).
-    The brief''s own layout (p4) is a schematic, eight gauges and a decision log, with no map, and it says 3D earns
-    nothing: the 3D view, the rules panel and the camera panel are cut (DEC-44; CON-02 closed by CON-20). The screen
-    only reads decision records (ARCHITECTURE contracts). Owner: Logan (DEC-47); M3 (Sun 01:30) is the screen milestone.
-    Nothing is built. Proof: every ''What the jury sees'' cell in DEMO_SCRIPT''s Scenario B table appears on that
-    one page, rehearsed on the laptop''s own display.'
+  how: 'Done: one page (src/sdv/ui/static/index.html) with six views: Operations (ship mimic, eight tiles, ship-state
+    chips, decision record, event log), the constraint ledger, Mission compare (two runs, one per priority file),
+    Admission review (the jury''s card and its edits), the profile and rule builder, and Reference. Tests:
+    tests/test_ui_server.py, tests/test_ui_view.py.'
   links:
   - label: 'GAMEPLAN: architecture'
     path: GAMEPLAN.md#architecture-the-frozen-design
@@ -13778,7 +13537,7 @@ requirements:
   - DEC-44
   - DEC-47
   - CON-20
-  status: planned
+  status: done
   question: Do the three views switch as tabs on the one page, or does Mission compare replace Operations only while
     it runs?
 - id: R-453
@@ -13788,11 +13547,8 @@ requirements:
   sources:
   - brief p5, Constraints
   quote: Runs on a laptop, single screen, no specialised hardware
-  how: 'Mechanism: everything required runs on the laptop. The VENTUNO Q board is an instrument only: it runs the
-    same container off the demo path, and a board button or knob may only mirror a laptop input (DEC-44). NPU inference
-    is cut, so Qualcomm''s proprietary QAIRT runtime is not needed (CON-04 closed by CON-20; SOFTWARE_LOG lists
-    it as excluded). Cameras, the webcam and the Wi-Fi path are cut (DEC-44). Not built. Proof: a rehearsal with
-    the board unplugged gives the same decision log on replay.'
+  how: 'Done: everything required runs on the laptop; the VENTUNO Q board is an instrument only and nothing in the demo
+    depends on it (its measured rows in the Physical Account are still planned).'
   links:
   - label: 'GAMEPLAN: board instrument'
     path: GAMEPLAN.md#failsafes-stale-feeds-and-the-board-instrument
@@ -13806,7 +13562,7 @@ requirements:
   - DEC-01
   - DEC-44
   - CON-20
-  status: planned
+  status: done
   question: Do we bring the board to the table at all, given 'no specialised hardware', or keep it to the Physical
     Account's measured rows?
 - id: R-454
@@ -13968,7 +13724,7 @@ requirements:
   - label: 'GAMEPLAN: stale and missing feeds'
     path: GAMEPLAN.md#failsafes-stale-feeds-and-the-board-instrument
   - label: 'Memo: live demo'
-    path: docs/SCENARIO_C_MEMO.md#live-demo-14-6-and-0-aboard
+    path: docs/SCENARIO_C_MEMO.md#what-runs-14-6-and-0-aboard
   - label: 'Demo: breadth strip'
     path: docs/DEMO_SCRIPT.md#breadth-strip-one-line-each-about-5-s-each
   - label: 'ARCHITECTURE: conditions snapshot'
@@ -14077,7 +13833,7 @@ requirements:
   - label: 'GAMEPLAN: core model'
     path: GAMEPLAN.md#core-model-locked-by-logan-fri-2100-pdt
   - label: 'README: the idea in one line'
-    path: README.md#the-idea-in-one-line
+    path: README.md#architecture
   - label: Manifest schema field names
     path: manifests/schema.json
   - label: 'ARCHITECTURE: sentence patterns'
@@ -15144,7 +14900,7 @@ requirements:
   - label: Schema
     path: manifests/schema.json
   - label: README idea
-    path: README.md#the-idea-in-one-line
+    path: README.md#architecture
   decisions: []
   status: drafted
   question: Should the README show one Kubernetes request beside our G4 card to make the difference obvious to the
@@ -15264,9 +15020,9 @@ requirements:
   sources:
   - brief p4, Stack, data & tools
   quote: 'One screen: ship schematic (bays, mast, deck)'
-  how: 'Planned (T8): the Operations view holds the ship schematic (bays, mast, deck, ramp, hangar), eight gauges,
-    the ship-state row and the event log, with the constraint ledger as its drill-down. It is one of three views
-    on one locally served page (FastAPI and SVG), beside Mission compare and Admission review. Owner: Logan (DEC-47).'
+  how: 'Done: the Operations view holds the ship mimic (bays, mast, flight deck, hangar), the eight tiles, the
+    ship-state chips and the event log, with the constraint ledger as its own view (src/sdv/ui/view.py,
+    src/sdv/ui/static/js/app.js).'
   links:
   - label: Architecture
     path: GAMEPLAN.md#architecture-the-frozen-design
@@ -15275,7 +15031,7 @@ requirements:
   decisions:
   - DEC-44
   - DEC-47
-  status: planned
+  status: done
   question: Does the schematic mark the hangar roof, an assumed position, differently from the brief's positions?
 - id: R-508
   category: stack-data
@@ -15284,12 +15040,13 @@ requirements:
   sources:
   - brief p4, Stack, data & tools
   quote: eight gauges
-  how: 8 gauges planned.
+  how: 'Done: eight tiles, one per class (cooling, power, deck, mast, mass and stability, data links, compute,
+    response), each with capacity, demand and state (src/sdv/ui/view.py tiles).'
   links:
   - label: Architecture
     path: GAMEPLAN.md#architecture-the-frozen-design
   decisions: []
-  status: planned
+  status: done
   question: One gauge per class, or split power into total and two lines?
 - id: R-509
   category: stack-data
@@ -15298,12 +15055,12 @@ requirements:
   sources:
   - brief p4, Stack, data & tools
   quote: an event log with decisions and rationales
-  how: Event log reads decision records.
+  how: 'Done: the event log prints the records'' sentences and the state changes (src/sdv/ui/view.py).'
   links:
   - label: Decision record
     path: docs/ARCHITECTURE.md#data-contracts
   decisions: []
-  status: planned
+  status: done
   question: Show the ledger line under each sentence?
 - id: R-510
   category: stack-data
@@ -15312,12 +15069,12 @@ requirements:
   sources:
   - brief p4, Stack, data & tools
   quote: no map needed, 3D earns nothing
-  how: No map planned.
+  how: 'Done: no map on the screen.'
   links:
   - label: Architecture
     path: GAMEPLAN.md#architecture-the-frozen-design
   decisions: []
-  status: planned
+  status: done
   question: Do we need even a small position readout for the drone?
 - id: R-511
   category: stack-data
@@ -15609,7 +15366,7 @@ requirements:
   - label: 'Software log: data sources'
     path: docs/SOFTWARE_LOG.md#data-sources-planned-none-downloaded-yet
   - label: 'Scenario C memo: r3 assumptions'
-    path: docs/SCENARIO_C_MEMO.md#live-demo-14-6-and-0-aboard
+    path: docs/SCENARIO_C_MEMO.md#what-runs-14-6-and-0-aboard
   decisions:
   - DEC-22
   - CON-03
@@ -15890,7 +15647,7 @@ requirements:
   - label: 'GAMEPLAN: cut order'
     path: GAMEPLAN.md#schedule-pacific-pdt
   - label: 'Scenario C memo: live demo'
-    path: docs/SCENARIO_C_MEMO.md#live-demo-14-6-and-0-aboard
+    path: docs/SCENARIO_C_MEMO.md#what-runs-14-6-and-0-aboard
   - label: 'WORKLOG: CON-01'
     path: WORKLOG.md#conflicts-and-risks-to-watch
   decisions:
@@ -15988,13 +15745,9 @@ requirements:
   - slides p9
   - slides p13, Explainable Logic
   quote: Deterministic, inspectable rules beat behaviour nobody can audit
-  how: 'ARCHITECTURE principle 2: engines are pure functions of their inputs; same inputs, same decision, same sentence.
-    Planned proofs: the seeded 1 Hz simulator (Siddharth, DEC-47), the event timeline in, the decision log out,
-    and a replay command that asserts identical output on every field except wall-clock latency and timestamps,
-    which go to a separate timing log (T22; never-cut; M4 at Sun 03:00); inputs_hash over the timeline, assumptions,
-    cards and priority file on every record; ties by guest id. Rules and priorities are readable YAML/JSON, and
-    every sentence is filled from a template over record fields. CV and the LLM paraphraser are cut (DEC-44). No
-    replay test exists; today''s tests check data only.'
+  how: 'Done: the engines are pure functions; the event timeline goes in, the decision log comes out, and `sdv replay`
+    asserts identical output except the timing log (src/sdv/loop.py). No model or network is on the decision path;
+    every sentence is built from the record''s fields.'
   links:
   - label: Principles
     path: docs/ARCHITECTURE.md#principles
@@ -16018,7 +15771,7 @@ requirements:
   - CON-01
   - DEC-44
   - DEC-47
-  status: planned
+  status: done
   question: Is every decision reproducible from the same inputs and rule file, and which test proves it?
 - id: R-541
   category: decision-class
@@ -16030,16 +15783,9 @@ requirements:
   - slides p9, Core Mechanic 2
   - slides p13, Explainable Logic
   quote: an identifiable decision engine with declared objectives, not generic AI
-  how: 'Planned; objectives drafted. Mechanism: the decision path is the deterministic core alone (ARCHITECTURE
-    principle 2): D1 to D5 as pure functions, each with a declared objective, and D1 to D4 with a ceiling (README
-    ''Decision classes'', ARCHITECTURE engine table), each output a decision record built from the binding ledger
-    line. The README table states D4''s precedence (safety-critical never shed and hard limits first, throttle before
-    shed, then shed_order if declared, else the computed price) and D5''s setting per rule and crew level (confirm,
-    standing plan, automatic or forbidden, never confirm at 0); D1 and D2 search by enumeration. No ML decides,
-    per brief p4 (''Use ML for forecasting, not for the decision''), and no model runs at all: cameras, CV, the
-    rule compiler and the LLM paraphraser are cut (DEC-44). Rules are typed conditions in data, never code written
-    by a model (CON-01). Every AI tool used to build ArgOS is declared in docs/SOFTWARE_LOG.md. Missing: the engines.
-    Proof: a replay pytest shows identical records for identical inputs_hash; the README names each objective.'
+  how: 'Done: the decision path is the deterministic core alone: D1 to D5 as pure functions, each with a declared
+    objective (README ''Decision classes''), D1 to D4 with a ceiling measured on every record, each output the
+    decision record built from the binding ledger line. No model runs anywhere in the build.'
   links:
   - label: Principles
     path: docs/ARCHITECTURE.md#principles
@@ -16058,7 +15804,7 @@ requirements:
   - DEC-09
   - CON-01
   - DEC-44
-  status: planned
+  status: done
   question: Do we show the declared-objectives table on screen beside each decision class, so the jury sees an identifiable
     engine, not generic AI?
 - id: R-542
@@ -16373,11 +16119,10 @@ requirements:
   sources:
   - brief p5, Constraints
   quote: keeps working when a budget shrinks or a data feed drops
-  how: 'Every capacity is a function of conditions, recomputed each tick: power by gensets online, heat by seawater
-    temperature (160 kW at 12 °C to 120 kW at 30 °C, x0.6 degraded), SATCOM by availability and emission state.
-    The D4 ladder takes the tighter of power and cooling, so warming water or a degraded loop shrinks the target
-    exactly like a trip. Planned demo evidence: replay Scenario B with seawater ramping past 27 °C and show the
-    ladder''s first step.'
+  how: 'Done: every capacity is a function of the snapshot and recomputed each tick: power by gensets online and speed
+    band, heat by seawater temperature (160 kW at 12 C to 120 kW at 30 C, x0.6 with a pump down); D4''s limit is
+    min(power, heat) minus 5 kW, so a shrinking budget moves the target without a fault (src/sdv/ledger.py,
+    src/sdv/shedding.py). Tests: tests/test_ledger.py.'
   links:
   - label: 'Core model: shedding ladder'
     path: GAMEPLAN.md#shedding-ladder-d4-precomputed-every-tick
@@ -16385,6 +16130,6 @@ requirements:
     path: config/assumptions.yaml
   decisions:
   - DEC-24
-  status: planned
+  status: done
   question: 'Which shrinking budget do we show in the demo: warming seawater, SATCOM dropping in emission silence,
     or a degraded cooling pump?'

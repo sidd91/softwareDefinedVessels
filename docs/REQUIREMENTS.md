@@ -17,22 +17,22 @@ leaving out a part the design freeze cut (DEC-44).
 
 | Section | Rows | Called out | done | drafted | planned | gap | not-applicable |
 |---|---|---|---|---|---|---|---|
-| [Deliverables](requirements/deliverables.md) | 26 | 26 | 0 | 19 | 7 | 0 | 0 |
-| [Problem framing and resource classes](requirements/problem-framing-and-resource-classes.md) | 59 | 55 | 0 | 36 | 23 | 0 | 0 |
-| [Must-have success criteria](requirements/must-have-success-criteria.md) | 14 | 14 | 0 | 7 | 7 | 0 | 0 |
-| [Should-have success criteria](requirements/should-have-success-criteria.md) | 12 | 12 | 0 | 1 | 11 | 0 | 0 |
-| [Decision classes (D1 to D6)](requirements/decision-classes-d1-to-d6.md) | 48 | 46 | 0 | 9 | 39 | 0 | 0 |
-| [What we are judged on](requirements/what-we-are-judged-on.md) | 29 | 28 | 5 | 11 | 13 | 0 | 0 |
-| [Reference scenarios](requirements/reference-scenarios.md) | 40 | 40 | 0 | 20 | 20 | 0 | 0 |
-| [Live demo](requirements/live-demo.md) | 31 | 30 | 0 | 12 | 19 | 0 | 0 |
-| [Platform model and ship state (Annex A)](requirements/platform-model-and-ship-state-annex-a.md) | 72 | 71 | 0 | 64 | 7 | 0 | 1 |
+| [Deliverables](requirements/deliverables.md) | 26 | 26 | 4 | 19 | 3 | 0 | 0 |
+| [Problem framing and resource classes](requirements/problem-framing-and-resource-classes.md) | 59 | 55 | 3 | 36 | 20 | 0 | 0 |
+| [Must-have success criteria](requirements/must-have-success-criteria.md) | 14 | 14 | 2 | 7 | 5 | 0 | 0 |
+| [Should-have success criteria](requirements/should-have-success-criteria.md) | 12 | 12 | 2 | 2 | 8 | 0 | 0 |
+| [Decision classes (D1 to D6)](requirements/decision-classes-d1-to-d6.md) | 48 | 46 | 24 | 16 | 8 | 0 | 0 |
+| [What we are judged on](requirements/what-we-are-judged-on.md) | 29 | 28 | 8 | 12 | 9 | 0 | 0 |
+| [Reference scenarios](requirements/reference-scenarios.md) | 40 | 40 | 2 | 20 | 18 | 0 | 0 |
+| [Live demo](requirements/live-demo.md) | 31 | 30 | 5 | 12 | 14 | 0 | 0 |
+| [Platform model and ship state (Annex A)](requirements/platform-model-and-ship-state-annex-a.md) | 72 | 71 | 3 | 64 | 4 | 0 | 1 |
 | [Guest manifest and cards (Annex B)](requirements/guest-manifest-and-cards-annex-b.md) | 72 | 70 | 5 | 64 | 3 | 0 | 0 |
 | [Physical Account (Annex C)](requirements/physical-account-annex-c.md) | 25 | 25 | 0 | 24 | 1 | 0 | 0 |
-| [Constraints](requirements/constraints.md) | 68 | 65 | 0 | 46 | 22 | 0 | 0 |
-| [Stack, data and tools](requirements/stack-data-and-tools.md) | 38 | 10 | 1 | 14 | 21 | 0 | 2 |
+| [Constraints](requirements/constraints.md) | 68 | 65 | 6 | 46 | 16 | 0 | 0 |
+| [Stack, data and tools](requirements/stack-data-and-tools.md) | 38 | 10 | 5 | 14 | 17 | 0 | 2 |
 | [Out of scope](requirements/out-of-scope.md) | 9 | 8 | 0 | 2 | 0 | 0 | 7 |
-| [Data use and AI rules](requirements/data-use-and-ai-rules.md) | 11 | 9 | 0 | 7 | 2 | 0 | 2 |
-| **All** | **554** | **509** | **11** | **336** | **195** | **0** | **12** |
+| [Data use and AI rules](requirements/data-use-and-ai-rules.md) | 11 | 9 | 1 | 7 | 1 | 0 | 2 |
+| **All** | **554** | **509** | **70** | **345** | **127** | **0** | **12** |
 
 ## Gaps
 

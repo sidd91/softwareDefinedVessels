@@ -69,14 +69,14 @@ engine code yet. Tasks and owners: [BUILD_PLAN.md](BUILD_PLAN.md).
 | Safety-command table | 200 ms answers (A.8), rebuilt every tick next to the D4 ladder | ledger, snapshot, rules | commands | Logan |
 | Decision record, explainer | one record per decision; the sentence is a template over its fields | engine outputs | decision log (JSONL), timing log | Logan |
 | Clock and replay | ship-time clock that can hold and jump; replay compares logs | event timeline, decision log | match, or the first differing field | Logan |
-| Screen | one screen with three views (below) | snapshots, decision log | demo inputs | Logan |
+| Screen | one screen with six views (below) | snapshots, decision log | demo inputs | Logan |
 | Physical Account | Annex C from `assumptions.yaml` and the cards | data model, board rows | `docs/PHYSICAL_ACCOUNT.md` | Logan; generator built |
 | Board instrument | the same container on the VENTUNO Q, off the demo path ([NODE_B_BOARD.md](NODE_B_BOARD.md)) | replayed timelines | measured Physical Account rows | not assigned |
 
 The design freeze cut three earlier components (DEC-44): the two-node bus with failover, camera virtual
 sensors, and the crew rule compiler.
 
-**The screen.** One screen, as the brief asks, with three views. **Operations**: ship schematic, eight
+**The screen.** One screen, as the brief asks, with six views (the three below, the constraint ledger, the profile and rule builder, and Reference). **Operations**: ship schematic, eight
 gauges, ship-state row, event log with decisions and rationales; the constraint ledger is its drill-down.
 **Mission compare**: two runs on one timeline, one per priority file, so the jury sees the same code run two
 ships. **Admission review**: the D1 record for the jury's card, with the one-number edit. The laptop
@@ -153,7 +153,7 @@ backbone, line-of-sight radio, acoustic, compute cores, response time.
 | Engine | Objective | Ceiling | Sentence pattern |
 |---|---|---|---|
 | D1 admission | verdict at both gensets, the 200 kW reserve and cooling at 30 °C; must survive one genset down by throttling to the 95 kW gate, otherwise yes-if; the raw one-genset-down line always shown (DEC-35); port moves with crane time (DEC-37); links at minimum rates (DEC-38); the seawater tipping point; for yes-if, least mission value lost | 30 s | "Refused: {line} has {free} {unit} free, {guest} needs {need} {unit}." |
-| D2 placement | maximise the smallest remaining margin; preferred slots first; leave the most future cards admissible | 30 s | "{part} to {slot}: rejected {slot2}, {line} has {free} {unit} free." |
+| D2 placement | lexicographic, by enumeration of every allowed layout: no installed part left without a position, most parts placed, fewest port moves, most parts in a preferred position, then a fixed order (no margin term, no rejected-alternatives record: CON-18) | 30 s | "{part} to {slot}." |
 | D3 right of way | hard limits first, then mission-weighted value | 2 s | "{winner} proceeds: {hard limit or weight}, {loser} loses {cost}." |
 | D4 shedding | the precedence below; power and heat rechecked after each step | 5 s first action, 60 s full sequence | "{guest} to {mode}: frees {kW} kW, loses {capability}." |
 | D5 crew policy | what a human still confirms at 14, 6 and 0, approved ahead of time | n/a | "At {crew} aboard, {rule} is {policy}." |
