@@ -94,7 +94,7 @@ def from_d4(d: dict, *, seq: int, snapshot: dict) -> dict:
                     "demand": b["demand"], "free": b["free"], "unit": b["unit"], "degraded_by": list(b["degraded_by"])},
         "load_kw": d["load_kw"], "limit_kw": d["limit_kw"], "load_after_kw": d["load_after_kw"],
         "steps": [_step(s) for s in d["steps"]], "armed": [_step(s) for s in d["armed"]], "losses": d["losses"],
-        "queued": [_step(s) for s in d.get("queued", [])], "responses": d.get("responses", {}),
+        "queued": [_step(s) for s in d.get("queued", [])], "responses": d.get("responses", {}), "envelope": d.get("envelope", {}),
         "order_source": "computed",
         "raw_event_t_s": d.get("raw_event_t_s"), "confirmed_t_s": d.get("confirmed_t_s"), "first_shed_due_t_s": d.get("first_shed_due_t_s"),
         "full_sequence_due_t_s": d.get("full_sequence_due_t_s"),

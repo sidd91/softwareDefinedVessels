@@ -968,3 +968,27 @@ deadline; offline and advisory only if ever (audit §5).
 Decisions: DEC-61, DEC-62 (Siddharth). Conflicts: CON-07's residue is closed by DEC-62's merge direction. Deferrals:
 none. Requirements touched: none yet (R-067 once #2 lands). Next: #2, #4, #6 on `audit/main-gaps`, small commits,
 pushed as they pass.
+### Sat 22:03 PDT · Minute 12: the hold sentence carries the whole armed ladder and the envelope case · Claude Fable 5.1 on behalf of Siddharth Chawla (sidd91)
+
+What: the minute-12 D4 hold said only "0 steps" and the first armed step; the must-have reads "min-12 explicit shedding sequence" (R-067).
+shed() now records each guest's draw now beside its envelope draw (`envelope`), carried by from_d4 and the schema; the hold sentence
+lists the whole armed ladder in order (move, kW freed, capability lost) and why the envelope set does not arise (105 kW against the 95 kW limit, but G3 holding depth at 1 kW and G4 airborne at 2 kW).
+Files: src/sdv/{shedding,records,explain}.py, config/decision_record.schema.json, tests/fixtures/records/d4_m12_{survey,sar}.json (regenerated from the engine; sar's ladder as DEC-60 orders it), expected_sentences.yaml, tests/test_{explain,decisions_b}.py, docs/DEMO_SCRIPT.md.
+Tests: 1279 pass; the ops view renders it at t=745. Branch fix/minute-12-sentence (88a9915), pushed for a teammate to merge.
+Decisions: none. Conflicts: none. Requirements touched: R-067, R-196.
+
+### Sat 22:18 PDT · Review of fix/minute-12-sentence: the ladder is stated in its order, "priced" dropped · Claude Fable 5.1 on behalf of Siddharth Chawla (sidd91)
+
+What: independent review of 88a9915 and ade4ec4 against the minute-12 task: the diff line by line, the full suite, `sdv admit` and `sdv run` under both
+files, `sdv demo` on port 8300 (/api/state at t=745 and t=1145 for both files, /api/compare), the envelope field against the engine on the pinned
+snapshots (equal), DEMO_SCRIPT's quotes against the fixtures (verbatim). One defect fixed on the branch (0b28495): the hold sentence said "Armed in
+priced order", but D4 orders the ladder by response class, then throttle before shed, then shed_order rank, then price (ledger.Step.shed_key, DEC-60);
+the minute-19 post-shed hold under rescue reads G5 low power to off (0.0375 per kW), G3 standby to off (0.06), G4 fast charge to charge (0.012), and
+under survey it puts G4 charge to standby ahead of the cheaper G5 low power to off, so the record's own cost_per_kw contradicted the word. The
+sentence now says "Armed in order:". The decision this branch implements is DEC-61 (Siddharth, Sat 21:40, on branch audit/main-gaps, not yet on
+main), which the previous entry could not see; it asks for the ladder in its declared order, which the sentence states.
+Files: src/sdv/explain.py, tests/fixtures/records/d4_m12_{survey,sar}.json, tests/fixtures/records/expected_sentences.yaml, tests/test_explain.py, docs/DEMO_SCRIPT.md.
+Tests: 1279 pass before and after the fix. Left for the owner: docs/requirements.yaml's R-067 row still describes minute 12 by its first armed step
+and lists D4 as missing (stale before this branch); the decision log writes cost_per_kw rounded (0, 0.1), so the order was checked against the
+engine's prices; the 19 px .why paragraph now carries about 450 characters live at minute 12, not checked on a screen here.
+Decisions: none new (implements DEC-61). Conflicts: none. Requirements touched: R-067, R-034 (docs/requirements.yaml not edited).

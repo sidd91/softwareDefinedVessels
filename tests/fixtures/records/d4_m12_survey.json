@@ -34,36 +34,39 @@
       "from_kw": 45,
       "to_kw": 8,
       "cost_per_kw": 0.0038,
-      "capability_lost_pct": 70,
+      "capability_lost_pct": 70.0,
       "mission_critical": false,
       "shed": false,
-      "response": "shed_first_action"
+      "response": "shed_first_action",
+      "due_t_s": 725
     },
     {
       "guest": "G5",
       "from_mode": "low_power",
       "to_mode": "off",
+      "frees_kw": 8,
       "from_kw": 8,
       "to_kw": 0,
-      "frees_kw": 8,
       "cost_per_kw": 0.0075,
       "capability_lost_pct": 30.0,
       "mission_critical": false,
       "shed": true,
-      "response": "shed_first_action"
+      "response": "shed_first_action",
+      "due_t_s": 725
     },
     {
       "guest": "G4",
       "from_mode": "standby",
       "to_mode": "off",
+      "frees_kw": 2,
       "from_kw": 2,
       "to_kw": 0,
-      "frees_kw": 2,
       "cost_per_kw": 0.03,
       "capability_lost_pct": 30.0,
       "mission_critical": false,
       "shed": true,
-      "response": "shed_first_action"
+      "response": "shed_first_action",
+      "due_t_s": 725
     }
   ],
   "order_source": "computed",
@@ -87,11 +90,34 @@
       "capability_after": 1.0
     }
   },
+  "envelope": {
+    "G3": {
+      "mode": "standby",
+      "kw": 1,
+      "activity": "holding_depth",
+      "envelope_mode": "charging",
+      "envelope_kw": 25
+    },
+    "G4": {
+      "mode": "standby",
+      "kw": 2,
+      "activity": "airborne",
+      "envelope_mode": "fast_charge",
+      "envelope_kw": 35
+    },
+    "G5": {
+      "mode": "full",
+      "kw": 45,
+      "activity": "transmitting",
+      "envelope_mode": "full",
+      "envelope_kw": 45
+    }
+  },
   "trigger": "genset_trip",
   "injected": false,
   "raw_event_t_s": 720,
   "confirmed_t_s": 721,
   "first_shed_due_t_s": 725,
   "inputs_hash": "4ff8aaca11be1511",
-  "sentence": "Holds: 48 of 95 kW with one genset down, 0 steps, no capability lost. First armed step: G5 full to low power, 45 to 8 kW, frees 37 kW."
+  "sentence": "Holds: 48 of 95 kW with one genset down, 0 steps, no capability lost. Armed in order: G5 full to low power, 45 to 8 kW, frees 37 kW (70 % lost), then G5 low power to off, 8 to 0 kW, frees 8 kW (30 % lost), then G4 standby to off, 2 to 0 kW, frees 2 kW (30 % lost). The envelope case does not arise: G3 charging 25 kW, G4 fast charge 35 kW and G5 full 45 kW would be 105 kW against the 95 kW limit, but G3 is holding depth in standby (1 kW) and G4 is airborne in standby (2 kW)."
 }
