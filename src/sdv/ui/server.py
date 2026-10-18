@@ -40,7 +40,7 @@ from sdv import loader as Ld
 from sdv.ui import builder, data, live, view
 
 STATIC = Path(__file__).parent / "static"
-SPEEDS = (1, 12, 60)
+SPEEDS = (1, 12, 20, 60)
 SOURCES = ("live", "fixtures")
 
 

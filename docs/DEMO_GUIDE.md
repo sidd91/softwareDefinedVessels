@@ -20,22 +20,24 @@ Click each button once. A pause of up to a second after a click is normal.
 
 Use only one browser tab. A second tab runs its own separate copy of the demo.
 
-## The run: 2 minutes, hard stop
+## The run: press play, about 1 minute, no clicks during it
 
-Buttons used: RESTART and the three event buttons in the bottom bar (G4 LOW BATT, GEN 2 TRIP, CHW P1 TRIP), and the
-OPERATIONS and DEMO COMPARE tabs at the top. Click each once. You do not need to wait for the clock.
+1. **Quick tour, 15 seconds (OPERATIONS tab).** Point at the ship drawing, the eight boxes under it, and the panel on
+   the right. Say: "This is what the crew sees: the ship, its equipment, its budget, and every decision with its reason."
+2. **Click DEMO COMPARE** (last tab at the top). Survey is on the left, rescue on the right.
+3. **In the bottom bar click ×20, then RESTART.** The 20-minute mission now plays out in 1 minute by itself. Do not click
+   anything else. Talk over it:
 
-| By | Click | Point at | Say |
-|---|---|---|---|
-| 0:15 | Nothing yet (you are on OPERATIONS) | The ship drawing, then the eight boxes under it | "This is what the crew sees: the ship, its equipment, and its budget of power, cooling, space and weight." |
-| 0:25 | RESTART, then DEMO COMPARE (last tab at the top) | The two columns | "The same ship under two missions, side by side. Survey on the left, rescue on the right." |
-| 0:50 | G4 LOW BATT | Both columns, first line | "Minute 8. The drone is low on battery. Both missions land it first. Survey pauses the underwater robot. Rescue cancels the robot's dive and saves power for the drone." |
-| 1:05 | GEN 2 TRIP | Both columns | "Minute 12. A generator cuts out. Everything still fits, so neither mission turns anything off." |
-| 1:30 | CHW P1 TRIP | Both columns, then the table underneath | "Minute 19. A cooling pump fails. Survey slows the drone's charging. Rescue turns the communications unit down instead. Each decided within the 5-second rule." |
-| 1:50 | OPERATIONS | The right panel: first line, then PRIORITY and CREW RULE | "Every decision comes with its reason and the rules in force." |
-| 2:00 | Stop | | "That is ArgOS." |
+| About | What appears in both columns | Say |
+|---|---|---|
+| 0:24 | Minute 8: the drone is low on battery | "The drone must land. Survey pauses the underwater robot. Rescue cancels its dive and saves power for the drone." |
+| 0:36 | Minute 12: a generator cuts out | "Both missions still fit on one generator, so nothing is turned off." |
+| 0:57 | Minute 19: a cooling pump fails (labelled INJECTED) | "Now something must give. Survey slows the drone's charging. Rescue turns the communications unit down. Same ship, same failure, the mission decides what gives way first." |
+| 1:00 | The clock stops at T+00:20:00 | "That is graceful degradation, decided by the mission." |
 
-If you are running long, skip GEN 2 TRIP.
+At minute 19 the two headlines read the same. Point at the ACTION row in each column, or the DIFFERENCE table below.
+
+**If anything goes wrong:** click RESTART in the bottom bar. The run starts again from zero at the same speed.
 
 ## If something goes wrong
 
