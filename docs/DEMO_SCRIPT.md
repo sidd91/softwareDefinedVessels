@@ -249,7 +249,8 @@ section 5; the laptop serves on port 8000, the port numbers in the scorecard are
 2. `uv sync` prints "Audited 27 packages" in under 2 s. If "No interpreter found for Python 3.12 ... offline
    mode": connect to Wi-Fi once and rerun (cold: CPython 3.12.14, 104 MB, plus 27 wheels; 1.7 s on the dev box,
    1 to 3 min on conference Wi-Fi).
-3. `uv run pytest -q` prints "1485 passed" or more (1485 on 7b9a804 in about 215 s; every merged fix adds its own
+3. `uv run pytest -q` prints "1773 passed, 1 xfailed" on the final main ec36081 (the one xfail is deliberate: it pins the
+   recovery-lead lookup left unfixed so the 6-aboard record stays as shown), and in any case "1485 passed" or more (1485 on 7b9a804 in about 215 s; every merged fix adds its own
    tests). Skip if under 20 min are left.
 4. Port 8000 free (`lsof -i :8000` prints nothing), then `uv run sdv demo` prints "ArgOS screen on
    http://127.0.0.1:8000/ (live); Ctrl+C stops it" (since fix/live-run-log, in 6a91f5d, followed by a LOGS line
