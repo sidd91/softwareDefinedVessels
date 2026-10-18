@@ -80,11 +80,16 @@ needs Logan's approval before it is.
 | OR-Tools | Apache-2.0 | Google | optional solver for D2 placement | not planned: D1 and D2 run by enumeration (design freeze) |
 | ReportLab or WeasyPrint | BSD-3 | ReportLab Inc.; Kozea | memo and Physical Account to PDF | the PDF route is `tools/build_pdfs.py` instead |
 
+## Data sources in use
+| Source | Licence | Status |
+|---|---|---|
+| Open-Meteo Marine and Archive | CC BY 4.0, free tier non-commercial | cached: Siddharth fetched the Strait of Sicily route on feat/ship-state-fsm fbe59a5, hourly for 1-15 Oct 2026 at 3 grid points (4 waypoints), corridor_mid and corridor_mid_return sharing one; the deployment map (`tools/deploy_map/data/`) carries a copy and its footer links "Weather data by Open-Meteo.com" to open-meteo.com and "CC BY 4.0" to the licence. The brief names Open-Meteo Marine as a tier-2 public source (CON-05) |
+| Natural Earth 1:10m land, v5.1.2 | public domain | downloaded Sat 22:16 PDT from github.com/nvkelso/natural-earth-vector (tag v5.1.2, 10 MB), approved by Logan; clipped to the Strait of Sicily (4 KB) in `tools/deploy_map/data/coast_strait_of_sicily.json`; credited "Made with Natural Earth" in the map's footer. Natural Earth is a NACIS project (USA) |
+
 ## Data sources (planned; none downloaded yet)
 Full tiered list with sizes in `research/SENSOR_CATALOG.md`. Each is declared here when pulled.
 | Source | Licence | Status |
 |---|---|---|
-| Open-Meteo Marine and Archive | CC BY 4.0, free tier non-commercial | planned; the brief itself names Open-Meteo Marine as a tier-2 public source (Stack, data and tools), so no organizer check is needed (CON-05); attribution line in the README when cached |
 | NOAA OISST via ERDDAP | public domain | planned |
 | Argo via Ifremer ERDDAP | free and open | planned |
 | UCI naval propulsion CBM | CC BY 4.0 | planned |

@@ -102,6 +102,9 @@ Deadline: **Sun 2026-10-18 10:00 PDT**.
 | DEC-61 | Sat 21:40 | Scenario B minute 12 (DEC-51, freeze F4): the DEC-40 timeline stands. The minute-12 D4 record states the full armed ladder in declared order and why the brief's 105 kW set does not arise (G3 at sea on its own battery, G4 airborne); the minute-19 pump fault, labelled injected, runs that ladder live. No new timeline variant before the demo (req R-067) | Siddharth | Claude Fable 5.1 for Siddharth |
 | DEC-62 | Sat 21:40 | Rubric audit of main accepted as the work list (`docs/AUDIT_MAIN.md`): must-have gaps first (power-edit crash, minute-12 sentence, crew-chip crash guards, data/compute admission lines, Physical Account tracer), then README truth pass and PDFs; everything else declared as a limitation. `feat/ship-state-fsm` is never merged wholesale: plant and environment are ported behind main's simulator interface, engines, records and UI stay main's (req R-016, R-064 to R-067, R-069) | Siddharth | Claude Fable 5.1 for Siddharth |
 | DEC-63 | Sat 23:32 | Scenario B load-out is G1 + G3 + G4 + G5 (9.56 t): the organisers' forum answer of 17 Oct ('Scenario B loadout' thread, Software-Defined Vessel forum; question by Filip Debef 08:22, answer by Graziano 08:55: 'Use G1 + G3 + G4 + G5 for Scenario B ... G3 in Bay 1, G5 in Bay 2, G1 on the mast, G5's antenna on the hangar roof. The Annexes take precedence over the demo narrative.'). Supersedes the G3, G4, G5 set of DEC-32; the refusal of G2-G5 at the pier stands. Settles CON-18 for Scenario B: the antenna is on the hangar roof (req R-066, R-067) | Siddharth | Claude Fable 5.1 for Siddharth |
+| DEC-63 | Sat 21:53 | Final-night split (Discord sync): Siddharth covers the code: his audit tracks #1, #2, #4, #5, #6, #12/#19, the demo rehearsal, README truth pass, UX simplification. Logan covers the slides (VC or commander style, no paragraphs, buzzwords, slides last), the deployment map with weather ranges for mission parameters, long-running soak tests reported to Siddharth, Q&A prep, and subsidiary UI design calls agreed with Siddharth. Separate branches per feature, merged at the end | Logan and Siddharth | Claude for Logan |
+| DEC-64 | Sat 22:32 | Slogan: "ArgOS: Reliability through Automation" | Logan | Claude for Logan |
+| DEC-65 | Sat 22:27 | Deployment map built standalone (tools/deploy_map, branch feat/deployment-map): 2D, offline, Natural Earth coastlines (public domain, approved by Logan) and Siddharth's Open-Meteo route cache; seeded points along the route and inside a +/-10 km area; mission parameters (cooling at route P90 and max seawater, weather-window shares, D1 by the real engine at route seawater) per profile. Whether it joins the ArgOS screen is a later team call | Logan | Claude for Logan |
 
 ## Conflicts and risks to watch
 
@@ -1279,3 +1282,34 @@ Files: src/sdv/estimator.py, src/sdv/safety.py, src/sdv/kit.py, src/sdv/cli.py, 
 Tests: 9 added (19 in test_review_fixes.py).
 Decisions: none. Conflicts: none.
 Deferrals: explain.py crash #22 and loop.py float frames to Siddharth (his files, DEC-63).
+
+### Sat 22:32 PDT · Final-night split, deck draft, deployment map, review fleet (DEC-63 to DEC-65) · Claude Opus 5.5 on behalf of Logan Walker (GhostWalka)
+
+- Split recorded (DEC-63): Siddharth's audit tracks are his; nothing here touches his files.
+- Pitch deck draft: 8 slides as a Slides artifact, template order (title and team, challenge fit, demo, innovation, USPs, scalability, thanks); placeholders for team number, bios, pilot length; slides finished last, no paragraphs (Logan).
+- Deployment map (DEC-65) on feat/deployment-map: 16 tests; route seawater P90 25.9 °C, max 27.0 °C; gust P90 25 kn; G4 flight deck open about 90 % of sampled hours; one pump down at max seawater leaves 76 kW against the 105 kW Scenario B load-out. Data sources logged in SOFTWARE_LOG.
+- Fleet running, report-only: a soak test of main, two strong reviews of this session's post-freeze work (engine; kit, map and docs), a docs writer for the slide facts (PITCH_FACTS, JURY_QA, ARCHITECTURE_ONE_PAGE on docs/pitch-facts), a slide copy spec.
+- For Siddharth: main's Physical Account prints on 2 pages since the tracer fix (limit 1), measured with tools/build_pdfs.py account at 1148d11.
+- A watcher waits for Siddharth's UX simplification on main to take the deck's screenshots.
+
+Decisions: DEC-63 to DEC-65. Conflicts: none new. Deferrals: team number, bios and the AI-list source (#27) from Logan.
+
+### Sat 23:12 PDT · Deployment map review fixes (feat/deployment-map) · Claude Opus 5.5 on behalf of Logan Walker (GhostWalka)
+
+- Douglas scale one state low: tops now [0.0, 0.1, 0.5, 1.25, 2.5, 4.0, 6.0, 9.0, 14.0] (2.0 m is state 4, not 3).
+- Ranges from the data, not the 400 samples: ROUTE is all 337 planned hours, AREA all 1080 hours at the 3 distinct grid points (4 waypoints). Seawater route P90 25.82, route max 25.98, area max 27.2 °C. Sea state route P90 4. D1 and the cooling rows read the route P90 and max: 129.3 and 128.9 kW, one pump down 77.4 kW against the 105 kW load-out.
+- Samples stay for the dots and windows, now over the unique legs within the voyage hours: G2 and G3 100 %, G4 89.2 %.
+- Label "WEATHER RANGES · 1-15 OCT 2026 · OPEN-METEO ARCHIVE" from the data. Footer links Open-Meteo and CC BY 4.0, credits Natural Earth and "PLAN S. CHAWLA". Seed and point count off the header (kept in deployment.json). A mission-critical guest outside the load-out says NOT IN LOAD-OUT.
+- 31 tests (was 16), 1345 pass.
+
+Decisions: none. Conflicts: Siddharth's fbe59a5 Douglas list has the same off-by-one, noted in tools/deploy_map/config.yaml, his file left alone. Deferrals: his fix before his port reaches main, and whether the map joins the ArgOS screen (team).
+
+### Sat 23:39 PDT · Deployment map: sea state before rounding, Marine credit, offline test (feat/deployment-map) · Claude Opus 5.5 on behalf of Logan Walker (GhostWalka)
+
+- Sea state now read from the blended wave before rounding: hour 293 blends to 1.2519 m, shown as 1.25, read SS 4 (was SS 3). Route hours by sea state now SS 2: 108, SS 3: 181, SS 4: 48 (were 108, 183, 46).
+- Unchanged: seawater route P90 25.82, route max 25.98, area max 27.2 °C; sea state route P90 4, route max 4, area max 5; gust route P90 24.45 kn; G2 and G3 100 %, G4 89.2 %; cooling 129.3 and 128.9 kW, one pump down 77.4 kW against the 105 kW load-out.
+- Ranges heading now "WEATHER RANGES · 1-15 OCT 2026 · OPEN-METEO MARINE AND ARCHIVE" (seawater and waves come from the Marine API).
+- Offline test also forbids remote and protocol-relative src, <link href>, @import and url(), and still allows <a href> links.
+- 32 tests (was 31). Page rebuilt locally (out/ is gitignored).
+
+Decisions: none. Conflicts: none. Deferrals: none.

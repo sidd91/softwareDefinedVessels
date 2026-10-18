@@ -1,0 +1,12 @@
+# Deployment map settings (standalone tool, tools/deploy_map). Every value says where it comes from.
+plan: sicily_cable_survey          # Siddharth's mission plan (data/, copied from feat/ship-state-fsm fbe59a5)
+plan_credit: S. Chawla             # the plan's author, as the page footer credits him
+seed: 0                            # the samples are drawn from this seed, so a rerun gives the same map
+points: 400                        # dots and weather windows only: half along the route at its planned hours, half anywhere in the operations area at any hour of the voyage
+corridor_km: 10                    # assumed: half-width of the operations area either side of the route
+# Douglas sea scale (WMO), the top wave height of each state in metres: 0 glassy, 1 up to 0.1, 2 up to 0.5, 3 up to 1.25,
+# 4 up to 2.5, 5 up to 4, 6 up to 6, 7 up to 9, 8 up to 14, 9 above. Siddharth's assumptions.environment list (fbe59a5)
+# starts at 0.1 and so reads every wave one state low (2.0 m as 3, not 4). For him to fix before his port reaches main.
+sea_state_wave_m: [0.0, 0.1, 0.5, 1.25, 2.5, 4.0, 6.0, 9.0, 14.0]
+wind_limits_use_gusts: true        # wind limits judged on gusts, Siddharth's assumptions.environment (fbe59a5)
+load_out: [G3, G4, G5]             # Scenario B's load-out (DEC-32), judged under every mission profile
